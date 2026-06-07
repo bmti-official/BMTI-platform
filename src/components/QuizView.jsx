@@ -79,10 +79,11 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
       {phase === 'part1' && (
         <>
           {/* Question */}
-          <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-8 md:p-12 shadow-sm text-center mb-8 min-h-[300px] flex flex-col justify-center fade-in">
+          <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-8 md:p-12 shadow-sm text-center mb-8 min-h-[300px] flex flex-col justify-center items-center fade-in">
             <p className="text-sm text-gray-400 font-bold mb-4 tracking-wider">Q{step + 1}</p>
-            <h2 className="text-2xl md:text-3xl font-serif font-bold leading-relaxed break-keep">
-              {QUESTIONS[step]}
+            <div className="text-5xl md:text-6xl mb-6">{QUESTIONS[step].emoji}</div>
+            <h2 className="text-xl md:text-2xl font-serif font-bold leading-relaxed break-keep whitespace-pre-wrap">
+              {QUESTIONS[step].text}
             </h2>
           </div>
 
