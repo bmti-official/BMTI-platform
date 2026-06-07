@@ -29,9 +29,9 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => (
         {[...CHARACTERS, ...CHARACTERS].map((char, idx) => (
           <div
             key={idx}
-            className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center text-5xl md:text-6xl ${char.color} hover:-translate-y-2 transition-transform duration-300 cursor-pointer`}
+            className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center text-5xl md:text-6xl ${char.color} hover:-translate-y-2 transition-transform duration-300 cursor-pointer overflow-hidden p-2`}
           >
-            {char.emoji}
+            <img src={char.image} alt={char.id} className="w-full h-full object-contain drop-shadow-sm" />
           </div>
         ))}
       </div>

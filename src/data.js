@@ -130,22 +130,39 @@ export const BOARD_DATA = {
   ]
 };
 
+import imgACDM from './assets/누끼 버전/ACDM 누끼.png';
+import imgACDZ from './assets/누끼 버전/ACDZ 누끼.png';
+import imgACQM from './assets/누끼 버전/ACQM 누끼.png';
+import imgACQZ from './assets/누끼 버전/ACQZ 누끼.png';
+import imgALDM from './assets/누끼 버전/ALDM 누끼.png';
+import imgALDZ from './assets/누끼 버전/ALDZ 누끼.png';
+import imgALQM from './assets/누끼 버전/ALQM 누끼.png';
+import imgALQZ from './assets/누끼 버전/ALQZ 누끼.png';
+import imgOCDM from './assets/누끼 버전/OCDM 누끼.png';
+import imgOCDZ from './assets/누끼 버전/OCDZ 누끼.png';
+import imgOCQM from './assets/누끼 버전/OCQM 누끼.png';
+import imgOCQZ from './assets/누끼 버전/OCQZ 누끼.png';
+import imgOLDM from './assets/누끼 버전/OLDM 누끼.png';
+import imgOLDZ from './assets/누끼 버전/OLDZ 누끼.png';
+import imgOLQM from './assets/누끼 버전/OLQM 누끼.png';
+import imgOLQZ from './assets/누끼 버전/OLQZ 누끼.png';
+
 // 16 BMTI Character types
 export const CHARACTERS = [
-  { emoji: '🐻', color: 'bg-[#f4f4f4]' },
-  { emoji: '🐆', color: 'bg-[#fdf9e6]' },
-  { emoji: '🦥', color: 'bg-[#edf6ed]' },
-  { emoji: '🦅', color: 'bg-[#eef4fb]' },
-  { emoji: '🐬', color: 'bg-[#e7f7f9]' },
-  { emoji: '🐘', color: 'bg-[#f1f3f5]' },
-  { emoji: '🦌', color: 'bg-[#fdf3eb]' },
-  { emoji: '🐅', color: 'bg-[#fff0e6]' },
-  { emoji: '🐇', color: 'bg-[#fceef2]' },
-  { emoji: '🐢', color: 'bg-[#eaf5f0]' },
-  { emoji: '🦉', color: 'bg-[#f5f3ef]' },
-  { emoji: '🐺', color: 'bg-[#e9ecef]' },
-  { emoji: '🦍', color: 'bg-[#f4f4f5]' },
-  { emoji: '🦊', color: 'bg-[#ffeedd]' },
-  { emoji: '🐈', color: 'bg-[#fdf0f3]' },
-  { emoji: '🐕', color: 'bg-[#eaf6f6]' }
+  { id: 'ACDM', image: imgACDM, color: 'bg-[#f4f4f4]' },
+  { id: 'ACDZ', image: imgACDZ, color: 'bg-[#fdf9e6]' },
+  { id: 'ACQM', image: imgACQM, color: 'bg-[#edf6ed]' },
+  { id: 'ACQZ', image: imgACQZ, color: 'bg-[#eef4fb]' },
+  { id: 'ALDM', image: imgALDM, color: 'bg-[#e7f7f9]' },
+  { id: 'ALDZ', image: imgALDZ, color: 'bg-[#f1f3f5]' },
+  { id: 'ALQM', image: imgALQM, color: 'bg-[#fdf3eb]' },
+  { id: 'ALQZ', image: imgALQZ, color: 'bg-[#fff0e6]' },
+  { id: 'OCDM', image: imgOCDM, color: 'bg-[#fceef2]' },
+  { id: 'OCDZ', image: imgOCDZ, color: 'bg-[#eaf5f0]' },
+  { id: 'OCQM', image: imgOCQM, color: 'bg-[#f5f3ef]' },
+  { id: 'OCQZ', image: imgOCQZ, color: 'bg-[#e9ecef]' },
+  { id: 'OLDM', image: imgOLDM, color: 'bg-[#f4f4f5]' },
+  { id: 'OLDZ', image: imgOLDZ, color: 'bg-[#ffeedd]' },
+  { id: 'OLQM', image: imgOLQM, color: 'bg-[#fdf0f3]' },
+  { id: 'OLQZ', image: imgOLQZ, color: 'bg-[#eaf6f6]' }
 ];
