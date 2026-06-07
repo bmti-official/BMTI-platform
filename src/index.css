@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ========================================
+   BMTI Design System
+   ======================================== */
+
+/* --- Theme Configuration --- */
+@theme {
+  --font-sans: 'Pretendard', sans-serif;
+  --font-serif: 'Noto Serif KR', serif;
+  --color-brand: #111111;
+  --color-accent: #c0ff00;
+  --color-kakao: #FEE500;
+  --color-kakao-hover: #F4DC00;
+}
+
+/* --- Base Styles --- */
+body {
+  font-family: var(--font-sans);
+  background-color: #ffffff;
+  color: #111111;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #000000;
+}
+
+/* --- Scrollbar --- */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* --- Animations --- */
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Marquee (endless horizontal scroll) */
+.marquee-content {
+  display: flex;
+  width: max-content;
+  animation: scroll-left 40s linear infinite;
+}
+
+.marquee-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Spinning shape in result card */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
