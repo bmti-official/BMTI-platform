@@ -22,6 +22,20 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
     }
   };
 
+  const handleBack = () => {
+    if (phase === 'part1' && step === 0) return; // 첫 문제에서는 뒤로 가기 불가
+
+    // 이전 답변 제거
+    setAnswers(prev => prev.slice(0, -1));
+
+    if (phase === 'part2') {
+      setPhase('part1');
+      // step은 이미 마지막 문제(QUESTIONS.length - 1)를 가리키고 있으므로 그대로 둠
+    } else {
+      setStep(prev => prev - 1);
+    }
+  };
+
   const handlePart2Answer = (choiceId) => {
     // 최종 BMTI 코드 계산
     const finalCode = calculateBMTI(answers, choiceId);
@@ -36,9 +50,22 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-3xl mx-auto fade-in">
       {/* Progress bar */}
       <div className="mb-12">
-        <div className="flex justify-between text-sm text-gray-500 mb-2 font-medium">
-          <span>{phase === 'part1' ? 'Part 1 · 성향 분석' : 'Part 2 · 상태 지표'}</span>
-          <span>{currentStep} / {totalSteps}</span>
+        <div className="flex items-center mb-2">
+          {(step > 0 || phase === 'part2') && (
+            <button
+              onClick={handleBack}
+              className="p-1 -ml-1 mr-2 text-gray-400 hover:text-black transition-colors rounded-full hover:bg-gray-100 flex-shrink-0"
+              aria-label="이전 질문"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          <div className="flex justify-between text-sm text-gray-500 font-medium w-full">
+            <span>{phase === 'part1' ? 'Part 1 · 성향 분석' : 'Part 2 · 상태 지표'}</span>
+            <span>{currentStep} / {totalSteps}</span>
+          </div>
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
