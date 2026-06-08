@@ -246,9 +246,9 @@ const BoardView = () => {
             })}
           </div>
 
-          <div className="mt-8 text-center">
-            <button className="bg-black text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
-              글쓰기
+          <div className="fixed bottom-6 left-0 right-0 px-4 pointer-events-none flex justify-center z-40 fade-in">
+            <button className="pointer-events-auto bg-black text-white px-8 py-3.5 rounded-full text-sm font-bold shadow-xl shadow-black/20 hover:bg-gray-800 hover:-translate-y-1 transition-all duration-300">
+              {talkType === 'Z' ? '팩트로 해답 얻기' : '따뜻한 위로 받기'}
             </button>
           </div>
         </div>
@@ -270,7 +270,7 @@ const BoardView = () => {
                 tipType === 'Q' ? 'bg-amber-100 text-amber-700 border-2 border-amber-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
               }`}
             >
-              질문형(Q) — 원리탐구
+              질문형(Q) - 원리탐구
             </button>
             <button
               onClick={() => setTipType('D')}
@@ -278,7 +278,7 @@ const BoardView = () => {
                 tipType === 'D' ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
               }`}
             >
-              실전형(D) — 자극체크
+              실전형(D) - 자극체크
             </button>
           </div>
 
@@ -332,8 +332,8 @@ const BoardView = () => {
             })}
           </div>
 
-          <div className="mt-8 text-center">
-            <button className="bg-black text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+          <div className="fixed bottom-6 left-0 right-0 px-4 pointer-events-none flex justify-center z-40 fade-in">
+            <button className="pointer-events-auto bg-black text-white px-8 py-3.5 rounded-full text-sm font-bold shadow-xl shadow-black/20 hover:bg-gray-800 hover:-translate-y-1 transition-all duration-300">
               질문하기
             </button>
           </div>
