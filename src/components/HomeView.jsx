@@ -18,6 +18,22 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => (
       </p>
     </section>
 
+    {/* Sticky CTA Button */}
+    {!(isLoggedIn && quizCompleted) && (
+      <div className="sticky top-6 md:top-10 left-0 right-0 px-6 flex justify-center z-50 fade-in mb-16 pointer-events-none">
+        <button
+          id="start-quiz-cta"
+          onClick={() => setView('quiz')}
+          className="pointer-events-auto bg-black text-white text-lg font-medium px-12 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center gap-2"
+        >
+          BMTI test GO!
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+        </button>
+      </div>
+    )}
+
     {/* 16 Characters Marquee Section */}
     <section className="w-full overflow-hidden mb-24 relative">
       {/* Gradient Fade Edges */}
@@ -31,7 +47,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => (
             key={idx}
             className={`flex-shrink-0 w-36 h-36 md:w-56 md:h-56 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 transition-transform duration-300 cursor-pointer overflow-hidden`}
           >
-            <img src={char.image} alt={char.id} className="w-full h-full object-contain scale-[1.15] drop-shadow-sm" />
+            <img src={char.image} alt={char.id} className="w-full h-full object-cover scale-[1.35] drop-shadow-sm" />
           </div>
         ))}
       </div>
@@ -68,21 +84,6 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => (
       <p className="text-xs text-gray-500">Director of Human Body Analytics</p>
     </section>
 
-    {/* Fixed Bottom CTA */}
-    {!(isLoggedIn && quizCompleted) && (
-      <div className="fixed bottom-[5.8rem] left-0 right-0 px-6 flex justify-center z-40 fade-in">
-        <button
-          id="start-quiz-cta"
-          onClick={() => setView('quiz')}
-          className="bg-black text-white text-lg font-medium px-12 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center gap-2"
-        >
-          BMTI test GO!
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-          </svg>
-        </button>
-      </div>
-    )}
   </div>
 );
 
