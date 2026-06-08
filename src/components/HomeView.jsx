@@ -2,14 +2,16 @@ import { useState, useRef } from 'react';
 import { CHARACTERS } from '../data';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn }) => {
-  const [hoveredChar, setHoveredChar] = useState(null);
+  const [activeCharIdx, setActiveCharIdx] = useState(null);
   const sliderRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [dragDistance, setDragDistance] = useState(0);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
+    setDragDistance(0);
     setStartX(e.pageX - sliderRef.current.offsetLeft);
     setScrollLeft(sliderRef.current.scrollLeft);
   };
@@ -26,24 +28,13 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => {
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - sliderRef.current.offsetLeft;
+    setDragDistance(Math.abs(x - startX));
     const walk = (x - startX) * 2; // 스크롤 속도
     sliderRef.current.scrollLeft = scrollLeft - walk;
   };
 
   return (
     <div className="fade-in pb-32">
-      {/* Hover Overlay */}
-      {hoveredChar && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/40 backdrop-blur-md fade-in">
-          <div className="flex flex-col items-center transform scale-105 transition-transform duration-300">
-            <img src={hoveredChar.originalImage} alt={hoveredChar.id} className="w-80 h-80 md:w-[500px] md:h-[500px] object-contain drop-shadow-2xl" />
-            <div className="mt-8 px-8 py-3 bg-white/20 backdrop-blur-lg rounded-full border border-white/30 text-white font-bold text-3xl tracking-widest shadow-xl">
-              {hoveredChar.id}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Hero Section */}
       <section className="pt-40 pb-12 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-8">
@@ -93,16 +84,22 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <style>{`.marquee-content::-webkit-scrollbar { display: none; }`}</style>
-        {[...CHARACTERS, ...CHARACTERS].map((char, idx) => (
-          <div
-            key={idx}
-            onMouseEnter={() => !isDragging && setHoveredChar(char)}
-            onMouseLeave={() => setHoveredChar(null)}
-            className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 hover:shadow-lg transition-all duration-300 overflow-hidden p-1 relative z-10`}
-          >
-            <img src={char.image} alt={char.id} className={`w-full h-full object-contain scale-[1.10] drop-shadow-sm pointer-events-none ${char.imgClass || ''}`} />
-          </div>
-        ))}
+        {[...CHARACTERS, ...CHARACTERS].map((char, idx) => {
+          const isActive = activeCharIdx === idx;
+          return (
+            <div
+              key={idx}
+              onClick={() => {
+                if (dragDistance < 5) {
+                  setActiveCharIdx(isActive ? null : idx);
+                }
+              }}
+              className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} transition-all duration-500 overflow-hidden p-1 relative cursor-pointer ${isActive ? 'scale-[1.8] md:scale-[2] z-50 shadow-2xl border-gray-400' : 'hover:-translate-y-2 hover:shadow-lg z-10 border-gray-100'}`}
+            >
+              <img src={char.image} alt={char.id} className={`w-full h-full object-contain scale-[1.10] drop-shadow-sm pointer-events-none transition-transform duration-500 ${char.imgClass || ''}`} />
+            </div>
+          );
+        })}
       </div>
     </section>
 
