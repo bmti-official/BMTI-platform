@@ -62,6 +62,9 @@ const BoardView = () => {
     if (talkSort === 'popular') {
       return [...posts].sort((a, b) => b.likes - a.likes);
     }
+    if (talkSort === 'comments') {
+      return [...posts].sort((a, b) => b.comments.length - a.comments.length);
+    }
     return posts;
   };
 
@@ -77,7 +80,7 @@ const BoardView = () => {
               : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
           }`}
         >
-          💬 과몰입 톡톡: 일상 공감
+          💬 과몰입 톡톡: 일상공감
         </button>
         <button
           onClick={() => setActiveTab('tips')}
@@ -105,7 +108,7 @@ const BoardView = () => {
                 talkType === 'Z' ? 'bg-blue-100 text-blue-700 border-2 border-blue-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
               }`}
             >
-              팩트형(Z) - 팩트 직구
+              팩트형(Z) - 팩트직구
             </button>
             <button
               onClick={() => setTalkType('M')}
@@ -113,7 +116,7 @@ const BoardView = () => {
                 talkType === 'M' ? 'bg-pink-100 text-pink-700 border-2 border-pink-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
               }`}
             >
-              공감형(M) - 폭풍 공감
+              공감형(M) - 폭풍공감
             </button>
           </div>
 
@@ -134,6 +137,14 @@ const BoardView = () => {
               }`}
             >
               🔥 인기글
+            </button>
+            <button
+              onClick={() => setTalkSort('comments')}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                talkSort === 'comments' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              💬 댓글순
             </button>
           </div>
 
@@ -259,7 +270,7 @@ const BoardView = () => {
                 tipType === 'Q' ? 'bg-amber-100 text-amber-700 border-2 border-amber-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
               }`}
             >
-              질문형(Q) — 원리 탐구
+              질문형(Q) — 원리탐구
             </button>
             <button
               onClick={() => setTipType('D')}
@@ -267,7 +278,7 @@ const BoardView = () => {
                 tipType === 'D' ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
               }`}
             >
-              실전형(D) — 자극 체크
+              실전형(D) — 자극체크
             </button>
           </div>
 
