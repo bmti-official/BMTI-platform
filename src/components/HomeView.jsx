@@ -1,8 +1,34 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { CHARACTERS } from '../data';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn }) => {
   const [hoveredChar, setHoveredChar] = useState(null);
+  const sliderRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - sliderRef.current.offsetLeft);
+    setScrollLeft(sliderRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - sliderRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // 스크롤 속도
+    sliderRef.current.scrollLeft = scrollLeft - walk;
+  };
 
   return (
     <div className="fade-in pb-32">
@@ -57,15 +83,24 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => {
       <div className="absolute right-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
 
       {/* Marquee Content */}
-      <div className="marquee-content flex gap-6 md:gap-8 px-4">
+      <div 
+        ref={sliderRef}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        className={`marquee-content flex gap-6 md:gap-8 px-4 overflow-x-auto select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <style>{`.marquee-content::-webkit-scrollbar { display: none; }`}</style>
         {[...CHARACTERS, ...CHARACTERS].map((char, idx) => (
           <div
             key={idx}
-            onMouseEnter={() => setHoveredChar(char)}
+            onMouseEnter={() => !isDragging && setHoveredChar(char)}
             onMouseLeave={() => setHoveredChar(null)}
-            className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden p-1 relative z-10`}
+            className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 hover:shadow-lg transition-all duration-300 overflow-hidden p-1 relative z-10`}
           >
-            <img src={char.image} alt={char.id} className="w-full h-full object-contain scale-[1.10] drop-shadow-sm pointer-events-none" />
+            <img src={char.image} alt={char.id} className={`w-full h-full object-contain scale-[1.10] drop-shadow-sm pointer-events-none ${char.imgClass || ''}`} />
           </div>
         ))}
       </div>
