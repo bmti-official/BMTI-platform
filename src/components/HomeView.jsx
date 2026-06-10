@@ -137,35 +137,15 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn }) => {
         </div>
       </section>
 
-      {/* Cards Section */}
-      <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-6 mb-24">
-        <div className="bg-[#f2f2f2] rounded-3xl p-10 h-[500px] flex flex-col justify-between relative overflow-hidden group">
-          <div className="z-10 relative">
-            <h3 className="text-2xl font-medium mb-2">BMTI Analysis</h3>
-            <p className="text-gray-600">정밀한 신체 유형 분석 에이전트</p>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-200/50 to-transparent"></div>
-          <div className="absolute -bottom-10 -right-10 w-96 h-96 bg-white/40 rounded-full blur-3xl"></div>
-          <button id="explore-analysis" className="z-10 bg-black text-white px-6 py-2 rounded-full w-max text-sm hover:bg-gray-800 transition-colors">Explore</button>
-        </div>
-
-        <div className="bg-[#f8f9fa] border border-gray-100 rounded-3xl p-10 h-[500px] flex flex-col justify-between relative overflow-hidden group">
-          <div className="z-10 relative">
-            <h3 className="text-2xl font-medium mb-2">Personalized Plan</h3>
-            <p className="text-gray-600">유형별 맞춤 라이프스타일 플랫폼</p>
-          </div>
-          <div className="absolute top-20 right-10 w-64 h-64 bg-[#c0ff00]/20 rounded-full blur-3xl"></div>
-          <button id="explore-plan" className="z-10 bg-black text-white px-6 py-2 rounded-full w-max text-sm hover:bg-gray-800 transition-colors">Explore</button>
-        </div>
-      </section>
+      {/* Removed Cards Section */}
 
       {/* Quote Section */}
       <section className="max-w-4xl mx-auto px-6 text-center mb-32">
-        <p className="text-3xl font-serif leading-relaxed mb-6">
-          "If we're going to move to the level of true physical wellness that we want, then understanding BMTI is the key."
+        <p className="text-xl md:text-3xl font-serif leading-relaxed italic">
+          당신의 의지가 부족했던 게 아니라,<br/>
+          내 몸의 진짜 성향을 몰랐을 뿐입니다.<br/>
+          성격이 모두 다르듯,
         </p>
-        <p className="text-sm font-medium">BMTI Research Lab</p>
-        <p className="text-xs text-gray-500">Director of Human Body Analytics</p>
       </section>
     </div>
   );

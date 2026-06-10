@@ -221,7 +221,10 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
             </div>
             <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4">안내 사항</h3>
             <p className="text-sm md:text-base text-gray-600 leading-relaxed break-keep">
-              본 리포트는 고객의 체형과 운동 성향을 돕기 위한 <strong>웰니스 가이드</strong>이며, 의학적 진단이나 치료를 대신하지 않습니다. 심각한 뻐근함이나 불편감이 지속될 경우 반드시 <strong>전문의의 진료</strong>를 받으시길 권장합니다.
+              본 리포트는 고객의 운동 성향을 돕기 위한 웰니스 가이드이며,<br/>
+              의학적 진단이나 치료를 대신하지 않습니다.<br/>
+              심각한 뻐근함이나 불편감이 지속될 경우<br/>
+              반드시 전문의의 진료를 받으시길 권장합니다.
             </p>
           </div>
 
