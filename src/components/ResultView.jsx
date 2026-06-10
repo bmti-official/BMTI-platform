@@ -182,10 +182,10 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
               </div>
             )}
 
-            {/* Right Content */}
-            <div className="flex-1 flex flex-col items-start text-left">
+            {/* Center Content */}
+            <div className="flex-1 flex flex-col items-center text-center">
               <p className="text-[#9BB31B] font-bold text-lg md:text-xl mb-2">당신의 분석 코드</p>
-              <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-1 tracking-tight text-gray-900 flex flex-col items-start gap-0">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-1 tracking-tight text-gray-900 flex flex-col items-center gap-0">
                 <span>{axisCode}</span>
                 {suffix && <span className="text-xl sm:text-2xl md:text-3xl text-gray-400 font-bold">-{suffix}</span>}
               </h3>
