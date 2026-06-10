@@ -9,7 +9,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
     { id: 'home', label: '홈' },
     { id: 'result', label: '결과지' },
     { id: 'board', label: '게시판' },
-    { id: 'lab', label: <span className="text-[#9BB31B]">BMTI 플리 연구소🧪</span> }
+    { id: 'lab', label: <span className="text-[#c0ff00] drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">BMTI 플리 연구소🧪</span> }
   ];
 
   return (

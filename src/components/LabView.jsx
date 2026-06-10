@@ -7,7 +7,7 @@ const LabView = () => {
     <div className="min-h-screen pt-32 px-4 md:px-6 max-w-4xl mx-auto pb-24 fade-in">
       {/* Main Title */}
       <div className="text-center mb-10">
-        <h2 className="text-2xl md:text-3xl font-bold mb-3 font-serif tracking-tight text-[#9BB31B]">BMTI 플리 연구소🧪</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-3 font-serif tracking-tight text-[#c0ff00] drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">BMTI 플리 연구소🧪</h2>
         <p className="text-gray-500 text-sm break-keep">
           여러분의 피드백으로 완성되는 맞춤형 운동 플레이리스트
         </p>

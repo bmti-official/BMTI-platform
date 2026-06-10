@@ -128,11 +128,11 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* Catchphrase & Name & Buttons Layout */}
-          <div className="w-full flex flex-row items-start justify-start gap-4 md:gap-8 mb-10 relative">
+          <div className="w-full flex flex-col md:flex-row items-center justify-center mb-10 relative md:min-h-[220px]">
             
             {/* Left CTAs */}
             {quizCompleted && (
-              <div className="flex flex-col gap-2 z-20 fade-in shrink-0">
+              <div className="flex flex-col gap-2 z-20 fade-in shrink-0 w-full md:w-auto md:absolute md:left-0 md:top-0 mb-6 md:mb-0">
                 {!isLoggedIn ? (
                   <button
                     id="kakao-login-result"
@@ -183,7 +183,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             )}
 
             {/* Center Content */}
-            <div className="flex-1 flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center w-full">
               <p className="text-[#9BB31B] font-bold text-lg md:text-xl mb-2">당신의 분석 코드</p>
               <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-1 tracking-tight text-gray-900 flex flex-col items-center gap-0">
                 <span>{axisCode}</span>
