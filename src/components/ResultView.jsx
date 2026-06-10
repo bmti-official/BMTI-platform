@@ -128,7 +128,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* Catchphrase & Name & Buttons Layout */}
-          <div className="w-full flex flex-col md:flex-row items-center justify-start md:justify-center gap-6 mb-10 relative">
+          <div className="w-full flex flex-row items-start justify-start gap-4 md:gap-8 mb-10 relative">
             
             {/* Left CTAs */}
             {quizCompleted && (
@@ -137,7 +137,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                   <button
                     id="kakao-login-result"
                     onClick={() => setIsLoggedIn(true)}
-                    className="bg-[#FEE500] text-black px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-[#F4DC00] hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit mx-auto md:mx-0"
+                    className="bg-[#FEE500] text-black px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-[#F4DC00] hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit"
                   >
                     <KakaoIcon className="w-3.5 h-3.5 fill-current" />
                     카카오톡 로그인
@@ -147,7 +147,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <button
                       id="kakao-share"
                       onClick={() => alert('카카오톡 공유가 완료되었습니다.')}
-                      className="bg-[#FEE500] text-black px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-[#F4DC00] hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit mx-auto md:mx-0"
+                      className="bg-[#FEE500] text-black px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-[#F4DC00] hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit"
                     >
                       <KakaoIcon className="w-3.5 h-3.5 fill-current" />
                       카카오톡 공유
@@ -155,7 +155,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <button
                       id="insta-story-btn"
                       onClick={() => setShowStoryModal(true)}
-                      className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit mx-auto md:mx-0"
+                      className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit"
                     >
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                       인스타그램 공유
@@ -163,14 +163,14 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <button
                       id="go-to-lab-card"
                       onClick={() => setView('lab')}
-                      className="bg-black text-[#c0ff00] px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-gray-800 hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit mx-auto md:mx-0"
+                      className="bg-black text-[#c0ff00] px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-gray-800 hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit"
                     >
-                      🎧 BMTI 플리 신청하기
+                      🎧 BMTI 플리 신청
                     </button>
                     <button
                       id="retake-quiz-card"
                       onClick={() => setShowConfirm(true)}
-                      className="bg-white text-black border border-gray-200 px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit mx-auto md:mx-0"
+                      className="bg-white text-black border border-gray-200 px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-transform flex items-center gap-1.5 w-fit"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -182,12 +182,12 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
               </div>
             )}
 
-            {/* Center Content */}
-            <div className="flex-1 flex flex-col items-center text-center">
+            {/* Right Content */}
+            <div className="flex-1 flex flex-col items-start text-left">
               <p className="text-[#9BB31B] font-bold text-lg md:text-xl mb-2">당신의 분석 코드</p>
-              <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-1 tracking-tight text-gray-900 flex items-baseline justify-center gap-1">
-                {axisCode}
-                {suffix && <span className="text-lg sm:text-xl md:text-2xl text-gray-400 font-bold">-{suffix}</span>}
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-1 tracking-tight text-gray-900 flex flex-col items-start gap-0">
+                <span>{axisCode}</span>
+                {suffix && <span className="text-xl sm:text-2xl md:text-3xl text-gray-400 font-bold">-{suffix}</span>}
               </h3>
               <p className="text-base sm:text-lg text-gray-500 font-bold mb-4">{getKoreanName(axisCode)}</p>
               <p className="text-xs sm:text-sm text-gray-500 mb-2 font-medium">{info.kr}</p>
@@ -295,7 +295,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             onClick={() => setView('lab')}
             className="flex-1 bg-black text-[#c0ff00] px-4 py-4 rounded-2xl text-sm font-bold shadow-sm hover:bg-gray-800 hover:-translate-y-1 transition-transform flex items-center justify-center gap-2"
           >
-            🎧 BMTI 플리 신청하기
+            🎧 BMTI 플리 신청
           </button>
           <button
             id="retake-quiz-bottom"
