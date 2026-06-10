@@ -83,6 +83,11 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
             <p className="text-sm text-gray-400 font-bold mb-4 tracking-wider">Q{step + 1}</p>
             <div className="text-5xl md:text-6xl mb-6">{QUESTIONS[step].emoji}</div>
             <h2 className="text-xl md:text-2xl font-serif font-bold leading-relaxed break-keep whitespace-pre-wrap">
+              {QUESTIONS[step].prefix && (
+                <span className="text-sm md:text-base text-gray-400 block mb-2 font-normal">
+                  {QUESTIONS[step].prefix}
+                </span>
+              )}
               {QUESTIONS[step].text}
             </h2>
           </div>
@@ -137,28 +142,28 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
             </h2>
           </div>
 
-          {/* Part 2 Options */}
-          <div className="flex flex-col gap-3">
-            {PART2_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                id={`part2-option-${option.id}`}
-                onClick={() => handlePart2Answer(option.id)}
-                className="w-full p-5 rounded-2xl border-2 border-gray-200 bg-white text-left hover:border-black hover:shadow-md transition-all duration-200 group active:scale-[0.98] flex items-center gap-4"
-              >
-                <span className="text-2xl w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-gray-100 transition-colors flex-shrink-0">
-                  {option.emoji}
-                </span>
-                <div className="flex-1">
-                  <span className="font-bold text-gray-800 group-hover:text-black transition-colors">
-                    {option.label}
-                  </span>
-                </div>
-                <svg className="w-5 h-5 text-gray-300 group-hover:text-black transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            ))}
+          {/* Part 2 Linear Scale Answers (1~5) */}
+          <div className="max-w-xl mx-auto mt-8">
+            <div className="flex justify-between text-xs md:text-sm text-gray-400 font-bold mb-4 px-2">
+              <span className="text-left w-1/3 break-keep">에너지 바닥이고<br/>휴식이 필요한 상태</span>
+              <span className="text-right w-1/3 break-keep">에너지가 넘치고<br/>컨디션 최상인 상태</span>
+            </div>
+            <div className="flex justify-between items-center relative px-2">
+              {/* Connecting Line */}
+              <div className="absolute left-0 right-0 h-1 bg-gray-100 top-1/2 -translate-y-1/2 z-0 rounded-full"></div>
+
+              {/* Nodes */}
+              {[1, 2, 3, 4, 5].map((val) => (
+                <button
+                  key={val}
+                  id={`part2-answer-${val}`}
+                  onClick={() => handlePart2Answer(val)}
+                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-white border-2 border-gray-200 shadow-sm relative z-10 flex items-center justify-center hover:border-black hover:bg-black hover:text-white transition-all duration-200 group active:scale-95"
+                >
+                  <span className="opacity-0 group-hover:opacity-100 font-bold transition-opacity">{val}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
