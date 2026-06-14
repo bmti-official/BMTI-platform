@@ -254,35 +254,104 @@ const LabView = () => {
         <div className="fade-in max-w-2xl mx-auto">
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 md:p-8 mb-8 text-center">
             <span className="text-3xl mb-4 block">🎧</span>
-            <h3 className="text-lg font-bold text-blue-900 mb-2">"내 BMTI에 이 루틴 만들어주세요!"</h3>
+            <h3 className="text-lg font-bold text-blue-900 mb-2">"나를 위한 BMTI 플리 만들어주세요!"</h3>
             <p className="text-sm text-blue-700/80 leading-relaxed break-keep">
               이용자분들이 필요한 운동 루틴(플리)을 직접 신청하는 공간입니다.<br className="hidden md:block"/>
-              추후 정식 앱 출시에 맞춰 맞춤형 플리로 제작해 드립니다.
+              나의 상황을 자세히 작성 할수록 나에게 맞는 플리가 제작이 됩니다.
             </p>
           </div>
           
           {/* Form */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
             <h4 className="font-bold text-gray-900 mb-6 text-center">새로운 플리 신청하기</h4>
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-2 block">어떤 목적의 루틴이 필요한가요?</label>
+                <label className="text-sm font-bold text-gray-800 mb-2 block">어떤 목적의 루틴이 필요한가요?</label>
                 <input type="text" placeholder="예: 무릎 안 아픈 10분 하체 루틴" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors" />
               </div>
+
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-2 block">본인의 BMTI</label>
+                <label className="text-sm font-bold text-gray-800 mb-2 block">본인의 BMTI</label>
                 <input type="text" placeholder="예: ALDZ" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors" />
               </div>
+
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-2 block">상세 설명</label>
+                <label className="text-sm font-bold text-gray-800 mb-3 block">운동환경이 어떻게 되나요?</label>
+                
+                <div className="mb-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p className="text-xs font-bold text-gray-600 mb-3">피해야하는 상황 (중복 선택 가능)</p>
+                  <div className="flex flex-wrap gap-2">
+                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" className="accent-black w-4 h-4" /> 야외
+                    </label>
+                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" className="accent-black w-4 h-4" /> 층간소음
+                    </label>
+                    <div className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-1.5 rounded-lg focus-within:border-gray-400">
+                      <input type="checkbox" className="accent-black w-4 h-4" />
+                      <input type="text" placeholder="기타 (직접 작성)" className="w-28 text-sm outline-none bg-transparent" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p className="text-xs font-bold text-gray-600 mb-3">가지고 있는 도구 (중복 선택 가능)</p>
+                  <div className="flex flex-wrap gap-2">
+                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" className="accent-black w-4 h-4" /> 폼롤러
+                    </label>
+                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" className="accent-black w-4 h-4" /> 마사지공
+                    </label>
+                    <div className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-1.5 rounded-lg focus-within:border-gray-400">
+                      <input type="checkbox" className="accent-black w-4 h-4" />
+                      <input type="text" placeholder="기타 (직접 작성)" className="w-28 text-sm outline-none bg-transparent" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-800 mb-3 block">현재 나의 몸 상태</label>
+                <div className="space-y-2">
+                  {[
+                    { id: 'state1', text: '🔋 에너지 바닥 (깊은 피로)', score: '1점' },
+                    { id: 'state2', text: '🔋 배터리 부족 (가벼운 피로)', score: '2점' },
+                    { id: 'state3', text: '🔋 보통 (일상적 기준점)', score: '3점' },
+                    { id: 'state4', text: '🚀 좋은 컨디션 (안정적 활력)', score: '4점' },
+                    { id: 'state5', text: '🚀 최상 컨디션 (퍼포먼스 도약)', score: '5점' }
+                  ].map(state => (
+                    <label key={state.id} className="flex items-center gap-3 text-sm bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                      <input type="radio" name="bodyState" className="accent-black w-4 h-4" /> 
+                      <span className="flex-1">{state.text} <strong className="text-gray-400 ml-1">[{state.score}]</strong></span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-800 mb-2 block">세심한 배려가 필요한 부위나 뻐근하거나 불편한 곳 <span className="text-gray-400 font-normal">(선택 사항)</span></label>
+                <input type="text" placeholder="예: 오른쪽 어깨가 특히 결려요" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-800 mb-2 block">오늘의 기분/목표 <span className="text-gray-400 font-normal">(선택 사항)</span></label>
+                <input type="text" placeholder="예: 차분하게 하루를 마무리하고 싶어요" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-800 mb-2 block">상세 설명</label>
                 <textarea rows="4" placeholder="어떤 동작들이 들어가면 좋을지, 피하고 싶은 동작은 무엇인지 자유롭게 적어주세요." className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors resize-none"></textarea>
               </div>
-              <button 
-                onClick={() => alert("플리 신청이 완료되었습니다! 정식 앱 출시에 적극 반영할게요.")}
-                className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors"
-              >
-                신청하기
-              </button>
+
+              <div className="pt-2">
+                <button 
+                  onClick={() => alert("플리 신청이 완료되었습니다! 정식 앱 출시에 적극 반영할게요.")}
+                  className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors"
+                >
+                  신청하기
+                </button>
+              </div>
             </div>
           </div>
         </div>
