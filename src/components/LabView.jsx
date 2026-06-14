@@ -5,29 +5,46 @@ const LabView = () => {
   const [activeTab, setActiveTab] = useState('story'); // 'request' or 'story'
   const [formData, setFormData] = useState({
     purpose: '',
+    environments: [],
+    envCustom: '',
+    tools: [],
+    toolsCustom: '',
     bodyState: '',
     bodyPart: '딱히 없음',
     bodyPartCustom: '',
     description: ''
   });
+  const [showErrors, setShowErrors] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleArrayChange = (field, item) => {
+    setFormData(prev => {
+      const arr = prev[field];
+      if (arr.includes(item)) {
+        return { ...prev, [field]: arr.filter(i => i !== item) };
+      } else {
+        return { ...prev, [field]: [...arr, item] };
+      }
+    });
   };
 
   const handleSubmit = () => {
-    if (!formData.purpose.trim() || !formData.bodyState || !formData.description.trim()) {
-      alert("선택 사항을 제외한 필수 항목을 모두 기재해 주세요.");
+    const hasEnv = formData.environments.length > 0 || formData.envCustom.trim() !== '';
+    const hasTool = formData.tools.length > 0 || formData.toolsCustom.trim() !== '';
+    const hasBodyPart = formData.bodyPart !== '기타(직접 작성)' || formData.bodyPartCustom.trim() !== '';
+    const isValid = formData.purpose.trim() && hasEnv && hasTool && formData.bodyState && hasBodyPart && formData.description.trim() && agreedToTerms;
+
+    if (!isValid) {
+      setShowErrors(true);
+      alert("모든 항목을 입력해주셔야\n플리 신청이 완료가 됩니다!");
       return;
     }
-    if (!agreedToTerms) {
-      alert("이용약관 및 개인정보 수집/이용에 동의해 주세요.");
-      return;
-    }
+    
     alert("플리 신청이 완료되었습니다!\n'자기점검 50분' 카카오톡 공식 채널에서 확인해보실 수 있습니다.");
-    setFormData({ purpose: '', bodyState: '', bodyPart: '딱히 없음', bodyPartCustom: '', description: '' });
+    setFormData({ purpose: '', environments: [], envCustom: '', tools: [], toolsCustom: '', bodyState: '', bodyPart: '딱히 없음', bodyPartCustom: '', description: '' });
+    setAgreedToTerms(false);
+    setShowErrors(false);
   };
 
   return (
@@ -297,7 +314,9 @@ const LabView = () => {
                 <input 
                   type="text" 
                   placeholder="예: 무릎 안 아픈 10분 하체 루틴" 
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors" 
+                  className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:border-black transition-colors ${
+                    showErrors && !formData.purpose.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-200'
+                  }`}
                   value={formData.purpose}
                   onChange={(e) => handleInputChange('purpose', e.target.value)}
                 />
@@ -306,52 +325,68 @@ const LabView = () => {
               <div>
                 <label className="text-sm font-bold text-gray-800 mb-3 block">운동환경이 어떻게 되나요?</label>
                 
-                <div className="mb-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-xs font-bold text-gray-600 mb-3">주된 운동 환경 (중복 선택 가능)</p>
+                <div className={`mb-4 bg-gray-50 p-4 rounded-xl border ${
+                  showErrors && formData.environments.length === 0 && !formData.envCustom.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-100'
+                }`}>
+                  <p className={`text-xs font-bold mb-3 ${showErrors && formData.environments.length === 0 && !formData.envCustom.trim() ? 'text-red-500' : 'text-gray-600'}`}>주된 운동 환경 (중복 선택 가능)</p>
                   <div className="flex flex-wrap gap-2">
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 홈트
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 헬스장
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 야외/공원
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 사무실/학교
-                    </label>
+                    {['홈트', '헬스장', '야외/공원', '사무실/학교'].map(env => (
+                      <label key={env} className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input 
+                          type="checkbox" 
+                          className="accent-black w-4 h-4 cursor-pointer" 
+                          checked={formData.environments.includes(env)}
+                          onChange={() => handleArrayChange('environments', env)}
+                        /> {env}
+                      </label>
+                    ))}
                     <div className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-1.5 rounded-lg focus-within:border-gray-400">
-                      <input type="checkbox" className="accent-black w-4 h-4" />
-                      <input type="text" placeholder="기타 (직접 작성)" className="w-28 text-sm outline-none bg-transparent" />
+                      <input 
+                        type="checkbox" 
+                        className="accent-black w-4 h-4 cursor-pointer" 
+                        checked={formData.envCustom.trim() !== ''}
+                        readOnly
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="기타 (직접 작성)" 
+                        className="w-28 text-sm outline-none bg-transparent" 
+                        value={formData.envCustom}
+                        onChange={(e) => handleInputChange('envCustom', e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-xs font-bold text-gray-600 mb-3">활용하고 싶은 도구 (중복 선택 가능)</p>
+                <div className={`bg-gray-50 p-4 rounded-xl border ${
+                  showErrors && formData.tools.length === 0 && !formData.toolsCustom.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-100'
+                }`}>
+                  <p className={`text-xs font-bold mb-3 ${showErrors && formData.tools.length === 0 && !formData.toolsCustom.trim() ? 'text-red-500' : 'text-gray-600'}`}>활용하고 싶은 도구 (중복 선택 가능)</p>
                   <div className="flex flex-wrap gap-2">
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 폼롤러
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 마사지공(또는 테니스공)
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 탄성밴드(세라밴드, 루프밴드)
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 아령(덤벨)또는 케틀벨
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 요가링(젠링)
-                    </label>
-                    <label className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input type="checkbox" className="accent-black w-4 h-4" /> 딱히 없음(맨몸)
-                    </label>
+                    {['폼롤러', '마사지공(또는 테니스공)', '탄성밴드(세라밴드, 루프밴드)', '아령(덤벨)또는 케틀벨', '요가링(젠링)', '딱히 없음(맨몸)'].map(tool => (
+                      <label key={tool} className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input 
+                          type="checkbox" 
+                          className="accent-black w-4 h-4 cursor-pointer" 
+                          checked={formData.tools.includes(tool)}
+                          onChange={() => handleArrayChange('tools', tool)}
+                        /> {tool}
+                      </label>
+                    ))}
                     <div className="flex items-center gap-2 text-sm bg-white border border-gray-200 px-3 py-1.5 rounded-lg focus-within:border-gray-400">
-                      <input type="checkbox" className="accent-black w-4 h-4" />
-                      <input type="text" placeholder="기타 (직접 작성)" className="w-28 text-sm outline-none bg-transparent" />
+                      <input 
+                        type="checkbox" 
+                        className="accent-black w-4 h-4 cursor-pointer" 
+                        checked={formData.toolsCustom.trim() !== ''}
+                        readOnly
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="기타 (직접 작성)" 
+                        className="w-28 text-sm outline-none bg-transparent" 
+                        value={formData.toolsCustom}
+                        onChange={(e) => handleInputChange('toolsCustom', e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -359,8 +394,10 @@ const LabView = () => {
 
               <div>
                 <label className="text-sm font-bold text-gray-800 mb-3 block">현재 나의 몸 상태</label>
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                  <div className="flex justify-between text-xs font-bold text-gray-500 mb-6 px-2">
+                <div className={`bg-gray-50 p-6 rounded-xl border ${
+                  showErrors && !formData.bodyState ? 'border-red-500 bg-red-50/30' : 'border-gray-100'
+                }`}>
+                  <div className={`flex justify-between text-xs font-bold mb-6 px-2 ${showErrors && !formData.bodyState ? 'text-red-500' : 'text-gray-500'}`}>
                     <span className="text-center w-20">🔋 에너지 바닥<br/>(깊은 피로)</span>
                     <span className="text-center w-24">🚀 최상 컨디션<br/>(퍼포먼스 도약)</span>
                   </div>
@@ -393,7 +430,9 @@ const LabView = () => {
                 <label className="text-sm font-bold text-gray-800 mb-2 block">세심한 배려가 필요하거나 뻐근 또는 불편한 부위 <span className="text-gray-400 font-normal">(한 부위 선택 가능)</span></label>
                 <div className="relative mb-2">
                   <select 
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors appearance-none bg-white font-medium"
+                    className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:border-black transition-colors appearance-none bg-white font-medium ${
+                      showErrors && formData.bodyPart === '기타(직접 작성)' && !formData.bodyPartCustom.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-200'
+                    }`}
                     value={formData.bodyPart}
                     onChange={(e) => handleInputChange('bodyPart', e.target.value)}
                   >
@@ -415,7 +454,9 @@ const LabView = () => {
                   <input 
                     type="text" 
                     placeholder="불편한 부위를 직접 적어주세요" 
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors bg-gray-50"
+                    className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:border-black transition-colors bg-gray-50 ${
+                      showErrors && formData.bodyPart === '기타(직접 작성)' && !formData.bodyPartCustom.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-200'
+                    }`}
                     value={formData.bodyPartCustom}
                     onChange={(e) => handleInputChange('bodyPartCustom', e.target.value)}
                   />
@@ -427,21 +468,25 @@ const LabView = () => {
                 <textarea 
                   rows="4" 
                   placeholder="예시) 오래 앉아 있으면 오른쪽 허리가 뻐근해요 / 계단을 내려갈 때 무릎에서 뚝뚝 소리가 나요 / 아프진 않은데 체형 교정이 목적이에요." 
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors resize-none"
+                  className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:border-black transition-colors resize-none ${
+                    showErrors && !formData.description.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-200'
+                  }`}
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                 ></textarea>
               </div>
 
               <div className="pt-2">
-                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer mb-4">
+                <label className={`flex items-center gap-2 text-sm cursor-pointer mb-4 ${
+                  showErrors && !agreedToTerms ? 'text-red-500' : 'text-gray-700'
+                }`}>
                   <input 
                     type="checkbox" 
                     className="accent-black w-4 h-4 cursor-pointer" 
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                   />
-                  <span>[필수] <button type="button" onClick={() => setIsTermsOpen(true)} className="underline font-bold text-gray-900 hover:text-black">이용약관 및 개인정보 수집/이용</button>에 동의합니다.</span>
+                  <span>[필수] <button type="button" onClick={() => setIsTermsOpen(true)} className={`underline font-bold hover:text-black ${showErrors && !agreedToTerms ? 'text-red-600' : 'text-gray-900'}`}>이용약관 및 개인정보 수집/이용</button>에 동의합니다.</span>
                 </label>
                 
                 <button 
