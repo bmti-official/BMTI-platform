@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TermsModal from './TermsModal';
 
 const LabView = () => {
   const [activeTab, setActiveTab] = useState('story'); // 'request' or 'story'
@@ -9,6 +10,8 @@ const LabView = () => {
     bodyPartCustom: '',
     description: ''
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -17,6 +20,10 @@ const LabView = () => {
   const handleSubmit = () => {
     if (!formData.purpose.trim() || !formData.bodyState || !formData.description.trim()) {
       alert("선택 사항을 제외한 필수 항목을 모두 기재해 주세요.");
+      return;
+    }
+    if (!agreedToTerms) {
+      alert("이용약관 및 개인정보 수집/이용에 동의해 주세요.");
       return;
     }
     alert("플리 신청이 완료되었습니다!\n'자기점검 50분' 카카오톡 공식 채널에서 확인해보실 수 있습니다.");
@@ -427,6 +434,16 @@ const LabView = () => {
               </div>
 
               <div className="pt-2">
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer mb-4">
+                  <input 
+                    type="checkbox" 
+                    className="accent-black w-4 h-4 cursor-pointer" 
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  />
+                  <span>[필수] <button type="button" onClick={() => setIsTermsOpen(true)} className="underline font-bold text-gray-900 hover:text-black">이용약관 및 개인정보 수집/이용</button>에 동의합니다.</span>
+                </label>
+                
                 <button 
                   onClick={handleSubmit}
                   className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors flex flex-col items-center gap-1"
@@ -439,6 +456,9 @@ const LabView = () => {
           </div>
         </div>
       )}
+
+      {/* Terms Modal */}
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import TermsModal from './TermsModal';
 
 // ===== 상태 관리 데이터 =====
 // 사용자의 BMTI 축(1,2번째 글자)에 따른 유형 매핑
@@ -54,6 +55,8 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
   const [showToast, setShowToast] = useState(false);
   const [animatingIdx, setAnimatingIdx] = useState(null);
   const [canvasDataUrl, setCanvasDataUrl] = useState(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -111,6 +114,10 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
   const handleSubmit = () => {
     if (!photoPreview) {
       setAlertMsg('📸 사진을 첨부해 주세요!');
+      return;
+    }
+    if (!agreedToTerms) {
+      setAlertMsg('🚨 이용약관 및 개인정보 수집/이용에 동의해 주세요.');
       return;
     }
 
@@ -341,6 +348,22 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
               `}
             />
 
+            {/* 약관 동의 체크박스 */}
+            {!verified && (
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer mb-2 px-1">
+                <input 
+                  type="checkbox" 
+                  className="accent-black w-4 h-4 cursor-pointer" 
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  disabled={isFormDisabled}
+                />
+                <span className={isFormDisabled ? 'text-gray-400' : ''}>
+                  [필수] <button type="button" onClick={() => setIsTermsOpen(true)} className={`underline font-bold ${isFormDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-900 hover:text-black'}`}>이용약관 및 개인정보 수집/이용</button>에 동의합니다.
+                </span>
+              </label>
+            )}
+
             {/* 인증 완료 버튼 */}
             <button
               onClick={handleSubmit}
@@ -413,6 +436,9 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
           </div>
         </div>
       )}
+
+      {/* Terms Modal */}
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
     </div>
   );
 };
