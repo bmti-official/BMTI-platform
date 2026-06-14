@@ -6,6 +6,7 @@ import ResultView from './components/ResultView';
 import BoardView from './components/BoardView';
 import LabView from './components/LabView';
 import Footer from './components/Footer';
+import TicketView from './components/TicketView';
 import SignupModal from './components/SignupModal';
 
 function App() {
@@ -82,10 +83,11 @@ function App() {
           />
         )}
         {currentView === 'lab' && <LabView />}
+        {currentView === 'ticket' && <TicketView />}
       </main>
 
       {/* Footer for Home/Board/Lab views */}
-      {['home', 'board', 'lab'].includes(currentView) && <Footer />}
+      {['home', 'board', 'lab', 'ticket'].includes(currentView) && <Footer />}
 
       {/* Signup Modal */}
       <SignupModal
