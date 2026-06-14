@@ -80,29 +80,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin }) => {
 
   return (
     <div className="min-h-screen pt-32 px-4 md:px-6 max-w-4xl mx-auto pb-24 fade-in">
-      {/* Main Tabs */}
-      <div className="flex gap-3 md:gap-4 mb-10 overflow-x-auto hide-scrollbar pb-2">
-        <button
-          onClick={() => setActiveTab('talk')}
-          className={`whitespace-nowrap px-5 md:px-8 py-3 md:py-4 rounded-2xl font-bold text-sm md:text-lg transition-all duration-300 border-2 ${
-            activeTab === 'talk'
-              ? 'bg-black text-white border-black shadow-lg scale-[1.02]'
-              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-          }`}
-        >
-          💬 과몰입 톡톡: 일상공감
-        </button>
-        <button
-          onClick={() => setActiveTab('tips')}
-          className={`whitespace-nowrap px-5 md:px-8 py-3 md:py-4 rounded-2xl font-bold text-sm md:text-lg transition-all duration-300 border-2 ${
-            activeTab === 'tips'
-              ? 'bg-black text-white border-black shadow-lg scale-[1.02]'
-              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-          }`}
-        >
-          💡 맞춤 꿀팁: 질문/상담
-        </button>
-      </div>
+      {/* Main Tabs removed */}
 
       {/* ===== 과몰입 톡톡 ===== */}
       {activeTab === 'talk' && (
@@ -267,94 +245,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin }) => {
         </div>
       )}
 
-      {/* ===== 맞춤 꿀팁 ===== */}
-      {activeTab === 'tips' && (
-        <div className="fade-in">
-          {/* Sub-description */}
-          <p className="text-center text-gray-500 text-sm mb-8">
-            {tipType === 'Q' ? '원리가 궁금할 땐 질문하세요 — 가이드가 답변합니다 📚' : '자극 위치가 헷갈릴 땐 물어보세요 — 가이드가 답변합니다 🎯'}
-          </p>
-
-          {/* Type Toggle */}
-          <div className="flex justify-center gap-4 mb-8">
-            <button
-              onClick={() => setTipType('Q')}
-              className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${
-                tipType === 'Q' ? 'bg-amber-100 text-amber-700 border-2 border-amber-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
-              }`}
-            >
-              질문형(Q) - 원리탐구
-            </button>
-            <button
-              onClick={() => setTipType('D')}
-              className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${
-                tipType === 'D' ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-200 shadow-md' : 'bg-gray-100 text-gray-500 border-2 border-transparent hover:bg-gray-200'
-              }`}
-            >
-              실전형(D) - 자극체크
-            </button>
-          </div>
-
-          {/* Posts */}
-          <div className="flex flex-col gap-4">
-            {TIP_POSTS[tipType].map(post => {
-              const isExpanded = expandedId === post.id + 100;
-              return (
-                <div key={post.id} className="border border-gray-100 rounded-2xl bg-white overflow-hidden transition-all duration-300 hover:shadow-md">
-                  <div className="p-5 md:p-6 cursor-pointer" onClick={() => toggleExpand(post.id + 100)}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        post.tag === '하체' ? 'bg-blue-100 text-blue-700' :
-                        post.tag === '상체' ? 'bg-orange-100 text-orange-700' :
-                        post.tag === '코어' ? 'bg-purple-100 text-purple-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>{post.tag}</span>
-                      {post.answered && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-700">✅ 답변완료</span>
-                      )}
-                    </div>
-                    <h3 className="text-base md:text-lg font-bold mb-2 leading-snug">{post.title}</h3>
-                    <p className={`text-sm text-gray-600 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>{post.body}</p>
-                    <div className="flex items-center mt-4 text-xs text-gray-500 gap-3">
-                      <span className={`font-bold ${tipType === 'Q' ? 'text-amber-600' : 'text-emerald-600'}`}>{post.author}</span>
-                      <span>{post.date}</span>
-                    </div>
-                  </div>
-
-                  {/* Expanded: Expert Answer */}
-                  {isExpanded && (
-                    <div className="border-t border-gray-100 bg-gray-50/50 p-4 md:p-6 fade-in">
-                      {post.answer ? (
-                        <div className="bg-white border border-green-200 rounded-xl p-4 md:p-5">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-sm font-bold text-green-700">{post.answer.author}</span>
-                            <span className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold">전문가 답변</span>
-                          </div>
-                          <p className="text-sm text-gray-700 leading-relaxed">{post.answer.text}</p>
-                        </div>
-                      ) : (
-                        <div className="text-center py-6">
-                          <p className="text-sm text-gray-400 mb-3">아직 가이드 답변이 없어요</p>
-                          <p className="text-xs text-gray-400">BMTI 가이드가 곧 답변해 드릴게요! ⏳</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="fixed bottom-6 left-0 right-0 px-4 pointer-events-none flex justify-center z-40 fade-in">
-            <button 
-              onClick={handleWriteClick}
-              className="pointer-events-auto bg-black text-white px-8 py-3.5 rounded-full text-sm font-bold shadow-xl shadow-black/20 hover:bg-gray-800 hover:-translate-y-1 transition-all duration-300"
-            >
-              질문하기
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Tips section removed */}
     </div>
   );
 };

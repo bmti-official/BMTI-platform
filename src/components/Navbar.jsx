@@ -8,7 +8,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const tabs = [
     { id: 'home', label: '홈' },
     { id: 'result', label: '결과지' },
-    { id: 'board', label: '게시판' },
+    { id: 'board', label: '커뮤니티' },
     { id: 'lab', label: 'BMTI 플리 연구소🧪' }
   ];
 
@@ -49,7 +49,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           {isLoggedIn ? (
             <div className="flex items-center gap-3">
               {userProfile && (
-                <div className="hidden sm:flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
                   <span className="font-bold text-black">{userProfile.nickname}</span>
                   {bmtiCode && (
                     <span className="text-[10px] font-bold bg-[#c0ff00] px-2 py-0.5 rounded-full text-black border border-[#9BB31B]/30">
