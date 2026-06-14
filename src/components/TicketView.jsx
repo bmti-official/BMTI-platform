@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-const TicketView = ({ isLoggedIn, bmtiCode, setView }) => {
+const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
   const [progress, setProgress] = useState(3); // 3/5 active
   const [verified, setVerified] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -95,7 +95,7 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView }) => {
     return () => clearTimeout(t);
   }, [animatingIdx]);
 
-  if (!isLoggedIn || !bmtiCode) {
+  if (!bmtiCode) {
     return (
       <div className="min-h-screen pt-44 pb-40 px-6 flex flex-col items-center justify-center text-center fade-in max-w-md mx-auto">
         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-200">
@@ -110,6 +110,29 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView }) => {
           className="bg-black text-white px-8 py-3.5 rounded-full font-medium hover:bg-gray-800 transition-colors shadow-lg shadow-black/10 w-full md:w-auto"
         >
           설문하러 가기
+        </button>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen pt-44 pb-40 px-6 flex flex-col items-center justify-center text-center fade-in max-w-md mx-auto">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-200">
+          <span className="text-3xl">🎟️</span>
+        </div>
+        <h2 className="text-2xl font-serif font-bold mb-4">로그인이 필요합니다</h2>
+        <p className="text-gray-500 mb-8 break-keep leading-relaxed text-sm md:text-base">
+          플리 티켓 인증을 위해 카카오톡으로 간편하게 로그인해 주세요.
+        </p>
+        <button
+          onClick={() => onRequireLogin && onRequireLogin()}
+          className="bg-[#FEE500] text-[#000000] text-base font-semibold px-8 py-3.5 rounded-full shadow hover:bg-[#F4DC00] transition-all duration-300 w-full md:w-auto flex items-center justify-center gap-2"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+            <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" />
+          </svg>
+          카카오톡 로그인/회원가입
         </button>
       </div>
     );

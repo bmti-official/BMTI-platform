@@ -90,6 +90,7 @@ function App() {
             isLoggedIn={isLoggedIn}
             bmtiCode={bmtiCode}
             setView={setCurrentView}
+            onRequireLogin={() => setShowSignup(true)}
           />
         )}
       </main>
