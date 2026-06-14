@@ -18,7 +18,7 @@ const LabView = () => {
       alert("선택 사항을 제외한 필수 항목을 모두 기재해 주세요.");
       return;
     }
-    alert("플리 신청이 완료되었습니다! 정식 앱 출시에 적극 반영할게요.");
+    alert("플리 신청이 완료되었습니다!\n'자기점검 50분' 카카오톡 공식 채널에서 확인해보실 수 있습니다.");
     setFormData({ purpose: '', bmti: '', bodyState: '', description: '' });
   };
 
@@ -390,9 +390,10 @@ const LabView = () => {
               <div className="pt-2">
                 <button 
                   onClick={handleSubmit}
-                  className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors"
+                  className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors flex flex-col items-center gap-1"
                 >
-                  신청하기
+                  <span className="text-base">🎧 플리 신청 완료하기!</span>
+                  <span className="text-[11px] text-gray-300 font-normal">(BMTI 가이드가 한땀한땀 확인하기 때문에 최대 3-4일이 소요될 수 있습니다.)</span>
                 </button>
               </div>
             </div>

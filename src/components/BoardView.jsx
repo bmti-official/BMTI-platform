@@ -99,6 +99,44 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
     }
   };
 
+  const handleDeleteComment = (postId, commentId) => {
+    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+      setPosts(prev => {
+        const updated = { ...prev };
+        updated[talkType] = updated[talkType].map(p => {
+          if (p.id !== postId) return p;
+          return {
+            ...p,
+            comments: p.comments.filter(c => c.id !== commentId)
+          };
+        });
+        return updated;
+      });
+    }
+  };
+
+  const handleDeleteReply = (postId, commentId, replyId) => {
+    if (window.confirm('정말로 이 답글을 삭제하시겠습니까?')) {
+      setPosts(prev => {
+        const updated = { ...prev };
+        updated[talkType] = updated[talkType].map(p => {
+          if (p.id !== postId) return p;
+          return {
+            ...p,
+            comments: p.comments.map(c => {
+              if (c.id !== commentId) return c;
+              return {
+                ...c,
+                replies: c.replies.filter(r => r.id !== replyId)
+              };
+            })
+          };
+        });
+        return updated;
+      });
+    }
+  };
+
   const getSortedPosts = (list) => {
     if (talkSort === 'popular') return [...list].sort((a, b) => b.likes - a.likes);
     if (talkSort === 'comments') return [...list].sort((a, b) => b.comments.length - a.comments.length);
@@ -285,9 +323,19 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                         {post.comments.map(comment => (
                           <div key={comment.id}>
                             {/* Comment */}
-                            <div className="flex gap-3">
-                              <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" />
-                              <span className="text-[11px] text-gray-400 mt-0.5">{comment.date}</span>
+                            <div className="flex gap-3 justify-between items-start">
+                              <div className="flex gap-3">
+                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" />
+                                <span className="text-[11px] text-gray-400 mt-0.5">{comment.date}</span>
+                              </div>
+                              {isLoggedIn && comment.author === myNickname && (
+                                <button
+                                  onClick={() => handleDeleteComment(post.id, comment.id)}
+                                  className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"
+                                >
+                                  삭제
+                                </button>
+                              )}
                             </div>
                             <p className="text-sm text-gray-700 mt-1.5 ml-0.5">{comment.text}</p>
                             <button
@@ -302,9 +350,19 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                               <div className="ml-6 mt-3 flex flex-col gap-3 border-l-2 border-gray-200 pl-4">
                                 {comment.replies.map(reply => (
                                   <div key={reply.id}>
-                                    <div className="flex gap-3">
-                                      <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" />
-                                      <span className="text-[10px] text-gray-400 mt-0.5">{reply.date}</span>
+                                    <div className="flex gap-3 justify-between items-start">
+                                      <div className="flex gap-3">
+                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" />
+                                        <span className="text-[10px] text-gray-400 mt-0.5">{reply.date}</span>
+                                      </div>
+                                      {isLoggedIn && reply.author === myNickname && (
+                                        <button
+                                          onClick={() => handleDeleteReply(post.id, comment.id, reply.id)}
+                                          className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"
+                                        >
+                                          삭제
+                                        </button>
+                                      )}
                                     </div>
                                     <p className="text-xs text-gray-600 mt-1 ml-0.5">{reply.text}</p>
                                   </div>
