@@ -104,7 +104,7 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
       </div>
 
       {/* ===== Part 1: 20 Questions ===== */}
-      {phase === 'part1' && (
+      {phase === 'quiz' && (
         <>
           {/* Question */}
           <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-8 md:p-12 shadow-sm text-center mb-8 min-h-[300px] flex flex-col justify-center items-center fade-in">
