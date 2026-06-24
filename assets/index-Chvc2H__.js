@@ -21,11 +21,11 @@ Error generating stack: `+e.message+`
 감성적인 위로는 사절입니다. "자세가 무너졌으니 당장 고치세요" 같은 뼈 때리는 팩트가 주어져야 더 큰 자극을 받아 운동을 완수합니다.
 
 [[닉네임] 당신은]
-뭉친 곳을 직접 타격해 활력을 되찾는 행동파입니다. 아픈 부위만 조지는 습관을 버리고, 원인이 되는 부위까지 시야를 넓히면 훨씬 빠르고 확실하게 회복할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OCDM): [사르르 녹아! 다정한 마사지건]
-"나에게 부드러운 쉼표를 찍어주는 밸런스 메이커!"
-앞만 보고 달리는 저에게, [다정한 마사지건] 친구는 적절한 휴식 타이밍을 상기시켜줍니다. 제가 "일단 땀부터 빼자!"며 에너지를 끌어올릴 때, "이젠 부드럽게 풀어줄 차례야"라며 템포를 기분 좋게 맞춰주는 완벽한 파트너입니다.`,badMatch:`🤔 조금 다른 템포 (ALQM): [폭신폭신! 다정한 물음표 운동화]
-"원리를 왜 자꾸 물어보나요? 저는 당장 땀부터 흘리고 싶은데요!"
-이론과 원리를 중요하게 생각하며 다정하게 다가오는 [물음표 운동화]는 저와 템포가 다릅니다. 생각 없이 일단 몸을 움직이며 팩트폭행을 원하는 저에게, 구구절절 원리를 설명하려는 방식은 답답하고 운동할 의욕을 꺾게 만듭니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
+뭉친 곳을 직접 타격해 활력을 되찾는 행동파입니다. 아픈 부위만 조지는 습관을 버리고, 원인이 되는 부위까지 시야를 넓히면 훨씬 빠르고 확실하게 회복할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OCDM): [다정한 마사지건]
+ 
+[다정한 마사지건] 친구는 오운완 후 뭉친 핵심 근육만을 스트레칭하며 피로를 풀어주는 최고의 휴식 메이트입니다. 땀 흘려 지친 몸을 편안하게 쉬게 도와주며, 내일을 위해 완벽한 휴식을 선물합니다.`,badMatch:`🤔 조금 다른 템포 (ALQM): [물음표 운동화]
+ 
+[물음표 운동화] 친구는 똑같이 팩트를 날리지만 시선이 다릅니다. 당장의 운동량만 신경 쓰는 당신에게 평소 걷는 자세나 기본기를 짚어주려하지만 넓은 관점의 조언 때문에 운동 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
 
 어울리는 강사: 잡담 없이 내 자세의 문제점만 정확히 팩트로 짚고 바로 몸을 굴려주는 강사.
 
@@ -60,11 +60,11 @@ Error generating stack: `+e.message+`
 차가운 팩트 지적은 의욕을 꺾습니다. 내 포인트를 알아주는 섬세한 위로와 "오늘 고생했어요, 자세 좋아요!"라는 다정한 응원이 있어야 신나게 땀 흘릴 수 있습니다.
 
 [[닉네임] 당신은]
-감정을 존중받고 지지가 있을 때 거침없이 움직이는 활동적인 사람입니다. 가끔은 객관적인 지적도 수용할 줄 안다면 더 확실하게 몸을 회복할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OCQM): [이해 쏙! 친절한 하트괄사]
-"나를 잘 이해해 주는 다정하고 든든한 휴식처!"
-이 친구도 저처럼 뻐근한 부위에 집중하는 걸 좋아하고, 따뜻한 공감을 나누는 파트너입니다. 제가 땀부터 내고자 할 때, 곁에서 "여기를 풀어주면 더 편해져"라며 차분한 휴식을 제안해 주어 저에게 안정감을 줍니다.`,badMatch:`🤔 조금 다른 템포 (ALDZ): [저돌맹진! 팩트폭행 짐볼]
-"너무 차가운 팩트는 상처받아요! 저는 따뜻한 응원이 필요해요."
-다짜고짜 동작부터 들이밀며 팩트 폭격을 날리는 이 유형은 당황스럽습니다. 저는 기분 좋게 땀을 흘리면서 따뜻한 위로를 먼저 들어야 에너지가 솟아나는데, 앞뒤 가리지 않고 팩트부터 던지는 방식은 오히려 의욕을 굳게 만듭니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
+감정을 존중받고 지지가 있을 때 거침없이 움직이는 활동적인 사람입니다. 가끔은 객관적인 지적도 수용할 줄 안다면 더 확실하게 몸을 회복할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OLQZ): [깐깐한 꺼꾸리]
+ 
+[깐깐한 꺼꾸리] 친구는 오운완 후 전신 이완할 줄 아는 합리적인 휴식을 추구하는 완벽한 메이트입니다. 생각 없이 타겟 부위만 파고들며 무지성 위로를 바라는 당신에게, 큰 그림을 보는 꼼꼼한 팩트 폭격으로 오히려 휴식의 빈틈을 완벽하게 채워줍니다.`,badMatch:`🤔 조금 다른 템포 (OLQM): [키다리 폼롤러]
+ 
+[키다리 폼롤러] 친구는 전신을 이완 할 수 있으며 다정한 위로를 건네어 시선이 다릅니다. 생각 없이 타겟 부위만 조지며 맹목적인 우쭈쭈를 원하는 당신에게, 눕는 원리를 하나하나 설명하며 섬세하게 다독여주어 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
 
 어울리는 강사: 긍정적인 에너지를 쏟아붓고 같이 땀 흘리며 칭찬해 주는 텐션 높은 강사.
 
@@ -99,11 +99,11 @@ Error generating stack: `+e.message+`
 맹목적인 위로보다는 "이 동작은 이런 원리로 작용합니다"라는 객관적인 팩트를 받았을 때 자극을 받아 완벽하게 운동을 마칩니다.
 
 [[닉네임] 당신은]
-지적 호기심을 채우는 팩트 체크가 끝나면 눈부신 실행력을 보여줍니다. 명확한 데이터와 원리가 있다면 흔들림 없이 자기점검하는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (OLQZ): [중력 역행! 깐깐한 거꾸리]
-"원리와 팩트를 사랑하는 지적인 완벽 파트너!"
-이 친구도 뜬구름 잡는 위로보다 팩트와 원리를 바탕으로 분석하는 걸 좋아합니다. 제가 원리를 이해하고 수축에 집중할 때, "이젠 논리적으로 이완해 줘야 해"라며 스마트한 휴식을 제안해 주어 최고의 시너지를 냅니다.`,badMatch:`🤔 조금 다른 템포 (ALDM): [발을 올리자!? 뜨끈뜨끈 보수볼]
-"원리도 모르고 무작정 하는 전신 운동은 비효율적이에요!"
-복잡한 이유는 묻지 않고 땀부터 흘리며 감정적 호응을 바라는 이 유형은 부담스럽습니다. 정확한 원리를 납득해야 에너지가 솟는 저에게, 타겟이나 원리 없이 무작정 텐션을 앞세우는 방식은 오히려 땀 흘릴 의욕을 식게 합니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
+지적 호기심을 채우는 팩트 체크가 끝나면 눈부신 실행력을 보여줍니다. 명확한 데이터와 원리가 있다면 흔들림 없이 자기점검하는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (OLQZ): [깐깐한 거꾸리]
+ 
+[깐깐한 거꾸리] 친구는 오운완 후 전신을 효율적으로 풀며 합리적인 휴식을 추구하는 완벽한 메이트입니다. 당신의 좁은 시야를 넓혀주는 꼼꼼한 팩트 폭격으로, 휴식마저 빈틈없이 완벽하게 만들어 줍니다.`,badMatch:`🤔 조금 다른 템포 (ALDM): [뜨끈뜨끈 보수볼]
+ 
+[뜨끈뜨끈 보수볼] 친구는 휴식을 대하는 시선이 완전히 다릅니다. 철저한 분석을 원하는 당신에게 전신을 대충 풀고 폭풍 공감과 우쭈쭈만 건넵니다. 너무 결이 다른 무지성 위로 때문에 묘하게 흐름이 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
 
 어울리는 강사: 체형의 문제점과 해결책을 해부학적 팩트와 원리로 깔끔하게 브리핑해 주는 강사.
 
@@ -137,11 +137,11 @@ Error generating stack: `+e.message+`
 매서운 팩트 폭격은 몸을 굳게 합니다. "고생 많았죠? 이건 이런 원리로 좋아요"라는 따뜻하고 친절한 설명이 더해져야 텐션이 올라갑니다.
 
 [[닉네임] 당신은]
-이해시켜 주는 다정한 가이드만 있다면 활기차게 움직이는 사람입니다. 객관적인 지적도 상처받지 않고 수용하면 더 건강하게 일상의 피로를 털어낼 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OCQM): [이해 쏙! 친절한 하트괄사]
-"다정함을 사랑하고 이유를 알려주는 포근한 힐링 요정!"
-차가운 지적보다는 따뜻한 설명으로 몸을 이해하는 파트너입니다. 제가 긍정적인 에너지를 뿜어낼 때, "이런 원리로 풀어줘야 해"라며 조곤조곤 휴식을 제안해 주어 방전된 몸과 마음을 녹여줍니다.`,badMatch:`🤔 조금 다른 템포 (ALDZ): [저돌맹진! 팩트폭행 짐볼]
-"매서운 팩트 폭격은 제 마음을 철렁하게 해요!"
-거친 동작부터 들이밀며 이유 불문하고 밀어붙이는 불도저 같은 유형입니다. 다정한 공감과 설명을 먼저 들어야 에너지가 솟아나는 저에게, 친절한 설명 없이 거친 팩트부터 앞세우는 방식은 마음을 위축시킵니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
+이해시켜 주는 다정한 가이드만 있다면 활기차게 움직이는 사람입니다. 객관적인 지적도 상처받지 않고 수용하면 더 건강하게 일상의 피로를 털어낼 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OLDZ): [실용주의 요가링]
+ 
+[실용주의 요가링] 친구는 머리를 비우고 전신을 이완 시킬 줄 아는 최고의 휴식 메이트입니다. 계획적으로 핵심 부위만 파고들며 위로를 바라는 당신에게 쓸데없는 위로 대신 큰 그림을 보는 차가운 팩트를 던져, 오히려 빈틈없는 리커버리를 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (OLDM): [포근포근 운동매트]
+ 
+[포근포근 운동매트] 친구는 큰 고민 없이 전신을 이완하며 무지성 우쭈쭈를 건네어 시선이 다릅니다. 철저한 계획 아래 타겟 부위를 파고들며 원리 기반의 섬세한 위로를 원하는 당신에게, 그저 맹목적인 폭풍 공감만 쏟아내어 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
 
 어울리는 강사: 내 몸이 아프거나 동작이 안 나오는 것에 충분히 공감하며 친절하게 원리를 설명해 주는 강사.
 
@@ -175,11 +175,11 @@ Error generating stack: `+e.message+`
 어설픈 위로는 운동 의욕을 떨어뜨립니다. "골반이 틀어졌습니다. 당장 밸런스를 잡으세요!" 같은 뼈 때리는 팩트 지적을 받아야 승부욕이 불타오릅니다.
 
 [[닉네임] 당신은]
-날카로운 팩트가 주어지면 전체 체형을 신경 쓰며 움직이는 활동가입니다. 가끔은 좁은 부위의 디테일에도 집중한다면 훨씬 완벽하게 점검할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OLDZ): [일단 끼워보자! 실용주의 요가링]
-"팩트를 사랑하며 쿨하게 쉴 줄 아는 최고의 파트너!"
-감성적 위로 대신 팩트로 피드백을 주고받는 쿨한 실전 파트너입니다. 제가 불도저처럼 에너지를 뿜어낼 때, "가장 효율적으로 이완하며 열기를 식혀야 해"라며 군더더기 없는 휴식을 제안해 주어 완벽한 시너지를 냅니다.`,badMatch:`🤔 조금 다른 템포 (OCQM): [이해 쏙! 친절한 하트괄사]
-"설명과 위로는 그만! 당장 움직이고 싶어요."
-제가 땀을 흠뻑 흘리고자 할 때, 기나긴 감성적 위로를 건네며 특정 부위만 부드럽게 어루만지는 힐링 요정입니다. 시원한 팩트 폭격을 들어야 전투력이 솟는 저에게, 구구절절 좁은 부위만 달래려는 방식은 답답하게 느껴집니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
+날카로운 팩트가 주어지면 전체 체형을 신경 쓰며 움직이는 활동가입니다. 가끔은 좁은 부위의 디테일에도 집중한다면 훨씬 완벽하게 점검할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OLDZ): [실용주의 요가링]
+ 
+[실용주의 요가링] 친구는 오운완 후 큰 고민 없이 전신을 이완할 수 있는 최고의 휴식 메이트입니다. 쓸데없는 위로 대신 큰 그림을 보는 차가운 팩트 폭격으로 휴식마저 빈틈없이 챙겨줍니다.`,badMatch:`🤔 조금 다른 템포 (OCQM): [친절한 하트괄사]
+ 
+[친절한 하트괄사] 친구는 한 부위만 집중적으로 풀며 다정한 위로를 건네어 시선이 다릅니다. 차가운 팩트를 원하는 당신에게 눕는 원리를 설명하며 섬세하게 다독여주어 운동 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
 
 어울리는 강사: 잡담 없이 내 자세의 문제점만 정확히 팩트로 짚고 바로 몸을 굴려주는 강사.
 
@@ -213,11 +213,11 @@ Error generating stack: `+e.message+`
 차가운 팩트는 의욕을 차갑게 식힙니다. 내 상황을 이해하는 다정한 위로와 애정 어린 공감이 주어져야만 기분 좋게 득근할 동기가 생깁니다.
 
 [[닉네임] 당신은]
-따뜻한 응원 속에서 내 몸의 감각을 믿고 움직이는 감성적인 사람입니다. 객관적인 조언도 기분 좋게 수용하면 훨씬 탄탄하게 점검할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OLDM): [토닥토닥! 포근포근 요가매트]
-"전신 움직임과 다정함을 사랑하는 든든한 힐링 요정!"
-거시적인 밸런스를 맞추는 걸 좋아하며, 차가운 지적 대신 공감을 주고받는 감성 파트너입니다. 제가 에너지를 뿜어낼 때, "이제 푹신하게 누워 부드럽게 풀자"라며 휴식을 제안해 주어 안정감을 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACQZ): [핵심만! 사실대로 아령줘요]
-"원리 설명과 팩트 폭격은 그만! 지금 신나게 움직이고 싶어요."
-좁은 특정 부위의 원리만 조곤조곤 따지며 매서운 팩트를 날리는 깐깐한 유형입니다. 기분 좋은 응원을 들어야 에너지가 솟는 저에게, 격려 없이 현미경 들이대듯 팩트만 따지는 방식은 템포가 끊기게 만듭니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
+따뜻한 응원 속에서 내 몸의 감각을 믿고 움직이는 감성적인 사람입니다. 객관적인 조언도 기분 좋게 수용하면 훨씬 탄탄하게 점검할 수 있습니다.`,goodMatch:`💖 환상의 짝꿍 (OCQZ): [심리학자 온냉팩]
+ 
+[심리학자 온냉팩] 친구는 오운완 후 핵심 부위만 효율적으로 이완하며 합리적인 휴식을 추구하는 최고의 메이트입니다. 뇌를 비우고 전신 밸런스를 챙기며 무지성 위로를 바라는 당신에게 현미경 같은 팩트를 꽂지만, 빈틈없는 회복으로 오히려 완벽한 휴식을 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (OCQM): [친절한 하트괄사]
+ 
+[친절한 하트괄사] 친구는 핵심 부위만 집중적으로 이완하며 다정한 위로를 건네어 시선이 다릅니다. 생각 없이 전신을 풀며 맹목적인 우쭈쭈를 원하는 당신에게, 효율적인 휴식 원리를 하나하나 설명하며 섬세하게 다독여주어 서로의 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
 
 어울리는 강사: 긍정적인 에너지를 쏟아붓고 같이 땀 흘리며 칭찬해 주는 텐션 높은 강사.
 
@@ -251,11 +251,11 @@ Error generating stack: `+e.message+`
 감성적 위로가 아닌 객관적인 데이터와 팩트가 강력한 무기입니다. 내 보상 작용을 예리하게 지적하는 현미경 팩폭을 마주할 때 호기심과 실행력이 살아납니다.
 
 [[닉네임] 당신은]
-전체 숲을 바라보는 구조적 시야와, 역학적 원리로 움직임을 통제하는 냉철한 이성을 가졌습니다. 명확한 근거만 주어지면 완벽한 밸런스를 스스로 세팅해냅니다.`,goodMatch:`💖 환상의 짝꿍 (OLQZ): [중력 역행! 깐깐한 거꾸리]
-"원리와 팩트를 사랑하는 지적인 파트너!"
-감성적인 위로 대신 원리를 바탕으로 거시적으로 분석하는 지성 파트너입니다. 완벽한 원리로 땀 흘려 전신을 쓸 때, "이젠 중력을 역행해 밸런스를 맞춰보자"며 스마트한 휴식을 제안해 주어 든든한 위로가 됩니다.`,badMatch:`🤔 조금 다른 템포 (ACDM): [눈 딱감고 낙하! 복근 슬라이더]
-"원리 없이 들이박는 건 너무 비효율적이에요!"
-복잡한 원리는 묻지 않고 텐션과 감정으로 밀어붙이는 돌격대장 유형입니다. 객관적인 데이터와 논리적인 위로를 받아야 움직일 용기가 나는 저에게, 원리 없이 느낌만 앞세우는 맹목적인 방식은 당황스럽습니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
+전체 숲을 바라보는 구조적 시야와, 역학적 원리로 움직임을 통제하는 냉철한 이성을 가졌습니다. 명확한 근거만 주어지면 완벽한 밸런스를 스스로 세팅해냅니다.`,goodMatch:`💖 환상의 짝꿍 (OCQM): [친절한 하트괄사]
+ 
+[친절한 하트괄사] 친구는 오운완 후 뭉친 근육을 타겟팅해 섬세하게 풀어주는 최고의 휴식 메이트입니다. 효율적으로 눕는 원리를 알려주며, 큰 그림만 보는 당신에게 따뜻한 위로와 꿀잠을 선물해 전반적인 컨디션을 완벽히 관리해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACQZ): [핵심만 아령줘요]
+ 
+[핵심만 아령줘요] 친구는 계획적인 루틴과 팩트 폭격이라는 결은 같지만 시선이 묘하게 다릅니다. 둘 다 현미경처럼 파고드는 스타일이라, 운동할 때 서로의 방식이 정답이라 우기느라 흐름이 자꾸 삐걱거립니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
 
 어울리는 강사: 체형의 문제점과 해결책을 해부학적 팩트와 원리로 깔끔하게 브리핑해 주는 강사.
 
@@ -290,11 +290,11 @@ Error generating stack: `+e.message+`
 매서운 지적은 의욕을 꺾습니다. "오늘 애쓰셨어요. 이 동작은 당신의 불편함을 풀어줄 거예요!"라는 원리 기반의 따뜻한 공감이 주어질 때 기분 좋게 득근합니다.
 
 [[닉네임] 당신은]
-원리를 알고 싶어 하는 지적 호기심과 전신을 넓게 바라보는 시야를 갖추었습니다. 따뜻한 공감과 가이드만 있다면 완벽한 보폭을 맞춰 자기점검하는 다정한 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (OLQM): [묵묵한 조력자! 키다리 폼롤러]
-"빅픽처와 팩트를 사랑하며 중심을 잡아주는 든든한 파트너!"
-감성적 위로보다 빅픽처와 팩트로 몸 전체를 이해하며, 조용히 뼈 때리는 조언을 해주는 실전 파트너입니다. 땀을 흘리려 할 때, "이젠 전체적인 축을 바로잡자"며 차분한 휴식을 제안해 주어 어설픈 위로보다 큰 안정감을 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACDZ): [들고 보니?! 단단한 케틀벨]
-"빅픽처 설명 없이 무작정 좁은 부위만 조지는 건 비효율적이에요!"
-전체적인 원리보단 당장의 좁은 부위만 들이밀며 팩트 폭격을 날리는 고집스러운 유형입니다. 거시적인 팩트를 들어야 에너지가 솟는 저에게, 원리 없이 좁은 부위 자극만 앞세우는 방식은 의욕을 굳게 만듭니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
+원리를 알고 싶어 하는 지적 호기심과 전신을 넓게 바라보는 시야를 갖추었습니다. 따뜻한 공감과 가이드만 있다면 완벽한 보폭을 맞춰 자기점검하는 다정한 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (OLQZ): [깐깐한 거꾸리]
+ 
+[깐깐한 거꾸리] 친구는 오운완 후 전신을 효율적으로 풀며 합리적인 눕방을 추구하는 완벽한 휴식 메이트입니다. 따뜻한 위로를 바라는 당신에게 팩트를 꽂지만, 큰 그림을 보는 꼼꼼함으로 휴식을 빈틈없이 챙겨줍니다.`,badMatch:`🤔 조금 다른 템포 (ACDM): [복근 슬라이더]
+ 
+[복근 슬라이더] 친구는 큰 고민 없이 한 부위만 조지며 영혼 없는 우쭈쭈를 건네어 시선이 다릅니다. 계획적인 루틴과 원리를 중시하는 당신에게 무지성 칭찬과 좁은 시야의 조언을 날려 운동 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
 
 어울리는 강사: 내 몸이 아프거나 동작이 안 나오는 것에 충분히 공감하며 친절하게 원리를 설명해 주는 강사.
 
@@ -328,11 +328,11 @@ Error generating stack: `+e.message+`
 어설픈 감성적 위로는 집중력을 흐트러뜨립니다. "승모근 단축이 심각하니 압박하세요!"라는 예리한 족집게 팩폭을 마주할 때 단호한 스나이퍼 본능이 깨어납니다.
 
 [[닉네임] 당신은]
-핵심만 짚어내는 예리함과 망설임 없이 공략하는 실행력을 갖추었습니다. 정확한 좌표만 찍어준다면 뭉친 곳을 속 시원하게 격파해 자기점검하는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (OLDZ): [일단 끼워보자! 실용주의 요가링]
-"위로 대신 팩트를 사랑하며, 쿨한 이완을 돕는 실용주의 파트너!"
-감성적 위로보다 팩트를 바탕으로 몸을 다루며, 군더더기 없이 효율적으로 이완을 돕는 파트너입니다. 아픈 곳만 짚고 쉬려 할 때, "효율적으로 전신 밸런스를 맞추며 쉬어야 완벽해"라며 거시적 휴식을 제안해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACQM): [친절한^^ 수다쟁이 루(돌)프 밴드]
-"구구절절한 수다 대신 팩트만 듣고 쉬고 싶어요."
-아픈 원리를 다정하게 설명하며 텐션 높게 움직이려 드는 수다쟁이 유형입니다. 감정 소모 없이 합리적인 팩폭을 들어야 기절 모드에 돌입할 수 있는 저에게, 텐션을 끌어올리려는 친절한 방식은 피곤하게 느껴집니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
+핵심만 짚어내는 예리함과 망설임 없이 공략하는 실행력을 갖추었습니다. 정확한 좌표만 찍어준다면 뭉친 곳을 속 시원하게 격파해 자기점검하는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (OLDZ): [실용주의 요가링]
+ 
+[실용주의 요가링] 친구는 오운완 후 깊게 생각안하고 전신을 이완할 수 있는 최고의 휴식 메이트입니다. 특정 부위만 고집하는 당신에게 넓은 시야의 차가운 팩트를 던지며, 쓸데없는 위로 없이 깔끔하고 빈틈없는 회복을 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACQM): [수다쟁이 루프밴드]
+ 
+[수다쟁이 루프밴드] 친구는 한 근육만 집중적으로 파고들며 따뜻한 위로를 바라는 스타일이라 시선이 다릅니다. 생각 없이 누워 쉬며 팩트를 원하는 당신에게 꼼꼼한 계획과 운동 원리를 내세우며 다정하게 다가와 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
 
 어울리는 강사: 잡담 없이 내 자세의 문제점만 정확히 팩트로 짚고 바로 몸을 굴려주는 강사.
 
@@ -367,11 +367,11 @@ Error generating stack: `+e.message+`
 날카로운 팩트 폭격은 몸을 더 굳게 만듭니다. 내가 힘들어하는 부분만 섬세하게 어루만져 주는 다정한 핀셋 위로가 닿는 순간 근육이 사르르 녹아내립니다.
 
 [[닉네임] 당신은]
-불편한 타겟을 찾아내는 실행력과, 지친 감정을 돌볼 줄 아는 따뜻함이 매력적입니다. 진심 어린 공감 속에서 지친 몸을 부드럽게 매만지는 다정한 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ACDM): [눈 딱감고 낙하! 복근 슬라이더]
-"행동대장과 다정한 힐러, 서로의 부족함을 채워주는 콤비!"
-전신을 쓰기보다 뻐근한 부위에 집중하며, 서로 다정한 맹목적인 우쭈쭈를 주고받는 감성 파트너입니다. 제가 쉴 때 곁에서 "나는 여기만 확실히 움직이고 올게!"라며 활기찬 대리 만족을 주어 최고의 시너지를 냅니다.`,badMatch:`🤔 조금 다른 템포 (ALQZ): [아치 사수! 원리원칙 러닝화]
-"팩트 폭격은 그만! 아무 생각 없이 위로받으며 푹 자고 싶어요."
-생각을 끄고 쉬려는 제 앞을 가로막고, 무작정 거시적 전신 운동을 강요하는 원칙주의자 유형입니다. 무지성 우쭈쭈와 따뜻한 공감을 받아야 편안해지는 저에게, 원리와 팩트부터 따지고 드는 방식은 버겁게 느껴집니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
+불편한 타겟을 찾아내는 실행력과, 지친 감정을 돌볼 줄 아는 따뜻함이 매력적입니다. 진심 어린 공감 속에서 지친 몸을 부드럽게 매만지는 다정한 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ACDM): [복근 슬라이더]
+ 
+[복근 슬라이더] 친구는 별다른 고민 없이 타겟 부위만 집중적으로 파고들며 폭풍 공감해주는 최고의 운동 메이트입니다. 복잡한 고민 없이 무지성 우쭈쭈와 따뜻한 위로를 주고받으며, 땀 흘린 후의 완벽한 휴식과 꿀잠까지 찰떡같이 맞아떨어집니다.`,badMatch:`🤔 조금 다른 템포 (ALQZ): [분석가 트레드밀]
+ 
+[원리원칙 러닝화] 친구는 철저한 계획하에 전신 밸런스를 따지며 팩트를 날려 시선이 다릅니다. 생각 없이 푹 쉬며 다정한 위로를 원하는 당신에게, 큰 그림을 보라며 현미경 같은 팩트 폭격을 쏟아내어 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
 
 어울리는 강사: 긍정적인 에너지를 쏟아붓고 같이 땀 흘리며 칭찬해 주는 텐션 높은 강사.
 
@@ -406,11 +406,11 @@ Error generating stack: `+e.message+`
 에두르는 위로는 집중력을 흐트러뜨립니다. "타겟 근육 단축이 심각하니 15분간 온열을 적용하세요"라는 족집게 팩폭을 마주할 때 가장 큰 안정감을 느낍니다.
 
 [[닉네임] 당신은]
-인체의 원리를 꿰뚫어 보는 호기심과 정확한 솔루션을 찾는 냉철함을 갖추었습니다. 명확한 팩트와 논리적 근거만 주어진다면 지능적으로 회복을 해내는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ACQZ): [핵심만! 사실대로 아령줘요]
-"좁은 타겟과 팩트를 사랑하며, 핵심을 공략해 주는 효율 파트너!"
-아픈 부위에 집중하며 감정적 위로 대신 논리와 팩트로 피드백을 주고받는 지성 파트너입니다. 제가 효율적인 휴식을 취할 때, "내가 핵심만 자극하고 올게!"라며 팩트 기반의 대리 만족을 안겨 주어 완벽한 시너지를 냅니다.`,badMatch:`🤔 조금 다른 템포 (ALDM): [발을 올리자!? 뜨끈뜨끈 보수볼]
-"타겟 분석 없이 온몸을 던지는 감성적 호들갑은 비효율적이에요!"
-정확한 타겟 없이 감정적 호응을 바라며 전신을 둥글둥글하게 다 쓰려는 행동파 유형입니다. 가감 없는 족집게 팩폭을 들어야 합리적으로 쉴 수 있는 저에게, 감정과 텐션부터 앞세우는 방식은 오히려 피곤하게 만듭니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
+인체의 원리를 꿰뚫어 보는 호기심과 정확한 솔루션을 찾는 냉철함을 갖추었습니다. 명확한 팩트와 논리적 근거만 주어진다면 지능적으로 회복을 해내는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ACQZ): [핵심만 아령줘요]
+ 
+[핵심만 아령줘요] 친구는 치밀한 계획 아래 한 부위만 파고드는 최고의 운동 메이트입니다. 효율적인 휴식을 추구하는 당신과 똑같이 현미경 같은 팩트를 주고받으며, 군더더기 없이 깔끔하고 완벽한 오운완을 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ALDM): [뜨끈뜨끈 보수볼]
+ 
+[뜨끈뜨끈 보수볼] 친구는 큰 고민 없이 전신의 연관성에 집중하며 다정한 위로를 원해 시선이 완전히 다릅니다. 효율을 따지며 족집게처럼 팩트를 꽂는 당신에게, 자꾸만 무지성 우쭈쭈와 폭풍 공감을 요구하여 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
 
 어울리는 강사: 체형의 문제점과 해결책을 해부학적 팩트와 원리로 깔끔하게 브리핑해 주는 강사.
 
@@ -444,11 +444,11 @@ Error generating stack: `+e.message+`
 강압적인 팩트 폭격 앞에서는 잔뜩 긴장해 굳어버립니다. "고생 많았어요. 이건 이런 이유로 이완시켜 줄 거예요"라는 원리 기반의 다정한 위로가 주어지면 놀라운 회복력을 보입니다.
 
 [[닉네임] 당신은]
-원리를 알고 싶어 하는 지성과 스스로를 다독이는 따뜻한 감성을 갖추었습니다. 꼼꼼하고 부드럽게 자기점검 할 줄 아는 지적이며 따뜻한 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ACDM): [눈 딱감고 낙하! 복근 슬라이더]
-"행동대장과 다정한 힐러, 완벽한 시너지 콤비!"
-뻐근한 부위에 집중하며 따뜻한 공감을 주고받는 파트너입니다. 친구가 앞장서서 활기차게 움직이면, 저는 곁에서 원리를 다정하게 설명하며 긴장을 풀어줍니다. 활동성과 차분함이 만나 서로를 다독여줍니다.`,badMatch:`🤔 조금 다른 템포 (ALDZ): [저돌맹진! 팩트폭행 짐볼]
-"팩트 폭격은 몸을 더 굳게 만들어요!"
-동작부터 들이밀며 차가운 팩트를 날리는 불도저 유형입니다. 조곤조곤한 설명과 부드러운 위로가 필요한 저에게, 다짜고짜 밀어붙이는 거침없는 방식은 신경을 곤두서게 하고 긴장하게 만듭니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
+원리를 알고 싶어 하는 지성과 스스로를 다독이는 따뜻한 감성을 갖추었습니다. 꼼꼼하고 부드럽게 자기점검 할 줄 아는 지적이며 따뜻한 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ACDM): [복근 슬라이더]
+ 
+[복근 슬라이더] 친구는 생각 없이 타겟 부위만 파고들며 따뜻한 위로를 건네는 최고의 메이트입니다. 효율적인 휴식 원리를 따지는 당신에게 꼭 맞는 다정한 우쭈쭈와 섬세한 위로를 전해주어, 내일을 위한 완벽한 꿀잠을 선물합니다.`,badMatch:`🤔 조금 다른 템포 (ALDZ): [팩트폭행 짐볼]
+ 
+[팩트폭행 짐볼] 친구는 전신 밸런스를 중시하며 차가운 팩트를 날려 시선이 완전히 다릅니다. 타겟 부위만 쏙쏙 풀며 다정한 위로를 바라는 당신에게, 넓은 관점의 뼈 때리는 조언만 꽂아버려 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
 
 어울리는 강사: 내 몸이 아프거나 동작이 안 나오는 것에 충분히 공감하며 친절하게 원리를 설명해 주는 강사.
 
@@ -482,11 +482,11 @@ Error generating stack: `+e.message+`
 말랑말랑한 위로는 몰입을 방해합니다. "후면 근막이 짧아져 전신 정렬이 무너졌습니다" 같은 빅픽처 팩트 폭격을 받을 때 밸런스를 되찾는 엄청난 실행력이 깨어납니다.
 
 [[닉네임] 당신은]
-넓은 시야와 직관력, 군더더기 없는 냉철한 이성을 갖추었습니다. 가감 없는 팩트만 주어지면 언제든 전신의 막힌 흐름을 속 시원하게 뚫어내는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALDZ): [저돌맹진! 팩트폭행 짐볼]
-"거시적 팩트를 사랑하며 화끈하게 에너지를 쏟아주는 파트너!"
-감성적 위로 대신 전신의 논리와 팩트로 피드백을 주고받는 지성 파트너입니다. 제가 팩트 체크 후 눕방을 준비할 때, "내가 전신을 화끈하게 부딪히고 올게!"라며 팩트 기반의 대리 만족을 주어 완벽한 시너지를 냅니다.`,badMatch:`🤔 조금 다른 템포 (ACQM): [친절한^^ 수다쟁이 루(돌)프 밴드]
-"구구절절한 수다 대신 거시적 팩트만 듣고 쉬고 싶어요!"
-특정 부위만 들이밀며 감성적 위로와 함께 텐션을 올리려 드는 수다쟁이 유형입니다. 가감 없는 전신 팩폭을 들어야 편안해지는 저에게, 좁은 부위에 얽매여 다정함을 강요하는 방식은 시야가 좁게 느껴집니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
+넓은 시야와 직관력, 군더더기 없는 냉철한 이성을 갖추었습니다. 가감 없는 팩트만 주어지면 언제든 전신의 막힌 흐름을 속 시원하게 뚫어내는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALDZ): [팩트폭행 짐볼]
+ 
+[팩트폭행 짐볼] 친구는 큰 고민 없이 전신의 연광성을 신경쓰며 차가운 팩트를 날리는 최고의 운동 메이트입니다. 쓸데없는 위로 없이 큰 그림을 보는 뼈 때리는 조언을 주고받으며, 합리적인 휴식과 완벽한 리커버리를 함께 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACQM): [수다쟁이 루프밴드]
+ 
+[수다쟁이 루프밴드] 친구는 치밀한 계획 아래 핵심 부위만 파고들며 다정한 위로를 원해 시선이 완전히 다릅니다. 생각 없이 전신을 풀며 차가운 팩트를 바라는 당신에게 꼼꼼한 운동 원리와 섬세한 위로를 건네어 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"스파르타 훈련소 조교형"
 
 어울리는 강사: 잡담 없이 내 자세의 문제점만 정확히 팩트로 짚고 바로 몸을 굴려주는 강사.
 
@@ -520,11 +520,11 @@ Error generating stack: `+e.message+`
 차가운 지적은 몸을 방어적으로 굳게 만듭니다. 공감해 주는 프로 끄덕러의 눈빛과 "고생했어요, 이제 다 내려놓아도 괜찮아요"라는 부드러운 토닥임이 닿을 때 피로가 완벽히 사라집니다.
 
 [[닉네임] 당신은]
-흐름을 보는 넓은 시야와 직관적으로 편안함을 찾는 감각을 품고 있습니다. 다정한 공감만 있다면 언제든 가장 깊은 회복의 숲으로 내 몸을 이끄는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALDM): [발을 올리자!? 뜨끈뜨끈 보수볼]
-"전신 움직임과 다정함을 사랑하는 따뜻한 감성 파트너!"
-거시적인 전신을 아우르며 차가운 팩트 폭격 대신 따뜻한 우쭈쭈를 주고받는 파트너입니다. 제가 쉬고자 할 때, "네가 푹 쉬는 동안 나는 전신을 텐션 높게 움직일게!"라며 다정한 공감과 활기찬 대리 만족을 안겨 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACQZ): [핵심만! 사실대로 아령줘요]
-"팩트 폭격은 제발 그만! 아무 생각 없이 위로받으며 자고 싶어요."
-좁은 특정 부위의 원리만 따지며 팩트를 날리는 깐깐한 원칙주의자입니다. 따뜻한 토닥임 속에서 완벽한 기절을 원하는 저에게, 무작정 팩트부터 현미경처럼 들이대는 매서운 방식은 달콤한 휴식을 쫓아냅니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
+흐름을 보는 넓은 시야와 직관적으로 편안함을 찾는 감각을 품고 있습니다. 다정한 공감만 있다면 언제든 가장 깊은 회복의 숲으로 내 몸을 이끄는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALDM): [뜨끈뜨끈 보수볼]
+ 
+[뜨끈뜨끈 보수볼] 친구는 큰 고민 없이 전신 연계성에 집중하며 폭풍 공감해주는 최고의 운동 메이트입니다. 복잡한 고민 없이 무지성 우쭈쭈와 따뜻한 위로를 주고받으며, 땀 흘린 후 전신을 편안하게 이완하는 완벽한 휴식과 꿀잠까지 찰떡같이 맞아떨어집니다.`,badMatch:`🤔 조금 다른 템포 (ACQZ): [핵심만 아령줘요]
+ 
+[핵심만 아령줘요] 친구는 치밀한 계획 아래 핵심 부위만 파고들며 팩트를 꽂아 시선이 완전히 다릅니다. 생각 없이 전신을 푹 쉬며 맹목적인 우쭈쭈를 원하는 당신에게, 효율을 따지며 현미경 같은 팩트 폭격을 쏟아내어 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"파이팅 넘치는 치어리더형"
 
 어울리는 강사: 긍정적인 에너지를 쏟아붓고 같이 땀 흘리며 칭찬해 주는 텐션 높은 강사.
 
@@ -558,11 +558,11 @@ Error generating stack: `+e.message+`
 말랑말랑한 위로는 몰입을 방해합니다. "골반 정렬이 3도 틀어져 보상 작용이 일어났습니다"라며 밸런스 붕괴를 꼬집는 현미경 팩폭이 주어질 때 주저 없이 밸런스를 스스로 다시 세팅합니다.
 
 [[닉네임] 당신은]
-넓은 시야와 효율적인 휴식을 취하는 냉철한 이성을 갖추었습니다. 가감 없는 팩트 가이드만 주어지면 언제든 긴장을 재조립해 내는 지능적인 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALQZ): [아치 사수! 원리원칙 러닝화]
-"전신의 원리를 사랑하며 스마트하게 에너지를 쏟는 지성 파트너!"
-감성적 위로 대신 거시적 원리와 팩트로 피드백을 주고받는 파트너입니다. 제가 전신의 빅픽처를 팩트로 세팅하고 쉴 때, "내가 이 원칙대로 아치를 사수하며 뛰고 올게!"라며 스마트한 대리 만족을 안겨 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACDM): [눈 딱감고 낙하! 복근 슬라이더]
-"원리 없이 무작정 코어만 들이박는 건 너무 비효율적이에요!"
-복잡한 빅픽처 없이 느낌과 감정으로만 밀어붙이는 돌격대장 유형입니다. 전신의 원리를 거시적으로 들여다보며 팩폭을 들어야 합리적으로 쉬는 저에게, 감정만 앞세워 좁은 부위로 낙하하는 방식은 비효율적입니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
+넓은 시야와 효율적인 휴식을 취하는 냉철한 이성을 갖추었습니다. 가감 없는 팩트 가이드만 주어지면 언제든 긴장을 재조립해 내는 지능적인 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALQZ): [분석가 트레드밀]
+ 
+[분석가 트레드밀] 친구는 철저한 계획 아래 전신 연계성을 챙기며 팩트를 주고받는 최고의 운동 메이트입니다. 효율적인 휴식을 추구하며 현미경처럼 분석하는 당신과 완벽하게 통하여, 군더더기 없이 합리적이고 깔끔한 오운완과 완벽한 회복과정을 함께 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACDM): [복근 슬라이더]
+ 
+[복근 슬라이더] 친구는 큰 고민 없이 핵심 부위만 파고들며 맹목적인 우쭈쭈를 원해 시선이 완전히 다릅니다. 전신을 효율적으로 이완하며 꼼꼼한 팩트 폭격을 주고받길 원하는 당신에게 그저 영혼 없는 다정한 위로만 건네어, 서로의 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"족집게 1타 강사형"
 
 어울리는 강사: 체형의 문제점과 해결책을 해부학적 팩트와 원리로 깔끔하게 브리핑해 주는 강사.
 
@@ -596,11 +596,11 @@ Error generating stack: `+e.message+`
 "거기 뭉쳤네요, 폼롤러 굴리세요" 같은 차가운 지시는 마음을 닫게 만듭니다. "오늘 많이 피곤했죠? 전신 긴장을 부드럽게 이완해 줄게요"라는 원리 기반의 위로가 닿을 때 깊이 안심하며 에너지를 채웁니다.
 
 [[닉네임] 당신은]
-전신을 조망하는 넓은 시야와 지적 호기심, 따뜻한 감수성을 품고 있습니다. 다정한 위로와 원리 가이드만 있다면 내 몸의 밸런스를 가장 평온하게 맞추는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALQM): [폭신폭신! 다정한 물음표 운동화]
-"원리와 다정함을 사랑하며 활기차게 에너지를 쏟는 감성 파트너!"
-정확한 원리를 바탕으로 거시적인 전신 밸런스를 맞추며 따뜻한 공감을 나누는 파트너입니다. 원리를 파악하고 쉴 때, "원리대로 내가 전신을 움직이고 올게!"라며 프로끄덕러다운 다정한 공감과 활력을 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACDZ): [들고 보니?! 단단한 케틀벨]
-"따뜻한 위로 없이 무작정 좁은 부위만 차갑게 조지는 건 비효율적이에요!"
-원리나 위로 없이 다짜고짜 좁은 타겟부터 부수려는 고집스러운 유형입니다. 원리 기반의 친절한 설명과 따뜻한 토닥임이 있어야 편안하게 쉬는 저에게, 무작정 팩트만 앞세우는 차가운 방식은 휴식을 방해합니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
+전신을 조망하는 넓은 시야와 지적 호기심, 따뜻한 감수성을 품고 있습니다. 다정한 위로와 원리 가이드만 있다면 내 몸의 밸런스를 가장 평온하게 맞추는 사람입니다.`,goodMatch:`💖 환상의 짝꿍 (ALQM): [물음표 운동화]
+ 
+[물음표 운동화] 친구는 철저한 계획 아래 전신 연계성을 챙기며 섬세한 위로를 건네는 최고의 메이트입니다. 효율적인 휴식과 원리 기반의 위로를 추구하며, 몸 전체가 빈틈없는 오운완과 회복 과정을 함께 완성해 줍니다.`,badMatch:`🤔 조금 다른 템포 (ACDZ): [단단한 케틀벨]
+ 
+[단단한 케틀벨] 친구는 큰 고민 없이 핵심 부위만 파고들며 뼈 때리는 팩트를 날려 시선이 완전히 다릅니다. 전신을 효율적으로 이완하며 따뜻하고 논리적인 위로를 원하는 당신에게, 다정함 없이 차가운 팩트 폭격만 쏟아내어 서로의 휴식 흐름이 묘하게 어긋납니다.`,fourTraits:``,howToDeal:``,playlist:``,warmMessage:``,howToChooseInstructor:`"따뜻한 전담 주치의형"
 
 어울리는 강사: 내 몸이 아프거나 동작이 안 나오는 것에 충분히 공감하며 친절하게 원리를 설명해 주는 강사.
 
@@ -658,21 +658,21 @@ Error generating stack: `+e.message+`
 
 때로는 위로보다는 명확한 원인 분석과 팩트 체크가 최고의 해결책일 수 있습니다. 하지만 가끔은 원인 분석을 잠시 미루고, 그저 묵묵히 버텨준 내 몸의 든든함을 한 번쯤 칭찬해 주는 것도 훌륭한 회복제가 됩니다. 뇌를 비우고 직관적으로 몸의 밸런스를 맞춰갈 [무념무상 스트레칭 보드]님의 쿨한 휴식을 진심으로 응원합니다!`},Le={A:{name:`활동형 (Adventure)`,confident:{emoji:`🏃‍♂️`,modifier:`확신의`,quote:`가만히 누워만 있는 건 오히려 피곤해요! 움직여야 진짜 충전이 되죠.`,desc:`기본적으로 차분한 상태보다는 심박수가 기분 좋게 오르고 리듬감 있게 몸을 움직일 때 신체 에너지가 최고조에 달합니다. 억지로 가만히 누워 버티는 정적인 휴식은 오히려 몸을 더 무겁게 만듭니다. 밖으로 나가 땀을 흘리며 능동적으로 몸을 가동하는 시간이야말로 회원님에게는 스트레스를 날려버리는 '진짜 휴식'이자 완벽한 에너지 충전법입니다.`},flexible:{emoji:`🚶‍♂️`,modifier:`유연한`,quote:`몸이 찌뿌둥할 땐, 가벼운 움직임이 기분 좋은 활력을 불어넣어 줘요.`,desc:`기본적으로 몸을 움직이며 활력을 얻는 편이지만, 매번 숨이 턱 끝까지 차오르는 강도 높은 활동만 고집하지는 않습니다. 때로는 조용히 쉬는 시간도 즐길 줄 알죠. 하지만 하루 종일 가만히 앉아 있어 몸이 굳어갈 때쯤이면, 가볍게라도 밖으로 나가 산책을 하거나 능동적으로 몸을 움직여주는 것이 회원님만의 훌륭한 기분 전환이자 회복 방식입니다.`}},O:{name:`휴식형 (Oasis)`,confident:{emoji:`🛋️`,modifier:`확신의`,quote:`숨차고 땀 빼는 운동은 오히려 방전되는 기분이에요. 고요함이 필요해요.`,desc:`억지로 활동량을 늘려가며 땀을 흘리기보다, 조용한 환경에서 깊게 숨을 고르며 온전히 쉴 때 진짜 에너지가 차오릅니다. 남들보다 체력이 약해서가 아니에요. 신체 감각이 그만큼 섬세하고 예민하기 때문입니다. 외부의 시끄러운 자극을 차단하고 고요함 속에서 릴랙스하는 시간이 나에게는 그 어떤 운동보다 탁월하고 과학적인 충전 방식입니다.`},flexible:{emoji:`☕`,modifier:`유연한`,quote:`너무 격렬한 활동보다는, 적당히 차분하게 몸을 풀어주는 게 좋아요.`,desc:`가끔은 기분 좋게 땀 흘리는 것도 나쁘지 않지만, 기본적으로는 조용한 환경에서 호흡을 가다듬으며 쉴 때 에너지가 훨씬 잘 채워지는 편입니다. 시끄럽고 복잡한 외부 자극이나 무리한 운동보다는, 내 템포에 맞춰 부드럽게 뭉친 곳을 이완하는 시간이 하루의 피로를 덜어내는 가장 기분 좋은 휴식이 됩니다.`}},C:{name:`집중형 (Center)`,confident:{emoji:`🎯`,modifier:`확신의`,quote:`복잡한 전신 밸런스보다, 당장 뻐근한 '바로 거기'를 알고 싶어요.`,desc:`내 몸 전체가 어떻게 이어져 있는지 장황하게 듣기보다, 당장 묵직하게 뭉친 특정 부위를 명확하게 분리해 내는 감각이 뛰어납니다. "발목 정렬이 무너져서 목이 무겁다"는 식의 복잡한 이야기보다, "아, 지금 목과 어깨 딱 그 부위가 타이트해졌네요!" 하고 내가 당장 집중해야 할 핵심 타겟을 직관적으로 콕 짚어줄 때 속이 뻥 뚫리는 편안함을 느낍니다.`},flexible:{emoji:`🎯`,modifier:`유연한`,quote:`전체적인 흐름도 좋지만, 결국 내가 집중해야 할 '타겟 부위'가 명확해야 마음이 편해요.`,desc:`우리 몸이 서로 영향을 주고받는다는 것은 어느 정도 이해하지만, 케어를 할 때만큼은 지금 당장 무겁고 불편한 부위가 어디인지 뚜렷하게 아는 것을 선호합니다. 너무 넓은 범위를 두루뭉술하게 다루는 것보다, "오늘은 이 근육을 집중적으로 부드럽게 풀어줄 거예요"라고 명확한 목표를 설정해 줄 때 움직임에 훨씬 더 깊이 집중할 수 있습니다.`}},L:{name:`연결형 (Link)`,confident:{emoji:`🔗`,modifier:`확신의`,quote:`우리 몸은 하나로 연결되어 있잖아요! 나무보다 숲을 보는 전신 밸런스가 중요해요.`,desc:`당장 목이 뻐근하다고 해서 목만 주무르는 것은 근본적인 케어가 아니라고 생각합니다. 회원님은 발끝부터 머리까지 이어지는 전신의 흐름을 하나의 완벽한 시스템으로 감각하는 능력이 탁월합니다. "골반의 정렬이 틀어져서 어깨까지 긴장감이 이어졌네요"처럼, 전신의 보상 패턴과 전체적인 흐름을 넓은 시야로 설명해 줄 때 깊이 납득하며 가장 훌륭한 신체 밸런스를 찾아갑니다.`},flexible:{emoji:`🔗`,modifier:`유연한`,quote:`특정 부위만 누르기보다, 주변 부위와 어떻게 이어지는지 알면 더 개운해요.`,desc:`뻐근한 곳 하나만 맹목적으로 파고들기보다는, 그 주변 부위들이 어떻게 서로 영향을 주고받는지 가볍게 짚어줄 때 더 큰 시원함을 느낍니다. "어깨가 무거운 이유는 앞쪽 가슴 근육이 타이트해져서 당기고 있기 때문이에요"처럼, 자연스러운 몸의 연결 고리를 이해하며 부드럽게 밸런스를 맞춰나가는 방식을 선호합니다.`}},D:{name:`실전형 (Direct)`,confident:{emoji:`👣`,modifier:`확신의`,quote:`길고 복잡한 설명은 지루해요! 일단 직접 움직여보면서 내 몸에 맞는 느낌을 찾을래요.`,desc:`머리로 복잡하게 계산하고 이론을 따지기보다, 일단 몸을 먼저 움직여보면서 즉각적인 감각을 통해 자세를 수정해 나가는 능력이 탁월합니다. 시작부터 완벽한 각도를 강요받거나 장황한 설명을 듣는 것은 오히려 흥미를 떨어뜨립니다. "아, 이런 느낌이구나!" 하고 직접 부딪혀보며 나만의 감을 찾아갈 때, 가장 빠르고 정확하게 내 몸에 맞는 움직임을 습득합니다.`},flexible:{emoji:`👣`,modifier:`유연한`,quote:`어느 정도 원리를 알았다면, 이제는 직접 움직이면서 몸으로 감을 잡고 싶어요.`,desc:`동작의 핵심적인 이유를 가볍게 듣는 것도 좋아하지만, 설명이 너무 길어지면 빨리 직접 해보고 싶어 몸이 근질거리는 편입니다. 완벽한 계획을 세우느라 머뭇거리기보다는, 기본적인 가이드를 들은 후 일단 가볍게 움직여보면서 "여기 이 자극이 맞나?" 하고 스스로 감을 잡아가며 자세를 부드럽게 다듬어 나가는 방식을 선호합니다.`}},Q:{name:`질문형 (Question)`,confident:{emoji:`🧠`,modifier:`확신의`,quote:`무작정 따라 하라니요? 이유를 완벽히 이해해야 안심하고 움직일 수 있죠.`,desc:`남들이 좋다는 동작을 영혼 없이 횟수만 채우며 따라 하는 건 절대 선호하지 않습니다. 뇌에서 완벽한 운동 계획이 수립되어야 근육이 안전하게 반응하는 성향이거든요. "내 승모근이 대체 왜 무거워진 건지, 이렇게 케어하면 어떤 원리로 가벼워지는지" 머리로 완벽하게 납득하고 이해해야 비로소 안심하고 몸을 여는 지적이고 신중한 성향입니다.`},flexible:{emoji:`🧠`,modifier:`유연한`,quote:`무작정 따라 하기보다는, 이 동작이 내 몸 어디에 어떻게 좋은지는 알고 싶어요.`,desc:`아무 생각 없이 시키는 대로 동작을 따라 하는 것보다는, 이 움직임이 지금 내 몸에 왜 필요한지 가벼운 이유라도 알고 움직여야 마음이 놓이는 편입니다. 너무 깊고 복잡한 해부학까지는 아니더라도, "이곳이 뻐근해진 이유는 이거예요~"라는 친절한 설명을 들으며 고개를 끄덕인 상태에서 움직일 때 훨씬 더 집중력 있고 안전하게 케어를 진행할 수 있습니다.`}},Z:{name:`팩트형 (Zero)`,confident:{emoji:`🤖`,modifier:`확신의`,quote:`위로나 감성적인 말보다, 제 정렬이 얼마나 벗어났는지 정확한 팩트를 알려주세요.`,desc:`과업과 사고를 중시하는 성향으로, 빙빙 에두르는 표현이나 감성적인 위로보다는 정확하고 객관적인 정보를 원합니다. "그동안 많이 힘드셨죠?"라는 부드러운 말보다, "현재 목의 각도가 기준선에서 이만큼 벗어나 있습니다"처럼 직관적이고 투명한 팩트를 깔끔하게 짚어줄 때 오히려 마음이 편안해지고 동기부여가 확실하게 생깁니다.`},flexible:{emoji:`🤖`,modifier:`유연한`,quote:`따뜻한 응원도 좋지만, 결국 제가 지금 뭘 어떻게 케어해야 하는지 명확한 피드백이 중요해요.`,desc:`기본적인 친절함과 응원은 환영하지만, 감정적인 교류에 너무 많은 시간을 쏟기보다는 내 신체 상태에 대한 명확하고 깔끔한 피드백을 빠르게 듣길 원합니다. 너무 감성적으로 접근하기보다 "현재 이 부위의 밸런스가 아쉬우니, 이렇게 방향을 잡아봅시다"라고 객관적이고 확실한 가이드를 줄 때 코치와 프로그램에 대한 신뢰도가 훌쩍 올라갑니다.`}},M:{name:`공감형 (Mind)`,confident:{emoji:`💓`,modifier:`확신의`,quote:`차가운 지적보다는 다정한 위로가 먼저 필요해요. 그래야 몸과 마음의 긴장이 풀리거든요.`,desc:`"거북목이 심하네요" 같은 차가운 팩트 폭격을 들으면 오히려 몸과 마음이 놀라 굳어버리고 방어벽을 칩니다. 정서적인 안전감이 무엇보다 중요한 성향이므로, 내 신체 상태를 딱딱하게 평가받기보다 "그동안 이렇게 무거운 몸을 이끌고 견디느라 정말 고생 많았어요"라는 따뜻한 공감과 위로를 마주할 때 비로소 마음이 사르르 열리고 진정한 케어를 받아들일 준비가 됩니다.`},flexible:{emoji:`💓`,modifier:`유연한`,quote:`상태를 평가하기 전에, 가벼운 칭찬이나 다정한 격려 한마디가 저를 훨씬 편안하게 해요.`,desc:`내 몸의 아쉬운 점이나 개선해야 할 점을 수용할 준비는 되어 있지만, 너무 차갑고 기계적인 지적만 훅 들어오면 어딘가 주눅이 드는 편입니다. 본격적인 솔루션에 들어가기 전에 "지금도 충분히 잘 관리하고 계시네요", "이 정도면 훌륭해요" 같은 다정한 격려와 긍정적인 지지가 선행될 때, 훨씬 더 기분 좋게 마음을 열고 케어에 집중할 수 있습니다.`}}},Re=({className:e=`w-3.5 h-3.5 fill-current`})=>(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,className:e,children:(0,b.jsx)(`path`,{d:`M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z`})}),ze=e=>({ACDZ:`애씨디지`,ACDM:`애씨디엠`,ACQZ:`애씨큐지`,ACQM:`애씨큐엠`,ALDZ:`앨디지`,ALDM:`앨디엠`,ALQZ:`앨큐지`,ALQM:`앨큐엠`,OCDZ:`오씨디지`,OCDM:`오씨디엠`,OCQZ:`오씨큐지`,OCQM:`오씨큐엠`,OLDZ:`올디지`,OLDM:`올디엠`,OLQZ:`올큐지`,OLQM:`올큐엠`})[e]||``,Be={ACDM:{kr:`활동적 집중 실전 공감형`,catchphrase:`몸으로 먼저 느끼고,
 마음으로 함께 움직이는 사람`,bestMatch:`OLQZ`,diffTempo:`OLQM`,color:`#FF6B6B`,bgGradient:`linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)`},ACDZ:{kr:`활동적 집중 실전 팩트형`,catchphrase:`결과로 말하는
-실전 파워 무버`,bestMatch:`OLQM`,diffTempo:`OLQZ`,color:`#4ECDC4`,bgGradient:`linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)`},ACQM:{kr:`활동적 집중 탐구 공감형`,catchphrase:`이론과 감성 사이에서
+실전 파워 무버`,bestMatch:`OCDM`,diffTempo:`ALQM`,color:`#4ECDC4`,bgGradient:`linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)`},ACQM:{kr:`활동적 집중 탐구 공감형`,catchphrase:`이론과 감성 사이에서
 최적의 균형을 찾는 사람`,bestMatch:`OLDZ`,diffTempo:`OLDM`,color:`#A78BFA`,bgGradient:`linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)`},ACQZ:{kr:`활동적 집중 탐구 팩트형`,catchphrase:`데이터로 파고드는
-분석형 액티비스트`,bestMatch:`OLDM`,diffTempo:`OLDZ`,color:`#60A5FA`,bgGradient:`linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)`},ALDM:{kr:`활동적 전신 실전 공감형`,catchphrase:`전신으로 느끼며
+분석형 액티비스트`,bestMatch:`OLQZ`,diffTempo:`ALDM`,color:`#60A5FA`,bgGradient:`linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)`},ALDM:{kr:`활동적 전신 실전 공감형`,catchphrase:`전신으로 느끼며
 사람과 함께 성장하는 무버`,bestMatch:`OCQZ`,diffTempo:`OCQM`,color:`#F472B6`,bgGradient:`linear-gradient(135deg, #F472B6 0%, #EC4899 100%)`},ALDZ:{kr:`활동적 전신 실전 팩트형`,catchphrase:`거침없는 실행력으로
-몸 전체를 깨우는 사람`,bestMatch:`OCQM`,diffTempo:`OCQZ`,color:`#34D399`,bgGradient:`linear-gradient(135deg, #34D399 0%, #10B981 100%)`},ALQM:{kr:`활동적 전신 탐구 공감형`,catchphrase:`호기심과 따뜻함이
-공존하는 밸런스 탐험가`,bestMatch:`OCDZ`,diffTempo:`OCDM`,color:`#FBBF24`,bgGradient:`linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)`},ALQZ:{kr:`활동적 전신 탐구 팩트형`,catchphrase:`과학적 근거 위에
-움직임을 설계하는 전략가`,bestMatch:`OCDM`,diffTempo:`OCDZ`,color:`#818CF8`,bgGradient:`linear-gradient(135deg, #818CF8 0%, #6366F1 100%)`},OCDM:{kr:`안정적 집중 실전 공감형`,catchphrase:`조용하지만 깊게,
-마음까지 챙기는 꼼꼼 무버`,bestMatch:`ALQZ`,diffTempo:`ALQM`,color:`#FB923C`,bgGradient:`linear-gradient(135deg, #FB923C 0%, #EA580C 100%)`},OCDZ:{kr:`안정적 집중 실전 팩트형`,catchphrase:`묵묵히 집중하며
-효율을 극대화하는 장인`,bestMatch:`ALQM`,diffTempo:`ALQZ`,color:`#2DD4BF`,bgGradient:`linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)`},OCQM:{kr:`안정적 집중 탐구 공감형`,catchphrase:`깊이 있는 탐구와
-따뜻한 소통의 조화`,bestMatch:`ALDZ`,diffTempo:`ALDM`,color:`#E879F9`,bgGradient:`linear-gradient(135deg, #E879F9 0%, #C026D3 100%)`},OCQZ:{kr:`안정적 집중 탐구 팩트형`,catchphrase:`냉철한 분석력으로
-최적의 루틴을 설계하는 사람`,bestMatch:`ALDM`,diffTempo:`ALDZ`,color:`#38BDF8`,bgGradient:`linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)`},OLDM:{kr:`안정적 전신 실전 공감형`,catchphrase:`편안한 리듬 속에
-모두와 함께 움직이는 힐러`,bestMatch:`ACQZ`,diffTempo:`ACQM`,color:`#FB7185`,bgGradient:`linear-gradient(135deg, #FB7185 0%, #E11D48 100%)`},OLDZ:{kr:`안정적 전신 실전 팩트형`,catchphrase:`꾸준함의 힘을 아는
-묵직한 실행가`,bestMatch:`ACQM`,diffTempo:`ACQZ`,color:`#4ADE80`,bgGradient:`linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)`},OLQM:{kr:`안정적 전신 탐구 공감형`,catchphrase:`천천히, 하지만 확실하게
-마음을 담아 움직이는 사람`,bestMatch:`ACDZ`,diffTempo:`ACDM`,color:`#F9A8D4`,bgGradient:`linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)`},OLQZ:{kr:`안정적 전신 탐구 팩트형`,catchphrase:`데이터와 균형 감각으로
-최적의 웰니스를 설계하는 사람`,bestMatch:`ACDM`,diffTempo:`ACDZ`,color:`#67E8F9`,bgGradient:`linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)`}},Ve={ACDZ:`단단한 케틀벨`,ACDM:`복근 슬라이더`,ACQZ:`핵심만 아령줘요`,ACQM:`수다쟁이 루프밴드`,ALDZ:`팩트폭행 짐볼`,ALDM:`뜨끈뜨끈 보수볼`,ALQZ:`분석가 트레드밀`,ALQM:`물음표 운동화`,OCDZ:`저격수 땅콩볼`,OCDM:`다정한 마사지건`,OCQZ:`심리학자 온냉팩`,OCQM:`친절한 하트괄사`,OLDZ:`실용주의 요가링`,OLDM:`포근포근 운동매트`,OLQZ:`깐깐한 꺼꾸리`,OLQM:`키다리 폼롤러`},He=({type:e,targetCode:t,resultData:n,isExpanded:r,onToggle:i})=>{let a=e===`bestMatch`,o=a?`💖 환상의 짝꿍 BMTI`:`🤔 조금 다른 템포 BMTI`,s=Oe.find(e=>e.id===t)?.image,c=Ve[t],l=a?n.goodMatch:n.badMatch,u=l?l.split(`
+몸 전체를 깨우는 사람`,bestMatch:`OLDZ`,diffTempo:`OCQM`,color:`#34D399`,bgGradient:`linear-gradient(135deg, #34D399 0%, #10B981 100%)`},ALQM:{kr:`활동적 전신 탐구 공감형`,catchphrase:`호기심과 따뜻함이
+공존하는 밸런스 탐험가`,bestMatch:`OLQZ`,diffTempo:`ACDM`,color:`#FBBF24`,bgGradient:`linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)`},ALQZ:{kr:`활동적 전신 탐구 팩트형`,catchphrase:`과학적 근거 위에
+움직임을 설계하는 전략가`,bestMatch:`OCQM`,diffTempo:`ACQZ`,color:`#818CF8`,bgGradient:`linear-gradient(135deg, #818CF8 0%, #6366F1 100%)`},OCDM:{kr:`안정적 집중 실전 공감형`,catchphrase:`조용하지만 깊게,
+마음까지 챙기는 꼼꼼 무버`,bestMatch:`ACDM`,diffTempo:`ALQZ`,color:`#FB923C`,bgGradient:`linear-gradient(135deg, #FB923C 0%, #EA580C 100%)`},OCDZ:{kr:`안정적 집중 실전 팩트형`,catchphrase:`묵묵히 집중하며
+효율을 극대화하는 장인`,bestMatch:`OLDZ`,diffTempo:`ACQM`,color:`#2DD4BF`,bgGradient:`linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)`},OCQM:{kr:`안정적 집중 탐구 공감형`,catchphrase:`깊이 있는 탐구와
+따뜻한 소통의 조화`,bestMatch:`ACDM`,diffTempo:`ALDZ`,color:`#E879F9`,bgGradient:`linear-gradient(135deg, #E879F9 0%, #C026D3 100%)`},OCQZ:{kr:`안정적 집중 탐구 팩트형`,catchphrase:`냉철한 분석력으로
+최적의 루틴을 설계하는 사람`,bestMatch:`ACQZ`,diffTempo:`ALDM`,color:`#38BDF8`,bgGradient:`linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)`},OLDM:{kr:`안정적 전신 실전 공감형`,catchphrase:`편안한 리듬 속에
+모두와 함께 움직이는 힐러`,bestMatch:`ALDM`,diffTempo:`ACQZ`,color:`#FB7185`,bgGradient:`linear-gradient(135deg, #FB7185 0%, #E11D48 100%)`},OLDZ:{kr:`안정적 전신 실전 팩트형`,catchphrase:`꾸준함의 힘을 아는
+묵직한 실행가`,bestMatch:`ALDZ`,diffTempo:`ACQM`,color:`#4ADE80`,bgGradient:`linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)`},OLQM:{kr:`안정적 전신 탐구 공감형`,catchphrase:`천천히, 하지만 확실하게
+마음을 담아 움직이는 사람`,bestMatch:`ALQM`,diffTempo:`ACDZ`,color:`#F9A8D4`,bgGradient:`linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)`},OLQZ:{kr:`안정적 전신 탐구 팩트형`,catchphrase:`데이터와 균형 감각으로
+최적의 웰니스를 설계하는 사람`,bestMatch:`ALQZ`,diffTempo:`ACDM`,color:`#67E8F9`,bgGradient:`linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)`}},Ve={ACDZ:`단단한 케틀벨`,ACDM:`복근 슬라이더`,ACQZ:`핵심만 아령줘요`,ACQM:`수다쟁이 루프밴드`,ALDZ:`팩트폭행 짐볼`,ALDM:`뜨끈뜨끈 보수볼`,ALQZ:`분석가 트레드밀`,ALQM:`물음표 운동화`,OCDZ:`저격수 땅콩볼`,OCDM:`다정한 마사지건`,OCQZ:`심리학자 온냉팩`,OCQM:`친절한 하트괄사`,OLDZ:`실용주의 요가링`,OLDM:`포근포근 운동매트`,OLQZ:`깐깐한 꺼꾸리`,OLQM:`키다리 폼롤러`},He=({type:e,targetCode:t,resultData:n,isExpanded:r,onToggle:i})=>{let a=e===`bestMatch`,o=a?`💖 환상의 짝꿍 BMTI`:`🤔 조금 다른 템포 BMTI`,s=Oe.find(e=>e.id===t)?.image,c=Ve[t],l=a?n.goodMatch:n.badMatch,u=l?l.split(`
 `):[],d=u.length>=3?u[2]:l;return(0,b.jsxs)(`div`,{className:`bg-white p-4 md:p-6 rounded-3xl md:rounded-[2rem] border border-gray-100 flex flex-col items-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] cursor-pointer transition-all duration-300 w-full`,onClick:i,children:[(0,b.jsx)(`div`,{className:`bg-white border border-gray-100 rounded-full px-3 md:px-4 py-1.5 mb-2 md:mb-4 text-[11px] md:text-sm font-bold text-gray-500 shadow-sm whitespace-nowrap z-10 relative`,children:o}),r?(0,b.jsxs)(`div`,{className:`w-full text-left`,children:[(0,b.jsxs)(`div`,{className:`flex flex-col md:flex-row items-center md:items-start md:gap-4 mb-4 md:mb-5`,children:[(0,b.jsx)(`div`,{className:`w-16 h-16 md:w-20 md:h-20 flex-shrink-0 mb-2 md:mb-0`,children:s&&(0,b.jsx)(`img`,{src:s,alt:t,className:`w-full h-full object-contain scale-[1.2] md:scale-[1.1]`})}),(0,b.jsxs)(`div`,{className:`flex flex-col text-center md:text-left mt-1 md:mt-3`,children:[(0,b.jsxs)(`p`,{className:`font-extrabold text-gray-500 text-[11px] md:text-sm mb-0.5 tracking-wider flex items-baseline justify-center md:justify-start gap-1`,children:[(0,b.jsx)(`span`,{children:t}),` `,(0,b.jsxs)(`span`,{className:`text-gray-400 font-normal text-[9px] md:text-[11px] hidden md:inline`,children:[`(`,ze(t),`)`]})]}),(0,b.jsx)(`p`,{className:`font-bold text-gray-800 text-[13px] md:text-lg leading-tight break-keep`,children:c})]})]}),(0,b.jsx)(`div`,{className:`w-full h-px bg-gray-100 mb-4 md:mb-5`}),(0,b.jsx)(`p`,{className:`text-gray-600 text-[13px] md:text-[15.5px] leading-relaxed break-keep mb-5 md:mb-6`,children:d}),(0,b.jsx)(`div`,{className:`w-full flex justify-center`,children:(0,b.jsxs)(`div`,{className:`border border-gray-100 text-gray-500 bg-white rounded-full px-3 md:px-4 py-1.5 text-[11px] md:text-sm font-medium flex items-center gap-1 md:gap-2 shadow-sm`,children:[`돌아가기`,(0,b.jsx)(`svg`,{width:`10`,height:`10`,className:`md:w-3 md:h-3`,viewBox:`0 0 24 24`,fill:`none`,stroke:`currentColor`,strokeWidth:`2.5`,strokeLinecap:`round`,strokeLinejoin:`round`,children:(0,b.jsx)(`polyline`,{points:`18 15 12 9 6 15`})})]})})]}):(0,b.jsxs)(`div`,{className:`flex flex-col items-center w-full`,children:[(0,b.jsx)(`div`,{className:`w-24 h-24 md:w-36 md:h-36 mb-1 md:mb-2 flex items-center justify-center`,children:s&&(0,b.jsx)(`img`,{src:s,alt:t,className:`w-full h-full object-contain scale-[1.2] md:scale-[1.1]`})}),(0,b.jsxs)(`p`,{className:`font-extrabold text-[#111827] text-base md:text-xl mb-1 flex items-baseline justify-center gap-1 text-center`,children:[(0,b.jsx)(`span`,{children:t}),` `,(0,b.jsxs)(`span`,{className:`text-gray-400 text-[10px] md:text-sm font-medium`,children:[`(`,ze(t),`)`]})]}),(0,b.jsx)(`p`,{className:`font-bold text-gray-800 text-[13px] md:text-lg text-center break-keep`,children:c}),(0,b.jsxs)(`div`,{className:`mt-4 md:mt-6 border border-gray-100 text-gray-500 bg-white rounded-full px-3 md:px-4 py-1.5 text-[11px] md:text-sm font-medium flex items-center gap-1 md:gap-2 shadow-sm`,children:[`설명 보기`,(0,b.jsx)(`svg`,{width:`10`,height:`10`,className:`md:w-3 md:h-3`,viewBox:`0 0 24 24`,fill:`none`,stroke:`currentColor`,strokeWidth:`2.5`,strokeLinecap:`round`,strokeLinejoin:`round`,children:(0,b.jsx)(`polyline`,{points:`6 9 12 15 18 9`})})]})]})]})},Ue=({setView:e,quizCompleted:t,setQuizCompleted:n,isLoggedIn:r,setIsLoggedIn:i,bmtiCode:a,bmtiAnswers:o})=>{let[s,c]=(0,_.useState)(!1),[l,u]=(0,_.useState)(!1),[d,f]=(0,_.useState)(!1),p=(0,_.useRef)(null),[m,h]=(0,_.useState)(!1),[g,v]=(0,_.useState)(!1),y=a?a.split(`-`)[0]:``,S=Be[y]||Be.ACDM,C=x[y]||{},w=Oe.find(e=>e.id===y);return Oe.find(e=>e.id===S.bestMatch),Oe.find(e=>e.id===S.diffTempo),t?(0,b.jsxs)(`div`,{className:`min-h-screen pt-44 md:pt-52 pb-32 px-6 max-w-2xl mx-auto fade-in`,children:[(0,b.jsxs)(`div`,{className:`text-center mb-10`,children:[(0,b.jsx)(`p`,{className:`text-gray-500 mb-2 font-medium tracking-widest text-sm`,children:`ANALYSIS COMPLETE`}),(0,b.jsx)(`h2`,{className:`text-3xl md:text-4xl font-serif font-bold`,children:`당신의 BMTI 유형은`})]}),(0,b.jsxs)(`div`,{className:`bg-white border border-gray-200 rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden mb-8`,children:[(0,b.jsx)(`div`,{className:`absolute top-0 right-0 w-64 h-64 bg-[#c0ff00]/10 rounded-bl-full -z-10`}),(0,b.jsxs)(`div`,{className:`flex flex-col items-center text-center`,children:[(0,b.jsx)(`div`,{className:`w-[calc(100%+4rem)] md:w-[calc(100%+6rem)] -mt-8 md:-mt-12 -mx-8 md:-mx-12 mb-8 relative`,children:w?(0,b.jsx)(`img`,{src:w.originalImage,alt:y,className:`w-full h-full object-cover rounded-t-[2.5rem]`,style:{maxHeight:`400px`}}):(0,b.jsxs)(`div`,{className:`w-full h-64 bg-gray-100 flex items-center justify-center rounded-t-[2.5rem]`,children:[(0,b.jsx)(`div`,{className:`w-32 h-32 bg-black rounded-[40%] animate-spin-slow absolute`}),(0,b.jsx)(`div`,{className:`w-24 h-24 bg-[#c0ff00] rounded-full absolute mix-blend-multiply opacity-90`})]})}),(0,b.jsx)(`div`,{className:`w-full flex flex-col md:flex-row items-center justify-center mb-10 relative md:min-h-[220px]`,children:(0,b.jsxs)(`div`,{className:`flex flex-col items-center text-center w-full`,children:[(0,b.jsxs)(`h3`,{className:`text-3xl sm:text-4xl md:text-5xl font-black mb-2 tracking-tight text-gray-900 flex flex-row items-baseline justify-center gap-3`,children:[(0,b.jsx)(`span`,{children:y}),(0,b.jsx)(`span`,{className:`text-lg sm:text-xl text-gray-400 font-medium`,children:ze(y)})]}),C.nickname&&(0,b.jsxs)(`p`,{className:`text-base sm:text-lg text-gray-800 font-bold whitespace-pre-line leading-relaxed mb-4 mt-2`,children:[`"`,C.nickname.replace(/\n/g,` `),`"`]})]})}),(0,b.jsxs)(`div`,{className:`w-full mb-10 fade-in`,children:[(0,b.jsx)(`h3`,{className:`text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2`,children:(0,b.jsx)(`span`,{children:`🔍 나를 움직이게 하는 4가지 성향`})}),(()=>{let e=Ae(o);if(!e)return null;let t=(t,n)=>{let r=e[t]>=50?t:n,i=Math.max(e[t],e[n]),a=i>=80?`confident`:`flexible`,o=Le[r],s=`bg-[#4ECDC4]`,c=`text-[#4ECDC4]`;return t===`A`?(s=`bg-[#FF6B6B]`,c=`text-[#FF6B6B]`):t===`C`?(s=`bg-[#4ECDC4]`,c=`text-[#4ECDC4]`):t===`D`?(s=`bg-[#60A5FA]`,c=`text-[#60A5FA]`):t===`Z`&&(s=`bg-[#A78BFA]`,c=`text-[#A78BFA]`),(0,b.jsxs)(`div`,{className:`bg-white border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] rounded-3xl p-6 md:p-8 mb-5 w-full text-left`,children:[(0,b.jsxs)(`div`,{className:`flex items-center justify-between mb-5`,children:[(0,b.jsx)(`div`,{className:`w-full bg-gray-100 rounded-full h-3 flex-1 mr-4 overflow-hidden`,children:(0,b.jsx)(`div`,{className:`${s} h-3 rounded-full transition-all duration-1000 ease-out`,style:{width:`${i}%`}})}),(0,b.jsxs)(`span`,{className:`${c} font-bold text-sm md:text-base min-w-[40px] text-right`,children:[i,`%`]})]}),(0,b.jsxs)(`h4`,{className:`text-[17px] md:text-[19px] font-bold text-gray-800 mb-4 flex items-center gap-2`,children:[(0,b.jsx)(`span`,{className:`text-xl md:text-2xl`,children:o[a].emoji}),(0,b.jsxs)(`span`,{children:[o[a].modifier,` `,o.name]})]}),(0,b.jsxs)(`p`,{className:`font-bold text-gray-800 text-[16px] md:text-[17px] mb-3 leading-relaxed break-keep`,children:[`"`,o[a].quote,`"`]}),(0,b.jsx)(`p`,{className:`text-gray-600 text-[15px] md:text-base leading-[1.7] break-keep`,children:o[a].desc})]},t)};return(0,b.jsxs)(`div`,{className:`flex flex-col gap-1 w-full max-w-lg mx-auto`,children:[t(`A`,`O`),t(`C`,`L`),t(`D`,`Q`),t(`Z`,`M`)]})})()]}),(0,b.jsxs)(`div`,{className:`w-full grid grid-cols-2 gap-3 md:gap-4 mt-2`,children:[(0,b.jsx)(He,{type:`bestMatch`,targetCode:S.bestMatch,resultData:C,isExpanded:m,onToggle:()=>h(!m)}),(0,b.jsx)(He,{type:`diffTempo`,targetCode:S.diffTempo,resultData:C,isExpanded:g,onToggle:()=>v(!g)})]})]})]}),r?(0,b.jsxs)(`div`,{className:`fade-in bg-white border border-gray-200 rounded-[2rem] p-8 md:p-10 shadow-sm space-y-12`,children:[(0,b.jsxs)(`div`,{className:`border-b border-gray-100 pb-12 text-left`,children:[(0,b.jsxs)(`h5`,{className:`font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2`,children:[(0,b.jsx)(`span`,{className:`text-xl`,children:`🏃‍♂️`}),` 운동 결심, 여기서 무너진다`]}),(0,b.jsx)(`div`,{className:`flex flex-col gap-6`,children:(()=>{let e=Pe[y&&y.length>=3?y[0]+y[2]:`OQ`]||Pe.OQ;return(0,b.jsxs)(b.Fragment,{children:[(0,b.jsx)(`h3`,{className:`text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight`,children:e.name}),(0,b.jsxs)(`div`,{className:`bg-gray-50/80 rounded-2xl p-6 md:p-7 space-y-5`,children:[(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`span`,{className:`text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block`,children:`당신의 특징:`}),(0,b.jsx)(`p`,{className:`text-[15px] md:text-base text-gray-600 leading-relaxed break-keep`,children:e.trait})]}),(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`span`,{className:`text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block`,children:`환불 마려운 순간:`}),(0,b.jsx)(`p`,{className:`text-[15px] md:text-base text-gray-600 leading-relaxed break-keep`,children:e.refund})]}),(0,b.jsxs)(`div`,{className:`pt-2`,children:[(0,b.jsx)(`span`,{className:`inline-block bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm md:text-[15px] font-bold px-3 py-1 rounded-lg mb-2`,children:`💡 기부천사 탈출법`}),(0,b.jsx)(`p`,{className:`text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep`,children:e.escape})]})]})]})})()})]}),(0,b.jsxs)(`div`,{className:`border-b border-gray-100 pb-12 text-left`,children:[(0,b.jsxs)(`h5`,{className:`font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2`,children:[(0,b.jsx)(`span`,{className:`text-xl`,children:`💥`}),` 멘탈 바사삭 '최악의 운동 분위기'`]}),(0,b.jsx)(`div`,{className:`flex flex-col gap-6`,children:(()=>{let e=Fe[y&&y.length>=4?y[0]+y[3]:`OM`]||Fe.OM;return(0,b.jsxs)(b.Fragment,{children:[(0,b.jsx)(`h3`,{className:`text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight`,children:e.name}),(0,b.jsxs)(`div`,{className:`flex flex-col gap-5 mt-2`,children:[(0,b.jsxs)(`div`,{className:`flex flex-col gap-1.5`,children:[(0,b.jsx)(`h6`,{className:`font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5`,children:`당신의 특징:`}),(0,b.jsx)(`p`,{className:`text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line`,children:e.trait})]}),(0,b.jsxs)(`div`,{className:`flex flex-col gap-1.5`,children:[(0,b.jsx)(`h6`,{className:`font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5`,children:`최악의 분위기:`}),(0,b.jsx)(`p`,{className:`text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line`,children:e.worst})]})]})]})})()})]}),(0,b.jsxs)(`div`,{className:`text-left`,children:[(0,b.jsxs)(`h5`,{className:`font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2`,children:[(0,b.jsx)(`span`,{className:`text-xl`,children:`💌`}),` 바디 가이드의 따뜻한 시선`]}),(0,b.jsx)(`div`,{className:`flex flex-col mt-4 gap-6`,children:(()=>{let e=y&&Ie[y]||Ie.ACDZ,t=e?e.split(`
 
 `):[];return(0,b.jsxs)(b.Fragment,{children:[t.length>0&&(0,b.jsx)(`p`,{className:`text-[15px] md:text-[16px] text-gray-700 leading-relaxed break-keep tracking-normal whitespace-pre-line`,children:t[0]}),t.length>1&&(0,b.jsx)(`p`,{className:`text-[15px] md:text-[16px] text-gray-700 leading-relaxed break-keep tracking-normal whitespace-pre-line mt-4`,children:t.slice(1).join(`
