@@ -44,6 +44,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
   const [isEditing, setIsEditing] = useState(false);
   const [showBmtiDetails, setShowBmtiDetails] = useState(false);
 
+  // 상위에서 userInfo가 업데이트될 경우(ex. 새로운 BMTI 검사 완료 후) 동기화
+  useEffect(() => {
+    if (userInfo) {
+      setUserData(prev => ({ ...prev, ...userInfo }));
+    }
+  }, [userInfo]);
+
   const [starBalance, setStarBalance] = useState(0);
   const [remainingTokens, setRemainingTokens] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
@@ -432,7 +439,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
           onClick={async () => {
             const { canRetake, message } = await canRetakeTest(userData);
             if (!canRetake) {
-              alert(message);
+              if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
+                setView('ticket');
+              }
               return;
             }
             if (window.confirm('정말 새로운 검사를 진행하시겠습니까?')) {

@@ -142,7 +142,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     }
     const { canRetake, message } = await canRetakeTest(userProfile);
     if (!canRetake) {
-      alert(message);
+      if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
+        setView('ticket');
+      }
       return;
     }
     setShowConfirm(true);

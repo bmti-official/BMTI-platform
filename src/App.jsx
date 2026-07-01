@@ -22,7 +22,11 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
-  const [bmtiCode, setBmtiCode] = useState(window.location.hash ? window.location.hash.replace('#', '') : ''); // e.g. "ALDZ-Tl"
+  const [bmtiCode, setBmtiCode] = useState(() => {
+    if (window.location.hash) return window.location.hash.replace('#', '');
+    const saved = localStorage.getItem('bmti_code');
+    return saved || '';
+  }); // e.g. "ALDZ-Tl"
   const [bmtiAnswers, setBmtiAnswers] = useState(() => {
     const saved = localStorage.getItem('bmti_answers');
     return saved ? JSON.parse(saved) : null;
@@ -46,6 +50,13 @@ function App() {
       window.history.replaceState(null, '', ' '); // clear hash
     }
   }, [currentView, bmtiCode]);
+
+  // Save bmtiCode to localStorage
+  useEffect(() => {
+    if (bmtiCode) {
+      localStorage.setItem('bmti_code', bmtiCode);
+    }
+  }, [bmtiCode]);
 
   // Load session on mount
   useEffect(() => {
