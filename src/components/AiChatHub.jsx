@@ -78,19 +78,26 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
             }, 2000);
           }}
           disabled={isLoading}
-          className="w-full bg-black text-white font-bold py-4 rounded-2xl text-lg hover:bg-gray-800 transition-all shadow-xl shadow-black/20 transform hover:-translate-y-1 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3"
+          className="relative w-full bg-gradient-to-r from-gray-900 to-black text-white font-extrabold py-4.5 rounded-2xl text-[17px] transition-all duration-300 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)] transform hover:-translate-y-1 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3 group border border-gray-800 overflow-hidden"
         >
           {isLoading ? (
             <>
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              입장 중...
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin relative z-10"></div>
+              <span className="relative z-10">입장 중...</span>
             </>
           ) : (
             <>
+              <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               {charData && (
-                <img src={charData.image} alt="" className="w-8 h-8 object-contain" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-[#c0ff00] blur-md opacity-30 rounded-full group-hover:opacity-60 transition-opacity duration-300"></div>
+                  <img src={charData.image} alt="" className="w-9 h-9 object-contain relative z-10 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300" />
+                </div>
               )}
-              BMTI TALK 입장!
+              <span className="relative z-10 tracking-wide">BMTI TALK 입장!</span>
+              <svg className="w-5 h-5 relative z-10 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"/>
+              </svg>
             </>
           )}
         </button>

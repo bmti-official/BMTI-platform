@@ -24,7 +24,7 @@ const ChatHistoryView = ({ setView }) => {
           <button 
             onClick={() => {
               if (selectedArchive) setSelectedArchive(null);
-              else setView('aichat');
+              else setView('aichat_room');
             }}
             className="p-2 -ml-2 text-gray-500 hover:text-black absolute left-4"
           >

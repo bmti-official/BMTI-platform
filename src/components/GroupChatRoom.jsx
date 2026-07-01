@@ -141,42 +141,37 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
   if (!room) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-50 flex flex-col z-50">
-      {/* Header */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-10 pt-safe">
-        <div className="h-14 flex items-center justify-between px-4 relative">
-          <button onClick={() => setView('aichat')} className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </button>
-          
-          <div className="flex flex-col items-center flex-1">
-            <h2 className="font-bold text-gray-900 text-base">{room.name}</h2>
-            <p className="text-[10px] text-gray-500 font-medium">참여 인원 {room.members.length}명</p>
+  return (
+    <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50">
+      {/* Floating Header Buttons */}
+      <div className="absolute top-4 left-0 right-0 px-4 z-20 flex items-center justify-between">
+        {/* Home (round) */}
+        <button 
+          onClick={() => setView('aichat_room')}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Room Title */}
+        <div className="flex items-center justify-center flex-1 mx-4">
+          <div className="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-gray-100 flex items-center gap-2">
+            <span className="font-bold text-gray-900 text-sm truncate max-w-[150px]">{room.name}</span>
+            <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{room.members.length}</span>
           </div>
-          
-          <button 
-            onClick={() => setIsDrawerOpen(true)}
-            className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
-            </svg>
-          </button>
         </div>
-        
-        {/* Token Info Bar */}
-        <div className="bg-gray-50 border-t border-gray-100 py-2 px-4 flex justify-between items-center text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-700">🪙 {remainingTokens.toLocaleString()}</span>
-            <span className="text-gray-300">|</span>
-            <span className="font-bold text-yellow-600">⭐️ {starBalance}</span>
-          </div>
-          <span className="text-[10px] text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
-            @BMTI 호출: {bmtiCallCount}/5
-          </span>
-        </div>
+
+        {/* Menu (round) */}
+        <button 
+          onClick={() => setIsDrawerOpen(true)}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
 
       <ChatDrawer 
@@ -188,16 +183,16 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
       />
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto pt-16 pb-28 px-4 space-y-4">
         {messages.length === 0 && (
-          <div className="text-center py-10 fade-in flex flex-col items-center">
-            <div className="w-24 h-24 rounded-3xl bg-purple-50 mb-4 flex items-center justify-center p-2 border border-purple-100">
-              <span className="text-4xl">👥</span>
+          <div className="text-center py-16 fade-in flex flex-col items-center">
+            <div className="w-24 h-24 rounded-3xl bg-purple-50 mb-4 flex items-center justify-center p-2 border border-purple-100 shadow-sm">
+              <span className="text-5xl">🙋🏻🙋🏻‍♀️</span>
             </div>
             <p className="text-sm font-bold text-gray-900 mb-1">{room.name}</p>
             <p className="text-xs text-gray-500">함께 운동 목표를 다져보세요!</p>
-            <div className="mt-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-sm text-gray-700 leading-relaxed text-left max-w-sm">
-              <span className="font-bold block mb-2">💡 단톡방 가이드</span>
+            <div className="mt-6 inline-block bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-sm text-gray-700 leading-relaxed text-left max-w-sm">
+              <span className="font-bold block mb-2 text-center">💡 단톡방 가이드</span>
               메시지에 <strong className="text-purple-600">@BMTI</strong> 를 포함하여 전송하면, 방 안의 BMTI 캐릭터들이 대화에 참여합니다.
             </div>
           </div>
@@ -255,10 +250,10 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
 
         {isTyping && (
           <div className="flex items-end gap-2 animate-pulse">
-            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mb-1">
+            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mb-1 shadow-sm border border-purple-200">
               <span className="text-xs">🤖</span>
             </div>
-            <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1">
+            <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm flex gap-1">
               <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
               <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
               <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
@@ -270,48 +265,54 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
 
       {/* Token Warning */}
       {showTokenWarning && (
-        <div className="absolute inset-x-0 bottom-20 mx-4 bg-white rounded-2xl p-4 shadow-xl border border-red-100 z-20">
+        <div className="absolute inset-x-0 bottom-28 mx-4 bg-white rounded-2xl p-4 shadow-xl border border-red-100 z-20 animate-fade-in-up">
           <div className="text-center">
+            <span className="text-3xl mb-2 block">🪙</span>
             <h3 className="font-bold text-gray-900 mb-2">토큰 부족</h3>
             <div className="flex gap-2">
               <button onClick={() => setShowTokenWarning(false)} className="flex-1 py-2 bg-gray-100 text-sm font-bold rounded-xl">닫기</button>
-              <button onClick={handleSpendStar} className="flex-1 py-2 bg-[#FEE500] text-sm font-bold rounded-xl">⭐️ 사용</button>
+              <button onClick={handleSpendStar} className="flex-1 py-2 bg-[#FEE500] text-sm font-bold rounded-xl flex items-center justify-center gap-1">⭐️ 사용</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Input */}
-      <div className="bg-white border-t border-gray-100 p-3 pb-safe z-10">
-        <div className="flex items-end gap-2 max-w-2xl mx-auto">
+      {/* Floating Input Area (Gemini style) */}
+      <div className="absolute bottom-4 left-4 right-4 z-10">
+        <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto">
           <button 
             onClick={() => setInputText(prev => prev + '@BMTI ')}
-            className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 font-bold text-xs flex items-center justify-center flex-shrink-0"
+            className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 font-bold text-xs flex items-center justify-center flex-shrink-0 hover:bg-purple-100 transition-colors"
           >
             @
           </button>
-          <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden flex items-end">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="메시지를 입력하세요... (@BMTI 호출 가능)"
-              className="w-full bg-transparent p-3 text-sm focus:outline-none resize-none max-h-32 min-h-[44px]"
-              rows={1}
-            />
-          </div>
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="메시지 입력... (@BMTI 호출 가능)"
+            className="flex-1 bg-transparent px-2 py-2.5 text-sm focus:outline-none resize-none max-h-32 min-h-[40px]"
+            rows={1}
+            disabled={isTyping}
+          />
           <button
             onClick={handleSend}
-            disabled={!inputText.trim()}
-            className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-200 transition-colors"
+            disabled={!inputText.trim() || isTyping}
+            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
           >
-            <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <svg className="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
           </button>
+        </div>
+        {/* Token Info under input */}
+        <div className="text-center mt-2">
+          <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full">@BMTI 호출: {bmtiCallCount}/5</span>
         </div>
       </div>
     </div>

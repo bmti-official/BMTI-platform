@@ -68,7 +68,7 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
             {/* 단톡방 Box */}
             <div className="pt-2">
               <div className="flex items-center justify-between mb-3 px-1">
-                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">👥 단톡방</h3>
+                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">🙋🏻🙋🏻‍♀️ 단톡방</h3>
                 <div className="flex gap-2">
                   <button onClick={() => setShowInviteModal(true)} className="text-[11px] font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
                     🔗 초대코드
