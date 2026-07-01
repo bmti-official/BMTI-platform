@@ -77,34 +77,53 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
   };
 
   const handleSaveProfile = async () => {
-    // If nickname changed, set hasEditedNickname to true
     let updatedUserData = { ...userData };
-    if (userInfo && userInfo.nickname !== userData.nickname) {
+    
+    // Check if any field changed
+    const hasChanged = userInfo && (
+      userInfo.nickname !== userData.nickname ||
+      userInfo.height !== userData.height ||
+      userInfo.weight !== userData.weight ||
+      userInfo.frequency !== userData.frequency ||
+      JSON.stringify(userInfo.goals) !== JSON.stringify(userData.goals)
+    );
+
+    if (hasChanged) {
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id')
-          .eq('nickname', userData.nickname);
-          
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
-          return;
+        if (userInfo.nickname !== userData.nickname) {
+          const { data, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('nickname', userData.nickname);
+            
+          if (error) throw error;
+          if (data && data.length > 0) {
+            alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+            return;
+          }
         }
+
         
-        // Update in Supabase
+        // Update all fields in Supabase
         const { error: updateError } = await supabase
           .from('users')
-          .update({ nickname: userData.nickname })
+          .update({ 
+            nickname: userData.nickname,
+            height: userData.height,
+            weight: userData.weight,
+            frequency: userData.frequency,
+            goals: userData.goals
+          })
           .eq('id', userData.id);
           
         if (updateError) throw updateError;
         
-        updatedUserData.hasEditedNickname = true;
+        if (userInfo && userInfo.nickname !== userData.nickname) {
+          updatedUserData.hasEditedNickname = true;
+        }
       } catch (e) {
-        console.error('닉네임 변경 오류:', e);
-        alert('닉네임 변경 중 오류가 발생했습니다.');
+        console.error('프로필 변경 오류:', e);
+        alert('프로필 변경 중 오류가 발생했습니다.');
         return;
       }
     }
@@ -179,16 +198,59 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
           </button>
         </div>
 
-        <div className="flex items-center gap-5 md:gap-6">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 border border-gray-200 overflow-hidden flex-shrink-0 relative shadow-inner">
-            {charInfo ? (
-              <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
+        <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">
+          <div className="flex items-center gap-4 md:flex-col md:items-start flex-shrink-0 w-full md:w-auto">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 border border-gray-200 overflow-hidden flex-shrink-0 relative shadow-inner">
+              {charInfo ? (
+                <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
+              ) : (
+                <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
+              )}
+            </div>
+            
+            <div className="flex-1 md:hidden">
+              {isEditing ? (
+                <div className="flex flex-col">
+                  <input 
+                    type="text" 
+                    value={userData.nickname}
+                    onChange={(e) => setUserData({...userData, nickname: e.target.value})}
+                    disabled={userData.hasEditedNickname}
+                    className={`text-lg font-black text-gray-900 border-b-2 ${userData.hasEditedNickname ? 'border-transparent bg-transparent text-gray-500' : 'border-black'} focus:outline-none w-full pb-0.5`}
+                  />
+                  {!userData.hasEditedNickname && <div className="text-[10px] text-red-500 font-medium mt-1">※ 가입 후 1회만 수정 가능</div>}
+                  {userData.hasEditedNickname && <div className="text-[10px] text-gray-400 font-medium mt-1">수정 횟수 초과</div>}
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <h2 className="text-xl font-black text-gray-900 flex flex-wrap items-center gap-1.5">
+                    {userData.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-sm shadow-sm">관리자</span>}
+                    {userData.nickname}
+                  </h2>
+                  {userData.isPremium && userData.nickname !== 'BMTI' && (
+                    <span className="bg-[#c0ff00] text-black text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex w-fit mt-1 shadow-sm">
+                      🎟️ 자기점검 평생구독권
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {charInfo && !isEditing && (
+                <div className="md:hidden flex-shrink-0">
+                  <button 
+                    onClick={() => setShowBmtiDetails(!showBmtiDetails)}
+                    className="w-14 h-14 bg-gray-50 border border-gray-200 rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
+                  >
+                    <span className="text-[9px] font-bold text-gray-500">현재 BMTI</span>
+                    <span className="text-sm font-black text-[#9BB31B]">{axisCode}</span>
+                  </button>
+                </div>
             )}
           </div>
-          <div className="flex-1">
-            <div className="flex flex-col mb-1">
+          
+          <div className="flex-1 w-full">
+            <div className="hidden md:flex flex-col mb-4">
               {isEditing ? (
                 <div>
                   <input 
@@ -196,7 +258,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                     value={userData.nickname}
                     onChange={(e) => setUserData({...userData, nickname: e.target.value})}
                     disabled={userData.hasEditedNickname}
-                    className={`text-xl font-black text-gray-900 border-b-2 ${userData.hasEditedNickname ? 'border-transparent bg-transparent text-gray-500' : 'border-black'} focus:outline-none w-32 pb-0.5`}
+                    className={`text-xl font-black text-gray-900 border-b-2 ${userData.hasEditedNickname ? 'border-transparent bg-transparent text-gray-500' : 'border-black'} focus:outline-none w-48 pb-0.5`}
                   />
                   {!userData.hasEditedNickname && <div className="text-[10px] text-red-500 font-medium mt-1">※ 닉네임은 가입 후 1회만 수정 가능합니다.</div>}
                   {userData.hasEditedNickname && <div className="text-[10px] text-gray-400 font-medium mt-1">닉네임 수정 횟수 초과</div>}
@@ -216,16 +278,16 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
               )}
             </div>
             
-            <div className="flex gap-4 items-start mt-3">
-              <div className="space-y-2.5 flex-1">
-                    <div className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                      <span className="w-16 text-gray-400 text-xs shrink-0">연령대/성별</span>
+            <div className="flex gap-4 items-start">
+              <div className="space-y-3 md:space-y-2.5 flex-1 w-full">
+                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                      <span className="w-full md:w-16 text-gray-400 text-xs shrink-0">연령대/성별</span>
                       {isEditing ? (
                         <div className="flex gap-2">
                           <select 
                             value={userData.kakaoAge} 
                             onChange={(e) => setUserData({...userData, kakaoAge: e.target.value})} 
-                            className="border rounded px-2 py-1 text-xs"
+                            className="border rounded px-2 py-1 text-xs w-24"
                           >
                             <option value="10대">10대</option>
                             <option value="20대">20대</option>
@@ -236,40 +298,38 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                           <select 
                             value={userData.kakaoGender} 
                             onChange={(e) => setUserData({...userData, kakaoGender: e.target.value})} 
-                            className="border rounded px-2 py-1 text-xs"
+                            className="border rounded px-2 py-1 text-xs w-20"
                           >
                             <option value="남성">남성</option>
                             <option value="여성">여성</option>
                           </select>
                         </div>
                       ) : (
-                        <span>{userData.kakaoAge} {userData.kakaoGender}</span>
+                        <span className="text-sm md:text-sm">{userData.kakaoAge} {userData.kakaoGender}</span>
                       )}
                     </div>
 
-                    <div className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                      <span className="w-14 text-gray-400 text-xs">신체 정보</span>
+                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                      <span className="w-full md:w-14 text-gray-400 text-xs shrink-0">신체 정보</span>
                       {isEditing ? (
                         <div className="flex items-center gap-2">
-                          <input type="number" value={userData.height} onChange={(e) => setUserData({...userData, height: e.target.value})} className="w-16 border rounded px-2 py-1 text-xs" /> cm / 
-                          <input type="number" value={userData.weight} onChange={(e) => setUserData({...userData, weight: e.target.value})} className="w-16 border rounded px-2 py-1 text-xs" /> kg
+                          <input type="number" value={userData.height} onChange={(e) => setUserData({...userData, height: e.target.value})} className="w-16 border rounded px-2 py-1 text-xs text-center" /> cm / 
+                          <input type="number" value={userData.weight} onChange={(e) => setUserData({...userData, weight: e.target.value})} className="w-16 border rounded px-2 py-1 text-xs text-center" /> kg
                         </div>
                       ) : (
-                        <span>{userData.height}cm / {userData.weight}kg</span>
+                        <span className="text-sm md:text-sm">{userData.height}cm / {userData.weight}kg</span>
                       )}
                     </div>
 
-
-                    
-                    <div className="text-sm font-medium text-gray-600 flex flex-col sm:flex-row sm:items-start gap-2">
-                      <span className="w-14 text-gray-400 text-xs mt-1">운동 빈도</span>
+                    <div className="text-sm font-medium text-gray-600 flex flex-col sm:flex-row sm:items-start gap-1.5 md:gap-2">
+                      <span className="w-full md:w-14 text-gray-400 text-xs shrink-0 md:mt-1">운동 빈도</span>
                       {isEditing ? (
-                        <div className="flex-1 grid grid-cols-2 gap-1.5">
+                        <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-1.5 w-full">
                           {EXERCISE_FREQUENCY.map(freq => (
                             <button
                               key={freq.id}
                               onClick={() => setUserData({...userData, frequency: freq.id})}
-                              className={`text-xs py-1.5 px-2 rounded-lg border font-bold transition-colors ${
+                              className={`text-xs py-1.5 px-1 md:px-2 rounded-lg border font-bold transition-colors text-center ${
                                 userData.frequency === freq.id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                               }`}
                             >
@@ -278,19 +338,19 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                           ))}
                         </div>
                       ) : (
-                        <span className="mt-0.5">{EXERCISE_FREQUENCY.find(f => f.id === userData.frequency)?.label || userData.frequency}</span>
+                        <span className="md:mt-0.5 text-sm">{EXERCISE_FREQUENCY.find(f => f.id === userData.frequency)?.label || userData.frequency}</span>
                       )}
                     </div>
 
-                    <div className="text-sm font-medium text-gray-600 flex flex-col sm:flex-row sm:items-start gap-2">
-                      <span className="w-14 text-gray-400 text-xs mt-1">운동 목적</span>
-                      <div className="flex-1 flex flex-wrap gap-1.5">
+                    <div className="text-sm font-medium text-gray-600 flex flex-col sm:flex-row sm:items-start gap-1.5 md:gap-2">
+                      <span className="w-full md:w-14 text-gray-400 text-xs shrink-0 md:mt-1">운동 목적</span>
+                      <div className="flex-1 flex flex-wrap gap-1.5 w-full">
                         {isEditing ? (
                           EXERCISE_GOALS.map(goal => (
                             <button
                               key={goal.id}
                               onClick={() => toggleGoal(goal.id)}
-                              className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
+                              className={`text-xs py-1.5 px-2 md:px-2.5 rounded-lg border font-bold transition-colors ${
                                 (userData.goals || []).includes(goal.id) ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                               }`}
                             >
@@ -313,7 +373,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                       <div className="flex items-center justify-start py-4 mt-2">
                         <button 
                           onClick={() => setView('home')} 
-                          className="bg-black text-[#c0ff00] font-bold py-2.5 px-6 rounded-full hover:bg-gray-900 transition-colors shadow-sm text-sm"
+                          className="bg-black text-[#c0ff00] font-bold py-2.5 px-6 rounded-full hover:bg-gray-900 transition-colors shadow-sm text-sm w-full md:w-auto"
                         >
                           🧬 BMTI 검사하기
                         </button>
@@ -322,13 +382,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                   </div>
               
               {charInfo && !isEditing && (
-                <div className="w-20 md:w-24 flex-shrink-0">
+                <div className="hidden md:block w-24 flex-shrink-0">
                   <button 
                     onClick={() => setShowBmtiDetails(!showBmtiDetails)}
                     className="w-full aspect-square bg-gray-50 border border-gray-200 rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
                   >
                     <span className="text-[10px] font-bold text-gray-500">현재 BMTI</span>
-                    <span className="text-base md:text-lg font-black text-[#9BB31B] mt-0.5">{axisCode}</span>
+                    <span className="text-lg font-black text-[#9BB31B] mt-0.5">{axisCode}</span>
                     <svg className={`w-3.5 h-3.5 text-gray-400 mt-1.5 transition-transform ${showBmtiDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
                 </div>

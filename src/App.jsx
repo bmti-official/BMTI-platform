@@ -81,16 +81,27 @@ function App() {
     const savedUser = localStorage.getItem('bmti_user');
     if (savedUser) {
       try {
-        const user = JSON.parse(savedUser);
-        if (user && user.nickname) {
-          user.isPremium = true; // Force premium for testing
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setUserProfile(user);
-          setIsLoggedIn(true);
-          
-          if (user.bmti_type) {
-            setBmtiCode(prev => prev || user.bmti_type);
-          }
+        const localUser = JSON.parse(savedUser);
+        if (localUser && localUser.id) {
+          // Fetch latest from Supabase
+          supabase.from('users').select('*').eq('id', localUser.id).single()
+            .then(({ data: dbUser, error }) => {
+              if (dbUser && !error) {
+                const updatedUser = { ...localUser, ...dbUser, isPremium: true };
+                setUserProfile(updatedUser);
+                setIsLoggedIn(true);
+                localStorage.setItem('bmti_user', JSON.stringify(updatedUser)); // keep id for next load
+                if (dbUser.bmti_type) {
+                  setBmtiCode(dbUser.bmti_type);
+                }
+              } else {
+                // fallback
+                localUser.isPremium = true;
+                setUserProfile(localUser);
+                setIsLoggedIn(true);
+                if (localUser.bmti_type) setBmtiCode(localUser.bmti_type);
+              }
+            });
         }
       } catch (e) {
         console.error('Failed to parse saved user', e);
@@ -109,7 +120,6 @@ function App() {
             .eq('id', userProfile.id);
             
           if (!error) {
-            // 항상 새로운 히스토리 추가 (결과가 같아도 추가됨)
             await supabase
               .from('bmti_history')
               .insert({ user_id: userProfile.id, bmti_code: bmtiCode })
@@ -169,7 +179,12 @@ function App() {
         
       if (error) throw error;
       
-      const fullUserData = { ...userData, id: data.id, bmti_type: data.bmti_type };
+      // Save pre-registration if opted in
+      if (userData.appNotification) {
+        await supabase.from('pre_registrations').insert({ user_id: data.id }).catch(e => console.error('Pre-reg error:', e));
+      }
+      
+      const fullUserData = { ...userData, id: data.id, bmti_type: data.bmti_type, appNotification: userData.appNotification };
       setUserProfile(fullUserData);
       setShowSignup(false);
       setIsLoggedIn(true);

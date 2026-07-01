@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, BMTI_INFO } from '../data';
 import { CHARACTER_NAMES, generateGroupResponse } from '../lib/gemini';
 import { getGroupMessages, addGroupMessage, useGroupBmtiCall } from '../lib/chatSystem';
+import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
 import ChatDrawer from './ChatDrawer';
@@ -23,12 +24,34 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (room) {
-      setMessages(getGroupMessages(room.id));
-      setBmtiCallCount(useGroupBmtiCall(room.id).used - 1); // 렌더링용이라 차감 취소 효과
-    }
+    const fetchMessages = async () => {
+      if (room) {
+        const msgs = await getGroupMessages(room.id);
+        setMessages(msgs);
+        setBmtiCallCount(useGroupBmtiCall(room.id).used - 1);
+        scrollToBottom();
+      }
+    };
+    fetchMessages();
     updateBalances();
-    scrollToBottom();
+    
+    let subscription = null;
+    if (room?.id) {
+      subscription = supabase
+        .channel(`public:group_messages:${room.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `room_id=eq.${room.id}` }, (payload) => {
+          setMessages(prev => {
+            if (prev.find(m => m.id === payload.new.id)) return prev;
+            return [...prev, payload.new];
+          });
+          scrollToBottom();
+        })
+        .subscribe();
+    }
+    
+    return () => {
+      if (subscription) supabase.removeChannel(subscription);
+    }
   }, [room]);
 
   useEffect(() => {
@@ -79,8 +102,11 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
       setBmtiCallCount(prev => prev + 1);
     }
 
-    const updatedMessages = addGroupMessage(room.id, userMsg);
-    setMessages(updatedMessages);
+    const userMsgData = await addGroupMessage(room.id, userInfo?.id, 'user', inputText.trim(), null, 0);
+    if (userMsgData) {
+      setMessages(prev => prev.find(m => m.id === userMsgData.id) ? prev : [...prev, userMsgData]);
+    }
+    
     setInputText('');
     updateBalances();
 
@@ -106,16 +132,15 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
         }
 
         // 응답들을 순차적으로 추가 (약간의 딜레이)
-        let currentMessages = [...updatedMessages];
         for (const aiResponse of response.responses) {
-          const aiMsg = {
-            senderType: 'bmti_ai',
-            bmti_character: aiResponse.character,
-            senderName: aiResponse.name,
-            content: aiResponse.message
-          };
-          currentMessages = addGroupMessage(room.id, aiMsg);
-          setMessages(currentMessages);
+          await addGroupMessage(
+            room.id, 
+            null, 
+            'bmti_ai', 
+            aiResponse.message, 
+            aiResponse.character, 
+            Math.floor(response.tokensUsed / response.responses.length)
+          );
         }
       } catch (error) {
         setIsTyping(false);
@@ -198,48 +223,54 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
         )}
 
         {messages.map((msg, idx) => {
-          const isMe = msg.senderType === 'user' && msg.user_id === userInfo?.id;
-          const isAI = msg.senderType === 'bmti_ai';
-          const isSystem = msg.senderType === 'system';
+          const isMe = msg.sender_type === 'user' && msg.user_id === userInfo?.id;
+          const isOtherUser = msg.sender_type === 'user' && msg.user_id !== userInfo?.id;
+          const isSystem = msg.sender_type === 'system';
+          const isAI = msg.sender_type === 'bmti_ai';
           
+          let aiChar = null;
+          let aiName = '';
+          if (isAI && msg.bmti_character) {
+            aiChar = CHARACTERS.find(c => c.id === msg.bmti_character);
+            aiName = CHARACTER_NAMES[msg.bmti_character] || 'BMTI 캐릭터';
+          }
+
           if (isSystem) {
-             return (
-               <div key={msg.id || idx} className="bg-gray-100 text-gray-500 px-4 py-2 rounded-2xl text-xs text-center border border-gray-200 my-4 max-w-xs mx-auto">
-                 {msg.content}
-               </div>
-             );
+            return (
+              <div key={msg.id || idx} className="flex justify-center my-2 fade-in">
+                <span className="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-2xl text-[11px]">
+                  {msg.content}
+                </span>
+              </div>
+            );
           }
 
           return (
             <div key={msg.id || idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-fade-in-up`}>
               {!isMe && (
-                <span className="text-[10px] text-gray-500 ml-10 mb-1 font-medium flex items-center gap-1">
-                  {isAI && '🤖'} {msg.senderName}
+                <span className="text-[11px] font-bold text-gray-600 mb-1 ml-11">
+                  {isAI ? aiName : (msg.senderName || '참여자')}
                 </span>
               )}
               <div className="flex items-end gap-2 max-w-[85%]">
                 {!isMe && (
-                  <div className={`w-8 h-8 rounded-full ${isAI ? 'bg-purple-100' : 'bg-gray-200'} flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 overflow-hidden mb-1`}>
-                    {isAI ? (
-                      <img src={CHARACTERS.find(c => c.id === msg.bmti_character)?.image} className="w-full h-full object-contain scale-110" alt="" />
-                    ) : (
-                      <span className="text-xs">👤</span>
-                    )}
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden mb-1 shadow-sm border border-gray-100 ${isAI ? 'bg-purple-50' : 'bg-gray-100'}`}>
+                    {isAI ? (aiChar ? <img src={aiChar.image} alt="AI" className="w-full h-full object-contain scale-110" /> : <span className="text-sm">🤖</span>) : <span className="text-xs">👤</span>}
                   </div>
                 )}
                 
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                  <div className={`px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
                     isMe 
                       ? 'bg-black text-white rounded-tr-sm' 
-                      : isAI
-                        ? 'bg-purple-50 text-gray-900 border border-purple-100 rounded-tl-sm'
-                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
+                      : isAI ? 'bg-purple-50 text-gray-900 border border-purple-100 rounded-tl-sm' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
                   }`}>
                     {msg.content}
                   </div>
-                  {msg.timestamp && (
-                    <span className="text-[10px] text-gray-400 mt-1 mx-1">{msg.timestamp}</span>
+                  {msg.created_at && (
+                    <span className="text-[10px] text-gray-400 mt-1 mx-1">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   )}
                 </div>
               </div>

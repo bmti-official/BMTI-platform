@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, BMTI_INFO } from '../data';
 import { CHARACTER_NAMES, generateChatResponse } from '../lib/gemini';
 import { getTodayMessages, addMessage, getSelectedMemories } from '../lib/chatSystem';
+import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
 import ChatDrawer from './ChatDrawer';
@@ -27,10 +28,34 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
   const messagesEndRef = useRef(null);
   
   useEffect(() => {
-    setMessages(getTodayMessages());
+    const fetchMessages = async () => {
+      if (userInfo?.id) {
+        const msgs = await getTodayMessages(userInfo.id);
+        setMessages(msgs);
+        scrollToBottom();
+      }
+    };
+    fetchMessages();
     updateBalances();
-    scrollToBottom();
-  }, []);
+
+    let subscription = null;
+    if (userInfo?.id) {
+      // Realtime Sync for Direct Messages
+      subscription = supabase
+        .channel('public:chat_messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `user_id=eq.${userInfo.id}` }, (payload) => {
+          setMessages(prev => {
+            if (prev.find(m => m.id === payload.new.id)) return prev;
+            return [...prev, payload.new];
+          });
+          scrollToBottom();
+        })
+        .subscribe();
+    }
+    return () => {
+      if (subscription) supabase.removeChannel(subscription);
+    };
+  }, [userInfo]);
 
   useEffect(() => {
     scrollToBottom();
@@ -64,37 +89,33 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       return;
     }
 
-    const userMsg = { sender: 'user', content: inputText.trim() };
-    const updatedMessages = addMessage(userMsg);
-    setMessages(updatedMessages);
+    const userMsgData = await addMessage(userInfo.id, 'user', inputText.trim(), 0);
+    if (userMsgData) {
+      // Opt. 업데이트는 subscription이 하므로 별도 추가하지 않아도 되지만 빠른 UI를 위해 로컬 반영
+      setMessages(prev => prev.find(m => m.id === userMsgData.id) ? prev : [...prev, userMsgData]);
+    }
+    
     setInputText('');
     setIsTyping(true);
     updateBalances();
 
     try {
-      // 대화 히스토리는 최근 10개만 전송
-      const history = updatedMessages.slice(-10);
-      const response = await generateChatResponse(axisCode, userInfo, memories, userMsg.content, history);
+      const history = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
+      history.push({ sender: 'user', content: inputText.trim() }); // Include just added message in history
+      
+      const memories = isPremium ? await getSelectedMemories(userInfo.id, 5) : [];
+      const response = await generateChatResponse(axisCode, userInfo, memories, inputText.trim(), history);
       
       setIsTyping(false);
       
-      const aiMsg = { 
-        sender: 'ai', 
-        content: response.text,
-        error: response.error,
-        tokensUsed: response.tokensUsed 
-      };
-      
-      const finalMessages = addMessage(aiMsg);
-      setMessages(finalMessages);
+      if (!response.error) {
+        await addMessage(userInfo.id, 'ai', response.text, response.tokensUsed);
+      } else {
+        await addMessage(userInfo.id, 'system', '앗, 일시적인 오류가 발생했어요. 다시 한 번 말씀해주시겠어요?', 0);
+      }
     } catch (error) {
       setIsTyping(false);
-      const errorMsg = { 
-        sender: 'ai', 
-        content: '앗, 일시적인 오류가 발생했어요. 다시 한 번 말씀해주시겠어요?',
-        error: true
-      };
-      setMessages(addMessage(errorMsg));
+      await addMessage(userInfo.id, 'system', '앗, 일시적인 오류가 발생했어요. 다시 한 번 말씀해주시겠어요?', 0);
     }
   };
 
@@ -191,7 +212,9 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
                     </div>
                   )}
                   {msg.timestamp && msg.sender !== 'system' && (
-                    <span className="text-[10px] text-gray-400 mt-1 mx-1">{msg.timestamp}</span>
+                    <span className="text-[10px] text-gray-400 mt-1 mx-1">
+                      {new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   )}
                 </div>
               </div>

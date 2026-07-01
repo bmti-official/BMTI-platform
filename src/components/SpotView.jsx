@@ -11,6 +11,7 @@ import spotExpertiseImg from '../assets/무브먼트 맵/spot_expertise.png';
 import spotPriceImg from '../assets/무브먼트 맵/spot_price.png';
 import mTypeIconVideo from '../assets/m_type_icon.mp4';
 import zTypeIconVideo from '../assets/z_type_icon.mp4';
+import { supabase } from '../lib/supabaseClient';
 
 const SpotView = ({ isLoggedIn, onRequireLogin }) => {
   const mVideoRef = useRef(null);
@@ -36,7 +37,7 @@ const SpotView = ({ isLoggedIn, onRequireLogin }) => {
     }
   });
 
-  const handleToggleAppNotification = () => {
+  const handleToggleAppNotification = async () => {
     if (!isLoggedIn) {
       alert("알림 받기를 위해선 카카오톡 로그인/회원가입이 필요합니다.");
       if (onRequireLogin) onRequireLogin();
@@ -49,6 +50,10 @@ const SpotView = ({ isLoggedIn, onRequireLogin }) => {
       const userObj = saved ? JSON.parse(saved) : {};
       userObj.appNotification = true;
       localStorage.setItem('bmti_user', JSON.stringify(userObj));
+      
+      if (userObj.id) {
+        await supabase.from('pre_registrations').insert({ user_id: userObj.id }).catch(e => console.error(e));
+      }
     } catch (e) {}
   };
 

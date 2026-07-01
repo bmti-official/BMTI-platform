@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
+import { supabase } from '../lib/supabaseClient';
 import { CHARACTERS, calculateBMTIPercentages } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } from '../customResultData';
@@ -150,7 +151,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     setShowConfirm(true);
   };
 
-  const handleToggleAppNotification = () => {
+  const handleToggleAppNotification = async () => {
     if (!isLoggedIn) {
       alert("알림 받기를 위해선 카카오톡 로그인/회원가입이 필요합니다.");
       if (setIsLoggedIn) setIsLoggedIn(true);
@@ -163,6 +164,10 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       const userObj = saved ? JSON.parse(saved) : {};
       userObj.appNotification = true;
       localStorage.setItem('bmti_user', JSON.stringify(userObj));
+      
+      if (userObj.id) {
+        await supabase.from('pre_registrations').insert({ user_id: userObj.id }).catch(e => console.error(e));
+      }
     } catch (e) {}
   };
 

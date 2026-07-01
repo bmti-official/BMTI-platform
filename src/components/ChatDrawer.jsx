@@ -18,7 +18,9 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
 
   useEffect(() => {
     if (isOpen && userInfo?.id) {
-      setGroupRooms(getMyGroupRooms(userInfo.id));
+      import('../lib/chatSystem').then(({ getMyGroupRooms }) => {
+        getMyGroupRooms(userInfo.id).then(setGroupRooms);
+      });
     }
   }, [isOpen, userInfo]);
 
@@ -72,14 +74,14 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
                     🔗 초대코드
                   </button>
                   {isPremium && groupRooms.length < 3 && (
-                    <button onClick={() => {
+                    <button onClick={async () => {
                         const name = window.prompt('단톡방 이름을 입력하세요:');
                         if (name) {
-                          const { createGroupRoom } = require('../lib/chatSystem');
-                          const result = createGroupRoom(name, userInfo?.id);
+                          const { createGroupRoom, getMyGroupRooms } = await import('../lib/chatSystem');
+                          const result = await createGroupRoom(name, userInfo?.id);
                           if (result.success) {
                             alert('방이 생성되었습니다.');
-                            setGroupRooms(getMyGroupRooms(userInfo?.id));
+                            setGroupRooms(await getMyGroupRooms(userInfo?.id));
                           } else {
                             alert(result.message);
                           }
@@ -165,12 +167,12 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
             <div className="flex gap-2">
               <button onClick={() => setShowInviteModal(false)} className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">취소</button>
               <button 
-                onClick={() => {
+                onClick={async () => {
                   if (inviteInput.length === 6) {
-                    const { joinGroupRoom } = require('../lib/chatSystem');
-                    const result = joinGroupRoom(inviteInput, userInfo?.id);
+                    const { joinGroupRoom, getMyGroupRooms } = await import('../lib/chatSystem');
+                    const result = await joinGroupRoom(inviteInput, userInfo?.id);
                     if (result.success) {
-                      setGroupRooms(getMyGroupRooms(userInfo?.id));
+                      setGroupRooms(await getMyGroupRooms(userInfo?.id));
                       setShowInviteModal(false);
                       setInviteInput('');
                     } else {
