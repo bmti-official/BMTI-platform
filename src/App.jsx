@@ -94,6 +94,7 @@ function App() {
       setIsLoggedIn(false); // logout
       setUserProfile(null);
       localStorage.removeItem('bmti_user');
+      setCurrentView('home');
     } else {
       setShowSignup(true); // open signup modal
     }

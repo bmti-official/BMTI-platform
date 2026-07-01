@@ -41,7 +41,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const [showCategory, setShowCategory] = useState(false);
   const tabs = [
     { id: 'home', label: '🧬 BMTI' },
-    { id: 'aichat', label: '⭐️ 운동심리 AI' },
+    { id: 'aichat', label: '⭐️ BMTI TALK' },
     { id: 'board', label: '💌 BMTI 과몰입' },
     { id: 'bodycheck', label: '☘️ 무브먼트 라이브' },
     { id: 'spot', label: '📍 무브먼트 맵' }
