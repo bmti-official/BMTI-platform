@@ -119,7 +119,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-10 pt-safe">
         <div className="h-14 flex items-center justify-between px-4 relative">
           <button 
-            onClick={() => setView('home')}
+            onClick={() => setView('aichat')}
             className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

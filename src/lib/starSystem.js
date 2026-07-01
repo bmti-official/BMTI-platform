@@ -141,3 +141,34 @@ export function spendStar(count, subscriptionTier = 'free') {
 export function getStarHistory() {
   return JSON.parse(localStorage.getItem(STAR_HISTORY_KEY) || '[]');
 }
+
+/**
+ * ⭐️ 회수 (당일 삭제 시)
+ * 잔액이 부족하면 마이너스도 허용
+ * @param {string} reason - 'post' | 'comment' | 'reply'
+ * @returns {{ success: boolean, amount: number, balance: number, message: string }}
+ */
+export function reclaimStar(reason) {
+  const amount = STAR_EARN_AMOUNTS[reason] || 0;
+  if (amount === 0) return { success: false, amount: 0, balance: getStarBalance(), message: '' };
+
+  const daily = getDailyData();
+  const newBalance = getStarBalance() - amount;
+  
+  localStorage.setItem(STAR_STORAGE_KEY, String(newBalance));
+  daily.earned = Math.max(0, daily.earned - amount);
+  saveDailyData(daily);
+
+  // 히스토리 저장
+  const history = JSON.parse(localStorage.getItem(STAR_HISTORY_KEY) || '[]');
+  history.push({ amount: -amount, reason: `${reason}_delete`, date: new Date().toISOString() });
+  if (history.length > 100) history.splice(0, history.length - 100);
+  localStorage.setItem(STAR_HISTORY_KEY, JSON.stringify(history));
+
+  return { 
+    success: true, 
+    amount, 
+    balance: newBalance, 
+    message: `⭐️ -${amount} 회수됨 (잔액: ${newBalance}개)` 
+  };
+}

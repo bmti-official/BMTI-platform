@@ -57,12 +57,12 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-32 px-4 md:px-6 max-w-2xl mx-auto fade-in">
+    <div className="min-h-screen pt-40 pb-32 px-4 md:px-6 max-w-2xl mx-auto fade-in">
       {/* 타이틀 영역 */}
       <div className="text-center mb-10">
         <h1 className="text-3xl font-black mb-3 flex items-center justify-center gap-2">⭐️ BMTI TALK</h1>
         <p className="text-gray-500 font-medium text-[15px] px-4 break-keep leading-relaxed">
-          나의 아바타 BMTI 캐릭터와 대화하거나<br/>친구들과 단체톡을 만들어 BMTI 캐릭터와 대화하세요.
+          나를 대변하는 BMTI 캐릭터와 대화하거나<br/>친구들과 단체톡을 만들어 BMTI 캐릭터와 대화하세요.
         </p>
       </div>
 
@@ -72,56 +72,66 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
           onClick={() => {
             if (onOpenChat) onOpenChat();
           }}
-          className="w-full bg-black text-white font-bold py-4 rounded-2xl text-lg hover:bg-gray-800 transition-colors shadow-xl shadow-black/20 transform hover:-translate-y-1"
+          className="w-full bg-black text-white font-bold py-4 rounded-2xl text-lg hover:bg-gray-800 transition-all shadow-xl shadow-black/20 transform hover:-translate-y-1 active:scale-95"
         >
-          BMTI TALK 입장!
+          ⭐️ BMTI TALK 입장!
         </button>
       </div>
 
-      {/* 상세 설명 (상세 페이지 느낌) */}
-      <div className="px-4">
-        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#c0ff00]/10 rounded-bl-full -z-10"></div>
-          
-          <h3 className="font-bold text-xl mb-6 text-gray-900 text-center">BMTI TALK이란?</h3>
-          
-          <div className="space-y-8">
-            <div className="flex gap-4 items-start">
-              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+      {/* 상세 설명 */}
+      <div className="px-2">
+        <h3 className="font-black text-xl mb-6 text-gray-900 text-center">BMTI TALK이란?</h3>
+        
+        <div className="space-y-4">
+          {/* 1:1 맞춤형 AI 코칭 */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[1.5rem] p-6 border border-blue-100/60 relative overflow-hidden">
+            <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-100/40 rounded-full blur-2xl"></div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-blue-100">
                 💬
               </div>
-              <div>
-                <h4 className="font-bold text-gray-900 mb-1">1:1 맞춤형 AI 코칭</h4>
-                <p className="text-sm text-gray-500 leading-relaxed break-keep">
-                  나의 BMTI 성향에 딱 맞는 전담 코치와 대화하며, 내 몸과 마음에 맞는 운동 피드백과 동기부여를 실시간으로 받을 수 있습니다.
-                </p>
-              </div>
+              <h4 className="font-bold text-gray-900 text-[15px]">1:1 맞춤형 AI 코칭</h4>
             </div>
+            <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
+              나의 BMTI 성향에 딱 맞는 전담 코치와 대화하며, 내 몸과 마음에 맞는 운동 피드백과 동기부여를 실시간으로 받을 수 있습니다.
+            </p>
+          </div>
 
-            <div className="flex gap-4 items-start">
-              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+          {/* 친구들과 단톡방 */}
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-[1.5rem] p-6 border border-purple-100/60 relative overflow-hidden">
+            <div className="absolute -top-4 -right-4 w-24 h-24 bg-purple-100/40 rounded-full blur-2xl"></div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-purple-100">
                 👥
               </div>
-              <div>
-                <h4 className="font-bold text-gray-900 mb-1">친구들과 단톡방</h4>
-                <p className="text-sm text-gray-500 leading-relaxed break-keep">
-                  친구들을 초대해 단체 채팅방을 만들고, AI 코치를 방에 불러 함께 운동 목표를 세우며 재밌게 소통해보세요.
-                </p>
-              </div>
+              <h4 className="font-bold text-gray-900 text-[15px]">친구들과 단톡방</h4>
             </div>
+            <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
+              친구들을 초대해 단체 채팅방을 만들고, AI 코치를 방에 불러 함께 운동 목표를 세우며 재밌게 소통해보세요.
+            </p>
+          </div>
 
-            <div className="flex gap-4 items-start">
-              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+          {/* 스마트한 AI 기억력 */}
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-[1.5rem] p-6 border border-amber-100/60 relative overflow-hidden">
+            <div className="absolute -top-4 -right-4 w-24 h-24 bg-amber-100/40 rounded-full blur-2xl"></div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-amber-100">
                 🧠
               </div>
-              <div>
-                <h4 className="font-bold text-gray-900 mb-1">스마트한 AI 기억력</h4>
-                <p className="text-sm text-gray-500 leading-relaxed break-keep">
-                  사용자가 '기억해줘'라고 지정한 내용을 AI가 기억하여, 다음 번 대화에서도 이전 대화 맥락을 파악하고 더 자연스럽게 대화합니다.
-                </p>
-              </div>
+              <h4 className="font-bold text-gray-900 text-[15px]">스마트한 AI 기억력</h4>
             </div>
+            <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
+              사용자가 '기억해줘'라고 지정한 내용을 AI가 기억하여, 다음 번 대화에서도 이전 대화 맥락을 파악하고 더 자연스럽게 대화합니다.
+            </p>
           </div>
+        </div>
+
+        {/* 하단 안내 */}
+        <div className="text-center mt-8 mb-4">
+          <p className="text-[11px] text-gray-400 leading-relaxed">
+            💡 모든 대화는 하루마다 초기화됩니다.<br />
+            이전 대화 기록은 <strong className="text-gray-500">7일 후 자동으로 삭제</strong>됩니다.
+          </p>
         </div>
       </div>
     </div>

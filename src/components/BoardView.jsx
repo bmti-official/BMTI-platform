@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { supabase } from '../lib/supabaseClient';
-import { earnStar } from '../lib/starSystem';
+import { earnStar, reclaimStar } from '../lib/starSystem';
 
 // Helper: get character image by BMTI code
 const getCharImage = (code) => {
@@ -265,47 +265,56 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
   const handleDeletePost = async (postId, e) => {
     e.stopPropagation();
-    if (window.confirm('정말로 이 글을 삭제하시겠습니까?')) {
+    if (window.confirm('정말로 이 글을 삭제하시겠습니까?\n당일 삭제 시 획득한 ⭐️가 회수됩니다.')) {
+      // 당일 작성한 글인지 확인
+      const post = posts[talkType]?.find(p => p.id === postId);
+      const postDate = post?.created_at ? new Date(post.created_at).toDateString() : '';
+      const isToday = postDate === new Date().toDateString();
+      
       await supabase.from('posts').delete().eq('id', postId);
+      
+      if (isToday) {
+        const result = reclaimStar('post');
+        if (result.success) alert(result.message);
+      }
       fetchPosts();
     }
   };
 
-  const handleDeleteComment = (postId, commentId) => {
-    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
-      setPosts(prev => {
-        const updated = { ...prev };
-        updated[talkType] = updated[talkType].map(p => {
-          if (p.id !== postId) return p;
-          return {
-            ...p,
-            comments: p.comments.filter(c => c.id !== commentId)
-          };
-        });
-        return updated;
-      });
+  const handleDeleteComment = async (postId, commentId) => {
+    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?\n당일 삭제 시 획득한 ⭐️가 회수됩니다.')) {
+      // 당일 작성한 댓글인지 확인
+      const post = posts[talkType]?.find(p => p.id === postId);
+      const comment = post?.comments?.find(c => c.id === commentId);
+      const commentDate = comment?.created_at ? new Date(comment.created_at).toDateString() : '';
+      const isToday = commentDate === new Date().toDateString();
+
+      await supabase.from('comments').delete().eq('id', commentId);
+
+      if (isToday) {
+        const result = reclaimStar('comment');
+        if (result.success) alert(result.message);
+      }
+      fetchPosts();
     }
   };
 
-  const handleDeleteReply = (postId, commentId, replyId) => {
-    if (window.confirm('정말로 이 답글을 삭제하시겠습니까?')) {
-      setPosts(prev => {
-        const updated = { ...prev };
-        updated[talkType] = updated[talkType].map(p => {
-          if (p.id !== postId) return p;
-          return {
-            ...p,
-            comments: p.comments.map(c => {
-              if (c.id !== commentId) return c;
-              return {
-                ...c,
-                replies: c.replies.filter(r => r.id !== replyId)
-              };
-            })
-          };
-        });
-        return updated;
-      });
+  const handleDeleteReply = async (postId, commentId, replyId) => {
+    if (window.confirm('정말로 이 답글을 삭제하시겠습니까?\n당일 삭제 시 획득한 ⭐️가 회수됩니다.')) {
+      // 당일 작성한 답글인지 확인
+      const post = posts[talkType]?.find(p => p.id === postId);
+      const comment = post?.comments?.find(c => c.id === commentId);
+      const reply = comment?.replies?.find(r => r.id === replyId);
+      const replyDate = reply?.created_at ? new Date(reply.created_at).toDateString() : '';
+      const isToday = replyDate === new Date().toDateString();
+
+      await supabase.from('comments').delete().eq('id', replyId);
+
+      if (isToday) {
+        const result = reclaimStar('reply');
+        if (result.success) alert(result.message);
+      }
+      fetchPosts();
     }
   };
 

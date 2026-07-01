@@ -145,7 +145,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
       {/* Header */}
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-10 pt-safe">
         <div className="h-14 flex items-center justify-between px-4 relative">
-          <button onClick={() => setView('home')} className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors">
+          <button onClick={() => setView('aichat')} className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
