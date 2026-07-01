@@ -12,7 +12,7 @@ import { getArchives, getMyGroupRooms } from '../lib/chatSystem';
 const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpenGroup, onOpenHistory }) => {
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
-  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 코치';
+  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 캐릭터';
   const bmtiInfo = BMTI_INFO[axisCode];
   const tier = userInfo?.subscription_tier || userInfo?.subscriptionTier || 'free';
   const isPremium = isSubscriber(tier) || userInfo?.isPremium;
@@ -105,7 +105,7 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
             )}
           </div>
           <div className="text-center">
-            <p className="font-bold text-lg text-gray-900 mb-1">'{charName}' 코치와 연결 중...</p>
+            <p className="font-bold text-lg text-gray-900 mb-1">'{charName}'과 연결 중...</p>
             <p className="text-sm text-gray-400">잠시만 기다려주세요</p>
           </div>
           <div className="w-40 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -119,17 +119,17 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
         <h3 className="font-black text-xl mb-6 text-gray-900 text-center">BMTI TALK이란?</h3>
         
         <div className="space-y-4">
-          {/* 1:1 맞춤형 AI 코칭 */}
+          {/* 1:1 나만의 캐릭터 대화 */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[1.5rem] p-6 border border-blue-100/60 relative overflow-hidden">
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-100/40 rounded-full blur-2xl"></div>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-blue-100">
                 💬
               </div>
-              <h4 className="font-bold text-gray-900 text-[15px]">1:1 맞춤형 AI 코칭</h4>
+              <h4 className="font-bold text-gray-900 text-[15px]">1:1 나만의 캐릭터와 대화</h4>
             </div>
             <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
-              나의 BMTI 성향에 딱 맞는 전담 코치와 대화하며, 내 몸과 마음에 맞는 운동 피드백과 동기부여를 실시간으로 받을 수 있습니다.
+              나를 대변하는 BMTI 캐릭터와 1:1로 대화하며, 내 성향에 꼭 맞는 운동 피드백과 동기부여를 실시간으로 받아보세요.
             </p>
           </div>
 
@@ -143,7 +143,7 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
               <h4 className="font-bold text-gray-900 text-[15px]">친구들과 단톡방</h4>
             </div>
             <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
-              친구들을 초대해 단체 채팅방을 만들고, AI 코치를 방에 불러 함께 운동 목표를 세우며 재밌게 소통해보세요.
+              친구들을 초대해 단체 채팅방을 만들고, BMTI 캐릭터들과 함께 운동 목표를 세우며 재밌게 소통해보세요.
             </p>
           </div>
 

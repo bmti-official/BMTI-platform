@@ -11,7 +11,7 @@ const AiChatView = ({ bmtiCode, setView, bmtiAnswers, userInfo }) => {
   // 기본 이미지 설정 (BMTI 결과가 없을 경우)
   const defaultAiImage = '⭐️'; // 기본 봇 이모지 또는 로고 대체 가능
   const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-16 h-16 md:w-20 md:h-20 object-contain drop-shadow-sm" /> : <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center text-3xl md:text-4xl">{defaultAiImage}</div>;
-  const aiName = bmtiInfo ? `'${bmtiInfo.kr}' 코치` : 'BMTI 에이전트';
+  const aiName = bmtiInfo ? `'${bmtiInfo.kr}'` : 'BMTI 캐릭터';
 
   if (!bmtiCode) {
     return (
@@ -28,8 +28,8 @@ const AiChatView = ({ bmtiCode, setView, bmtiAnswers, userInfo }) => {
         </div>
         <h2 className="text-2xl font-bold mb-3 text-gray-900">운동 심리 AI</h2>
         <p className="text-gray-500 mb-8 max-w-sm break-keep leading-relaxed text-sm">
-          정확한 맞춤형 코칭을 위해 카카오 간편 로그인 및 BMTI 설문 완료가 필요합니다. 
-          나에게 딱 맞는 AI 코치를 만나보세요!
+          정확한 맞춤형 대화를 위해 카카오 간편 로그인 및 BMTI 설문 완료가 필요합니다. 
+          나를 대변하는 BMTI 캐릭터를 만나보세요!
         </p>
         <button
           onClick={() => setView('quiz')}

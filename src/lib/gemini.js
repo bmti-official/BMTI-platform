@@ -66,13 +66,13 @@ function getTimeContext() {
  * 1:1 채팅용 시스템 프롬프트 생성
  */
 export function buildSystemPrompt(axisCode, userInfo, memoryContext = []) {
-  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 코치';
+  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 캐릭터';
   const bmtiInfo = BMTI_INFO[axisCode];
   const bmtiResult = BMTI_RESULTS[axisCode];
   const speechStyle = getSpeechStyle(axisCode);
   const timeContext = getTimeContext();
   
-  let prompt = `너는 운동 심리 코치 '${charName}'이야. BMTI 유형: ${axisCode} (${bmtiInfo?.kr || ''})
+  let prompt = `너는 나를 대변하는 BMTI 캐릭터 '${charName}'이야. BMTI 유형: ${axisCode} (${bmtiInfo?.kr || ''})
 캐치프레이즈: ${bmtiInfo?.catchphrase || ''}
 
 [너의 성격과 말투]
@@ -151,7 +151,7 @@ ${recentChat}
  * 시간대별 예약 메시지 프롬프트
  */
 export function buildScheduledPrompt(axisCode, timeSlot, userInfo, memoryContext = []) {
-  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 코치';
+  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 캐릭터';
   const speechStyle = getSpeechStyle(axisCode);
   
   const slotDescriptions = {
@@ -161,7 +161,7 @@ export function buildScheduledPrompt(axisCode, timeSlot, userInfo, memoryContext
     late_evening: '늦은 저녁이야. 하루를 돌아보며 내일을 준비하는 이완/수면 유도 메시지를 보내줘.',
   };
 
-  let prompt = `너는 운동 심리 코치 '${charName}'이야. ${speechStyle}
+  let prompt = `너는 나를 대변하는 BMTI 캐릭터 '${charName}'이야. ${speechStyle}
 현재: ${slotDescriptions[timeSlot] || ''}
 이용자에게 자기점검 미션을 하나 제시해줘. (예: "5분 스트레칭 해볼까?", "오늘 물 8잔 마셨어?")
 답변은 2~3문장으로 짧게. 미션은 구체적이고 실현 가능하게.`;

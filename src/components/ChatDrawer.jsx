@@ -11,7 +11,7 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
-  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 코치';
+  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 캐릭터';
 
   const tier = userInfo?.subscription_tier || userInfo?.subscriptionTier || 'free';
   const isPremium = isSubscriber(tier) || userInfo?.isPremium || userInfo?.nickname === 'BMTI';

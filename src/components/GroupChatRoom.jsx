@@ -99,7 +99,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
         if (response.error) {
           const errorMsg = { 
             senderType: 'system', 
-            content: 'AI 코치들을 불러오는 데 실패했어요. 잠시 후 다시 시도해주세요.' 
+            content: 'BMTI 캐릭터들을 불러오는 데 실패했어요. 잠시 후 다시 시도해주세요.' 
           };
           setMessages(addGroupMessage(room.id, errorMsg));
           return;

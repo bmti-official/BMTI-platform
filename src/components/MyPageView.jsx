@@ -437,7 +437,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
           ) : (
             <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
               <span className="text-2xl block mb-2 text-gray-300">🧠</span>
-              <p className="text-sm text-gray-500">아직 저장된 기억이 없습니다.<br/>AI 코치와 대화를 나누면 자동으로 기록됩니다.</p>
+              <p className="text-sm text-gray-500">아직 저장된 기억이 없습니다.<br/>BMTI 캐릭터와 대화를 나누면 자동으로 기록됩니다.</p>
             </div>
           )}
         </div>
