@@ -1,10 +1,58 @@
 import { useState } from 'react';
 import TermsModal from './TermsModal';
 
-const LabView = () => {
-  const [activeTab, setActiveTab] = useState('story'); // 'request' or 'story'
+const PLANS = [
+  {
+    id: 'coupon-10',
+    emoji: '🎁',
+    badge: '쿠폰 전용',
+    badgeColor: 'bg-rose-100 text-rose-600',
+    name: '[자기점검 10분] 베이직 플리',
+    duration: '10분',
+    desc: '하루 10분, 나의 BMTI 유형에 맞춰 무리하지 않고 일상의 빠근함을 다독여보는 가벼운 루틴입니다.',
+    price: 0,
+    originalPrice: '10,000원',
+    priceLabel: '무료 (쿠폰 적용)',
+  },
+  {
+    id: 'basic-10',
+    emoji: '🌱',
+    badge: null,
+    name: '[자기점검 10분] 베이직 플리',
+    duration: '10분',
+    desc: '하루 10분, 나의 BMTI 유형에 맞춰 무리하지 않고 일상의 빠근함을 다독여보는 가벼운 루틴입니다.',
+    price: 10000,
+    originalPrice: null,
+    priceLabel: '10,000원',
+  },
+  {
+    id: 'standard-30',
+    emoji: '🌿',
+    badge: null,
+    name: '[자기점검 30분] 스탠다드 플리',
+    duration: '30분',
+    desc: '나의 체형과 움직임 유형을 조금 더 깊이 알아가며, 차분하게 몸의 긴장을 풀어갈 수 있도록 30분 분량으로 구성했습니다.',
+    price: 20000,
+    originalPrice: null,
+    priceLabel: '20,000원',
+  },
+  {
+    id: 'signature-50',
+    emoji: '🌳',
+    badge: null,
+    name: '[자기점검 50분] 시그니쳐 플리',
+    duration: '50분',
+    desc: '내 BMTI 성향에 맞춰 영상 큐레이션부터 코칭 방식까지 완벽하게 커스텀되는 50분 코스입니다. 정적인 이완과 동적인 움직임 중 내가 선호하는 방식은 물론, 설명을 먼저 듣고 움직일지, 내 성향에 맞는 AI 코칭 톤(팩트/공감)은 무엇인지까지 내게 딱 맞게 세팅됩니다. 오직 나만을 위해 조립된 최적의 환경에서 내 몸의 쓰임새를 온전히 점검해 보세요.',
+    price: 40000,
+    originalPrice: null,
+    priceLabel: '40,000원',
+  },
+];
+
+const LabView = ({ isLoggedIn, quizCompleted, setView, onRequireLogin }) => {
+  const [activeTab, setActiveTab] = useState('story');
   const [formData, setFormData] = useState({
-    purpose: '',
+    planId: '',
     environments: [],
     envCustom: '',
     tools: [],
@@ -17,6 +65,9 @@ const LabView = () => {
   const [showErrors, setShowErrors] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+
+  const selectedPlan = PLANS.find(p => p.id === formData.planId);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -37,16 +88,28 @@ const LabView = () => {
     const hasEnv = formData.environments.length > 0 || formData.envCustom.trim() !== '';
     const hasTool = formData.tools.length > 0 || formData.toolsCustom.trim() !== '';
     const hasBodyPart = formData.bodyPart !== '기타(직접 작성)' || formData.bodyPartCustom.trim() !== '';
-    const isValid = formData.purpose.trim() && hasEnv && hasTool && formData.bodyState && hasBodyPart && formData.description.trim() && agreedToTerms;
+    const isValid = formData.planId && hasEnv && hasTool && formData.bodyState && hasBodyPart && formData.description.trim() && agreedToTerms;
 
     if (!isValid) {
       setShowErrors(true);
       alert("모든 항목을 입력해주셔야\n플리 신청이 완료가 됩니다!");
       return;
     }
-    
-    alert("플리 신청이 완료되었습니다!\n'자기점검 50분' 카카오톡 공식 채널에서 확인해보실 수 있습니다.");
-    setFormData({ purpose: '', environments: [], envCustom: '', tools: [], toolsCustom: '', bodyState: '', bodyPart: '딱히 없음', bodyPartCustom: '', description: '' });
+
+    if (selectedPlan && selectedPlan.price === 0) {
+      alert("플리 신청이 완료되었습니다!\n'자기점검 50분' 카카오톡 공식 채널에서 확인해보실 수 있습니다.");
+      setFormData({ planId: '', environments: [], envCustom: '', tools: [], toolsCustom: '', bodyState: '', bodyPart: '딱히 없음', bodyPartCustom: '', description: '' });
+      setAgreedToTerms(false);
+      setShowErrors(false);
+    } else {
+      setShowPayment(true);
+    }
+  };
+
+  const handlePaymentComplete = () => {
+    setShowPayment(false);
+    alert("결제가 완료되었습니다!\n플리 신청이 접수되었습니다.\n'자기점검 50분' 카카오톡 공식 채널에서 확인해보실 수 있습니다.");
+    setFormData({ planId: '', environments: [], envCustom: '', tools: [], toolsCustom: '', bodyState: '', bodyPart: '딱히 없음', bodyPartCustom: '', description: '' });
     setAgreedToTerms(false);
     setShowErrors(false);
   };
@@ -300,31 +363,97 @@ const LabView = () => {
       {/* ===== Request Tab ===== */}
       {activeTab === 'request' && (
         <div className="fade-in max-w-2xl mx-auto">
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 md:p-8 mb-8 text-center">
-            <span className="text-3xl mb-4 block">🎧</span>
-            <h3 className="text-lg font-bold text-blue-900 mb-2">"나를 위한 BMTI 플리 만들어주세요!"</h3>
-            <p className="text-sm text-blue-700/80 leading-relaxed break-keep">
-              이용자분들이 필요한 운동 루틴(플리)을 직접 신청하는 공간입니다.<br className="hidden md:block"/>
-              나의 상황을 자세히 작성 할수록 나에게 맞는 플리가 제작이 됩니다.
-            </p>
-          </div>
-          
-          {/* Form */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
-            <h4 className="font-bold text-gray-900 mb-6 text-center">새로운 플리 신청하기</h4>
-            <div className="space-y-6">
-              <div>
-                <label className="text-sm font-bold text-gray-800 mb-2 block">어떤 목적의 루틴이 필요한가요?</label>
-                <input 
-                  type="text" 
-                  placeholder="예: 무릎 안 아픈 10분 하체 루틴" 
-                  className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:border-black transition-colors ${
-                    showErrors && !formData.purpose.trim() ? 'border-red-500 bg-red-50/30' : 'border-gray-200'
-                  }`}
-                  value={formData.purpose}
-                  onChange={(e) => handleInputChange('purpose', e.target.value)}
-                />
+          {!quizCompleted ? (
+            <div className="bg-white rounded-3xl p-8 md:p-12 text-center border-2 border-gray-100 shadow-sm mb-8">
+              <div className="text-5xl mb-6">📝</div>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 break-keep">
+                나만의 플리를 신청하려면<br/>먼저 BMTI 검사를 완료해야 해요!
+              </h2>
+              <p className="text-gray-500 mb-8 break-keep">내게 꼭 맞는 운동 루틴을 찾기 위한 첫걸음을 시작해보세요.</p>
+              <button 
+                onClick={() => setView('quiz')}
+                className="bg-black text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition-colors w-full md:w-auto"
+              >
+                설문하러 가기
+              </button>
+            </div>
+          ) : !isLoggedIn ? (
+            <div className="bg-white rounded-3xl p-8 md:p-12 text-center border-2 border-gray-100 shadow-sm mb-8">
+              <div className="text-5xl mb-6">🔒</div>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 break-keep">
+                나만의 플리를 신청하려면<br/>카카오톡 로그인이 필요해요!
+              </h2>
+              <p className="text-gray-500 mb-8 break-keep">로그인하고 나만의 BMTI 플리를 만들어보세요.</p>
+              <button 
+                onClick={onRequireLogin}
+                className="bg-[#FEE500] text-[#3C1E1E] px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#F4DC00] transition-colors w-full md:w-auto flex items-center justify-center gap-2 mx-auto"
+              >
+                💬 카카오톡 로그인/회원가입
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 md:p-8 mb-8 text-center">
+                <span className="text-3xl mb-4 block">🎧</span>
+                <h3 className="text-lg font-bold text-blue-900 mb-2">"나를 위한 BMTI 플리 만들어주세요!"</h3>
+                <p className="text-sm text-blue-700/80 leading-relaxed break-keep">
+                  이용자분들이 필요한 운동 루틴(플리)을 직접 신청하는 공간입니다.<br />
+                  나의 상황을 자세히 작성 할수록 나에게 맞는 플리가 제작이 됩니다.
+                </p>
               </div>
+              
+              {/* Form */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
+                <h4 className="font-bold text-gray-900 mb-6 text-center">새로운 플리 신청하기</h4>
+                <div className="space-y-6">
+                  <div>
+                    <label className={`text-sm font-bold mb-3 block ${
+                      showErrors && !formData.planId ? 'text-red-500' : 'text-gray-800'
+                    }`}>나의 BMTI 플리 시간은?</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {PLANS.map(plan => {
+                        const isSelected = formData.planId === plan.id;
+                        return (
+                          <button
+                            key={plan.id}
+                            type="button"
+                            onClick={() => handleInputChange('planId', plan.id)}
+                            className={`relative text-left p-4 rounded-2xl border-2 transition-all duration-300 ${
+                              isSelected
+                                ? 'border-black bg-gray-50 shadow-lg scale-[1.01]'
+                                : showErrors && !formData.planId
+                                  ? 'border-red-300 bg-red-50/20 hover:border-red-400'
+                                  : 'border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm'
+                            }`}
+                          >
+                            {isSelected && (
+                              <div className="absolute top-3 right-3 w-6 h-6 bg-black rounded-full flex items-center justify-center">
+                                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xl">{plan.emoji}</span>
+                              {plan.badge && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${plan.badgeColor}`}>{plan.badge}</span>
+                              )}
+                            </div>
+                            <h5 className="text-sm font-bold text-gray-900 mb-1.5 break-keep">{plan.name} ({plan.duration})</h5>
+                            <p className="text-xs text-gray-500 leading-relaxed mb-3 break-keep">{plan.desc}</p>
+                            <div className="flex items-center gap-2">
+                              {plan.originalPrice && (
+                                <span className="text-xs text-gray-400 line-through">{plan.originalPrice}</span>
+                              )}
+                              <span className={`text-sm font-black ${
+                                plan.price === 0 ? 'text-rose-500' : 'text-gray-900'
+                              }`}>
+                                {plan.price === 0 ? '➡️ 무료' : plan.priceLabel}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
               <div>
                 <label className="text-sm font-bold text-gray-800 mb-3 block">운동환경이 어떻게 되나요?</label>
@@ -493,15 +622,68 @@ const LabView = () => {
                   <span>[필수] <button type="button" onClick={() => setIsTermsOpen(true)} className={`underline font-bold hover:text-black ${showErrors && !agreedToTerms ? 'text-red-600' : 'text-gray-900'}`}>이용약관 및 개인정보 수집/이용</button>에 동의합니다.</span>
                 </label>
                 
-                <button 
+               <button 
                   onClick={handleSubmit}
                   className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors flex flex-col items-center gap-1"
                 >
-                  <span className="text-base">🎧 플리 신청 완료하기!</span>
-                  <span className="text-[11px] text-gray-300 font-normal">(BMTI 가이드가 한땀한땀 확인하기 때문에 최대 3-4일이 소요될 수 있습니다.)</span>
+                  <span className="text-base">🎧 플리 신청 완료하기!{selectedPlan && selectedPlan.price > 0 ? ` (${selectedPlan.priceLabel})` : ''}</span>
+                  <span className="text-[11px] text-gray-300 font-normal text-center break-keep px-2">
+                    {selectedPlan && selectedPlan.price === 0
+                      ? '(쿠폰 적용으로 무료로 신청됩니다!)'
+                      : <>(결제 후 BMTI 가이드가 한땀한땀 확인하기 때문에<br className="md:hidden" /> 최대 3-4일이 소요될 수 있습니다.)</>
+                    }
+                  </span>
                 </button>
               </div>
             </div>
+          </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ===== Payment Modal ===== */}
+      {showPayment && selectedPlan && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl">
+            <div className="text-center mb-6">
+              <span className="text-4xl block mb-3">💳</span>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">결제 정보 확인</h3>
+              <p className="text-sm text-gray-500">선택하신 플리 상품을 확인해주세요.</p>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">{selectedPlan.emoji}</span>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{selectedPlan.name}</p>
+                  <p className="text-xs text-gray-500">{selectedPlan.duration} 플리</p>
+                </div>
+              </div>
+              <div className="border-t border-gray-200 pt-3 flex items-center justify-between">
+                <span className="text-sm text-gray-600 font-medium">결제 금액</span>
+                <span className="text-xl font-black text-gray-900">{selectedPlan.priceLabel}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handlePaymentComplete}
+                className="w-full bg-black text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-colors text-base"
+              >
+                결제하기
+              </button>
+              <button
+                onClick={() => setShowPayment(false)}
+                className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm"
+              >
+                뒤로 가기
+              </button>
+            </div>
+
+            <p className="text-[10px] text-gray-400 text-center mt-4 break-keep">
+              * 현재는 데모 화면입니다. 실제 결제 시스템은 추후 연동될 예정입니다.
+            </p>
           </div>
         </div>
       )}

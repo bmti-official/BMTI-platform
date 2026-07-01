@@ -1,6 +1,10 @@
+/* eslint-disable */
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { CHARACTERS } from '../data';
+import { CHARACTERS, calculateBMTIPercentages } from '../data';
+import { BMTI_RESULTS } from '../bmti_results';
+import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } from '../customResultData';
+import { canRetakeTest } from '../lib/bmtiSystem';
 
 const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   <svg viewBox="0 0 24 24" className={className}>
@@ -9,49 +13,165 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
 );
 
 const getKoreanName = (code) => {
-  if (!code) return '';
   const map = {
-    'A': '애', 'O': '오', 'C': '씨', 'L': '엘',
-    'D': '디', 'Q': '큐', 'M': '엠', 'Z': '지'
+    'ACDZ': '애씨디지', 'ACDM': '애씨디엠', 'ACQZ': '애씨큐지', 'ACQM': '애씨큐엠',
+    'ALDZ': '앨디지', 'ALDM': '앨디엠', 'ALQZ': '앨큐지', 'ALQM': '앨큐엠',
+    'OCDZ': '오씨디지', 'OCDM': '오씨디엠', 'OCQZ': '오씨큐지', 'OCQM': '오씨큐엠',
+    'OLDZ': '올디지', 'OLDM': '올디엠', 'OLQZ': '올큐지', 'OLQM': '올큐엠'
   };
-  return code.split('').map(char => map[char] || char).join('');
+  return map[code] || '';
 };
 
 // BMTI 유형별 정보
 const BMTI_INFO = {
   'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '몸으로 먼저 느끼고,\n마음으로 함께 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
-  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '결과로 말하는\n실전 파워 무버', bestMatch: 'OLQM', diffTempo: 'OLQZ', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
+  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '결과로 말하는\n실전 파워 무버', bestMatch: 'OCDM', diffTempo: 'ALQM', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
   'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '이론과 감성 사이에서\n최적의 균형을 찾는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },
-  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '데이터로 파고드는\n분석형 액티비스트', bestMatch: 'OLDM', diffTempo: 'OLDZ', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
+  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '데이터로 파고드는\n분석형 액티비스트', bestMatch: 'OLQZ', diffTempo: 'ALDM', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
   'ALDM': { kr: '활동적 전신 실전 공감형', catchphrase: '전신으로 느끼며\n사람과 함께 성장하는 무버', bestMatch: 'OCQZ', diffTempo: 'OCQM', color: '#F472B6', bgGradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 100%)' },
-  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '거침없는 실행력으로\n몸 전체를 깨우는 사람', bestMatch: 'OCQM', diffTempo: 'OCQZ', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
-  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '호기심과 따뜻함이\n공존하는 밸런스 탐험가', bestMatch: 'OCDZ', diffTempo: 'OCDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
-  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '과학적 근거 위에\n움직임을 설계하는 전략가', bestMatch: 'OCDM', diffTempo: 'OCDZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
-  'OCDM': { kr: '안정적 집중 실전 공감형', catchphrase: '조용하지만 깊게,\n마음까지 챙기는 꼼꼼 무버', bestMatch: 'ALQZ', diffTempo: 'ALQM', color: '#FB923C', bgGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' },
-  'OCDZ': { kr: '안정적 집중 실전 팩트형', catchphrase: '묵묵히 집중하며\n효율을 극대화하는 장인', bestMatch: 'ALQM', diffTempo: 'ALQZ', color: '#2DD4BF', bgGradient: 'linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)' },
-  'OCQM': { kr: '안정적 집중 탐구 공감형', catchphrase: '깊이 있는 탐구와\n따뜻한 소통의 조화', bestMatch: 'ALDZ', diffTempo: 'ALDM', color: '#E879F9', bgGradient: 'linear-gradient(135deg, #E879F9 0%, #C026D3 100%)' },
-  'OCQZ': { kr: '안정적 집중 탐구 팩트형', catchphrase: '냉철한 분석력으로\n최적의 루틴을 설계하는 사람', bestMatch: 'ALDM', diffTempo: 'ALDZ', color: '#38BDF8', bgGradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)' },
-  'OLDM': { kr: '안정적 전신 실전 공감형', catchphrase: '편안한 리듬 속에\n모두와 함께 움직이는 힐러', bestMatch: 'ACQZ', diffTempo: 'ACQM', color: '#FB7185', bgGradient: 'linear-gradient(135deg, #FB7185 0%, #E11D48 100%)' },
-  'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '꾸준함의 힘을 아는\n묵직한 실행가', bestMatch: 'ACQM', diffTempo: 'ACQZ', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
-  'OLQM': { kr: '안정적 전신 탐구 공감형', catchphrase: '천천히, 하지만 확실하게\n마음을 담아 움직이는 사람', bestMatch: 'ACDZ', diffTempo: 'ACDM', color: '#F9A8D4', bgGradient: 'linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)' },
-  'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '데이터와 균형 감각으로\n최적의 웰니스를 설계하는 사람', bestMatch: 'ACDM', diffTempo: 'ACDZ', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
+  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '거침없는 실행력으로\n몸 전체를 깨우는 사람', bestMatch: 'OLDZ', diffTempo: 'OCQM', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
+  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '호기심과 따뜻함이\n공존하는 밸런스 탐험가', bestMatch: 'OLQZ', diffTempo: 'ACDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
+  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '과학적 근거 위에\n움직임을 설계하는 전략가', bestMatch: 'OCQM', diffTempo: 'ACQZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
+  'OCDM': { kr: '안정적 집중 실전 공감형', catchphrase: '조용하지만 깊게,\n마음까지 챙기는 꼼꼼 무버', bestMatch: 'ACDM', diffTempo: 'ALQZ', color: '#FB923C', bgGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' },
+  'OCDZ': { kr: '안정적 집중 실전 팩트형', catchphrase: '묵묵히 집중하며\n효율을 극대화하는 장인', bestMatch: 'OLDZ', diffTempo: 'ACQM', color: '#2DD4BF', bgGradient: 'linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)' },
+  'OCQM': { kr: '안정적 집중 탐구 공감형', catchphrase: '깊이 있는 탐구와\n따뜻한 소통의 조화', bestMatch: 'ACDM', diffTempo: 'ALDZ', color: '#E879F9', bgGradient: 'linear-gradient(135deg, #E879F9 0%, #C026D3 100%)' },
+  'OCQZ': { kr: '안정적 집중 탐구 팩트형', catchphrase: '냉철한 분석력으로\n최적의 루틴을 설계하는 사람', bestMatch: 'ACQZ', diffTempo: 'ALDM', color: '#38BDF8', bgGradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)' },
+  'OLDM': { kr: '안정적 전신 실전 공감형', catchphrase: '편안한 리듬 속에\n모두와 함께 움직이는 힐러', bestMatch: 'ALDM', diffTempo: 'ACQZ', color: '#FB7185', bgGradient: 'linear-gradient(135deg, #FB7185 0%, #E11D48 100%)' },
+  'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '꾸준함의 힘을 아는\n묵직한 실행가', bestMatch: 'ALDZ', diffTempo: 'ACQM', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
+  'OLQM': { kr: '안정적 전신 탐구 공감형', catchphrase: '천천히, 하지만 확실하게\n마음을 담아 움직이는 사람', bestMatch: 'ALQM', diffTempo: 'ACDZ', color: '#F9A8D4', bgGradient: 'linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)' },
+  'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '데이터와 균형 감각으로\n최적의 웰니스를 설계하는 사람', bestMatch: 'ALQZ', diffTempo: 'ACDM', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
 };
 
-const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode }) => {
+const SHORT_NICKNAMES = {
+  ACDZ: '단단한 케틀벨', ACDM: '복근 슬라이더', ACQZ: '핵심만 \'아령(알려)\'줘요', ACQM: '수다쟁이 루프밴드',
+  ALDZ: '팩트폭행 짐볼', ALDM: '뜨끈뜨끈 보수볼', ALQZ: '분석가 트레드밀', ALQM: '물음표 운동화',
+  OCDZ: '저격수 땅콩볼', OCDM: '다정한 마사지건', OCQZ: '심리학자 온냉팩', OCQM: '친절한 하트괄사',
+  OLDZ: '실용주의 요가링', OLDM: '포근포근 운동매트', OLQZ: '깐깐한 꺼꾸리', OLQM: '키다리 폼롤러'
+};
+
+const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) => {
+  const isBest = type === 'bestMatch';
+  const badgeTitle = isBest ? '💖 환상의 짝꿍 BMTI' : '🤔 조금 다른 템포 BMTI';
+  const charImage = CHARACTERS.find(c => c.id === targetCode)?.image;
+  const shortNickname = SHORT_NICKNAMES[targetCode];
+  
+  const matchString = isBest ? resultData.goodMatch : resultData.badMatch;
+  const matchLines = matchString ? matchString.split('\n') : [];
+  const description = matchLines.length >= 3 ? matchLines[2] : matchString;
+
+  return (
+    <div 
+      className="bg-white p-4 md:p-6 rounded-3xl md:rounded-[2rem] border border-gray-100 flex flex-col items-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] cursor-pointer transition-all duration-300 w-full"
+      onClick={onToggle}
+    >
+      <div className="bg-white border border-gray-100 rounded-full px-3 md:px-4 py-1.5 mb-2 md:mb-4 text-[11px] md:text-sm font-bold text-gray-500 shadow-sm whitespace-nowrap z-10 relative">
+        {badgeTitle}
+      </div>
+      
+      {!isExpanded ? (
+        <div className="flex flex-col items-center w-full">
+          <div className="w-24 h-24 md:w-36 md:h-36 mb-1 md:mb-2 flex items-center justify-center">
+             {charImage && <img src={charImage} alt={targetCode} className={`w-full h-full object-contain ${['OCDZ', 'OCQM', 'OLQM'].includes(targetCode) ? 'scale-100' : 'scale-[1.2] md:scale-[1.1]'}`} />}
+          </div>
+          <p className="font-extrabold text-[#111827] text-base md:text-xl mb-1 flex items-baseline justify-center gap-1 text-center">
+             <span>{targetCode}</span> <span className="text-gray-400 text-[10px] md:text-sm font-medium">({getKoreanName(targetCode)})</span>
+          </p>
+          <p className="font-bold text-gray-800 text-[13px] md:text-lg text-center break-keep">{shortNickname}</p>
+          
+          <div className="mt-4 md:mt-6 border border-gray-100 text-gray-500 bg-white rounded-full px-3 md:px-4 py-1.5 text-[11px] md:text-sm font-medium flex items-center gap-1 md:gap-2 shadow-sm">
+            설명 보기 
+            <svg width="10" height="10" className="md:w-3 md:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full text-left">
+          <div className="flex flex-col md:flex-row items-center md:items-start md:gap-4 mb-4 md:mb-5">
+            <div className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 mb-2 md:mb-0 flex items-center justify-center">
+               {charImage && <img src={charImage} alt={targetCode} className={`w-full h-full object-contain ${['OCDZ', 'OCQM', 'OLQM'].includes(targetCode) ? 'scale-100' : 'scale-[1.2] md:scale-[1.1]'}`} />}
+            </div>
+            <div className="flex flex-col text-center md:text-left mt-1 md:mt-3">
+              <p className="font-extrabold text-gray-500 text-[11px] md:text-sm mb-0.5 tracking-wider flex items-baseline justify-center md:justify-start gap-1">
+                 <span>{targetCode}</span> <span className="text-gray-400 font-normal text-[9px] md:text-[11px] hidden md:inline">({getKoreanName(targetCode)})</span>
+              </p>
+              <p className="font-bold text-gray-800 text-[13px] md:text-lg leading-tight break-keep">{shortNickname}</p>
+            </div>
+          </div>
+          
+          <div className="w-full h-px bg-gray-100 mb-4 md:mb-5"></div>
+          
+          <p className="text-gray-600 text-[13px] md:text-[15.5px] leading-relaxed break-keep mb-5 md:mb-6">
+            {description}
+          </p>
+          
+          <div className="w-full flex justify-center">
+            <div className="border border-gray-100 text-gray-500 bg-white rounded-full px-3 md:px-4 py-1.5 text-[11px] md:text-sm font-medium flex items-center gap-1 md:gap-2 shadow-sm">
+              돌아가기 
+              <svg width="10" height="10" className="md:w-3 md:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode, bmtiAnswers, userProfile }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const [isFabOpen, setIsFabOpen] = useState(false);
   const storyRef = useRef(null);
+  
+  const [expandBestMatch, setExpandBestMatch] = useState(false);
+  const [expandDiffTempo, setExpandDiffTempo] = useState(false);
+
+  const [appNotification, setAppNotification] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bmti_user');
+      return saved ? JSON.parse(saved).appNotification : false;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleRetakeClick = async () => {
+    setIsFabOpen(false);
+    if (!isLoggedIn) {
+      setShowConfirm(true);
+      return;
+    }
+    const { canRetake, message } = await canRetakeTest(userProfile);
+    if (!canRetake) {
+      alert(message);
+      return;
+    }
+    setShowConfirm(true);
+  };
+
+  const handleToggleAppNotification = () => {
+    if (!isLoggedIn) {
+      alert("알림 받기를 위해선 카카오톡 로그인/회원가입이 필요합니다.");
+      if (setIsLoggedIn) setIsLoggedIn(true);
+      return;
+    }
+    if (appNotification) return; // 한번 켜면 끌 수 없음
+    setAppNotification(true);
+    try {
+      const saved = localStorage.getItem('bmti_user');
+      const userObj = saved ? JSON.parse(saved) : {};
+      userObj.appNotification = true;
+      localStorage.setItem('bmti_user', JSON.stringify(userObj));
+    } catch (e) {}
+  };
 
   // Parse BMTI code
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const suffix = bmtiCode && bmtiCode.includes('-') ? bmtiCode.split('-')[1] : '';
   const info = BMTI_INFO[axisCode] || BMTI_INFO['ACDM'];
+  const resultData = BMTI_RESULTS[axisCode] || {};
   const charData = CHARACTERS.find(c => c.id === axisCode);
-  const bestChar = CHARACTERS.find(c => c.id === info.bestMatch);
-  const diffChar = CHARACTERS.find(c => c.id === info.diffTempo);
 
-  const siteUrl = 'https://bmti-official.github.io/BMTI-platform/';
+  const siteUrl = 'https://dmdwns777.github.io/BMTI-platform/';
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(siteUrl).then(() => {
@@ -118,7 +238,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           {/* Character Image - Full Bleed */}
           <div className="w-[calc(100%+4rem)] md:w-[calc(100%+6rem)] -mt-8 md:-mt-12 -mx-8 md:-mx-12 mb-8 relative">
             {charData ? (
-              <img src={charData.originalImage} alt={axisCode} className="w-full h-full object-cover rounded-t-[2.5rem]" style={{ maxHeight: '400px' }} />
+              <img src={charData.originalImage} alt={axisCode} className="w-full h-auto object-cover rounded-t-[2.5rem]" />
             ) : (
               <div className="w-full h-64 bg-gray-100 flex items-center justify-center rounded-t-[2.5rem]">
                 <div className="w-32 h-32 bg-black rounded-[40%] animate-spin-slow absolute"></div>
@@ -128,44 +248,113 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* Catchphrase & Name Layout */}
-          <div className="w-full flex flex-col md:flex-row items-center justify-center mb-10 relative md:min-h-[220px]">
-            {/* Center Content */}
-            <div className="flex flex-col items-center text-center w-full">
-              <p className="text-[#9BB31B] font-bold text-lg md:text-xl mb-2">당신의 분석 코드</p>
-              <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-1 tracking-tight text-gray-900 flex flex-col items-center gap-0">
-                <span>{axisCode}</span>
-              </h3>
-              <p className="text-base sm:text-lg text-gray-500 font-bold mb-4">{getKoreanName(axisCode)}</p>
-              <p className="text-xs sm:text-sm text-gray-500 mb-2 font-medium">{info.kr}</p>
-              <p className="text-sm sm:text-base text-gray-600 whitespace-pre-line leading-relaxed italic">{info.catchphrase}</p>
-            </div>
+          <div className="w-full flex flex-col items-center justify-center mb-10 mt-6 relative px-4">
+            {resultData.nickname && (
+              <h1 className="text-[clamp(1.75rem,6vw,3rem)] leading-[1.2] font-black tracking-tight text-gray-900 whitespace-pre-line break-keep text-center">
+                {resultData.nickname}
+              </h1>
+            )}
+            <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400 tracking-tight mt-3">
+              {axisCode}
+            </span>
           </div>
 
-          {/* 5-Line Description */}
-          <p className="text-gray-600 leading-relaxed text-base md:text-lg mb-10 break-keep w-full max-w-md mx-auto">
-            기본적인 골격이 크고 근육량이 많아 조금만 운동해도 효과가 빠르게 나타나는 축복받은 체형입니다.<br />
-            하지만 에너지 흡수율도 높아 방심하면 체중이 쉽게 증가할 수 있습니다.<br />
-            무산소 운동보다는 꾸준한 유산소와 유연성 위주의 스트레칭을 병행했을 때,<br />
-            가장 완벽한 밸런스와 건강한 라이프스타일을 만들어낼 수 있습니다.<br />
-            당신의 숨겨진 잠재력을 끌어올려줄 디테일한 맞춤 솔루션을 확인해보세요.
-          </p>
+          {/* 4 Tendencies Section */}
+          <div className="w-full mb-10 fade-in">
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
+              <span>🔍 나를 움직이게 하는 4가지 성향</span>
+            </h3>
+            
+            {(() => {
+              const percentages = calculateBMTIPercentages(bmtiAnswers);
+              if (!percentages) return null;
+
+              const renderTendencyCard = (letter1, letter2) => {
+                const isLeft = percentages[letter1] >= 50;
+                const activeLetter = isLeft ? letter1 : letter2;
+                const percent = Math.max(percentages[letter1], percentages[letter2]);
+                const level = percent >= 80 ? 'confident' : 'flexible';
+                const data = TENDENCY_DATA[activeLetter];
+                
+                // Colors based on axis
+                let colorClass = 'bg-[#4ECDC4]'; // Default
+                let textClass = 'text-[#4ECDC4]';
+                if (letter1 === 'A') { colorClass = 'bg-[#FF6B6B]'; textClass = 'text-[#FF6B6B]'; }
+                else if (letter1 === 'C') { colorClass = 'bg-[#4ECDC4]'; textClass = 'text-[#4ECDC4]'; }
+                else if (letter1 === 'D') { colorClass = 'bg-[#60A5FA]'; textClass = 'text-[#60A5FA]'; }
+                else if (letter1 === 'Z') { colorClass = 'bg-[#A78BFA]'; textClass = 'text-[#A78BFA]'; }
+
+                return (
+                  <div key={letter1} className="md:bg-white md:border md:border-gray-100 md:shadow-[0_4px_20px_rgba(0,0,0,0.03)] md:rounded-3xl p-0 md:p-8 mb-8 md:mb-5 w-full text-left">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="w-full bg-gray-100 rounded-full h-3 flex-1 mr-4 overflow-hidden">
+                        <div className={`${colorClass} h-3 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
+                      </div>
+                      <span className={`${textClass} font-bold text-sm md:text-base min-w-[40px] text-right`}>{percent}%</span>
+                    </div>
+                    <h4 className="text-[17px] md:text-[19px] font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="text-xl md:text-2xl">{data[level].emoji}</span>
+                      <span>{data[level].modifier} {data.name}</span>
+                    </h4>
+                    <p className="font-bold text-gray-800 text-[16px] md:text-[17px] mb-3 leading-relaxed break-keep">
+                      "{data[level].quote}"
+                    </p>
+                    <p className="text-gray-600 text-[15px] md:text-base leading-[1.7] break-keep">
+                      {data[level].desc}
+                    </p>
+                  </div>
+                );
+              };
+
+              return (
+                <div className="flex flex-col gap-1 w-full max-w-lg mx-auto">
+                  {renderTendencyCard('A', 'O')}
+                  {renderTendencyCard('C', 'L')}
+                  {renderTendencyCard('D', 'Q')}
+                  {renderTendencyCard('Z', 'M')}
+                </div>
+              );
+            })()}
+          </div>
 
           {/* Chemistry section */}
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-            <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col items-center justify-center">
-              <p className="text-xs text-gray-400 mb-2 font-semibold tracking-wider">환상의 짝꿍 BMTI</p>
-              <p className="font-bold text-gray-800 text-lg">{info.bestMatch}</p>
-              <p className="text-xs text-gray-500 mt-1">{BMTI_INFO[info.bestMatch]?.kr}</p>
-            </div>
-            <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col items-center justify-center">
-              <p className="text-xs text-gray-400 mb-2 font-semibold tracking-wider">조금 다른 템포 BMTI</p>
-              <p className="font-bold text-gray-800 text-lg">{info.diffTempo}</p>
-              <p className="text-xs text-gray-500 mt-1">{BMTI_INFO[info.diffTempo]?.kr}</p>
-            </div>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mt-2">
+            <ChemistryCard 
+              type="bestMatch" 
+              targetCode={info.bestMatch} 
+              resultData={resultData} 
+              isExpanded={expandBestMatch}
+              onToggle={() => setExpandBestMatch(!expandBestMatch)}
+            />
+            <ChemistryCard 
+              type="diffTempo" 
+              targetCode={info.diffTempo} 
+              resultData={resultData} 
+              isExpanded={expandDiffTempo}
+              onToggle={() => setExpandDiffTempo(!expandDiffTempo)}
+            />
           </div>
+          
+          {/* New 1-column CTA section */}
+          <div className="w-full mt-8 mb-4">
+            <button 
+              onClick={() => {
+                if (window.Kakao && window.Kakao.Channel) {
+                  window.Kakao.Channel.addChannel({ channelPublicId: '_xasxgZX' }); 
+                } else {
+                  alert('카카오톡 채널 연동이 준비 중입니다.');
+                }
+              }}
+              className="w-full bg-[#FEE500] hover:bg-[#F4DC00] p-6 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#F4DC00]/50"
+            >
+              <span className="text-3xl mb-3 group-hover:scale-110 transition-transform">💬</span>
+              <span className="font-bold text-[#3C1E1E] text-sm md:text-base mb-1.5">내 BMTI 결과지 카톡으로 받아보기</span>
+              <span className="text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">(카카오톡 채널 추가)</span>
+            </button>
+          </div>
+
         </div>
       </div>
-
       {!isLoggedIn ? (
         /* Detailed Result Locked CTA */
         <div className="bg-[#fcfcfc] border border-gray-200 rounded-[2rem] p-8 md:p-10 text-center shadow-sm">
@@ -189,72 +378,286 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </button>
         </div>
       ) : (
-        /* Full Result Rendered when logged in */
-        <div className="fade-in bg-white border border-gray-200 rounded-[2rem] p-8 md:p-10 shadow-sm">
-          <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center mx-auto mb-5 shadow-md">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-            </svg>
+        <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
+          {/* Custom Instructor Guide Section */}
+          <div className="border-b border-gray-100 pb-12 text-left">
+            <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
+              <span className="text-xl">🙋🏻‍♂️🙋🏻‍♀️</span> 실패 없는 운동 강사 고르는 방법
+            </h5>
+            <div className="flex flex-col gap-6">
+              {(() => {
+                let instructorKey = 'DZ_strong';
+                const baseInstructor = axisCode && axisCode.length === 4 ? axisCode.substring(2, 4) : 'DZ';
+                if (bmtiAnswers && bmtiAnswers.length > 0) {
+                  const percentages = calculateBMTIPercentages(bmtiAnswers);
+                  const thirdLetter = axisCode ? axisCode[2] : 'D';
+                  if (percentages && percentages[thirdLetter] >= 80) {
+                    instructorKey = baseInstructor + '_strong';
+                  } else {
+                    instructorKey = baseInstructor + '_flexible';
+                  }
+                } else {
+                  // Fallback if no answers are available (e.g. direct entry to result)
+                  instructorKey = baseInstructor + '_flexible';
+                }
+                const guideData = INSTRUCTOR_GUIDE_DATA[instructorKey] || INSTRUCTOR_GUIDE_DATA['DZ_flexible'];
+                
+                return (
+                  <>
+                    <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
+                      {guideData.title}
+                    </h3>
+                    <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
+                      <div>
+                        <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">맞춤 운동 가이드:</span>
+                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                          {guideData.goodGuide}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">최악의 운동 가이드:</span>
+                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                          {guideData.badGuide}
+                        </p>
+                      </div>
+                      <div className="pt-2">
+                        <div>
+                          <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">💡 추천하는 자기점검 도구:</span>
+                          <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
+                            {guideData.tools}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
-          <h4 className="text-2xl font-bold mb-8 text-center text-gray-900 border-b border-gray-100 pb-6">상세 분석 리포트</h4>
-          <div className="space-y-6 text-gray-700 leading-relaxed break-keep text-left">
-            <div>
-              <h5 className="font-bold text-black mb-2 text-lg">🏃‍♀️ 추천 운동</h5>
-              <p className="bg-gray-50 p-4 rounded-xl border border-gray-100">가벼운 조깅, 실내 자전거, 필라테스. 규칙적인 유산소 운동이 에너지 대사를 높여줍니다.</p>
+
+          {/* Custom Escape Data Section */}
+          <div className="border-b border-gray-100 pb-12 text-left">
+            <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
+              <span className="text-xl">💸</span> 헬스장 기부천사 탈출법
+            </h5>
+            <div className="flex flex-col gap-6">
+              {(() => {
+                let escapeKey = 'OQ_strong';
+                const baseEscape = axisCode && axisCode.length >= 3 ? axisCode[0] + axisCode[2] : 'OQ';
+                if (bmtiAnswers && bmtiAnswers.length > 0) {
+                  const percentages = calculateBMTIPercentages(bmtiAnswers);
+                  const firstLetter = axisCode ? axisCode[0] : 'O';
+                  if (percentages && percentages[firstLetter] >= 80) {
+                    escapeKey = baseEscape + '_strong';
+                  } else {
+                    escapeKey = baseEscape + '_flexible';
+                  }
+                } else {
+                  escapeKey = baseEscape + '_flexible';
+                }
+                const escapeInfo = ESCAPE_DATA[escapeKey] || ESCAPE_DATA['OQ_flexible'];
+                
+                return (
+                  <>
+                    <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
+                      {escapeInfo.title}
+                    </h3>
+                    <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
+                      <div>
+                        <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">당신의 특징:</span>
+                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                          {escapeInfo.trait}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">환불 하고 싶어지는 순간:</span>
+                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                          {escapeInfo.refund}
+                        </p>
+                      </div>
+                      <div className="pt-2">
+                        <span className="inline-block bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm md:text-[15px] font-bold px-3 py-1 rounded-lg mb-2">
+                          💡 기부천사 탈출법
+                        </span>
+                        <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
+                          {escapeInfo.escape}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-            <div>
-              <h5 className="font-bold text-black mb-2 text-lg">⚠️ 피해야 할 운동</h5>
-              <p className="bg-gray-50 p-4 rounded-xl border border-gray-100">고중량 스쿼트 및 데드리프트. 관절에 무리가 갈 수 있는 폭발적인 무산소 운동은 피하는 것이 좋습니다.</p>
+          </div>
+
+          {/* Custom Worst Vibe Section */}
+          <div className="border-b border-gray-100 pb-12 text-left">
+            <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
+              <span className="text-xl">💥</span> 멘탈 바사삭 '최악의 운동 분위기'
+            </h5>
+            <div className="flex flex-col gap-6">
+              {(() => {
+                let vibeKey = 'OM_strong';
+                const baseVibe = axisCode && axisCode.length >= 4 ? axisCode[0] + axisCode[3] : 'OM';
+                if (bmtiAnswers && bmtiAnswers.length > 0) {
+                  const percentages = calculateBMTIPercentages(bmtiAnswers);
+                  const fourthLetter = axisCode ? axisCode[3] : 'M';
+                  if (percentages && percentages[fourthLetter] >= 80) {
+                    vibeKey = baseVibe + '_strong';
+                  } else {
+                    vibeKey = baseVibe + '_flexible';
+                  }
+                } else {
+                  vibeKey = baseVibe + '_flexible';
+                }
+                const vibeData = WORST_VIBE_DATA[vibeKey] || WORST_VIBE_DATA['OM_flexible'];
+                
+                return (
+                  <>
+                    <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
+                      {vibeData.name}
+                    </h3>
+                    <div className="flex flex-col gap-5 mt-2">
+                      <div className="flex flex-col gap-1.5">
+                        <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">당신의 특징:</h6>
+                        <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.trait}</p>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">최악의 분위기:</h6>
+                        <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.worst}</p>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-            <div>
-              <h5 className="font-bold text-black mb-2 text-lg">🥗 맞춤 식단 가이드</h5>
-              <p className="bg-gray-50 p-4 rounded-xl border border-gray-100">탄수화물 흡수율이 높은 편입니다. 정제 탄수화물보다는 현미, 고구마 등 복합 탄수화물 위주로 섭취하고 양질의 단백질 비중을 높여주세요.</p>
-            </div>
-            <div>
-              <h5 className="font-bold text-black mb-2 text-lg">💡 데일리 라이프스타일 팁</h5>
-              <p className="bg-gray-50 p-4 rounded-xl border border-gray-100">하체 부종이 쉽게 생길 수 있으니, 매일 취침 전 10분 하체 스트레칭과 L자 다리 운동을 루틴으로 만들어보세요.</p>
+          </div>
+          
+          {/* Custom Body Guide Letter Section */}
+          <div className="text-left">
+            <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
+              <span className="text-xl">💌</span> 바디 가이드의 따뜻한 시선
+            </h5>
+            <div className="flex flex-col mt-4 gap-6">
+              {(() => {
+                const guideData = (axisCode && BODY_GUIDE_DATA[axisCode]) || BODY_GUIDE_DATA['ACDZ'];
+                const paragraphs = guideData ? guideData.split('\n\n') : [];
+                
+                return (
+                  <>
+                    {/* First Paragraph (Fact) */}
+                    {paragraphs.length > 0 && (
+                      <p className="text-[15px] md:text-[16px] text-gray-700 leading-relaxed break-keep tracking-normal whitespace-pre-line">
+                        {paragraphs[0]}
+                      </p>
+                    )}
+                    
+                    {/* Second Paragraph (Cheering/Comfort Quote) */}
+                    {paragraphs.length > 1 && (
+                      <p className="text-[15px] md:text-[16px] text-gray-700 leading-relaxed break-keep tracking-normal whitespace-pre-line mt-4">
+                        {paragraphs.slice(1).join('\n\n')}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
       )}
 
-      {/* Logged in Floating CTAs */}
+      {/* Bottom CTA for Movement Map Pre-registration */}
+      <div className="mt-8 mb-6 fade-in px-4 md:px-0">
+        <button 
+          onClick={() => setView('spot')}
+          className="w-full bg-black hover:bg-gray-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-gray-800 relative overflow-hidden"
+        >
+          <div className="flex flex-col items-center z-10 w-full">
+            <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">🎁</span>
+            <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
+            <span className="text-white text-3xl md:text-4xl font-black my-3">무브먼트 맵</span>
+            <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
+            <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
+            
+            {/* Toggle Switch */}
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleAppNotification();
+              }}
+              className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
+            >
+              <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
+                사전 알림 신청으로<br/>할인 쿠폰 받기 !
+              </span>
+              <div
+                className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
+                  appNotification ? 'bg-[#c0ff00] cursor-not-allowed' : 'bg-gray-500'
+                }`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${
+                  appNotification ? 'left-6' : 'left-1'
+                }`} />
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Logged in Floating FAB */}
       {isLoggedIn && quizCompleted && (
-        <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] md:max-w-2xl bg-white/90 backdrop-blur-xl border border-gray-200/50 shadow-2xl p-1.5 md:p-3 rounded-2xl md:rounded-3xl z-50 flex flex-row items-center justify-between gap-1 md:gap-3 fade-in overflow-x-auto hide-scrollbar">
+        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[100] flex flex-col items-end gap-3 fade-in pointer-events-none">
+          {/* Menu Items (Vertical Stack) */}
+          <div className={`flex flex-col items-end gap-3 transition-all duration-300 origin-bottom ${isFabOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-8 pointer-events-none'}`}>
+            <button
+              onClick={() => { alert('카카오톡 공유가 완료되었습니다.'); setIsFabOpen(false); }}
+              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
+            >
+              <KakaoIcon className="w-5 h-5 fill-[#FEE500]" />
+              <span className="text-sm">친구에게 카톡 공유</span>
+            </button>
+            <button
+              onClick={() => { setView('board'); setIsFabOpen(false); }}
+              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
+            >
+              <span className="text-lg leading-none">💌</span>
+              <span className="text-sm">BMTI 과몰입 커뮤</span>
+            </button>
+            <button
+              onClick={() => { setView('bodycheck'); setIsFabOpen(false); }}
+              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
+            >
+              <span className="text-lg leading-none">☘️</span>
+              <span className="text-sm">전문가 코칭상담</span>
+            </button>
+            <button
+              onClick={handleRetakeClick}
+              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <span className="text-sm">다시 검사하기</span>
+            </button>
+          </div>
+
+          {/* Main FAB Toggle Button */}
           <button
-            id="kakao-share-bottom"
-            onClick={() => alert('카카오톡 공유가 완료되었습니다.')}
-            className="flex-1 bg-[#FEE500] text-black py-2.5 md:py-3 px-1 md:px-4 rounded-xl md:rounded-2xl text-[10px] sm:text-xs md:text-sm font-bold shadow-sm hover:bg-[#F4DC00] hover:-translate-y-0.5 transition-transform flex flex-col md:flex-row items-center justify-center gap-1 md:gap-1.5 whitespace-nowrap"
+            onClick={() => setIsFabOpen(!isFabOpen)}
+            className={`pointer-events-auto w-14 h-14 md:w-16 md:h-16 rounded-full bg-black text-[#c0ff00] shadow-2xl flex items-center justify-center transition-transform duration-300 hover:scale-105 active:scale-95 ${isFabOpen ? 'rotate-45' : 'rotate-0'}`}
           >
-            <KakaoIcon className="w-4 h-4 md:w-5 md:h-5 fill-current" />
-            <span>카카오톡 공유</span>
-          </button>
-          <button
-            id="insta-story-bottom"
-            onClick={() => setShowStoryModal(true)}
-            className="flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white py-2.5 md:py-3 px-1 md:px-4 rounded-xl md:rounded-2xl text-[10px] sm:text-xs md:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-transform flex flex-col md:flex-row items-center justify-center gap-1 md:gap-1.5 whitespace-nowrap"
-          >
-            <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-            <span>인스타그램 공유</span>
-          </button>
-          <button
-            id="go-to-lab-bottom"
-            onClick={() => setView('lab')}
-            className="flex-1 bg-black text-[#c0ff00] py-2.5 md:py-3 px-1 md:px-4 rounded-xl md:rounded-2xl text-[10px] sm:text-xs md:text-sm font-bold shadow-sm hover:bg-gray-800 hover:-translate-y-0.5 transition-transform flex flex-col md:flex-row items-center justify-center gap-1 md:gap-1.5 whitespace-nowrap"
-          >
-            <span className="text-base md:text-lg leading-none">🎧</span>
-            <span>BMTI 플리 신청</span>
-          </button>
-          <button
-            id="retake-quiz-bottom"
-            onClick={() => setShowConfirm(true)}
-            className="flex-1 bg-white text-black border border-gray-200 py-2.5 md:py-3 px-1 md:px-4 rounded-xl md:rounded-2xl text-[10px] sm:text-xs md:text-sm font-bold shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-transform flex flex-col md:flex-row items-center justify-center gap-1 md:gap-1.5 whitespace-nowrap"
-          >
-            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
             </svg>
-            <span>다시 검사하기</span>
           </button>
+          
+          {/* Overlay when FAB is open */}
+          {isFabOpen && (
+            <div 
+              className="fixed inset-0 bg-black/10 backdrop-blur-sm z-[-1] pointer-events-auto"
+              onClick={() => setIsFabOpen(false)}
+            />
+          )}
         </div>
       )}
 

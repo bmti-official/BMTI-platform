@@ -1,26 +1,22 @@
 // 20 Questions for BMTI Test (Part 1)
 export const QUESTIONS = [
   { text: "스트레스를 받으면 밖으로 나가\n몸이라도 움직여야 직성이 풀린다.", emoji: "🏃🏻🏃🏻‍♀️" }, // Q1 (A)
-  { text: "아무 소리도 안 들리는\n고요한 공간에 있을 때 가장 평온하다.", emoji: "🎧🧘🏻" }, // Q2 (O)
+  { text: "아무 소리도 안 들리는 고요한 공간에 있을 때\n가장 평온하다.", emoji: "🎧🧘🏻" }, // Q2 (O)
   { text: "가만히 누워만 있는 휴식은\n오히려 몸을 더 찌뿌둥하게 만든다.", emoji: "🛌🏻🌀" }, // Q3 (A)
   { text: "사람이 많고 복잡한 환경에 노출되면\n에너지가 급격히 떨어진다.", emoji: "🏙️🔋" }, // Q4 (O)
-  { text: "땀을 가볍게라도 흘리고 났을 때\n진짜 잘 쉬었다는 느낌이 든다.", emoji: "💦✨" }, // Q5 (A)
-  { prefix: "몸에 뻐근한 곳이 생기면,", text: "다른 곳보다 딱 아픈 그 부위를\n집중적으로 누르거나 풀어야 직성이 풀린다.", emoji: "🤛🏻🤕" }, // Q6 (C)
-  { prefix: "거울로 내 체형을 볼 때,", text: "'승모근'이나 '뱃살' 같은 특정 부위보다\n좌우 어깨의 높낮이나 전체적인 대칭을 먼저 보는 편이다.", emoji: "🪞📏" }, // Q7 (L)
-  { prefix: "몸을 풀거나 운동을 할 때,", text: "전신 운동이나 전체적으로 푸는 것보다\n단일 근육 운동/이완하는 것을 더 선호한다.", emoji: "💪🏻🎯" }, // Q8 (C)
-  { prefix: "목이나 어깨가 아프면,", text: "'혹시 골반이나 발목 등 다른 곳이 틀어져서 여기까지 아픈 건 아닐까?'\n하고 몸을 연결 지어 생각하게 된다.", emoji: "🦴🔗" }, // Q9 (L)
-  { prefix: "마사지나 관리를 받을 때,", text: "전신을 훑어주는 것보다 내가 뻐근하다고 느끼는\n그 타겟 부위만 집중적으로 파고들어 풀어주는 것이 좋다.", emoji: "🔨💆🏻" }, // Q10 (C)
-  { text: "새로운 물건을 사면 설명서를 읽기보다\n일단 조작해 보며 익힌다.", emoji: "🕹️🛠️" }, // Q11 (D)
-  { text: "누군가의 지시를 따를 때\n\"이걸 왜 해야 하는지\" 납득하는 것이 중요하다.", emoji: "🤔💡" }, // Q12 (Q)
-  { text: "길고 복잡한 설명보다\n내가 직접 한 번 부딪혀보는 것이 훨씬 빠르다.", emoji: "🔥🚀" }, // Q13 (D)
-  { text: "행동으로 옮기기 전 머릿속으로\n전체 과정을 미리 그려봐야 안심이 된다.", emoji: "🧠🗺️" }, // Q14 (Q)
-  { prefix: "운동 동작이 엉성해도 스트레스받지 않고,", text: "'하다 보면 몸에 익겠지' 하고\n일단 횟수를 채우는 편이다.", emoji: "📈🔧" }, // Q15 (D)
-  { text: "위로의 말보다 구체적인 수치와\n명확한 해결책을 제시받을 때 마음이 놓인다.", emoji: "📊✅" }, // Q16 (Z)
-  { text: "결과를 평가받기 전,\n내가 그동안 노력한 과정을 먼저 인정받고 싶다.", emoji: "🌱👏🏻" }, // Q17 (M)
-  { text: "빙빙 돌리지 않고 팩트만\n단호하게 말해주는 사람에게 더 큰 신뢰를 느낀다.", emoji: "🗡️💯" }, // Q18 (Z)
-  { text: "아무리 맞는 말이라도\n말투가 차가우면 마음의 문이 먼저 닫힌다.", emoji: "🧊🚪" }, // Q19 (M)
-  { text: "누군가에게 조언을 구할 때,\n다정한 공감보다 냉정하고 객관적인 평가를 원한다.", emoji: "⚖️🔍" } // Q20 (Z)
-];
+  { prefix: "몸에 뻐근한 곳이 생기면,", text: "다른 곳보다 딱 아픈 그 부위를\n집중적으로 누르거나 풀어야 직성이 풀린다.", emoji: "🤛🏻🤕" }, // Q5 (C)
+  { prefix: "무릎이 아프면 발의 아치나 엉덩이 근육 운동까지 찾아보진 않고,", text: "무릎 주변 근육만\n운동 또는 이완 방법을 찾아본다.", emoji: "💪🏻🎯" }, // Q6 (C)
+  { prefix: "목이나 어깨가 아프면,", text: "'혹시 골반이나 발목 등 다른 곳이 틀어져서\n여기까지 아픈 건 아닐까?' 하고\n몸을 연결 지어 생각하게 된다.", emoji: "🦴🔗" }, // Q7 (L)
+  { prefix: "마사지나 관리를 받을 때,", text: "전신을 훑어주는 것보다 뻐근하게 느끼는 그 타겟 부위만\n집중적으로 파고들어 풀어주는 것이 좋다.", emoji: "🔨💆🏻" }, // Q8 (C)
+  { text: "누군가의 지시를 따를 때\n\"이걸 왜 해야 하는지\" 납득하는 것이 중요하다.", emoji: "🤔💡" }, // Q9 (Q)
+  { text: "길고 복잡한 설명보다\n내가 직접 한 번 부딪혀보는 것이 훨씬 빠르다.", emoji: "🔥🚀" }, // Q10 (D)
+  { text: "행동으로 옮기기 전\n머릿속으로 전체 과정을 미리 그려봐야 안심이 된다.", emoji: "🧠🗺️" }, // Q11 (Q)
+  { prefix: "운동 동작이 엉성해도 스트레스받지 않고,", text: "'하다 보면 몸에 익겠지' 하고\n일단 횟수를 채우는 편이다.", emoji: "📈🔧" }, // Q12 (D)
+  { text: "위로의 말보다 구체적인 수치와\n명확한 해결책을 제시받을 때 마음이 놓인다.", emoji: "📊✅" }, // Q13 (Z)
+  { text: "빙빙 돌리지 않고 팩트만 단호하게\n말해주는 사람에게 더 큰 신뢰를 느낀다.", emoji: "🗡️💯" }, // Q14 (Z)
+  { text: "아무리 맞는 말이라도 말투가\n차가우면 마음의 문이 먼저 닫힌다.", emoji: "🧊🚪" }, // Q15 (M)
+  { text: "누군가에게 조언을 구할 때,\n다정한 공감보다 냉정하고 객관적인 평가를 원한다.", emoji: "⚖️🔍" } // Q16 (Z)
+].map((q, idx) => ({ ...q, id: idx + 1 }));
 
 // Part 2: State Indicator Question
 export const PART2_QUESTION = "현재 나의 몸 상태를 가장 잘 표현하는 것은?";
@@ -41,51 +37,72 @@ export const PART2_OPTIONS = [
  * 4축 코드 매핑
  * 각 축은 두 선택지 그룹으로 나뉘며, 문항 번호는 1-indexed (Q1 = index 0)
  */
-const AXES = [
+const WEIGHTS = {
+  LEFT_CORE: { 4: 5, 3: 2, 2: -1, 1: -3 },
+  LEFT_NORMAL: { 4: 3, 3: 1, 2: -1, 1: -2 },
+  RIGHT_CORE: { 4: -5, 3: -2, 2: 1, 1: 3 },
+  RIGHT_NORMAL: { 4: -3, 3: -1, 2: 1, 1: 2 },
+};
+
+const AXES_CONFIG = [
   {
-    // 제1축: A vs O
-    left:  { letter: 'A', questions: [1, 3, 5] },   // 3문항
-    right: { letter: 'O', questions: [2, 4] },       // 2문항
+    leftLetter: 'A', rightLetter: 'O',
+    min: -13, max: 13,
+    questions: [
+      { id: 1, type: 'LEFT_CORE' },
+      { id: 3, type: 'LEFT_NORMAL' },
+      { id: 2, type: 'RIGHT_CORE' },
+      { id: 4, type: 'RIGHT_NORMAL' },
+    ]
   },
   {
-    // 제2축: C vs L
-    left:  { letter: 'C', questions: [6, 8, 10] },   // 3문항
-    right: { letter: 'L', questions: [7, 9] },        // 2문항
+    leftLetter: 'C', rightLetter: 'L',
+    min: -12, max: 14,
+    questions: [
+      { id: 5, type: 'LEFT_CORE' },
+      { id: 6, type: 'LEFT_NORMAL' },
+      { id: 8, type: 'LEFT_NORMAL' },
+      { id: 7, type: 'RIGHT_CORE' },
+    ]
   },
   {
-    // 제3축: D vs Q
-    left:  { letter: 'D', questions: [11, 13, 15] },  // 3문항
-    right: { letter: 'Q', questions: [12, 14] },       // 2문항
+    leftLetter: 'D', rightLetter: 'Q',
+    min: -13, max: 13,
+    questions: [
+      { id: 10, type: 'LEFT_CORE' },
+      { id: 12, type: 'LEFT_NORMAL' },
+      { id: 9, type: 'RIGHT_CORE' },
+      { id: 11, type: 'RIGHT_NORMAL' },
+    ]
   },
   {
-    // 제4축: Z vs M
-    left:  { letter: 'Z', questions: [16, 18, 20] },  // 3문항
-    right: { letter: 'M', questions: [17, 19] },       // 2문항
-  },
+    leftLetter: 'Z', rightLetter: 'M',
+    min: -12, max: 14,
+    questions: [
+      { id: 14, type: 'LEFT_CORE' },
+      { id: 13, type: 'LEFT_NORMAL' },
+      { id: 16, type: 'LEFT_NORMAL' },
+      { id: 15, type: 'RIGHT_CORE' },
+    ]
+  }
 ];
 
-/**
- * 문항 점수 배열(1-indexed answers)에서 평균을 계산
- * @param {number[]} answers - 20개 응답 (index 0 = Q1), 값: 1~4
- * @param {number[]} questionNumbers - 1-indexed 문항 번호들
- * @returns {number} 평균값
- */
-function calcAverage(answers, questionNumbers) {
-  const sum = questionNumbers.reduce((acc, qNum) => acc + (answers[qNum - 1] || 0), 0);
-  return sum / questionNumbers.length;
+function calculateWeightedSum(answers, questions) {
+  let sum = 0;
+  questions.forEach(q => {
+    const val = answers[q.id - 1]; // 1-indexed to 0-indexed
+    if (val && WEIGHTS[q.type][val] !== undefined) {
+      sum += WEIGHTS[q.type][val];
+    }
+  });
+  return sum;
 }
 
-/**
- * BMTI 4축 코드 생성
- * @param {number[]} answers - 20개 응답 배열 (index 0 = Q1)
- * @returns {string} 4자리 코드, 예: "ALDZ"
- */
 export function calculateAxisCode(answers) {
-  return AXES.map(axis => {
-    const leftAvg = calcAverage(answers, axis.left.questions);
-    const rightAvg = calcAverage(answers, axis.right.questions);
-    // 동점 시 왼쪽(left) 알파벳 우선
-    return leftAvg >= rightAvg ? axis.left.letter : axis.right.letter;
+  return AXES_CONFIG.map(axis => {
+    const sum = calculateWeightedSum(answers, axis.questions);
+    // 양수면 왼쪽(left), 음수면 오른쪽(right), 0이면 기본적으로 왼쪽
+    return sum >= 0 ? axis.leftLetter : axis.rightLetter;
   }).join('');
 }
 
@@ -101,7 +118,7 @@ export function calculateBMTI(answers) {
 // Mock Board Data
 export const BOARD_DATA = {
   vote: {
-    question: "곧 맞춤형 50분 운동 플레이리스트 앱이 출시됩니다!\n가장 먼저 써보고 싶은 기능은?",
+    question: "곧 맞춤형 50분 운동 플레이리스트 앱이 출시됩니다! 가장 먼저 써보고 싶은 기능은?",
     options: [
       { id: 1, text: "내 유형별 인기 랭킹", votes: 45 },
       { id: 2, text: "원클릭 추천 플레이리스트", votes: 89 },
@@ -184,3 +201,49 @@ export const CHARACTERS = [
   { id: 'OLQM', image: imgOLQM, originalImage: origOLQM, color: 'bg-[#fdf0f3]' },
   { id: 'OLQZ', image: imgOLQZ, originalImage: origOLQZ, color: 'bg-[#eaf6f6]', imgClass: 'scale-[1.25]' }
 ];
+
+
+
+
+export const BMTI_INFO = {
+  'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '몸으로 먼저 느끼고, 마음으로 함께 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
+  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '결과로 말하는 실전 파워 무버', bestMatch: 'OLQM', diffTempo: 'OLQZ', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
+  'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '이론과 감성 사이에서 최적의 균형을 찾는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },
+  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '데이터로 파고드는 분석형 액티비스트', bestMatch: 'OLDM', diffTempo: 'OLDZ', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
+  'ALDM': { kr: '활동적 전신 실전 공감형', catchphrase: '전신으로 느끼며 사람과 함께 성장하는 무버', bestMatch: 'OCQZ', diffTempo: 'OCQM', color: '#F472B6', bgGradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 100%)' },
+  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '거침없는 실행력으로 몸 전체를 깨우는 사람', bestMatch: 'OCQM', diffTempo: 'OCQZ', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
+  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '호기심과 따뜻함이 공존하는 밸런스 탐험가', bestMatch: 'OCDZ', diffTempo: 'OCDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
+  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '과학적 근거 위에 움직임을 설계하는 전략가', bestMatch: 'OCDM', diffTempo: 'OCDZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
+  'OCDM': { kr: '정적인 집중 실전 공감형', catchphrase: '내면의 소리에 귀 기울이며 성장하는 조율사', bestMatch: 'ALQZ', diffTempo: 'ALQM', color: '#EC4899', bgGradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)' },
+  'OCDZ': { kr: '정적인 집중 실전 팩트형', catchphrase: '나만의 페이스로 목표를 명중시키는 저격수', bestMatch: 'ALQM', diffTempo: 'ALQZ', color: '#10B981', bgGradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
+  'OCQM': { kr: '정적인 집중 탐구 공감형', catchphrase: '깊이 있는 이해로 몸과 마음을 잇는 가이드', bestMatch: 'ALDZ', diffTempo: 'ALDM', color: '#8B5CF6', bgGradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' },
+  'OCQZ': { kr: '정적인 집중 탐구 팩트형', catchphrase: '원리를 파악하고 체계를 세우는 전략가', bestMatch: 'ALDM', diffTempo: 'ALDZ', color: '#3B82F6', bgGradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' },
+  'OLDM': { kr: '정적인 전신 실전 공감형', catchphrase: '휴식의 가치를 알고 나를 돌보는 도슨트', bestMatch: 'ACQZ', diffTempo: 'ACQM', color: '#F43F5E', bgGradient: 'linear-gradient(135deg, #F43F5E 0%, #E11D48 100%)' },
+  'OLDZ': { kr: '정적인 전신 실전 팩트형', catchphrase: '유연한 사고로 실용성을 찾는 해결사', bestMatch: 'ACQM', diffTempo: 'ACQZ', color: '#14B8A6', bgGradient: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)' },
+  'OLQM': { kr: '정적인 전신 탐구 공감형', catchphrase: '전체를 조망하며 안정을 찾는 키다리 아저씨', bestMatch: 'ACDZ', diffTempo: 'ACDM', color: '#F59E0B', bgGradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
+  'OLQZ': { kr: '정적인 전신 탐구 팩트형', catchphrase: '정확한 분석으로 최적의 답을 찾는 수학자', bestMatch: 'ACDM', diffTempo: 'ACDZ', color: '#6366F1', bgGradient: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' },
+};
+
+export function calculateBMTIPercentages(answers) {
+  if (!answers || answers.length === 0) return null;
+  const percentages = {};
+  
+  AXES_CONFIG.forEach(axis => {
+    const sum = calculateWeightedSum(answers, axis.questions);
+    let leftPct = Math.round(((sum - axis.min) / (axis.max - axis.min)) * 100);
+    
+    // 50%가 최대한 나오지 않게 하기 위해 정확히 50%일 경우 51%로 조정
+    if (leftPct === 50) {
+      leftPct = 51;
+    }
+    
+    // 범위 초과 방지
+    leftPct = Math.max(0, Math.min(100, leftPct));
+    
+    percentages[axis.leftLetter] = leftPct;
+    percentages[axis.rightLetter] = 100 - leftPct;
+  });
+  
+  return percentages;
+};
+

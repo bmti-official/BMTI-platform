@@ -1,4 +1,6 @@
+/* eslint-disable */
 import { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 const KakaoIcon = ({ className = "w-5 h-5 fill-current" }) => (
   <svg viewBox="0 0 24 24" className={className}>
@@ -30,25 +32,30 @@ const AGE_RANGES = [
   { id: '50s+', label: '50대 이상' },
 ];
 
+
+
 const SignupModal = ({ isOpen, onClose, onComplete }) => {
-  const [step, setStep] = useState(0); // 0: kakao intro, 1: basic info, 2: body info, 3: goals, 4: consent
+  const [step, setStep] = useState(0); // 0: kakao intro, 1: basic & body info, 2: goals, 3: consent
   const [formData, setFormData] = useState({
     nickname: '',
+    email: '',
     gender: '',
     ageRange: '',
-    height: '170',
-    weight: '70',
+    height: '160',
+    weight: '60',
+
     goals: [],
     frequency: '',
     appNotification: true,
     marketingConsent: false,
     privacyConsent: false,
+    isPremium: true
   });
   const [errors, setErrors] = useState({});
 
   if (!isOpen) return null;
 
-  const totalSteps = 4;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
 
   const updateField = (field, value) => {
@@ -69,14 +76,11 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
     const newErrors = {};
     if (currentStep === 1) {
       if (!formData.nickname || !formData.nickname.trim()) newErrors.nickname = true;
-      if (!formData.gender) newErrors.gender = true;
-      if (!formData.ageRange) newErrors.ageRange = true;
-    }
-    if (currentStep === 2) {
       if (!formData.height) newErrors.height = true;
       if (!formData.weight) newErrors.weight = true;
+
     }
-    if (currentStep === 3) {
+    if (currentStep === 2) {
       if (formData.goals.length === 0) newErrors.goals = true;
       if (!formData.frequency) newErrors.frequency = true;
     }
@@ -85,20 +89,101 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
   };
 
   const generateRandomNickname = () => {
-    const adjectives = ['열정적인', '꾸준한', '행복한', '건강한', '활기찬', '멋진', '강력한', '유연한'];
-    const nouns = ['헬린이', '운동러', '홈트족', '러너', '다이어터', '근육맨', '요기니'];
-    const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    const ADJECTIVES = ['열정적인', '꾸준한', '행복한', '건강한', '활기찬', '멋진', '강력한', '유연한'];
+    const NOUNS = ['헬린이', '운동러', '홈트족', '러너', '다이어터', '근육맨', '요기니'];
+    const randomAdj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+    const randomNoun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
     const randomNumber = Math.floor(Math.random() * 999) + 1;
     return `${randomAdj}${randomNoun}${randomNumber}`;
   };
 
+
+
+  const handleKakaoLogin = () => {
+    if (!window.Kakao) {
+      alert('카카오 SDK가 로드되지 않았습니다.');
+      return;
+    }
+
+    window.Kakao.Auth.login({
+      success: function(authObj) {
+        window.Kakao.API.request({
+          url: '/v2/user/me',
+          success: async function(res) {
+            // Check if user already exists in Supabase
+            try {
+              const { data: existingUser, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('kakao_id', res.id.toString())
+                .single();
+
+              if (existingUser) {
+                // User exists, skip signup steps
+                onComplete({
+                  id: existingUser.id,
+                  kakaoId: existingUser.kakao_id,
+                  nickname: existingUser.nickname,
+                  kakaoGender: existingUser.kakao_gender,
+                  kakaoAge: existingUser.kakao_age,
+                  height: existingUser.height,
+                  weight: existingUser.weight,
+                  frequency: existingUser.frequency,
+                  goals: existingUser.goals || [],
+                  bmti_type: existingUser.bmti_type
+                });
+                return;
+              }
+            } catch (e) {
+              console.log('Proceeding to new user signup');
+            }
+
+            const profile = res.kakao_account?.profile;
+            const nickname = profile?.nickname || generateRandomNickname();
+            
+            const kakaoGenderRaw = profile?.gender || res.kakao_account?.gender;
+            const kakaoGender = kakaoGenderRaw === 'male' ? '남성' : kakaoGenderRaw === 'female' ? '여성' : '성별 비공개';
+
+            const ageRangeRaw = res.kakao_account?.age_range;
+            let kakaoAge = '20대';
+            if (ageRangeRaw) {
+              const prefix = ageRangeRaw.split('~')[0];
+              kakaoAge = `${prefix}대`;
+              if (parseInt(prefix) >= 50) kakaoAge = '50대 이상';
+            } else {
+              kakaoAge = '연령 비공개';
+            }
+            
+            const email = res.kakao_account?.email || '';
+
+            // 프로필 정보 세팅 및 Step 1으로 이동
+            setFormData(prev => ({
+              ...prev,
+              nickname: nickname,
+              email: email,
+              kakaoId: res.id.toString(),
+              kakaoGender: kakaoGender,
+              kakaoAge: kakaoAge
+            }));
+            
+            setStep(1);
+          },
+          fail: function(error) {
+            console.error('카카오 사용자 정보 요청 실패:', error);
+            alert('사용자 정보를 가져오는데 실패했습니다.');
+          }
+        });
+      },
+      fail: function(err) {
+        console.error('카카오 로그인 실패:', err);
+        // 사용자가 취소한 경우 등
+      }
+    });
+  };
+
   const handleNext = () => {
     if (step === 0) {
-      if (!formData.nickname) {
-        setFormData(prev => ({ ...prev, nickname: generateRandomNickname() }));
-      }
-      setStep(1);
+      handleKakaoLogin();
       return;
     }
     if (!validateStep(step)) return;
@@ -160,6 +245,14 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
 
 
 
+              <div className="bg-gray-50 rounded-xl p-4 mb-5 text-xs text-gray-500 text-left w-full border border-gray-100">
+                <p className="font-bold text-gray-700 mb-2.5 flex items-center gap-1.5"><span className="text-sm">💡</span> 연동되는 카카오톡 정보</p>
+                <ul className="space-y-1.5 ml-1">
+                  <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-400 rounded-full"></div>카카오톡 계정(이메일)</li>
+                  <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-400 rounded-full"></div>닉네임 / 성별 / 연령대</li>
+                </ul>
+              </div>
+
               <button
                 id="kakao-login-start"
                 onClick={handleNext}
@@ -209,56 +302,65 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                 />
               </div>
 
-              {/* Gender */}
-              <div className="mb-8">
-                <label className="text-sm font-bold text-gray-700 mb-3 block">
-                  성별
-                  {errors.gender && <span className="text-red-400 ml-2 font-medium text-xs">선택해주세요</span>}
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'male', label: '남성', emoji: '🙋‍♂️' },
-                    { id: 'female', label: '여성', emoji: '🙋‍♀️' },
-                  ].map(g => (
-                    <button
-                      key={g.id}
-                      id={`gender-${g.id}`}
-                      onClick={() => updateField('gender', g.id)}
-                      className={`py-4 rounded-2xl border-2 font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
-                        formData.gender === g.id
-                          ? 'border-black bg-black text-white shadow-md scale-[1.02]'
-                          : `border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50 ${errors.gender ? 'border-red-200' : ''}`
-                      }`}
-                    >
-                      <span className="text-lg">{g.emoji}</span>
-                      {g.label}
-                    </button>
-                  ))}
+
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* Height */}
+                <div>
+                  <label className="text-sm font-bold text-gray-700 mb-2 block">
+                    키 <span className="text-xs text-gray-400 font-normal ml-1">(cm)</span>
+                    {errors.height && <span className="text-red-400 ml-2 font-medium text-xs block">입력</span>}
+                  </label>
+                  <div className="flex items-center justify-between border-2 border-gray-200 rounded-xl p-1.5 bg-white transition-colors focus-within:border-black hover:border-gray-300">
+                    <button 
+                      onClick={() => updateField('height', String(Math.max(140, parseInt(formData.height || 160) - 1)))} 
+                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
+                    >-</button>
+                    <input
+                      type="number"
+                      value={formData.height}
+                      onChange={(e) => updateField('height', e.target.value)}
+                      className="text-sm md:text-base font-bold text-gray-900 w-12 text-center bg-transparent focus:outline-none hide-number-spin"
+                    />
+                    <button 
+                      onClick={() => updateField('height', String(Math.min(220, parseInt(formData.height || 160) + 1)))} 
+                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
+                    >+</button>
+                  </div>
+                </div>
+
+                {/* Weight */}
+                <div>
+                  <label className="text-sm font-bold text-gray-700 mb-2 block">
+                    체중 <span className="text-xs text-gray-400 font-normal ml-1">(kg)</span>
+                    {errors.weight && <span className="text-red-400 ml-2 font-medium text-xs block">입력</span>}
+                  </label>
+                  <div className="flex items-center justify-between border-2 border-gray-200 rounded-xl p-1.5 bg-white transition-colors focus-within:border-black hover:border-gray-300">
+                    <button 
+                      onClick={() => updateField('weight', String(Math.max(40, parseInt(formData.weight || 60) - 1)))} 
+                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
+                    >-</button>
+                    <input
+                      type="number"
+                      value={formData.weight}
+                      onChange={(e) => updateField('weight', e.target.value)}
+                      className="text-sm md:text-base font-bold text-gray-900 w-12 text-center bg-transparent focus:outline-none hide-number-spin"
+                    />
+                    <button 
+                      onClick={() => updateField('weight', String(Math.min(150, parseInt(formData.weight || 60) + 1)))} 
+                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
+                    >+</button>
+                  </div>
                 </div>
               </div>
 
-              {/* Age Range */}
-              <div className="mb-8">
-                <label className="text-sm font-bold text-gray-700 mb-3 block">
-                  연령대
-                  {errors.ageRange && <span className="text-red-400 ml-2 font-medium text-xs">선택해주세요</span>}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {AGE_RANGES.map(age => (
-                    <button
-                      key={age.id}
-                      id={`age-${age.id}`}
-                      onClick={() => updateField('ageRange', age.id)}
-                      className={`px-5 py-2.5 rounded-full border-2 text-sm font-bold transition-all duration-200 ${
-                        formData.ageRange === age.id
-                          ? 'border-black bg-black text-white shadow-md'
-                          : `border-gray-200 text-gray-600 hover:border-gray-400 ${errors.ageRange ? 'border-red-200' : ''}`
-                      }`}
-                    >
-                      {age.label}
-                    </button>
-                  ))}
-                </div>
+
+
+              <div className="bg-gray-50 rounded-2xl p-4 mb-6 flex items-start gap-3">
+                <span className="text-lg mt-0.5">🔒</span>
+                <p className="text-xs text-gray-500 leading-relaxed break-keep">
+                  입력하신 신체 정보는 BMTI 분석에만 활용되며, 외부에 공개되지 않습니다. 더 정확한 맞춤 결과를 위해 입력을 권장합니다.
+                </p>
               </div>
 
               <button
@@ -271,80 +373,8 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
             </div>
           )}
 
-          {/* ===== STEP 2: Height & Weight ===== */}
+          {/* ===== STEP 2: Goals & Frequency ===== */}
           {step === 2 && (
-            <div className="fade-in">
-              <button onClick={handleBack} className="mb-4 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                이전
-              </button>
-              <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP 2 / {totalSteps}</p>
-              <h3 className="text-2xl font-bold mb-1 text-gray-900">신체 정보</h3>
-              <p className="text-sm text-gray-500 mb-8">정확한 체형 분석을 위해 입력해주세요.</p>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {/* Height */}
-                <div>
-                  <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    키
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={formData.height}
-                      onChange={(e) => updateField('height', e.target.value)}
-                      className="w-full px-4 py-4 rounded-2xl border-2 text-center text-lg font-bold focus:outline-none focus:border-black transition-colors border-gray-200 appearance-none bg-white"
-                    >
-                      <option value="140">140cm 이하</option>
-                      {Array.from({ length: 59 }, (_, i) => (
-                        <option key={141 + i} value={String(141 + i)}>{141 + i}cm</option>
-                      ))}
-                      <option value="200">200cm 이상</option>
-                    </select>
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">▼</span>
-                  </div>
-                </div>
-
-                {/* Weight */}
-                <div>
-                  <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    체중
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={formData.weight}
-                      onChange={(e) => updateField('weight', e.target.value)}
-                      className="w-full px-4 py-4 rounded-2xl border-2 text-center text-lg font-bold focus:outline-none focus:border-black transition-colors border-gray-200 appearance-none bg-white"
-                    >
-                      <option value="40">40kg 이하</option>
-                      {Array.from({ length: 59 }, (_, i) => (
-                        <option key={41 + i} value={String(41 + i)}>{41 + i}kg</option>
-                      ))}
-                      <option value="100">100kg 이상</option>
-                    </select>
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">▼</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-2xl p-4 mb-8 flex items-start gap-3">
-                <span className="text-lg mt-0.5">🔒</span>
-                <p className="text-xs text-gray-500 leading-relaxed break-keep">
-                  입력하신 신체 정보는 BMTI 분석에만 활용되며, 외부에 공개되지 않습니다. 더 정확한 맞춤 결과를 위해 입력을 권장합니다.
-                </p>
-              </div>
-
-              <button
-                id="step2-next"
-                onClick={handleNext}
-                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                다음
-              </button>
-            </div>
-          )}
-
-          {/* ===== STEP 3: Goals & Frequency ===== */}
-          {step === 3 && (
             <div className="fade-in">
               <button onClick={handleBack} className="mb-4 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
@@ -413,14 +443,14 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
             </div>
           )}
 
-          {/* ===== STEP 4: Consent & Complete ===== */}
-          {step === 4 && (
+          {/* ===== STEP 3: Consent & Complete ===== */}
+          {step === 3 && (
             <div className="fade-in">
               <button onClick={handleBack} className="mb-4 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                 이전
               </button>
-              <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP 4 / {totalSteps}</p>
+              <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP 3 / {totalSteps}</p>
               <h3 className="text-2xl font-bold mb-1 text-gray-900">거의 다 왔어요!</h3>
               <p className="text-sm text-gray-500 mb-8">아래 내용을 확인하고 가입을 완료해주세요.</p>
 
@@ -429,16 +459,12 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                 <p className="text-xs font-semibold text-gray-400 tracking-wider mb-3">입력하신 정보 요약</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
+                    <span className="text-gray-500">성별 / 연령대</span>
+                    <span className="font-bold text-gray-800">{formData.kakaoGender || '선택안함'} / {formData.kakaoAge || '알 수 없음'}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-500">닉네임</span>
                     <span className="font-bold text-gray-800">{formData.nickname}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">성별</span>
-                    <span className="font-bold text-gray-800">{formData.gender === 'male' ? '남성' : '여성'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">연령대</span>
-                    <span className="font-bold text-gray-800">{AGE_RANGES.find(a => a.id === formData.ageRange)?.label}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">키 / 체중</span>
@@ -461,9 +487,9 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
               <div className="bg-[#c0ff00]/10 border border-[#c0ff00]/30 rounded-2xl p-5 mb-6">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-sm text-gray-900 mb-1">🚀 BMTI 앱 출시 알림 받기</p>
+                    <p className="font-bold text-sm text-gray-900 mb-1">⛄️ '무브먼트 맵' 앱 출시 알림 받기</p>
                     <p className="text-xs text-gray-500 break-keep leading-relaxed">
-                      BMTI 앱이 출시되면 카카오톡으로 가장 먼저 알려드릴게요! 사전 등록 혜택도 함께 제공됩니다.
+                      올 겨울 출시 예정인 '무브먼트 맵' 앱의 알림을 가장 먼저 받아보세요! 사전 등록 혜택도 함께 제공됩니다.
                     </p>
                   </div>
                   <button

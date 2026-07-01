@@ -1,27 +1,39 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable */
+import { useState, useEffect, useRef } from 'react';
 import { QUESTIONS, PART2_QUESTION, PART2_OPTIONS, calculateBMTI } from '../data';
 
-const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
+const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) => {
+  const [shuffledQuestions] = useState(() => [...QUESTIONS].sort(() => Math.random() - 0.5));
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState([]); // 20 answers (1~4)
+  const [answers, setAnswers] = useState([]); // Array of { id, score }
   const [phase, setPhase] = useState('quiz'); // 'quiz' | 'disclaimer' | 'loading'
   const [pendingCode, setPendingCode] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
+  
+  const textRef = useRef(null);
+  const prefixRef = useRef(null);
 
-  const totalSteps = QUESTIONS.length;
-  const currentStep = phase === 'quiz' ? step + 1 : QUESTIONS.length;
+
+
+  const totalSteps = shuffledQuestions.length;
+  const currentStep = phase === 'quiz' ? step + 1 : shuffledQuestions.length;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleAnswer = (score) => {
-    const newAnswers = [...answers, score];
+    const currentQuestion = shuffledQuestions[step];
+    const newAnswers = [...answers, { id: currentQuestion.id, score }];
     setAnswers(newAnswers);
 
-    if (step < QUESTIONS.length - 1) {
+    if (step < shuffledQuestions.length - 1) {
       setStep(prev => prev + 1);
     } else {
-      const finalCode = calculateBMTI(newAnswers);
+      const orderedAnswers = new Array(QUESTIONS.length);
+      newAnswers.forEach(ans => {
+        orderedAnswers[ans.id - 1] = ans.score;
+      });
+      const finalCode = calculateBMTI(orderedAnswers);
       console.log('🧬 BMTI Code:', finalCode);
-      console.log('📊 Answers:', newAnswers);
+      console.log('📊 Answers:', orderedAnswers);
       setPendingCode(finalCode);
       setPhase('disclaimer');
     }
@@ -64,6 +76,13 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
 
     const timer = setTimeout(() => {
       setBmtiCode(pendingCode);
+      if (setBmtiAnswers) {
+        const orderedAnswers = new Array(QUESTIONS.length);
+        answers.forEach(ans => {
+          orderedAnswers[ans.id - 1] = ans.score;
+        });
+        setBmtiAnswers(orderedAnswers);
+      }
       setQuizCompleted(true);
       setView('result');
     }, 3000);
@@ -107,17 +126,19 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode }) => {
       {phase === 'quiz' && (
         <>
           {/* Question */}
-          <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-8 md:p-12 shadow-sm text-center mb-8 min-h-[300px] flex flex-col justify-center items-center fade-in">
+          <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-8 md:p-12 shadow-sm text-center mb-8 min-h-[300px] flex flex-col justify-center items-center fade-in overflow-hidden w-full max-w-full">
             <p className="text-sm text-gray-400 font-bold mb-4 tracking-wider">Q{step + 1}</p>
-            <div className="text-5xl md:text-6xl mb-6">{QUESTIONS[step].emoji}</div>
-            <h2 className="text-xl md:text-2xl font-serif font-bold leading-relaxed break-keep whitespace-pre-wrap">
-              {QUESTIONS[step].prefix && (
-                <span className="text-gray-400 block mb-2 font-normal">
-                  {QUESTIONS[step].prefix}
+            <div className="text-5xl md:text-6xl mb-6">{shuffledQuestions[step].emoji}</div>
+            <div className="w-full flex flex-col items-center">
+              {shuffledQuestions[step].prefix && (
+                <span ref={prefixRef} className="text-black block mb-2 font-normal whitespace-pre-line break-keep text-base md:text-lg">
+                  {shuffledQuestions[step].prefix}
                 </span>
               )}
-              {QUESTIONS[step].text}
-            </h2>
+              <h2 ref={textRef} className="text-black text-xl md:text-2xl font-serif font-bold whitespace-pre-line break-keep leading-relaxed">
+                {shuffledQuestions[step].text}
+              </h2>
+            </div>
           </div>
 
           {/* Linear Scale Answers (1~4) */}

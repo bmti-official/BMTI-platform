@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 
 const TermsModal = ({ isOpen, onClose }) => {
@@ -84,10 +85,10 @@ const TermsModal = ({ isOpen, onClose }) => {
               </div>
 
               <div>
-                <h5 className="font-bold text-gray-900 mb-1">제2조 (수집하는 개인정보의 항목)</h5>
-                <p className="text-gray-600 break-keep mb-2">"회사"는 플리 신청 및 미션 인증을 위해 아래의 개인정보를 수집하고 있습니다.</p>
+                <h5 className="font-bold text-gray-900 mb-1">제2조 (수집하는 개인정보의 항목 및 수집 목적)</h5>
+                <p className="text-gray-600 break-keep mb-2">"회사"는 회원가입, 맞춤형 플리 신청 및 미션 인증을 위해 아래의 개인정보를 수집하고 있습니다.</p>
                 <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                  <li><strong>필수 항목:</strong> 성명, 카카오톡 계정(또는 연락처), BMTI 검사 결과, 운동 환경 및 소도구 유무, 신체 불편/주의 부위</li>
+                  <li><strong>필수 항목:</strong> 카카오계정(전화번호), 카카오계정(이메일), 성별, 연령대, 닉네임, BMTI 검사 결과, 운동 환경 및 소도구 유무, 신체 불편/주의 부위</li>
                   <li><strong>선택 항목:</strong> 미션 수행 인증 사진 (단, 인증 사진은 환경/사물 위주로 수집하며, 얼굴 등 민감한 개인 식별 정보는 요구하지 않습니다)</li>
                 </ul>
               </div>
@@ -115,7 +116,7 @@ const TermsModal = ({ isOpen, onClose }) => {
                 <ul className="text-gray-600 space-y-1 text-sm">
                   <li><strong>책임자 성명:</strong> 이응준</li>
                   <li><strong>소속/직위:</strong> 자기점검 50분 대표</li>
-                  <li><strong>전화번호:</strong> 010-2885-0431</li>
+                  <li><strong>전화번호:</strong> 070-xxxx-xxxx(수정 예정)</li>
                 </ul>
               </div>
             </div>

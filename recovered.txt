@@ -1,0 +1,27 @@
+Created At: 2026-06-24T03:23:19Z
+Completed At: 2026-06-24T03:23:20Z
+
+				The command completed successfully.
+				Output:
+				const getKoreanName = (code) => {
+  if (!code) return '';
+  const map = {
+    'A': '애', 'O': '오', 'C': '씨', 'L': '엘',
+    'D': '디', 'Q': '큐', 'M': '엠', 'Z': '지'
+  };
+  return code.split('').map(char => map[char] || char).join('');
+};
+
+
+
+const TraitCard = ({ title, quote, body, barPct, barColor }) => {
+  return (
+    <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+      <div className="flex flex-col gap-2.5 p-4 text-left">
+        {barPct != null && (
+          <div className="w-full flex items-center gap-2">
+            <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${barPct}%`, backgroundColor: barColor || '#000' }}></div>
+            </div>
+            <span className="text-xs font-black shrink-0" style={{ color: barColor || '#000' }}>{barPct}%</span>
+

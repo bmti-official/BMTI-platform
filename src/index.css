@@ -23,6 +23,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.chat-mode-fixed {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 ::selection {
   background-color: var(--color-accent);
   color: #000000;
@@ -89,4 +96,14 @@ body {
 
 .animate-spin-slow {
   animation: spin-slow 12s linear infinite;
+}
+
+/* Hide number input arrows */
+.hide-number-spin::-webkit-inner-spin-button,
+.hide-number-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hide-number-spin {
+  -moz-appearance: textfield;
 }

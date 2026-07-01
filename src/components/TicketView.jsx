@@ -270,10 +270,13 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
       </div>
 
       {/* ===== 동기부여(소셜 프루프) ===== */}
-      <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-2xl px-4 py-3 mb-6 text-center">
+      <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-2xl px-4 py-3 mb-3 text-center">
         <p className="text-sm text-gray-700 break-keep">
           🔥 현재 <strong className="text-orange-600">{companionCount}명</strong>의 <strong className="text-black">{userBMTI}</strong> 유형 동지들이 오늘의 미션을 완료했습니다!
         </p>
+      </div>
+      <div className="text-center text-xs text-gray-400 mb-6">
+        📌 미션 기간은 <strong className="text-gray-600">매주 월요일 ~ 일요일</strong>이며, 월요일에 초기화됩니다.
       </div>
 
       {/* ===== 오늘의 미션 카드 / 인증 완료 사진 ===== */}
@@ -416,9 +419,13 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
 
       {/* ===== 진척도 메시지 ===== */}
       {remaining > 0 && !verified && (
-        <div className="text-center text-sm text-gray-500 break-keep">
-          이번 주 <strong className="text-black">{remaining}번</strong>만 더 인증하면,{' '}
-          나만의 <strong className="text-[#9BB31B]">[10분 맞춤 플리]</strong>를 신청할 수 있어요!
+        <div className="bg-gradient-to-r from-[#f5f9e6] to-[#eef5d6] border-2 border-[#e2edbc] rounded-2xl p-5 text-center mb-6 fade-in">
+          <p className="text-base font-bold text-gray-800 break-keep">
+            이번 주 <span className="text-[#9BB31B] text-xl">{remaining}번</span>만 더 인증하면,
+          </p>
+          <p className="text-base font-bold text-[#6b7c30] mt-1 break-keep">
+            나만의 <span className="bg-[#c0ff00] text-black px-2 py-0.5 rounded-lg">[10분 맞춤 플리]</span>를 신청할 수 있어요! 🎉
+          </p>
         </div>
       )}
       {weeklyCount >= 5 && (
@@ -426,6 +433,25 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
           🎉 축하해요! 이번 주 인증을 모두 완료했어요! 나만의 맞춤 플리를 신청해 보세요!
         </div>
       )}
+
+      {/* ===== 이전 미션 기록 ===== */}
+      <div className="mt-12 mb-8 text-left w-full fade-in">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span>📅</span> 나의 미션 내역<span className="text-sm font-medium text-gray-400">(월요일에 초기화 됩니다!)</span>
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center aspect-[4/5] relative overflow-hidden group cursor-pointer hover:border-gray-300 transition-colors">
+            <span className="text-2xl mb-2 opacity-50 group-hover:scale-110 transition-transform">📷</span>
+            <p className="text-[10px] md:text-xs font-bold text-gray-400">2026.06.12</p>
+            <p className="text-xs md:text-sm font-bold text-gray-700 mt-1">1일 차 완료</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center aspect-[4/5] relative overflow-hidden group cursor-pointer hover:border-gray-300 transition-colors">
+            <span className="text-2xl mb-2 opacity-50 group-hover:scale-110 transition-transform">📷</span>
+            <p className="text-[10px] md:text-xs font-bold text-gray-400">2026.06.13</p>
+            <p className="text-xs md:text-sm font-bold text-gray-700 mt-1">2일 차 완료</p>
+          </div>
+        </div>
+      </div>
 
       {/* ===== Toast Notification ===== */}
       {showToast && (
