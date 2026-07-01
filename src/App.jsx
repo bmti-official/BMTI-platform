@@ -36,10 +36,16 @@ function App() {
     }
   }, [bmtiAnswers]);
 
-  // Scroll to top on view change
+  // Scroll to top and update hash on view change
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentView]);
+    
+    if (currentView === 'result' && bmtiCode) {
+      window.history.replaceState(null, '', `#${bmtiCode}`);
+    } else if (currentView === 'home') {
+      window.history.replaceState(null, '', ' '); // clear hash
+    }
+  }, [currentView, bmtiCode]);
 
   // Load session on mount
   useEffect(() => {
@@ -52,6 +58,10 @@ function App() {
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setUserProfile(user);
           setIsLoggedIn(true);
+          
+          if (user.bmti_type) {
+            setBmtiCode(prev => prev || user.bmti_type);
+          }
         }
       } catch (e) {
         console.error('Failed to parse saved user', e);
