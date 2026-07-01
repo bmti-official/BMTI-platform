@@ -40,6 +40,24 @@ function App() {
     }
   }, [bmtiAnswers]);
 
+  // BMTI 변경 이벤트 리스너 추가
+  useEffect(() => {
+    const handleBmtiChange = (e) => {
+      setBmtiCode(e.detail.code);
+    };
+    const handleOpenGroupRoom = (e) => {
+      setCurrentGroupRoom(e.detail);
+      setCurrentView('group_chat');
+    };
+    
+    window.addEventListener('BMTI_UPDATED', handleBmtiChange);
+    window.addEventListener('OPEN_GROUP_ROOM', handleOpenGroupRoom);
+    return () => {
+      window.removeEventListener('BMTI_UPDATED', handleBmtiChange);
+      window.removeEventListener('OPEN_GROUP_ROOM', handleOpenGroupRoom);
+    };
+  }, []);
+
   // Scroll to top and update hash on view change
   useEffect(() => {
     window.scrollTo(0, 0);

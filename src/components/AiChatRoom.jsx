@@ -5,8 +5,10 @@ import { CHARACTER_NAMES, generateChatResponse } from '../lib/gemini';
 import { getTodayMessages, addMessage, getSelectedMemories } from '../lib/chatSystem';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
+import ChatDrawer from './ChatDrawer';
 
 const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const charName = CHARACTER_NAMES[axisCode] || 'BMTI 코치';
@@ -130,30 +132,14 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
             <p className="text-[10px] text-gray-500 font-medium">1:1 맞춤형 코칭</p>
           </div>
           
-          <div className="relative">
-            <button 
-              onClick={() => {
-                const el = document.getElementById('chat-menu');
-                if (el) el.classList.toggle('hidden');
-              }}
-              className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
-              </svg>
-            </button>
-            <div id="chat-menu" className="hidden absolute top-12 right-0 w-40 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
-              <button onClick={() => setView('aichat_room')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
-                1:1 대화방
-              </button>
-              <button onClick={() => setView('aichat')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
-                단톡방
-              </button>
-              <button onClick={() => setView('chat_history')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50">
-                이전 대화 기록
-              </button>
-            </div>
-          </div>
+          <button 
+            onClick={() => setIsDrawerOpen(true)}
+            className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+            </svg>
+          </button>
         </div>
         
         {/* Token Info Bar */}
@@ -173,6 +159,14 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
           )}
         </div>
       </div>
+
+      <ChatDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        setView={setView} 
+        userInfo={userInfo} 
+        bmtiCode={bmtiCode} 
+      />
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

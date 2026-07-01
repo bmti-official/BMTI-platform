@@ -5,20 +5,21 @@ import { CHARACTER_NAMES, generateGroupResponse } from '../lib/gemini';
 import { getGroupMessages, addGroupMessage, useGroupBmtiCall } from '../lib/chatSystem';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
+import ChatDrawer from './ChatDrawer';
 
 const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
-  const userAxisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
-  const tier = userInfo?.subscription_tier || userInfo?.subscriptionTier || 'free';
-  const isPremium = isSubscriber(tier) || userInfo?.isPremium;
-
   const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [remainingTokens, setRemainingTokens] = useState(0);
   const [starBalance, setStarBalance] = useState(0);
   const [showTokenWarning, setShowTokenWarning] = useState(false);
   const [bmtiCallCount, setBmtiCallCount] = useState(0);
   
+  const userAxisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
+  const tier = userInfo?.subscription_tier || userInfo?.subscriptionTier || 'free';
+  const isPremium = isSubscriber(tier) || userInfo?.isPremium;
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -155,33 +156,14 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
             <p className="text-[10px] text-gray-500 font-medium">참여 인원 {room.members.length}명</p>
           </div>
           
-          <div className="relative">
-            <button 
-              onClick={() => {
-                const el = document.getElementById('group-chat-menu');
-                if (el) el.classList.toggle('hidden');
-              }}
-              className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
-              </svg>
-            </button>
-            <div id="group-chat-menu" className="hidden absolute top-12 right-0 w-40 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
-              <button onClick={() => setView('aichat_room')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
-                1:1 대화방
-              </button>
-              <button onClick={() => setView('aichat')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
-                단톡방
-              </button>
-              <button onClick={() => setView('chat_history')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
-                이전 대화 기록
-              </button>
-              <button onClick={() => alert(`초대 코드: ${room.inviteCode}`)} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 hover:bg-gray-50">
-                초대 코드 보기
-              </button>
-            </div>
-          </div>
+          <button 
+            onClick={() => setIsDrawerOpen(true)}
+            className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+            </svg>
+          </button>
         </div>
         
         {/* Token Info Bar */}
@@ -196,6 +178,14 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
           </span>
         </div>
       </div>
+
+      <ChatDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        setView={setView} 
+        userInfo={userInfo} 
+        bmtiCode={bmtiCode} 
+      />
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

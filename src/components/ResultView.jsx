@@ -201,7 +201,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     }
   };
 
-  if (!quizCompleted) {
+  if (!bmtiCode && !quizCompleted) {
     return (
       <div className="min-h-screen pt-44 md:pt-52 pb-20 px-6 flex flex-col items-center justify-center text-center fade-in">
         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-200">
