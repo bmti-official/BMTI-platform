@@ -123,49 +123,79 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
 
       {/* 상세 설명 */}
       <div className="px-2">
-        <h3 className="font-black text-xl mb-6 text-gray-900 text-center">BMTI TALK이란?</h3>
+        {/* Quote Box */}
+        <div className="bg-white rounded-[1.5rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 mb-8 mx-auto max-w-sm relative overflow-hidden flex flex-col items-center justify-center gap-1">
+          <p className="text-[15px] font-extrabold text-gray-900 tracking-tight">
+            "나 지금 너무 나태해졌어 팩폭해줘!"
+          </p>
+          <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full my-1">vs</span>
+          <p className="text-[15px] font-extrabold text-gray-900 tracking-tight">
+            "나 오늘 너무 힘들었어 공감해줘ㅜㅜ"
+          </p>
+        </div>
         
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* 1:1 나만의 캐릭터 대화 */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[1.5rem] p-6 border border-blue-100/60 relative overflow-hidden">
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-100/40 rounded-full blur-2xl"></div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-blue-100">
-                💬
+          <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">
+            <h4 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
+              <span className="text-xl">💬</span> 1:1 나만의 캐릭터와 대화
+            </h4>
+            <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl">
+              <div className="flex flex-col items-end">
+                <div className="bg-black text-white text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tr-sm shadow-sm max-w-[85%]">
+                  요즘 자꾸 늘어지네.. 운동 자극 좀 줘!
+                </div>
               </div>
-              <h4 className="font-bold text-gray-900 text-[15px]">1:1 나만의 캐릭터와 대화</h4>
+              <div className="flex gap-2 items-end">
+                <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-sm shadow-sm border border-blue-100">🤖</div>
+                <div className="bg-white text-gray-800 border border-gray-100 text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%] leading-relaxed">
+                  나를 대변하는 BMTI 캐릭터와 1:1로 대화하며, <strong className="text-blue-600">내 성향에 꼭 맞는 운동 피드백과 동기부여</strong>를 실시간으로 받아보세요.
+                </div>
+              </div>
             </div>
-            <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
-              나를 대변하는 BMTI 캐릭터와 1:1로 대화하며, 내 성향에 꼭 맞는 운동 피드백과 동기부여를 실시간으로 받아보세요.
-            </p>
           </div>
 
           {/* 친구들과 단톡방 */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-[1.5rem] p-6 border border-purple-100/60 relative overflow-hidden">
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-purple-100/40 rounded-full blur-2xl"></div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-purple-100">
-                👥
+          <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">
+            <h4 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
+              <span className="text-xl">👥</span> 친구들과 단톡방
+            </h4>
+            <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl">
+              <div className="flex flex-col items-start">
+                <div className="flex gap-2 items-end">
+                  <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[10px] font-bold shadow-sm border border-gray-300">친구</div>
+                  <div className="bg-white border border-gray-100 text-gray-800 text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%]">
+                    우리 내일 하체 어때? @BMTI 
+                  </div>
+                </div>
               </div>
-              <h4 className="font-bold text-gray-900 text-[15px]">친구들과 단톡방</h4>
+              <div className="flex gap-2 items-end">
+                <div className="w-7 h-7 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 text-sm shadow-sm border border-purple-100">🤖</div>
+                <div className="bg-purple-50 text-gray-900 border border-purple-100 text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%] leading-relaxed">
+                  친구들을 초대해 단체 채팅방을 만들고, BMTI 캐릭터들과 함께 <strong className="text-purple-700">운동 목표를 세우며 재밌게 소통</strong>해보세요.
+                </div>
+              </div>
             </div>
-            <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
-              친구들을 초대해 단체 채팅방을 만들고, BMTI 캐릭터들과 함께 운동 목표를 세우며 재밌게 소통해보세요.
-            </p>
           </div>
 
           {/* 스마트한 AI 기억력 */}
-          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-[1.5rem] p-6 border border-amber-100/60 relative overflow-hidden">
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-amber-100/40 rounded-full blur-2xl"></div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm border border-amber-100">
-                🧠
+          <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">
+            <h4 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
+              <span className="text-xl">🧠</span> 스마트한 AI 기억력
+            </h4>
+            <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl">
+              <div className="flex flex-col items-end">
+                <div className="bg-black text-white text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tr-sm shadow-sm max-w-[85%]">
+                  나 내일 인바디 재니까 기억해줘
+                </div>
               </div>
-              <h4 className="font-bold text-gray-900 text-[15px]">스마트한 AI 기억력</h4>
+              <div className="flex gap-2 items-end">
+                <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0 text-sm shadow-sm border border-amber-100">🤖</div>
+                <div className="bg-white border border-gray-100 text-gray-800 text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%] leading-relaxed">
+                  사용자가 '기억해줘'라고 지정한 내용을 기억하여, <strong className="text-amber-600">이전 대화 맥락을 파악하고 더 자연스럽게 대화</strong>합니다.
+                </div>
+              </div>
             </div>
-            <p className="text-[13px] text-gray-600 leading-relaxed break-keep pl-14">
-              사용자가 '기억해줘'라고 지정한 내용을 AI가 기억하여, 다음 번 대화에서도 이전 대화 맥락을 파악하고 더 자연스럽게 대화합니다.
-            </p>
           </div>
         </div>
 
