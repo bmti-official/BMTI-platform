@@ -114,7 +114,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50">
+    <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50 h-[100dvh] w-full">
       {/* Floating Header Buttons */}
       <div className="absolute top-4 left-0 right-0 px-4 z-20 flex items-center justify-between">
         {/* Home (round) */}
@@ -154,18 +154,9 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       />
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto pt-16 pb-24 px-4 space-y-4">
+      <div className="flex-1 overflow-y-auto pt-16 pb-4 px-4 space-y-4" onClick={() => document.activeElement?.blur()}>
         {messages.length === 0 && (
           <div className="text-center py-16 fade-in flex flex-col items-center">
-            <div className="mb-4">
-              {charData ? (
-                <img src={charData.image} alt={axisCode} className="w-24 h-24 object-contain drop-shadow-md" />
-              ) : (
-                <span className="text-5xl">⭐️</span>
-              )}
-            </div>
-            <p className="text-sm font-bold text-gray-900 mb-1">{charName}</p>
-            <p className="text-xs text-gray-500 max-w-[200px] break-keep">{bmtiInfo?.catchphrase}</p>
             <div className="mt-6 inline-block bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-sm text-gray-700">궁금한 점이나 오늘의 몸 상태를 자유롭게 이야기해주세요!</p>
             </div>
@@ -249,11 +240,14 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       )}
 
       {/* Floating Input Area (Gemini style) */}
-      <div className="absolute bottom-4 left-4 right-4 z-10">
+      <div className="p-4 bg-transparent pb-safe flex-shrink-0 z-10 w-full">
         <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onFocus={() => {
+              setTimeout(scrollToBottom, 100);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();

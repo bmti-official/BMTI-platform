@@ -141,8 +141,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
   if (!room) return null;
 
   return (
-  return (
-    <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50">
+    <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50 h-[100dvh] w-full">
       {/* Floating Header Buttons */}
       <div className="absolute top-4 left-0 right-0 px-4 z-20 flex items-center justify-between">
         {/* Home (round) */}
@@ -183,7 +182,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
       />
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto pt-16 pb-28 px-4 space-y-4">
+      <div className="flex-1 overflow-y-auto pt-16 pb-4 px-4 space-y-4" onClick={() => document.activeElement?.blur()}>
         {messages.length === 0 && (
           <div className="text-center py-16 fade-in flex flex-col items-center">
             <div className="w-24 h-24 rounded-3xl bg-purple-50 mb-4 flex items-center justify-center p-2 border border-purple-100 shadow-sm">
@@ -278,7 +277,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
       )}
 
       {/* Floating Input Area (Gemini style) */}
-      <div className="absolute bottom-4 left-4 right-4 z-10">
+      <div className="p-4 bg-transparent pb-safe flex-shrink-0 z-10 w-full">
         <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto">
           <button 
             onClick={() => setInputText(prev => prev + '@BMTI ')}
@@ -289,6 +288,9 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onFocus={() => {
+              setTimeout(scrollToBottom, 100);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
