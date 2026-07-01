@@ -181,12 +181,32 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 0) {
       handleKakaoLogin();
       return;
     }
     if (!validateStep(step)) return;
+
+    if (step === 1) {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('nickname', formData.nickname);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+          return;
+        }
+      } catch (e) {
+        console.error('닉네임 중복 확인 오류:', e);
+        alert('닉네임 확인 중 오류가 발생했습니다.');
+        return;
+      }
+    }
 
     if (step < totalSteps) {
       setStep(prev => prev + 1);

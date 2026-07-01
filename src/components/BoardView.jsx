@@ -115,7 +115,10 @@ const AuthorBadge = ({ author, bmti, size = 'md', isPremium = false }) => {
       )}
       <div className="flex flex-col justify-center">
         <div className="flex items-center gap-1.5">
-          <span className={`${textS} font-bold text-gray-800 leading-none`}>{isPremium ? '🎟️ ' : ''}{author}</span>
+          <span className={`${textS} font-bold ${author === 'BMTI' ? 'text-blue-600' : 'text-gray-800'} leading-none flex items-center`}>
+            {author === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+            {isPremium && author !== 'BMTI' ? '🎟️ ' : ''}{author}
+          </span>
           {bmti && (
             <span className={`${codeS} font-bold px-1.5 py-0.5 rounded-full border leading-none ${
               bmti.endsWith('Z') ? 'bg-blue-100 text-blue-700 border-blue-200' :
@@ -249,6 +252,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
   const [showReplyFor, setShowReplyFor] = useState(null);
 
   const myNickname = userProfile?.nickname || '익명';
+  const isAdmin = myNickname === 'BMTI';
   const myBmti = bmtiCode?.split('-')[0] || '';
 
   const toggleLike = (postId) => {
@@ -605,7 +609,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                           post.tag === '고민' ? 'bg-purple-100 text-purple-700' :
                           'bg-green-100 text-green-700'
                         }`}>{post.tag}</span>
-                        {isLoggedIn && post.author === myNickname && (
+                        {isLoggedIn && (post.author === myNickname || isAdmin) && (
                           <button
                             onClick={(e) => handleDeletePost(post.id, e)}
                             className="text-[11px] text-gray-400 hover:text-red-500 font-bold transition-colors px-2 py-1"
@@ -650,7 +654,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                                 <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" isPremium={comment.isPremium || (comment.author === myNickname && userProfile?.isPremium)} />
                                 <span className="text-[11px] text-gray-400 mt-0.5">{comment.date}</span>
                               </div>
-                              {isLoggedIn && comment.author === myNickname && (
+                              {isLoggedIn && (comment.author === myNickname || isAdmin) && (
                                 <button
                                   onClick={() => handleDeleteComment(post.id, comment.id)}
                                   className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"
@@ -677,7 +681,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                                         <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" isPremium={reply.isPremium || (reply.author === myNickname && userProfile?.isPremium)} />
                                         <span className="text-[10px] text-gray-400 mt-0.5">{reply.date}</span>
                                       </div>
-                                      {isLoggedIn && reply.author === myNickname && (
+                                      {isLoggedIn && (reply.author === myNickname || isAdmin) && (
                                         <button
                                           onClick={() => handleDeleteReply(post.id, comment.id, reply.id)}
                                           className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"

@@ -69,14 +69,49 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     // If nickname changed, set hasEditedNickname to true
     let updatedUserData = { ...userData };
     if (userInfo && userInfo.nickname !== userData.nickname) {
-      updatedUserData.hasEditedNickname = true;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('nickname', userData.nickname);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+          return;
+        }
+        
+        // Update in Supabase
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ nickname: userData.nickname })
+          .eq('id', userData.id);
+          
+        if (updateError) throw updateError;
+        
+        updatedUserData.hasEditedNickname = true;
+      } catch (e) {
+        console.error('닉네임 변경 오류:', e);
+        alert('닉네임 변경 중 오류가 발생했습니다.');
+        return;
+      }
     }
     setUserData(updatedUserData);
     localStorage.setItem('bmti_user', JSON.stringify(updatedUserData));
+    
+    // Check if App.jsx provided a setter to update global state
+    // To make sure Navbar and other components re-render, we'd need to update global state.
+    // Assuming setUserProfile might not be passed down, but usually changing localStorage is enough 
+    // if we refresh or it triggers an effect. Actually, let's just reload if nickname changed.
+    if (updatedUserData.hasEditedNickname) {
+      window.location.reload();
+    }
+    
     setIsEditing(false);
   };
 
