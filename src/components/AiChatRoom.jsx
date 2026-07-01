@@ -119,8 +119,8 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       <div className="absolute top-4 left-0 right-0 px-4 z-20 flex items-center justify-between">
         {/* Home (round) */}
         <button 
-          onClick={() => setView('aichat')}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+          onClick={() => setView('aichat_room')}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -137,7 +137,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
         {/* Menu (round) */}
         <button 
           onClick={() => setIsDrawerOpen(true)}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -216,7 +216,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
 
       {/* Token Warning Overlay */}
       {showTokenWarning && (
-        <div className="absolute inset-x-0 bottom-28 mx-4 bg-white rounded-2xl p-4 shadow-xl border border-red-100 animate-fade-in-up z-20">
+        <div className="absolute inset-x-0 bottom-28 mx-4 bg-white rounded-[1.5rem] p-5 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)] border border-red-100 animate-pop-in z-20">
           <div className="text-center">
             <span className="text-3xl mb-2 block">🪙</span>
             <h3 className="font-bold text-gray-900 mb-1">토큰이 부족합니다</h3>
@@ -224,13 +224,13 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
             <div className="flex gap-2">
               <button 
                 onClick={() => setShowTokenWarning(false)}
-                className="flex-1 py-2.5 bg-gray-100 text-gray-700 text-sm font-bold rounded-xl"
+                className="flex-1 py-3 bg-gray-100 text-gray-700 text-sm font-bold rounded-xl active:scale-95 transition-all duration-200"
               >
                 닫기
               </button>
               <button 
                 onClick={handleSpendStar}
-                className="flex-1 py-2.5 bg-[#FEE500] text-black text-sm font-bold rounded-xl flex items-center justify-center gap-1"
+                className="flex-1 py-3 bg-[#FEE500] text-black text-sm font-bold rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all duration-200 shadow-sm"
               >
                 ⭐️ 1개 사용하기
               </button>
@@ -241,7 +241,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
 
       {/* Floating Input Area (Gemini style) */}
       <div className="p-4 bg-transparent pb-safe flex-shrink-0 z-10 w-full">
-        <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto">
+        <div className="bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto transition-all duration-300 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.12)] focus-within:border-gray-300">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -262,7 +262,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
           <button
             onClick={handleSend}
             disabled={!inputText.trim() || isTyping}
-            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-100 disabled:text-gray-400 transition-all duration-300 ease-out hover:bg-gray-800 active:scale-90 disabled:active:scale-100 shadow-sm disabled:shadow-none"
           >
             <svg className="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

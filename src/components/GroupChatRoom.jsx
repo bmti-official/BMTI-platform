@@ -147,7 +147,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
         {/* Home (round) */}
         <button 
           onClick={() => setView('aichat_room')}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -165,7 +165,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
         {/* Menu (round) */}
         <button 
           onClick={() => setIsDrawerOpen(true)}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -264,13 +264,13 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
 
       {/* Token Warning */}
       {showTokenWarning && (
-        <div className="absolute inset-x-0 bottom-28 mx-4 bg-white rounded-2xl p-4 shadow-xl border border-red-100 z-20 animate-fade-in-up">
+        <div className="absolute inset-x-0 bottom-28 mx-4 bg-white rounded-[1.5rem] p-5 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)] border border-red-100 z-20 animate-pop-in">
           <div className="text-center">
             <span className="text-3xl mb-2 block">🪙</span>
             <h3 className="font-bold text-gray-900 mb-2">토큰 부족</h3>
             <div className="flex gap-2">
-              <button onClick={() => setShowTokenWarning(false)} className="flex-1 py-2 bg-gray-100 text-sm font-bold rounded-xl">닫기</button>
-              <button onClick={handleSpendStar} className="flex-1 py-2 bg-[#FEE500] text-sm font-bold rounded-xl flex items-center justify-center gap-1">⭐️ 사용</button>
+              <button onClick={() => setShowTokenWarning(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 text-sm font-bold rounded-xl active:scale-95 transition-all duration-200">닫기</button>
+              <button onClick={handleSpendStar} className="flex-1 py-3 bg-[#FEE500] text-black text-sm font-bold rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all duration-200 shadow-sm">⭐️ 사용</button>
             </div>
           </div>
         </div>
@@ -278,10 +278,10 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
 
       {/* Floating Input Area (Gemini style) */}
       <div className="p-4 bg-transparent pb-safe flex-shrink-0 z-10 w-full">
-        <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto">
+        <div className="bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto transition-all duration-300 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.12)] focus-within:border-gray-300">
           <button 
             onClick={() => setInputText(prev => prev + '@BMTI ')}
-            className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 font-bold text-xs flex items-center justify-center flex-shrink-0 hover:bg-purple-100 transition-colors"
+            className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 font-bold text-xs flex items-center justify-center flex-shrink-0 hover:bg-purple-100 active:scale-90 transition-all duration-200"
           >
             @
           </button>
@@ -305,7 +305,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
           <button
             onClick={handleSend}
             disabled={!inputText.trim() || isTyping}
-            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-100 disabled:text-gray-400 transition-all duration-300 ease-out hover:bg-gray-800 active:scale-90 disabled:active:scale-100 shadow-sm disabled:shadow-none"
           >
             <svg className="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
