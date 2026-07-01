@@ -27,7 +27,7 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
 
   useEffect(() => {
     setStarBalance(getStarBalance());
-    const t = isPremium ? 'plus_lifetime' : 'free';
+    const t = userInfo?.nickname === 'BMTI' ? 'admin' : (isPremium ? 'plus_lifetime' : 'free');
     setRemainingTokens(getRemainingTokens(t));
     setTotalTokens(getTotalDailyLimit(t));
     setArchives(getArchives());
@@ -62,7 +62,7 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
       <div className="text-center mb-8">
         <h1 className="text-3xl font-black mb-2 flex items-center justify-center gap-2">⭐️ BMTI TALK</h1>
         <p className="text-gray-500 font-medium text-sm px-4 break-keep">
-          나의 아바타 BMTI 캐릭터와 대화하거나 친구들과 단체톡을 만들어 BMTI 캐틱터와 대화하세요.
+          나의 아바타 BMTI 캐릭터와 대화하거나<br/>친구들과 단체톡을 만들어 BMTI 캐릭터와 대화하세요.
         </p>
       </div>
 

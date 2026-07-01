@@ -59,7 +59,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
   useEffect(() => {
     const tier = userData?.subscription_tier || userData?.subscriptionTier || 'free';
     const isPremium = isSubscriber(tier) || userData?.isPremium;
-    const effTier = isPremium ? 'plus_lifetime' : 'free';
+    const effTier = userData?.nickname === 'BMTI' ? 'admin' : (isPremium ? 'plus_lifetime' : 'free');
     
     setStarBalance(getStarBalance());
     setRemainingTokens(getRemainingTokens(effTier));

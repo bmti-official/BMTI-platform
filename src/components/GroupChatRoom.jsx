@@ -143,10 +143,10 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
     <div className="fixed inset-0 bg-gray-50 flex flex-col z-50">
       {/* Header */}
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-10 pt-safe">
-        <div className="h-14 flex items-center justify-between px-4">
-          <button onClick={onClose} className="p-2 -ml-2 text-gray-500 hover:text-black">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+        <div className="h-14 flex items-center justify-between px-4 relative">
+          <button onClick={() => setView('home')} className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </button>
           
@@ -155,11 +155,33 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
             <p className="text-[10px] text-gray-500 font-medium">참여 인원 {room.members.length}명</p>
           </div>
           
-          <button className="p-2 -mr-2 text-gray-500" onClick={() => alert(`초대 코드: ${room.inviteCode}`)}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => {
+                const el = document.getElementById('group-chat-menu');
+                if (el) el.classList.toggle('hidden');
+              }}
+              className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+              </svg>
+            </button>
+            <div id="group-chat-menu" className="hidden absolute top-12 right-0 w-40 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+              <button onClick={() => setView('aichat_room')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
+                1:1 대화방
+              </button>
+              <button onClick={() => setView('aichat')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
+                단톡방
+              </button>
+              <button onClick={() => setView('chat_history')} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 border-b border-gray-50">
+                이전 대화 기록
+              </button>
+              <button onClick={() => alert(`초대 코드: ${room.inviteCode}`)} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 hover:bg-gray-50">
+                초대 코드 보기
+              </button>
+            </div>
+          </div>
         </div>
         
         {/* Token Info Bar */}

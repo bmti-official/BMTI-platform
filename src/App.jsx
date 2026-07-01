@@ -80,9 +80,9 @@ function App() {
     }
   }, []);
 
-  // Update Supabase when bmtiCode is updated (after quiz)
+  // Update Supabase when quiz is completed
   useEffect(() => {
-    if (isLoggedIn && userProfile && bmtiCode && userProfile.bmti_type !== bmtiCode) {
+    if (isLoggedIn && userProfile && bmtiCode && quizCompleted) {
       const updateBmti = async () => {
         try {
           const { error } = await supabase
@@ -91,7 +91,7 @@ function App() {
             .eq('id', userProfile.id);
             
           if (!error) {
-            // 히스토리 기록
+            // 항상 새로운 히스토리 추가 (결과가 같아도 추가됨)
             await supabase
               .from('bmti_history')
               .insert({ user_id: userProfile.id, bmti_code: bmtiCode })
@@ -107,7 +107,8 @@ function App() {
       };
       updateBmti();
     }
-  }, [bmtiCode, isLoggedIn, userProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizCompleted]);
 
   // Handler for login attempts — opens signup modal instead of instant login
   const handleLoginAttempt = () => {

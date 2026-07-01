@@ -13,6 +13,7 @@ export const DAILY_TOKEN_LIMITS = {
   plus_lifetime: 25000,
   pro_monthly: 100000,
   pro_lifetime: 100000,
+  admin: 9999999, // 관리자 무제한
 };
 
 // 기능별 예상 토큰 소비량
