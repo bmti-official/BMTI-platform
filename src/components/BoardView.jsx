@@ -357,9 +357,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
       }
 
       const starResult = earnStar('post');
-      if (starResult.success) {
-        alert(`게시글이 등록되었습니다. ${starResult.message}`);
-      }
+      alert(`게시글이 등록되었습니다.\n${starResult.message}`);
 
       setWriteContent('');
       setWriteTag('일상');
@@ -395,9 +393,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
       if (error) throw error;
 
       const starResult = earnStar('comment');
-      if (starResult.success) {
-        alert(`댓글이 등록되었습니다. ${starResult.message}`);
-      }
+      alert(`댓글이 등록되었습니다.\n${starResult.message}`);
 
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
       fetchPosts(); // refresh
@@ -430,9 +426,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
       if (error) throw error;
 
       const starResult = earnStar('reply');
-      if (starResult.success) {
-        alert(`답글이 등록되었습니다. ${starResult.message}`);
-      }
+      alert(`답글이 등록되었습니다.\n${starResult.message}`);
 
       setReplyInputs(prev => ({ ...prev, [key]: '' }));
       setShowReplyFor(null);

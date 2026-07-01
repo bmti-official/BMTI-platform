@@ -36,7 +36,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const showAiChatDot = !!bmtiCode && lastChatDate !== todayStr;
   const showBoardDot = !!bmtiCode && lastVoteDate !== todayStr;
 
-  const isChat = currentView === 'aichat';
+  const isChat = false;
   const [showTopBar, setShowTopBar] = useState(false);
   const [showCategory, setShowCategory] = useState(false);
   const tabs = [
