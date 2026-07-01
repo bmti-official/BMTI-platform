@@ -114,50 +114,35 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-50 flex flex-col z-50">
-      {/* Header */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-10 pt-safe">
-        <div className="h-14 flex items-center justify-between px-4 relative">
-          <button 
-            onClick={() => setView('aichat')}
-            className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </button>
-          
-          <div className="flex flex-col items-center flex-1">
-            <h2 className="font-bold text-gray-900 text-base">'{charName}' 코치</h2>
-            <p className="text-[10px] text-gray-500 font-medium">1:1 맞춤형 코칭</p>
-          </div>
-          
-          <button 
-            onClick={() => setIsDrawerOpen(true)}
-            className="p-2 -mr-2 text-gray-500 hover:text-black transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
-            </svg>
-          </button>
-        </div>
-        
-        {/* Token Info Bar */}
-        <div className="bg-gray-50 border-t border-gray-100 py-2 px-4 flex justify-between items-center text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-700">🪙 {remainingTokens.toLocaleString()}</span>
-            <span className="text-gray-300">|</span>
-            <span className="font-bold text-yellow-600">⭐️ {starBalance}</span>
-          </div>
-          {isPremium && (
-            <button 
-              onClick={() => setView('mypage')}
-              className="text-[10px] font-bold bg-[#c0ff00] text-black px-2 py-1 rounded-full"
-            >
-              기억 관리
-            </button>
+    <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50">
+      {/* Floating Header Buttons */}
+      <div className="absolute top-4 left-0 right-0 px-4 z-20 flex items-center justify-between">
+        {/* Home (round) */}
+        <button 
+          onClick={() => setView('aichat')}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Floating Character (center) */}
+        <div className="flex items-center gap-2">
+          {charData && (
+            <img src={charData.image} alt={axisCode} className="w-10 h-10 object-contain drop-shadow-sm" />
           )}
         </div>
+
+        {/* Menu (round) */}
+        <button 
+          onClick={() => setIsDrawerOpen(true)}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
 
       <ChatDrawer 
@@ -169,14 +154,14 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       />
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto pt-16 pb-24 px-4 space-y-4">
         {messages.length === 0 && (
-          <div className="text-center py-10 fade-in flex flex-col items-center">
-            <div className={`w-24 h-24 rounded-3xl ${charData?.color || 'bg-gray-100'} mb-4 flex items-center justify-center p-2 shadow-sm border border-gray-100`}>
+          <div className="text-center py-16 fade-in flex flex-col items-center">
+            <div className="mb-4">
               {charData ? (
-                <img src={charData.image} alt={axisCode} className="w-full h-full object-contain" />
+                <img src={charData.image} alt={axisCode} className="w-24 h-24 object-contain drop-shadow-md" />
               ) : (
-                <span className="text-4xl">⭐️</span>
+                <span className="text-5xl">⭐️</span>
               )}
             </div>
             <p className="text-sm font-bold text-gray-900 mb-1">{charName}</p>
@@ -193,7 +178,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
             <div key={msg.id || idx} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-fade-in-up`}>
               <div className="flex items-end gap-2 max-w-[85%]">
                 {!isUser && (
-                  <div className={`w-8 h-8 rounded-full ${charData?.color || 'bg-gray-100'} flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 overflow-hidden mb-1`}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden mb-1">
                     {charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain scale-110" /> : '⭐️'}
                   </div>
                 )}
@@ -225,7 +210,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
 
         {isTyping && (
           <div className="flex items-end gap-2 animate-pulse">
-            <div className={`w-8 h-8 rounded-full ${charData?.color || 'bg-gray-100'} flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 overflow-hidden mb-1`}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden mb-1">
               {charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain scale-110" /> : '⭐️'}
             </div>
             <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm flex gap-1">
@@ -240,7 +225,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
 
       {/* Token Warning Overlay */}
       {showTokenWarning && (
-        <div className="absolute inset-x-0 bottom-20 mx-4 bg-white rounded-2xl p-4 shadow-xl border border-red-100 animate-fade-in-up z-20">
+        <div className="absolute inset-x-0 bottom-28 mx-4 bg-white rounded-2xl p-4 shadow-xl border border-red-100 animate-fade-in-up z-20">
           <div className="text-center">
             <span className="text-3xl mb-2 block">🪙</span>
             <h3 className="font-bold text-gray-900 mb-1">토큰이 부족합니다</h3>
@@ -263,31 +248,29 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-gray-100 p-3 pb-safe flex-shrink-0 z-10">
-        <div className="flex items-end gap-2 max-w-2xl mx-auto">
-          <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden flex items-end">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="메시지를 입력하세요..."
-              className="w-full bg-transparent p-3 text-sm focus:outline-none resize-none max-h-32 min-h-[44px]"
-              rows={1}
-              disabled={isTyping}
-            />
-          </div>
+      {/* Floating Input Area (Gemini style) */}
+      <div className="absolute bottom-4 left-4 right-4 z-10">
+        <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-200 flex items-end gap-2 p-2 max-w-2xl mx-auto">
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="메시지를 입력하세요..."
+            className="flex-1 bg-transparent px-3 py-2.5 text-sm focus:outline-none resize-none max-h-32 min-h-[40px]"
+            rows={1}
+            disabled={isTyping}
+          />
           <button
             onClick={handleSend}
             disabled={!inputText.trim() || isTyping}
-            className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
           >
-            <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>

@@ -24,6 +24,7 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
   const [groupRooms, setGroupRooms] = useState([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteInput, setInviteInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setStarBalance(getStarBalance());
@@ -70,13 +71,48 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
       <div className="px-4 mb-16">
         <button 
           onClick={() => {
-            if (onOpenChat) onOpenChat();
+            setIsLoading(true);
+            setTimeout(() => {
+              setIsLoading(false);
+              if (onOpenChat) onOpenChat();
+            }, 2000);
           }}
-          className="w-full bg-black text-white font-bold py-4 rounded-2xl text-lg hover:bg-gray-800 transition-all shadow-xl shadow-black/20 transform hover:-translate-y-1 active:scale-95"
+          disabled={isLoading}
+          className="w-full bg-black text-white font-bold py-4 rounded-2xl text-lg hover:bg-gray-800 transition-all shadow-xl shadow-black/20 transform hover:-translate-y-1 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3"
         >
-          ⭐️ BMTI TALK 입장!
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              입장 중...
+            </>
+          ) : (
+            <>
+              {charData && (
+                <img src={charData.image} alt="" className="w-8 h-8 object-contain" />
+              )}
+              BMTI TALK 입장!
+            </>
+          )}
         </button>
       </div>
+
+      {/* 로딩 오버레이 */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center gap-6">
+          <div className="relative">
+            {charData && (
+              <img src={charData.image} alt="" className="w-28 h-28 object-contain animate-bounce" />
+            )}
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-lg text-gray-900 mb-1">'{charName}' 코치와 연결 중...</p>
+            <p className="text-sm text-gray-400">잠시만 기다려주세요</p>
+          </div>
+          <div className="w-40 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-black rounded-full animate-loading-bar"></div>
+          </div>
+        </div>
+      )}
 
       {/* 상세 설명 */}
       <div className="px-2">
