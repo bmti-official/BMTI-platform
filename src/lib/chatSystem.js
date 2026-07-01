@@ -212,6 +212,15 @@ export async function getMyGroupRooms(userId) {
   return rooms;
 }
 
+export async function deleteGroupRoom(roomId) {
+  // supabase cascade delete is assumed or we just delete from group_rooms directly.
+  // if not cascading, we should delete messages and members first.
+  await supabase.from('group_messages').delete().eq('room_id', roomId);
+  await supabase.from('group_members').delete().eq('room_id', roomId);
+  const { error } = await supabase.from('group_rooms').delete().eq('id', roomId);
+  return { success: !error };
+}
+
 export async function getGroupMessages(roomId) {
   const today = getTodayStr();
   const startOfDay = new Date(today + 'T00:00:00+09:00').toISOString();

@@ -98,25 +98,46 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
               {groupRooms.length > 0 ? (
                 <div className="space-y-2">
                   {groupRooms.map(room => (
-                    <button
-                      key={room.id}
-                      onClick={() => {
-                        window.dispatchEvent(new CustomEvent('OPEN_GROUP_ROOM', { detail: room }));
-                        onClose();
-                      }}
-                      className="w-full bg-white rounded-[1.5rem] p-4 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all text-left"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl">👥</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-gray-900 truncate">{room.name}</h4>
-                        <p className="text-[11px] text-gray-400 mt-1">{room.members.length}명 참여 · 코드: {room.inviteCode}</p>
-                      </div>
-                      <div className="text-gray-300">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
-                      </div>
-                    </button>
+                    <div key={room.id} className="relative group">
+                      <button
+                        onClick={() => {
+                          window.dispatchEvent(new CustomEvent('OPEN_GROUP_ROOM', { detail: room }));
+                          onClose();
+                        }}
+                        className="w-full bg-white rounded-[1.5rem] p-4 shadow-sm border border-gray-100 flex items-center gap-3 hover:shadow-md transition-all text-left"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xl">👥</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-gray-900 truncate">{room.name}</h4>
+                          <p className="text-[11px] text-gray-400 mt-1">{room.members.length}명 참여 · 코드: {room.inviteCode}</p>
+                        </div>
+                        
+                        {room.owner_id === userInfo?.id && (
+                          <div 
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (window.confirm('정말 삭제하시겠습니까? 이전 대화 기록도 전부 같이 삭제 됩니다.')) {
+                                const { deleteGroupRoom } = await import('../lib/chatSystem');
+                                const res = await deleteGroupRoom(room.id);
+                                if (res.success) {
+                                  setGroupRooms(prev => prev.filter(r => r.id !== room.id));
+                                } else {
+                                  alert('삭제에 실패했습니다.');
+                                }
+                              }
+                            }}
+                            className="text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md transition-colors flex-shrink-0"
+                          >
+                            삭제
+                          </div>
+                        )}
+                        <div className="text-gray-300 flex-shrink-0 ml-1">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                        </div>
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : (

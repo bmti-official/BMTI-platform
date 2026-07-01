@@ -214,7 +214,7 @@ const GroupChatRoom = ({ bmtiCode, room, setView, userInfo, onClose }) => {
               <span className="text-5xl">🙋🏻🙋🏻‍♀️</span>
             </div>
             <p className="text-sm font-bold text-gray-900 mb-1">{room.name}</p>
-            <p className="text-xs text-gray-500">함께 운동 목표를 다져보세요!</p>
+            <p className="text-xs text-gray-500 mt-1 whitespace-pre-wrap leading-relaxed">아침, 점심, 저녁, 자기전<br/>BMTI 캐릭터들이 회의를 통해서 나온 공동의 게릴라 미션을 완수하세요.</p>
             <div className="mt-6 inline-block bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-sm text-gray-700 leading-relaxed text-left max-w-sm">
               <span className="font-bold block mb-2 text-center">💡 단톡방 가이드</span>
               메시지에 <strong className="text-purple-600">@BMTI</strong> 를 포함하여 전송하면, 방 안의 BMTI 캐릭터들이 대화에 참여합니다.
