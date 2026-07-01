@@ -196,8 +196,11 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-black text-gray-900">{userData.nickname}</h2>
-                  {userData.isPremium && (
+                  <h2 className="text-2xl font-black text-gray-900 flex items-center">
+                    {userData.nickname === 'BMTI' && <span className="mr-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md shadow-sm align-middle">관리자</span>}
+                    {userData.nickname}
+                  </h2>
+                  {userData.isPremium && userData.nickname !== 'BMTI' && (
                     <span className="bg-[#c0ff00] text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                       🎟️ 자기점검 평생구독권
                     </span>

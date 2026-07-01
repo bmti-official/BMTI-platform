@@ -74,11 +74,13 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                   <div className="flex items-center gap-1.5 sm:gap-2">
 
                     {/* 닉네임 및 프리미엄 뱃지 영역 */}
-                    <div className="flex flex-col items-center justify-center">
-                      <span className="font-bold text-black truncate max-w-[120px] text-sm">
-                        {userProfile.isPremium ? '🎟️ ' : ''}{userProfile.nickname}
-                      </span>
-                    </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-gray-800 text-sm flex items-center">
+                          {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+                          {userProfile.isPremium && userProfile.nickname !== 'BMTI' ? '🎟️ ' : ''}{userProfile.nickname}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium">{userProfile.kakaoAge} {userProfile.kakaoGender}</span>
+                      </div>
 
                     {/* BMTI Badge */}
                     {bmtiCode && (() => {
