@@ -119,7 +119,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       <div className="absolute top-4 left-0 right-0 px-4 z-20 flex items-center justify-between">
         {/* Home (round) */}
         <button 
-          onClick={() => setView('aichat_room')}
+          onClick={() => setView('aichat')}
           className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

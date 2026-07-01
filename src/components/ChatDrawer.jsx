@@ -22,18 +22,16 @@ const ChatDrawer = ({ isOpen, onClose, setView, userInfo, bmtiCode }) => {
     }
   }, [isOpen, userInfo]);
 
-  if (!isOpen) return null;
-
   return (
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 z-[100] transition-opacity backdrop-blur-sm"
+        className={`fixed inset-0 bg-black/50 z-[100] transition-opacity duration-300 ease-out backdrop-blur-sm ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
         onClick={onClose}
       />
       
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-gray-50 shadow-2xl z-[110] transform transition-transform duration-300 overflow-y-auto">
+      <div className={`fixed inset-y-0 right-0 w-[85%] max-w-sm bg-gray-50 z-[110] transform transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-y-auto ${isOpen ? 'translate-x-0 visible shadow-2xl' : 'translate-x-full invisible shadow-none'}`}>
         <div className="p-5 flex flex-col min-h-full">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-black text-gray-900">BMTI TALK</h2>
