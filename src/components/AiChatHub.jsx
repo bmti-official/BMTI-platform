@@ -58,6 +58,14 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
 
   return (
     <div className="min-h-screen pt-32 pb-32 px-4 md:px-6 max-w-2xl mx-auto fade-in">
+      {/* 타이틀 영역 */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-black mb-2 flex items-center justify-center gap-2">⭐️ BMTI TALK</h1>
+        <p className="text-gray-500 font-medium text-sm px-4 break-keep">
+          나의 아바타 BMTI 캐릭터와 대화하거나 친구들과 단체톡을 만들어 BMTI 캐틱터와 대화하세요.
+        </p>
+      </div>
+
       {/* 프로필 + 토큰 상태 카드 */}
       <div className="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-gray-100 mb-5 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-[#c0ff00]/10 to-transparent rounded-bl-full -z-0"></div>

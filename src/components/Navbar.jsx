@@ -79,7 +79,6 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                           {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
                           {userProfile.isPremium && userProfile.nickname !== 'BMTI' ? '🎟️ ' : ''}{userProfile.nickname}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-medium">{userProfile.kakaoAge} {userProfile.kakaoGender}</span>
                       </div>
 
                     {/* BMTI Badge */}

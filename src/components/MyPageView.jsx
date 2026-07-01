@@ -219,21 +219,31 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
             <div className="flex gap-4 items-start mt-3">
               <div className="space-y-2.5 flex-1">
                     <div className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                      <span className="w-14 text-gray-400 text-xs">연령대</span>
+                      <span className="w-16 text-gray-400 text-xs shrink-0">연령대/성별</span>
                       {isEditing ? (
-                        <select 
-                          value={userData.kakaoAge} 
-                          onChange={(e) => setUserData({...userData, kakaoAge: e.target.value})} 
-                          className="border rounded px-2 py-1 text-xs"
-                        >
-                          <option value="10대">10대</option>
-                          <option value="20대">20대</option>
-                          <option value="30대">30대</option>
-                          <option value="40대">40대</option>
-                          <option value="50대 이상">50대 이상</option>
-                        </select>
+                        <div className="flex gap-2">
+                          <select 
+                            value={userData.kakaoAge} 
+                            onChange={(e) => setUserData({...userData, kakaoAge: e.target.value})} 
+                            className="border rounded px-2 py-1 text-xs"
+                          >
+                            <option value="10대">10대</option>
+                            <option value="20대">20대</option>
+                            <option value="30대">30대</option>
+                            <option value="40대">40대</option>
+                            <option value="50대 이상">50대 이상</option>
+                          </select>
+                          <select 
+                            value={userData.kakaoGender} 
+                            onChange={(e) => setUserData({...userData, kakaoGender: e.target.value})} 
+                            className="border rounded px-2 py-1 text-xs"
+                          >
+                            <option value="남성">남성</option>
+                            <option value="여성">여성</option>
+                          </select>
+                        </div>
                       ) : (
-                        <span>{userData.kakaoAge}</span>
+                        <span>{userData.kakaoAge} {userData.kakaoGender}</span>
                       )}
                     </div>
 
