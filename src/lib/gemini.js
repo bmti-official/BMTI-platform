@@ -321,6 +321,28 @@ export async function generateGroupResponse(callerAxisCode, otherCharacters, rec
 }
 
 /**
+ * 가벼운 1차 판별 (비용 절감 목적)
+ * 건강/위기 관련 키워드가 포함되어 있는지 정규식/키워드로 빠르게 검사합니다.
+ */
+export function isHealthOrCrisisRelated(text) {
+  const keywords = [
+    // 위기
+    '죽', '자살', '우울', '사라지', '그만두', '끝내', '포기', '살기', '자해',
+    // 수면
+    '잠', '수면', '피곤', '피로', '졸려', '불면', '새벽', '밤새',
+    // 식습관
+    '밥', '식사', '야식', '폭식', '다이어트', '살', '체중', '입맛', '먹', '굶', '간식', '식단',
+    // 증상/컨디션
+    '아파', '아프', '병원', '약', '두통', '머리', '소화', '생리', '숨차', '컨디션', '몸', '감기', '열', '기침', '어지러',
+    // 운동
+    '운동', '헬스', '러닝', '걷기', '뛰기', '근육', '체력', '땀', '스트레칭',
+    // 멘탈
+    '스트레스', '짜증', '불안', '무기력', '답답', '힘들', '지쳐', '지치', '번아웃', '눈물', '울고'
+  ];
+  return keywords.some(kw => text.includes(kw));
+}
+
+/**
  * 건강 기록 자동 감지 분류기
  */
 export async function analyzeHealthRecord(userMessage, conversationHistory) {

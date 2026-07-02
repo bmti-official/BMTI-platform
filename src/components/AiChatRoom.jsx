@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, BMTI_INFO } from '../data';
-import { CHARACTER_NAMES, generateChatResponse, analyzeHealthRecord } from '../lib/gemini';
+import { CHARACTER_NAMES, generateChatResponse, analyzeHealthRecord, isHealthOrCrisisRelated } from '../lib/gemini';
 import { getTodayMessages, addMessage, getSelectedMemories } from '../lib/chatSystem';
 import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
@@ -106,14 +106,15 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
     setIsTyping(true);
     updateBalances();
 
-    // AI 카테고리 감지 비동기 실행 (동의한 유저만)
+    // AI 카테고리 감지 비동기 실행 (동의한 유저만, 1차 필터 통과 시에만)
     if (localStorage.getItem('healthRecordAgreed') === 'true') {
-      const chatContext = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
-      analyzeHealthRecord(text, chatContext).then(async (categories) => {
-        if (!categories || categories.length === 0) return;
-        
-        let hasSaved = false;
-        for (const cat of categories) {
+      if (isHealthOrCrisisRelated(text)) {
+        const chatContext = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
+        analyzeHealthRecord(text, chatContext).then(async (categories) => {
+          if (!categories || categories.length === 0) return;
+          
+          let hasSaved = false;
+          for (const cat of categories) {
           if (cat.category === 'crisis') {
             const crisisMsg = '많이 힘드시군요. 당신은 결코 혼자가 아닙니다. 도움이 필요하시다면 언제든 아래 기관에서 상담을 받으실 수 있어요.\n- 보건복지부 희망의 전화: 129\n- 정신건강 위기상담전화: 1577-0199\n- 생명의 전화: 1588-9191';
             const savedMsg = await addMessage(userInfo.id, 'system', crisisMsg, 0);
@@ -128,11 +129,12 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
           }
         }
         
-        if (hasSaved) {
-          setShowToast(true);
-          setTimeout(() => setShowToast(false), 3000);
-        }
-      });
+          if (hasSaved) {
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+          }
+        });
+      }
     }
 
     try {
