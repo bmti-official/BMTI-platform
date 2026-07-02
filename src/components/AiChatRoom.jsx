@@ -6,7 +6,7 @@ import { getTodayMessages, addMessage, getSelectedMemories } from '../lib/chatSy
 import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
-import HealthRecordDrawer, { addHealthRecord } from './HealthRecordDrawer';
+import HealthRecordDrawer, { addHealthRecord, getRecentHealthRecords, HEALTH_CATEGORIES } from './HealthRecordDrawer';
 import HealthRecordOnboarding from './HealthRecordOnboarding';
 import { getHealthRecordConsent, updateHealthRecordConsent, CONSENT_VERSION } from '../lib/healthConsentSystem';
 
@@ -162,7 +162,14 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       history.push({ sender: 'user', content: text }); // Include just added message in history
       
       const memories = isPremium ? await getSelectedMemories(userInfo.id, 5) : [];
-      const response = await generateChatResponse(axisCode, userInfo, memories, text, history);
+      
+      // 최근 건강 기록 로드 (동의한 유저만)
+      let recentHealthRecords = [];
+      if (hasConsent && userInfo?.id) {
+        recentHealthRecords = await getRecentHealthRecords(userInfo.id, 5);
+      }
+      
+      const response = await generateChatResponse(axisCode, userInfo, memories, text, history, recentHealthRecords);
       
       setIsTyping(false);
       
@@ -332,15 +339,35 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
                        {msg.content}
                      </div>
                   ) : (
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                      isUser 
-                        ? 'bg-black text-white rounded-tr-sm' 
-                        : msg.error
-                          ? 'bg-red-50 text-red-600 border border-red-100 rounded-tl-sm'
-                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
-                    }`}>
-                      {msg.content}
-                    </div>
+                    (() => {
+                      let text = msg.content;
+                      let refCategory = null;
+                      if (!isUser) {
+                        const refMatch = text.match(/<ref category="([^"]+)"\s*\/?>(?:<\/ref>)?/);
+                        if (refMatch) {
+                          text = text.replace(refMatch[0], '').trim();
+                          refCategory = refMatch[1];
+                        }
+                      }
+                      
+                      return (
+                        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm flex flex-col gap-2 ${
+                          isUser 
+                            ? 'bg-black text-white rounded-tr-sm' 
+                            : msg.error
+                              ? 'bg-red-50 text-red-600 border border-red-100 rounded-tl-sm'
+                              : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
+                        }`}>
+                          <span className="whitespace-pre-wrap">{text}</span>
+                          {refCategory && (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold border border-blue-100 self-start">
+                              <span>{HEALTH_CATEGORIES.find(c => c.id === refCategory)?.icon || '📌'}</span>
+                              <span>{HEALTH_CATEGORIES.find(c => c.id === refCategory)?.label || '이전'} 기록을 참고했어요</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   )}
                   {msg.timestamp && msg.sender !== 'system' && (
                     <span className="text-[10px] text-gray-400 mt-1 mx-1">

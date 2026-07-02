@@ -45,6 +45,29 @@ export async function getHealthRecords(userId) {
   return grouped;
 }
 
+export async function getRecentHealthRecords(userId, limit = 5) {
+  const { data, error } = await supabase
+    .from('health_records')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+    
+  if (error) {
+    console.error('[HealthRecord] 최근 기록 조회 실패:', error);
+    return [];
+  }
+  
+  return data.map(record => {
+    const categoryInfo = HEALTH_CATEGORIES.find(c => c.id === record.category) || {};
+    return {
+      ...record,
+      categoryLabel: categoryInfo.label || record.category,
+      categoryIcon: categoryInfo.icon || '📌'
+    };
+  });
+}
+
 export async function addHealthRecord(userId, category, summary) {
   const { data, error } = await supabase
     .from('health_records')

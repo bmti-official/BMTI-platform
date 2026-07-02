@@ -65,7 +65,7 @@ function getTimeContext() {
 /**
  * 1:1 채팅용 시스템 프롬프트 생성
  */
-export function buildSystemPrompt(axisCode, userInfo, memoryContext = []) {
+export function buildSystemPrompt(axisCode, userInfo, memoryContext = [], healthRecords = []) {
   const charName = CHARACTER_NAMES[axisCode] || 'BMTI 캐릭터';
   const bmtiInfo = BMTI_INFO[axisCode];
   const bmtiResult = BMTI_RESULTS[axisCode];
@@ -101,6 +101,18 @@ ${timeContext}
       prompt += `\n${i + 1}. [${mem.chat_date}] ${mem.summary}`;
     });
     prompt += `\n위 기억을 참고하여 이용자의 상태 변화를 인지하고, 자연스럽게 이전 내용을 언급하며 대화해.`;
+  }
+
+  if (healthRecords && healthRecords.length > 0) {
+    prompt += `\n\n[최근 건강 기록 (사용자가 예전에 말한 내용)]\n`;
+    healthRecords.forEach((record, i) => {
+      prompt += `${i + 1}. [${record.categoryLabel}] ${record.summary}\n`;
+    });
+    prompt += `\n위 건강 기록을 참고하여 자연스럽게 대화해.
+[건강 기록 활용 규칙]
+1. 매번 억지로 꺼내지 말고, 대화 흐름상 자연스러울 때나 먼저 안부를 물을 때만 사용해.
+2. 유저가 말한 사실만 언급하고 ("~라고 했었잖아"), 절대 의사처럼 진단하거나 평가하지 마 ("수면 장애가 있네요" 등 절대 금지).
+3. 건강 기록을 참고해서 답변을 작성했다면, 답변 내용 맨 끝에 반드시 <ref category="category_id"/> 태그를 붙여줘. (예: ...그건 좀 괜찮아졌어? <ref category="sleep"/>)`;
   }
 
   return prompt;
@@ -271,8 +283,8 @@ export async function callGemini(systemPrompt, userMessage, conversationHistory 
 /**
  * 1:1 대화 AI 응답 생성
  */
-export async function generateChatResponse(axisCode, userInfo, memoryContext, userMessage, conversationHistory) {
-  const systemPrompt = buildSystemPrompt(axisCode, userInfo, memoryContext);
+export async function generateChatResponse(axisCode, userInfo, memoryContext, userMessage, conversationHistory, healthRecords = []) {
+  const systemPrompt = buildSystemPrompt(axisCode, userInfo, memoryContext, healthRecords);
   return callGemini(systemPrompt, userMessage, conversationHistory);
 }
 
