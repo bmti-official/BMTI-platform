@@ -319,3 +319,40 @@ export async function generateGroupResponse(callerAxisCode, otherCharacters, rec
     tokensUsed: result.tokensUsed
   };
 }
+
+/**
+ * 건강 기록 자동 감지 분류기
+ */
+export async function analyzeHealthRecord(userMessage, conversationHistory) {
+  const prompt = `사용자의 최신 발화에서 건강 관련 정보를 분석해 JSON 배열 형식으로 반환해.
+[카테고리] 'diet'(식습관), 'sleep'(수면), 'exercise'(운동), 'mental'(정서), 'symptom'(증상), 'none'(관련없음), 'crisis'(위기 신호)
+
+[처리 규칙]
+1. 다중 태깅: 최대 2개의 관련 카테고리를 잡아내 배열로 반환. 인과관계(예: 스트레스로 폭식)가 있으면 원인과 결과 2개 카테고리를 모두 반환.
+2. 위기 신호: "다 그만두고 싶어", "사라지고 싶다" 등 극단적 우울/자해 등 안전 위기가 감지되면 반드시 [{"category": "crisis", "summary": "내용"}] 1개만 반환. (가장 최우선 규칙)
+3. 잡담/모호함: 건강과 무관하거나 정도가 미미하면 [{"category": "none", "summary": ""}] 반환.
+4. 과거형/부정형: "예전엔 불면증 있었는데 요즘은 괜찮아"처럼 현재 문제가 아니면 "none" 반환.
+5. 오직 JSON 배열 형식만 출력할 것. 다른 텍스트는 절대 포함하지 마.
+
+[응답 포맷 예시]
+[
+  { "category": "mental", "summary": "최근 회사 업무로 스트레스 누적" },
+  { "category": "diet", "summary": "스트레스로 인한 폭식 경향" }
+]`;
+
+  const result = await callGemini(prompt, userMessage, conversationHistory.slice(-3));
+  
+  if (result.error) return [];
+
+  try {
+    const jsonStr = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(jsonStr);
+    if (Array.isArray(parsed)) {
+      return parsed.filter(item => item.category && item.category !== 'none').slice(0, 2);
+    }
+    return [];
+  } catch (e) {
+    console.error('Failed to parse health record JSON:', e);
+    return [];
+  }
+}
