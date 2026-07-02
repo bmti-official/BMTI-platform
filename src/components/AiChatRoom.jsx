@@ -213,11 +213,12 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
           {/* 건강 기록 */}
           <button 
             onClick={() => setIsHealthDrawerOpen(true)}
-            className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
+            className="h-10 px-3.5 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center gap-1.5 text-gray-600 hover:text-black hover:shadow-md hover:bg-white transition-all duration-300 ease-out active:scale-95"
             aria-label="건강 기록 열기"
           >
+            <span className="text-[13px] font-medium tracking-tight">기록</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
             </svg>
           </button>
         </div>
