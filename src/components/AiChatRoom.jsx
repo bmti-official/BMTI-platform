@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, BMTI_INFO } from '../data';
-import { CHARACTER_NAMES, generateChatResponse, analyzeHealthRecord, isHealthOrCrisisRelated } from '../lib/gemini';
+import { CHARACTER_NAMES, generateChatResponse, analyzeHealthRecord, isHealthOrCrisisRelated, callGemini } from '../lib/gemini';
 import { getTodayMessages, addMessage, getSelectedMemories } from '../lib/chatSystem';
 import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
@@ -124,26 +124,33 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
     setIsTyping(true);
     updateBalances();
 
-    // AI 카테고리 감지 비동기 실행 (동의한 유저만, 1차 필터 통과 시에만)
-    if (hasConsent) {
+    // AI 카테고리 감지 (동의한 유저만, 1차 필터 통과 시에만)
+    let isCrisis = false;
+    let recentHealthRecords = [];
+    if (hasConsent && userInfo?.id) {
+      recentHealthRecords = await getRecentHealthRecords(userInfo.id, 5); // 최근 5개 기록 미리 로드
+      
       if (isHealthOrCrisisRelated(text)) {
         const chatContext = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
-        analyzeHealthRecord(text, chatContext).then(async (categories) => {
-          if (!categories || categories.length === 0) return;
-          
+        const categories = await analyzeHealthRecord(text, chatContext);
+        
+        if (categories && categories.length > 0) {
           let saveCount = 0;
           for (const cat of categories) {
             if (cat.category === 'crisis') {
-              const crisisMsg = '많이 힘드시군요. 당신은 결코 혼자가 아닙니다. 도움이 필요하시다면 언제든 아래 기관에서 상담을 받으실 수 있어요.\n- 보건복지부 희망의 전화: 129\n- 정신건강 위기상담전화: 1577-0199\n- 생명의 전화: 1588-9191';
-              const savedMsg = await addMessage(userInfo.id, 'system', crisisMsg, 0);
-              if (savedMsg) {
-                setMessages(prev => [...prev, savedMsg]);
-                scrollToBottom();
-              }
-              return; // 위기일 경우 일반 건강 기록 저장은 건너뜀
+              isCrisis = true;
+              break;
             } else {
-              await addHealthRecord(userInfo.id, cat.category, cat.summary);
-              saveCount++;
+              // 중복 방지 (오늘 같은 카테고리가 이미 있으면 저장 안함)
+              const todayStr = new Date().toLocaleDateString();
+              const hasDuplicateToday = recentHealthRecords.some(r => 
+                r.category === cat.category && new Date(r.created_at).toLocaleDateString() === todayStr
+              );
+              
+              if (!hasDuplicateToday) {
+                await addHealthRecord(userInfo.id, cat.category, cat.summary);
+                saveCount++;
+              }
             }
           }
           
@@ -153,22 +160,35 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
             setShowToast(true);
             toastTimeoutRef.current = setTimeout(() => setShowToast(false), 2500);
           }
-        });
+        }
       }
     }
 
     try {
+      if (isCrisis) {
+        // 위기 상황 처리 (일반 대화 중단)
+        const empathicPrompt = `너는 ${CHARACTER_NAMES[axisCode] || '친구'}야. 사용자가 방금 "${text}" 라고 매우 힘들어하거나 극단적인 선택을 암시하는 위기 상황을 표현했어. 
+절대 의학적/전문적 조언을 하지 말고, 1~2문장으로 깊이 공감하고 진심으로 위로해줘. 너무 길게 말하지 마.`;
+        const empathicResponse = await callGemini(empathicPrompt, text, []);
+        setIsTyping(false);
+        
+        if (!empathicResponse.error) {
+          await addMessage(userInfo.id, 'ai', empathicResponse.text, empathicResponse.tokensUsed);
+        }
+        
+        const crisisMsg = '많이 힘드시군요. 당신은 결코 혼자가 아닙니다. 도움이 필요하시다면 언제든 아래 기관에서 상담을 받으실 수 있어요.\n- 자살예방상담전화: 109\n- 정신건강 위기상담전화: 1577-0199\n- 생명의 전화: 1588-9191';
+        const savedMsg = await addMessage(userInfo.id, 'system', crisisMsg, 0);
+        if (savedMsg) {
+          setMessages(prev => [...prev, savedMsg]);
+          scrollToBottom();
+        }
+        return; // 일반 응답 건너뜀
+      }
+
       const history = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
       history.push({ sender: 'user', content: text }); // Include just added message in history
       
       const memories = isPremium ? await getSelectedMemories(userInfo.id, 5) : [];
-      
-      // 최근 건강 기록 로드 (동의한 유저만)
-      let recentHealthRecords = [];
-      if (hasConsent && userInfo?.id) {
-        recentHealthRecords = await getRecentHealthRecords(userInfo.id, 5);
-      }
-      
       const response = await generateChatResponse(axisCode, userInfo, memories, text, history, recentHealthRecords);
       
       setIsTyping(false);

@@ -196,7 +196,9 @@ export function useHealthRecords(isOpen, userId) {
 // 개별 카테고리 카드 (아코디언)
 // ==========================================
 function CategoryCard({ category, entries, isOpen, onToggle, onDelete }) {
+  const [showAll, setShowAll] = useState(false);
   const latest = entries[0];
+  const displayEntries = showAll ? entries : entries.slice(0, 5);
 
   return (
     <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -227,10 +229,10 @@ function CategoryCard({ category, entries, isOpen, onToggle, onDelete }) {
           <div className="px-4 pb-4 pt-1 border-t border-gray-50">
             {entries.length > 0 ? (
               <ul className="space-y-0 mt-2 relative">
-                {entries.map((entry, index) => (
+                {displayEntries.map((entry, index) => (
                   <li key={entry.id} className="relative flex gap-3 pb-5 last:pb-2 group/item">
                     {/* 세로 타임라인 선 */}
-                    {index !== entries.length - 1 && (
+                    {index !== displayEntries.length - 1 && (
                       <div className="absolute left-[3px] top-[14px] bottom-[-10px] w-[1px] bg-gray-200" />
                     )}
                     <div className="relative z-10 pt-[6px]">
@@ -256,7 +258,7 @@ function CategoryCard({ category, entries, isOpen, onToggle, onDelete }) {
                       {onDelete && (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); if(confirm('이 기록을 삭제할까요?')) onDelete(entry.id, category.id); }}
+                          onClick={(e) => { e.stopPropagation(); onDelete(entry.id, category.id); }}
                           className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-300 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 mt-0.5"
                           aria-label="기록 삭제"
                         >
@@ -268,9 +270,22 @@ function CategoryCard({ category, entries, isOpen, onToggle, onDelete }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-gray-300 text-center py-4">
-                대화 중 관련 내용이 나오면 자동으로 기록돼요
-              </p>
+              <div className="py-8 text-center bg-gray-50 rounded-2xl mt-2 border border-gray-100 border-dashed">
+                <span className="text-2xl opacity-50 block mb-2">{category.icon}</span>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed px-4">
+                  대화 중 관련 내용이 나오면<br/>자동으로 기록돼요
+                </p>
+              </div>
+            )}
+            
+            {entries.length > 5 && !showAll && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowAll(true); }}
+                className="w-full mt-2 py-2.5 rounded-xl bg-gray-50 text-gray-600 text-xs font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-1"
+              >
+                {entries.length - 5}개 더 보기
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
             )}
           </div>
         </div>
