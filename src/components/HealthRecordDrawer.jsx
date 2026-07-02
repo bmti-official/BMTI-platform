@@ -143,7 +143,7 @@ function CategoryCard({ category, entries, isOpen, onToggle, onDelete }) {
             )}
           </div>
           <p className="text-xs text-gray-400 mt-0.5 truncate">
-            {latest ? latest.summary : '아직 기록된 내용이 없어요'}
+            {latest ? <><span className="font-medium text-gray-500">최근 · </span>{latest.summary}</> : '아직 기록된 내용이 없어요'}
           </p>
         </div>
         <svg className={`w-5 h-5 text-gray-300 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,24 +155,44 @@ function CategoryCard({ category, entries, isOpen, onToggle, onDelete }) {
         <div className="overflow-hidden">
           <div className="px-4 pb-4 pt-1 border-t border-gray-50">
             {entries.length > 0 ? (
-              <ul className="space-y-2.5 mt-2">
-                {entries.map(entry => (
-                  <li key={entry.id} className="flex gap-2.5 group/item">
-                    <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${category.dot}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-700 leading-relaxed">{entry.summary}</p>
-                      <p className="text-[10px] text-gray-300 mt-0.5">{entry.date}</p>
-                    </div>
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(entry.id, category.id)}
-                        className="opacity-0 group-hover/item:opacity-100 text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 transition-opacity"
-                        aria-label="기록 삭제"
-                      >
-                        ✕
-                      </button>
+              <ul className="space-y-0 mt-2 relative">
+                {entries.map((entry, index) => (
+                  <li key={entry.id} className="relative flex gap-3 pb-5 last:pb-2 group/item">
+                    {/* 세로 타임라인 선 */}
+                    {index !== entries.length - 1 && (
+                      <div className="absolute left-[3px] top-[14px] bottom-[-10px] w-[1px] bg-gray-200" />
                     )}
+                    <div className="relative z-10 pt-[6px]">
+                      <span className={`block w-1.5 h-1.5 rounded-full ${category.dot}`} />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800 leading-snug tracking-tight break-keep">{entry.summary}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[11px] text-gray-400 font-medium">{entry.date}</span>
+                          <span className="text-[10px] text-gray-300">·</span>
+                          <button 
+                            className="text-[11px] text-blue-500 hover:text-blue-600 font-medium"
+                            onClick={(e) => { e.stopPropagation(); alert('대화 원문으로 이동하는 기능은 2단계에서 지원됩니다.'); }}
+                          >
+                            대화 보기
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* 삭제 버튼 (박스 형태) */}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); if(confirm('이 기록을 삭제할까요?')) onDelete(entry.id, category.id); }}
+                          className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-300 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 mt-0.5"
+                          aria-label="기록 삭제"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
