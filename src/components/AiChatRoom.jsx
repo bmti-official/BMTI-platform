@@ -74,8 +74,9 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim()) return;
+  const handleSend = async (textToSend = inputText) => {
+    const text = typeof textToSend === 'string' ? textToSend.trim() : inputText.trim();
+    if (!text) return;
 
     // 토큰 비용 계산
     const memories = isPremium ? getSelectedMemories(5) : [];
@@ -93,7 +94,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       return;
     }
 
-    const userMsgData = await addMessage(userInfo.id, 'user', inputText.trim(), 0);
+    const userMsgData = await addMessage(userInfo.id, 'user', text, 0);
     if (userMsgData) {
       // Opt. 업데이트는 subscription이 하므로 별도 추가하지 않아도 되지만 빠른 UI를 위해 로컬 반영
       setMessages(prev => prev.find(m => m.id === userMsgData.id) ? prev : [...prev, userMsgData]);
@@ -105,10 +106,10 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
 
     try {
       const history = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
-      history.push({ sender: 'user', content: inputText.trim() }); // Include just added message in history
+      history.push({ sender: 'user', content: text }); // Include just added message in history
       
       const memories = isPremium ? await getSelectedMemories(userInfo.id, 5) : [];
-      const response = await generateChatResponse(axisCode, userInfo, memories, inputText.trim(), history);
+      const response = await generateChatResponse(axisCode, userInfo, memories, text, history);
       
       setIsTyping(false);
       
@@ -195,9 +196,47 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto pt-16 pb-4 px-4 space-y-4" onClick={() => document.activeElement?.blur()}>
         {messages.length === 0 && (
-          <div className="text-center py-16 fade-in flex flex-col items-center">
-            <div className="mt-6 inline-block bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-sm text-gray-700">궁금한 점이나 오늘의 몸 상태를 자유롭게 이야기해주세요!</p>
+          <div className="flex flex-col items-center pt-8 pb-12 fade-in w-full max-w-sm mx-auto">
+            {/* 상단 프로필 및 인사말 */}
+            {charData ? (
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 shadow-sm border border-blue-100 flex items-center justify-center p-2 mb-3">
+                <img src={charData.image} alt="AI" className="w-full h-full object-contain" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 shadow-sm border border-blue-100 flex items-center justify-center text-2xl mb-3">
+                ⭐️
+              </div>
+            )}
+            
+            <h2 className="text-lg font-bold text-gray-900 mb-2">{charName}</h2>
+            <p className="text-[13px] text-gray-500 mb-1">오늘 하루 어땠는지 편하게 이야기해요.</p>
+            <p className="text-[13px] text-gray-500 mb-8">건강 얘기는 자동으로 정리해 드려요.</p>
+
+            {/* 첫 인사 말풍선 */}
+            <div className="w-full flex items-start gap-2 mb-6 animate-fade-in-up">
+              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-1 border border-blue-100">
+                {charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain" /> : '⭐️'}
+              </div>
+              <div className="bg-white border border-gray-100 text-gray-800 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm leading-relaxed max-w-[85%]">
+                안녕! 오늘도 만나서 반가워 😊 요즘 컨디션은 좀 어때?
+              </div>
+            </div>
+
+            {/* 추천 질문 칩 */}
+            <div className="w-full flex flex-wrap gap-2 pl-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              {[
+                { text: '요즘 잠을 못 자', action: () => handleSend('요즘 잠을 못 자') },
+                { text: '밥을 잘 못 챙겨', action: () => handleSend('밥을 잘 못 챙겨') },
+                { text: '스트레스가 많아', action: () => handleSend('스트레스가 많아') },
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={chip.action}
+                  className="bg-white border border-gray-200 text-gray-600 text-[13px] font-medium px-4 py-2 rounded-full hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-sm"
+                >
+                  {chip.text}
+                </button>
+              ))}
             </div>
           </div>
         )}
