@@ -7,8 +7,12 @@ import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
 import HealthRecordDrawer from './HealthRecordDrawer';
+import HealthRecordOnboarding from './HealthRecordOnboarding';
 
 const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return localStorage.getItem('healthRecordAgreed') === null;
+  });
   const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -133,6 +137,17 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       alert(result.message);
     }
   };
+
+  if (showOnboarding) {
+    return (
+      <HealthRecordOnboarding 
+        onComplete={(agreed) => {
+          localStorage.setItem('healthRecordAgreed', agreed);
+          setShowOnboarding(false);
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-[#f8f9fa] flex flex-col z-50 h-[100dvh] w-full">
