@@ -13,9 +13,6 @@ import MyPageView from './components/MyPageView';
 import SpotView from './components/SpotView';
 import AiChatHub from './components/AiChatHub';
 import AiChatRoom from './components/AiChatRoom';
-import GroupChatRoom from './components/GroupChatRoom';
-import ChatHistoryView from './components/ChatHistoryView';
-
 function App() {
   const [currentView, setCurrentView] = useState(window.location.hash ? 'result' : 'home');
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -45,16 +42,10 @@ function App() {
     const handleBmtiChange = (e) => {
       setBmtiCode(e.detail.code);
     };
-    const handleOpenGroupRoom = (e) => {
-      setCurrentGroupRoom(e.detail);
-      setCurrentView('group_chat');
-    };
     
     window.addEventListener('BMTI_UPDATED', handleBmtiChange);
-    window.addEventListener('OPEN_GROUP_ROOM', handleOpenGroupRoom);
     return () => {
       window.removeEventListener('BMTI_UPDATED', handleBmtiChange);
-      window.removeEventListener('OPEN_GROUP_ROOM', handleOpenGroupRoom);
     };
   }, []);
 
@@ -267,35 +258,10 @@ function App() {
             setView={setCurrentView} 
             userInfo={userProfile} 
             onOpenChat={() => setCurrentView('aichat_room')}
-            onOpenGroup={(action, room) => {
-              if (action === 'create') {
-                const name = window.prompt('단톡방 이름을 입력하세요:');
-                if (name) {
-                  const { createGroupRoom } = require('./lib/chatSystem');
-                  const result = createGroupRoom(name, userProfile?.id);
-                  if (result.success) {
-                    setCurrentGroupRoom(result.room);
-                    setCurrentView('group_chat');
-                  } else {
-                    alert(result.message);
-                  }
-                }
-              } else if (action === 'room') {
-                setCurrentGroupRoom(room);
-                setCurrentView('group_chat');
-              }
-            }}
-            onOpenHistory={() => setCurrentView('chat_history')}
           />
         )}
         {currentView === 'aichat_room' && (
           <AiChatRoom bmtiCode={bmtiCode} setView={setCurrentView} userInfo={userProfile} />
-        )}
-        {currentView === 'group_chat' && (
-          <GroupChatRoom bmtiCode={bmtiCode} room={currentGroupRoom} setView={setCurrentView} userInfo={userProfile} onClose={() => setCurrentView('aichat')} />
-        )}
-        {currentView === 'chat_history' && (
-          <ChatHistoryView setView={setCurrentView} />
         )}
         {currentView === 'mypage' && (
           <MyPageView 

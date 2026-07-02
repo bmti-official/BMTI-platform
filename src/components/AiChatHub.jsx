@@ -155,28 +155,6 @@ const AiChatHub = ({ bmtiCode, bmtiAnswers, setView, userInfo, onOpenChat, onOpe
             </div>
           </div>
 
-          {/* 친구들과 단톡방 */}
-          <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">
-            <h4 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
-              <span className="text-xl">👥</span> 친구들과 단톡방
-            </h4>
-            <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl">
-              <div className="flex flex-col items-start">
-                <div className="flex gap-2 items-end">
-                  <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[10px] font-bold shadow-sm border border-gray-300">친구</div>
-                  <div className="bg-white border border-gray-100 text-gray-800 text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%]">
-                    우리 내일 하체 어때? @BMTI 
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2 items-end">
-                <div className="w-7 h-7 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 text-sm shadow-sm border border-purple-100">🤖</div>
-                <div className="bg-purple-50 text-gray-900 border border-purple-100 text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%] leading-relaxed">
-                  친구들을 초대해 단체 채팅방을 만들고, BMTI 캐릭터들과 함께 <strong className="text-purple-700">운동 목표를 세우며 재밌게 소통</strong>해보세요.
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* 스마트한 AI 기억력 */}
           <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">

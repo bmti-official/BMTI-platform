@@ -6,11 +6,9 @@ import { getTodayMessages, addMessage, getSelectedMemories } from '../lib/chatSy
 import { supabase } from '../lib/supabaseClient';
 import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib/tokenSystem';
 import { getStarBalance, spendStar } from '../lib/starSystem';
-import ChatDrawer from './ChatDrawer';
 import HealthRecordDrawer from './HealthRecordDrawer';
 
 const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -169,26 +167,8 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </button>
-          {/* 채팅 메뉴 */}
-          <button 
-            onClick={() => setIsDrawerOpen(true)}
-            className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black transition-all duration-300 ease-out active:scale-90 hover:shadow-md hover:bg-white"
-            aria-label="채팅 메뉴 열기"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </div>
       </div>
-
-      <ChatDrawer 
-        isOpen={isDrawerOpen} 
-        onClose={() => setIsDrawerOpen(false)} 
-        setView={setView} 
-        userInfo={userInfo} 
-        bmtiCode={bmtiCode} 
-      />
 
       <HealthRecordDrawer
         isOpen={isHealthDrawerOpen}
