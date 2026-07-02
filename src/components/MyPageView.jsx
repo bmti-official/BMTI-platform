@@ -24,6 +24,7 @@ const EXERCISE_FREQUENCY = [
 
 const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) => {
   const getCharImage = (fullCode) => {
+    if (!fullCode) return null;
     const axis = fullCode.split('-')[0];
     const char = CHARACTERS.find(c => c.id === axis);
     return char ? char.image : null;
@@ -150,7 +151,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     }));
   };
 
-  const axisCode = bmtiCode ? bmtiCode.split('-')[0] : null;
+  const axisCode = bmtiCode ? String(bmtiCode).split('-')[0] : '';
   const charInfo = axisCode ? CHARACTERS.find(c => c.id === axisCode) : null;
 
   const [bmtiHistory, setBmtiHistory] = useState([]);
@@ -400,7 +401,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                 <div className="flex flex-wrap items-center gap-y-2 text-xs md:text-sm">
                   {(() => {
                     const percentages = calculateBMTIPercentages(bmtiAnswers);
-                    const chars = axisCode.split('');
+                    const chars = (axisCode || '').split('');
                     return chars.map((char, index) => {
                       let isConfident = false;
                       if (percentages && percentages[char] !== undefined) {
@@ -527,7 +528,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
       <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {bmtiHistory.length > 0 ? (
           [...bmtiHistory].sort((a, b) => new Date(b.date) - new Date(a.date)).map((item, idx) => {
-            const shortCode = item.code.split('-')[0];
+            const codeStr = item.code || '';
+            const shortCode = codeStr ? codeStr.split('-')[0] : '알수없음';
             const isCurrent = idx === 0; // Since it's sorted descending, newest is index 0
             return (
               <div 
@@ -536,8 +538,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
               >
                 {isCurrent && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#c0ff00]"></div>}
                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
-                  {getCharImage(item.code) ? (
-                    <img src={getCharImage(item.code)} alt={shortCode} className="w-full h-full object-contain scale-110" />
+                  {codeStr && getCharImage(codeStr) ? (
+                    <img src={getCharImage(codeStr)} alt={shortCode} className="w-full h-full object-contain scale-110" />
                   ) : (
                     <span className="text-2xl">👤</span>
                   )}
