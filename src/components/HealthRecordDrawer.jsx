@@ -214,6 +214,34 @@ export default function HealthRecordDrawer({ isOpen, onClose, characterName, use
   const [openId, setOpenId] = useState(null);
   const { entries, isLoading, totalEntries, removeEntry } = useHealthRecords(isOpen, userId);
 
+  const getInsightInfo = () => {
+    if (totalEntries === 0) return null;
+    
+    let maxCount = -1;
+    let topCat = null;
+    
+    for (const cat of HEALTH_CATEGORIES) {
+      const count = (entries[cat.id] || []).length;
+      if (count > maxCount) {
+        maxCount = count;
+        topCat = cat;
+      }
+    }
+    
+    let insightStr = '';
+    if (topCat) {
+      if (topCat.id === 'diet') insightStr = '최근엔 식습관에 관한 이야기가 자주 나왔어요.';
+      else if (topCat.id === 'sleep') insightStr = '최근엔 잠들기 어렵다는 이야기가 자주 나왔어요.';
+      else if (topCat.id === 'exercise') insightStr = '최근엔 운동과 활동량에 대한 이야기가 자주 나왔어요.';
+      else if (topCat.id === 'mental') insightStr = '최근엔 마음과 감정 상태에 대한 이야기가 자주 나왔어요.';
+      else if (topCat.id === 'symptom') insightStr = '최근엔 컨디션과 몸의 증상에 대한 이야기가 자주 나왔어요.';
+    }
+    
+    return { topCat, maxCount, insightStr };
+  };
+
+  const insightInfo = getInsightInfo();
+
   return (
     <>
       <div
@@ -239,13 +267,32 @@ export default function HealthRecordDrawer({ isOpen, onClose, characterName, use
             </button>
           </div>
 
-          {/* 요약 배너 */}
-          <div className="bg-black rounded-[1.5rem] p-4 flex items-center justify-between mb-5">
-            <div>
-              <p className="text-white/50 text-[11px] font-bold">누적 기록</p>
-              <p className="text-white font-black text-2xl mt-0.5">{isLoading ? '...' : `${totalEntries}개`}</p>
-            </div>
-            <span className="text-3xl">📋</span>
+          {/* 요약 배너 (버전 C: 인사이트형) */}
+          <div className="mb-5">
+            {isLoading ? (
+              <div className="bg-white rounded-[1.5rem] p-4 flex items-center justify-center border border-gray-100 shadow-sm h-[88px]">
+                <p className="text-gray-400 text-[13px]">분석 중...</p>
+              </div>
+            ) : totalEntries === 0 ? (
+              <div className="bg-gray-50 rounded-[1.5rem] p-5 text-center border border-gray-200 border-dashed">
+                <span className="text-2xl mb-2 block">💭</span>
+                <p className="text-gray-500 text-[13px] leading-relaxed">
+                  아직 기록이 없어요.<br />캐릭터와 건강 이야기를 나누면<br />여기에 하나씩 모여요.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-[1.5rem] p-4 border border-gray-100 shadow-sm">
+                <div className="flex items-start gap-2 mb-1.5">
+                  <span className="text-[17px] leading-none mt-[2px]">💡</span>
+                  <h3 className="font-bold text-gray-900 text-[15px] leading-snug tracking-tight">
+                    이번 주, {insightInfo.topCat.label.split('/')[0]} 얘기가 가장 많았어요
+                  </h3>
+                </div>
+                <p className="text-gray-500 text-[13px] leading-relaxed pl-7">
+                  {totalEntries}개 기록이 쌓였어요. {insightInfo.insightStr}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 카테고리 리스트 */}
