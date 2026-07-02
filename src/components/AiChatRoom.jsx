@@ -30,6 +30,8 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
   const [showTokenWarning, setShowTokenWarning] = useState(false);
   
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastTimeoutRef = useRef(null);
   
   const messagesEndRef = useRef(null);
   
@@ -113,25 +115,27 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
         analyzeHealthRecord(text, chatContext).then(async (categories) => {
           if (!categories || categories.length === 0) return;
           
-          let hasSaved = false;
+          let saveCount = 0;
           for (const cat of categories) {
-          if (cat.category === 'crisis') {
-            const crisisMsg = '많이 힘드시군요. 당신은 결코 혼자가 아닙니다. 도움이 필요하시다면 언제든 아래 기관에서 상담을 받으실 수 있어요.\n- 보건복지부 희망의 전화: 129\n- 정신건강 위기상담전화: 1577-0199\n- 생명의 전화: 1588-9191';
-            const savedMsg = await addMessage(userInfo.id, 'system', crisisMsg, 0);
-            if (savedMsg) {
-              setMessages(prev => [...prev, savedMsg]);
-              scrollToBottom();
+            if (cat.category === 'crisis') {
+              const crisisMsg = '많이 힘드시군요. 당신은 결코 혼자가 아닙니다. 도움이 필요하시다면 언제든 아래 기관에서 상담을 받으실 수 있어요.\n- 보건복지부 희망의 전화: 129\n- 정신건강 위기상담전화: 1577-0199\n- 생명의 전화: 1588-9191';
+              const savedMsg = await addMessage(userInfo.id, 'system', crisisMsg, 0);
+              if (savedMsg) {
+                setMessages(prev => [...prev, savedMsg]);
+                scrollToBottom();
+              }
+              return; // 위기일 경우 일반 건강 기록 저장은 건너뜀
+            } else {
+              await addHealthRecord(userInfo.id, cat.category, cat.summary);
+              saveCount++;
             }
-            return; // 위기일 경우 일반 건강 기록 저장은 건너뜀
-          } else {
-            await addHealthRecord(userInfo.id, cat.category, cat.summary);
-            hasSaved = true;
           }
-        }
-        
-          if (hasSaved) {
+          
+          if (saveCount > 0) {
+            if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+            setToastMessage(`📝 ${saveCount > 1 ? `${saveCount}개의 항목이` : '건강 관련 내용이'} 기록되었어요`);
             setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
+            toastTimeoutRef.current = setTimeout(() => setShowToast(false), 2500);
           }
         });
       }
@@ -227,11 +231,13 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       />
 
       {/* Toast Notification */}
-      {showToast && (
-        <div className="absolute bottom-[80px] left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-[13px] animate-fade-in-up z-[100] font-medium whitespace-nowrap">
-          📝 건강 관련 내용이 기록되었어요
-        </div>
-      )}
+      <div 
+        onClick={() => setShowToast(false)}
+        style={{ transitionDuration: '280ms' }}
+        className={`absolute bottom-[80px] left-1/2 -translate-x-1/2 bg-gray-800/90 backdrop-blur-sm text-white px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-[13px] z-[100] font-medium whitespace-nowrap transition-all ease-in-out cursor-pointer ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+      >
+        {toastMessage}
+      </div>
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto pt-16 pb-4 px-4 space-y-4" onClick={() => document.activeElement?.blur()}>
