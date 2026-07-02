@@ -108,7 +108,7 @@ const HealthRecordOnboarding = ({ onComplete }) => {
 
           <button 
             disabled={!isRequiredAgreed}
-            onClick={() => onComplete(true)}
+            onClick={() => onComplete(true, isOptionalAgreed)}
             className="w-full py-4 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed bg-black text-white hover:bg-gray-800 active:scale-[0.98]"
           >
             동의하고 시작
@@ -118,7 +118,7 @@ const HealthRecordOnboarding = ({ onComplete }) => {
           </button>
           
           <button 
-            onClick={() => onComplete(false)}
+            onClick={() => onComplete(false, false)}
             className="w-full py-2 text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
             기록 없이 대화만 할래요

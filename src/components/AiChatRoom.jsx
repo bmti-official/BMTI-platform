@@ -8,11 +8,12 @@ import { getRemainingTokens, useTokens, TOKEN_COSTS, isSubscriber } from '../lib
 import { getStarBalance, spendStar } from '../lib/starSystem';
 import HealthRecordDrawer, { addHealthRecord } from './HealthRecordDrawer';
 import HealthRecordOnboarding from './HealthRecordOnboarding';
+import { getHealthRecordConsent, updateHealthRecordConsent, CONSENT_VERSION } from '../lib/healthConsentSystem';
 
 const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    return localStorage.getItem('healthRecordAgreed') === null;
-  });
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isLoadingConsent, setIsLoadingConsent] = useState(true);
+  const [hasConsent, setHasConsent] = useState(false);
   const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -44,6 +45,21 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
       }
     };
     fetchMessages();
+    
+    const fetchConsent = async () => {
+      if (!userInfo?.id) return;
+      const consent = await getHealthRecordConsent(userInfo.id);
+      if (!consent || !consent.agreed || consent.version !== CONSENT_VERSION) {
+        setShowOnboarding(true);
+        setHasConsent(false);
+      } else {
+        setShowOnboarding(false);
+        setHasConsent(true);
+      }
+      setIsLoadingConsent(false);
+    };
+    fetchConsent();
+    
     updateBalances();
 
     let subscription = null;
@@ -109,7 +125,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
     updateBalances();
 
     // AI 카테고리 감지 비동기 실행 (동의한 유저만, 1차 필터 통과 시에만)
-    if (localStorage.getItem('healthRecordAgreed') === 'true') {
+    if (hasConsent) {
       if (isHealthOrCrisisRelated(text)) {
         const chatContext = messages.slice(-10).map(m => ({ sender: m.sender, content: m.content }));
         analyzeHealthRecord(text, chatContext).then(async (categories) => {
@@ -176,11 +192,22 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
     }
   };
 
+  if (isLoadingConsent) {
+    return (
+      <div className="fixed inset-0 bg-[#f8f9fa] flex items-center justify-center z-50">
+        <p className="text-gray-400 text-sm font-medium">초기화 중...</p>
+      </div>
+    );
+  }
+
   if (showOnboarding) {
     return (
       <HealthRecordOnboarding 
-        onComplete={(agreed) => {
-          localStorage.setItem('healthRecordAgreed', agreed);
+        onComplete={async (agreed, isOptionalAgreed) => {
+          await updateHealthRecordConsent(userInfo.id, agreed, isOptionalAgreed);
+          if (agreed) {
+            setHasConsent(true);
+          }
           setShowOnboarding(false);
         }} 
       />

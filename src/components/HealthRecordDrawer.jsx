@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import HealthRecordSettingsModal from './HealthRecordSettingsModal';
 
 // ==========================================
 // 건강 기록 카테고리 정의 (MVP 5종)
@@ -232,6 +233,7 @@ export function AutoSaveToast({ category, onDismiss }) {
 // ==========================================
 export default function HealthRecordDrawer({ isOpen, onClose, characterName, userId }) {
   const [openId, setOpenId] = useState(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { entries, isLoading, totalEntries, removeEntry } = useHealthRecords(isOpen, userId);
 
   const getInsightInfo = () => {
@@ -280,11 +282,19 @@ export default function HealthRecordDrawer({ isOpen, onClose, characterName, use
               <h2 className="text-xl font-black text-gray-900">건강 기록</h2>
               <p className="text-[11px] text-gray-400 mt-0.5">{characterName}와의 대화에서 자동으로 정리돼요</p>
             </div>
-            <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-black" aria-label="닫기">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1 -mr-2">
+              <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-black" aria-label="설정">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <button onClick={onClose} className="p-2 text-gray-400 hover:text-black" aria-label="닫기">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* 요약 배너 (버전 C: 인사이트형) */}
@@ -340,6 +350,18 @@ export default function HealthRecordDrawer({ isOpen, onClose, characterName, use
           </p>
         </div>
       </div>
+      
+      {isSettingsOpen && (
+        <HealthRecordSettingsModal
+          userId={userId}
+          onClose={() => setIsSettingsOpen(false)}
+          onRevoke={() => {
+            setIsSettingsOpen(false);
+            onClose(); // 드로어 닫고 새로고침 유도
+            window.location.reload(); // 상태를 리셋하기 위해 강제 새로고침
+          }}
+        />
+      )}
     </>
   );
 }
