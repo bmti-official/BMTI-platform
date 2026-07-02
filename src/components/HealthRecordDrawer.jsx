@@ -90,12 +90,21 @@ export async function deleteHealthRecord(recordId) {
   return !error;
 }
 
+export async function deleteAllHealthRecords(userId) {
+  const { error } = await supabase
+    .from('health_records')
+    .delete()
+    .eq('user_id', userId);
+  return !error;
+}
+
 // ==========================================
 // 커스텀 훅: 건강 기록 관리
 // ==========================================
 export function useHealthRecords(isOpen, userId) {
   const [entries, setEntries] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingDeletes, setPendingDeletes] = useState({});
 
   useEffect(() => {
     if (!isOpen || !userId) return;
@@ -129,20 +138,58 @@ export function useHealthRecords(isOpen, userId) {
     return record;
   }, [userId]);
 
-  const removeEntry = useCallback(async (recordId, category) => {
-    const ok = await deleteHealthRecord(recordId);
-    if (ok) {
-      setEntries(prev => ({
-        ...prev,
-        [category]: (prev[category] || []).filter(e => e.id !== recordId),
-      }));
-    }
-    return ok;
+  const removeEntry = useCallback((recordId, category) => {
+    const item = entries[category]?.find(e => e.id === recordId);
+    if (!item) return false;
+
+    // 즉시 숨기기
+    setEntries(prev => ({
+      ...prev,
+      [category]: prev[category].filter(e => e.id !== recordId),
+    }));
+
+    // 4초 후 실제 삭제
+    const timeoutId = setTimeout(() => {
+      deleteHealthRecord(recordId).then(() => {
+        setPendingDeletes(prev => {
+          const next = { ...prev };
+          delete next[recordId];
+          return next;
+        });
+      });
+    }, 4000);
+
+    setPendingDeletes(prev => ({
+      ...prev,
+      [recordId]: { category, item, timeoutId }
+    }));
+    return true;
+  }, [entries]);
+
+  const undoRemove = useCallback((recordId) => {
+    setPendingDeletes(prev => {
+      const pending = prev[recordId];
+      if (pending) {
+        clearTimeout(pending.timeoutId);
+        // 복구
+        setEntries(ePrev => {
+          const catList = ePrev[pending.category] || [];
+          return { 
+            ...ePrev, 
+            [pending.category]: [...catList, pending.item].sort((a,b) => new Date(b.date) - new Date(a.date))
+          };
+        });
+        const next = { ...prev };
+        delete next[recordId];
+        return next;
+      }
+      return prev;
+    });
   }, []);
 
   const totalEntries = Object.values(entries).reduce((sum, arr) => sum + arr.length, 0);
 
-  return { entries, isLoading, totalEntries, addEntry, removeEntry };
+  return { entries, isLoading, totalEntries, addEntry, removeEntry, pendingDeletes, undoRemove };
 }
 
 // ==========================================
@@ -257,7 +304,9 @@ export function AutoSaveToast({ category, onDismiss }) {
 export default function HealthRecordDrawer({ isOpen, onClose, characterName, userId }) {
   const [openId, setOpenId] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { entries, isLoading, totalEntries, removeEntry } = useHealthRecords(isOpen, userId);
+  const { entries, isLoading, totalEntries, removeEntry, pendingDeletes, undoRemove } = useHealthRecords(isOpen, userId);
+
+  const activeDeleteId = Object.keys(pendingDeletes)[Object.keys(pendingDeletes).length - 1];
 
   const getInsightInfo = () => {
     if (totalEntries === 0) return null;
@@ -372,6 +421,20 @@ export default function HealthRecordDrawer({ isOpen, onClose, characterName, use
             기록은 언제든 삭제할 수 있고, 대화 분석 외 다른 목적으로 사용되지 않아요
           </p>
         </div>
+        
+        {/* Undo Toast */}
+        {activeDeleteId && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[120] bg-gray-800 text-white text-[13px] px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xl animate-fade-in-up">
+            <span>기록을 삭제했어요</span>
+            <div className="w-px h-3 bg-gray-600" />
+            <button 
+              onClick={() => undoRemove(activeDeleteId)}
+              className="text-[#FEE500] font-bold hover:underline"
+            >
+              실행취소
+            </button>
+          </div>
+        )}
       </div>
       
       {isSettingsOpen && (
