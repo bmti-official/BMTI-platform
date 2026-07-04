@@ -427,16 +427,21 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
           </div>
         </div>
         
-        {/* App Notification Toggle (Moved to normal flow to prevent overlap) */}
+        {/* App Notification Toggle — 이 페이지에서만 신청 여부를 확인/변경 가능 */}
         {!isEditing && (
-          <div className="flex justify-end items-center gap-3 mt-4 fade-in">
-            <span className="text-xs font-bold text-gray-600">'무브먼트 맵' 앱 출시 알림 받기</span>
+          <div className="flex justify-between items-center gap-3 mt-4 fade-in bg-gray-50 border border-gray-100 rounded-2xl p-4">
+            <span className="text-xs font-bold text-gray-700">
+              {userData.appNotification ? '✅ 무브먼트 맵 사전 알림 신청 완료' : "'무브먼트 맵' 앱 출시 알림 받기"}
+            </span>
             <button
-              onClick={() => {
-                if (userData.appNotification) return; // Cannot disable once enabled
+              onClick={async () => {
+                if (userData.appNotification) return; // 한번 켜면 끌 수 없음
                 const updatedUser = { ...userData, appNotification: true };
                 setUserData(updatedUser);
                 localStorage.setItem('bmti_user', JSON.stringify(updatedUser));
+                if (userData.id) {
+                  await supabase.from('pre_registrations').insert({ user_id: userData.id }).catch(e => console.error(e));
+                }
               }}
               className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
                 userData.appNotification ? 'bg-black cursor-not-allowed' : 'bg-gray-300'

@@ -375,41 +375,37 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
               <span className="text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">(카카오톡 채널 추가)</span>
             </button>
 
-            {/* 2. 무브먼트 맵 사전 알림 (hero CTA) */}
-            <button
-              onClick={() => setView('spot')}
-              className="w-full bg-black hover:bg-gray-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-gray-800 relative overflow-hidden"
-            >
-              <div className="flex flex-col items-center z-10 w-full">
-                <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">🎁</span>
-                <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
-                <span className="text-white text-3xl md:text-4xl font-black my-3">무브먼트 맵</span>
-                <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
-                <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
+            {/* 2. 무브먼트 맵 사전 알림 (hero CTA) — 이미 신청했다면 마이페이지에서만 확인 가능하도록 숨김 */}
+            {!appNotification && (
+              <button
+                onClick={() => setView('spot')}
+                className="w-full bg-black hover:bg-gray-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-gray-800 relative overflow-hidden"
+              >
+                <div className="flex flex-col items-center z-10 w-full">
+                  <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">🎁</span>
+                  <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
+                  <span className="text-white text-3xl md:text-4xl font-black my-3">무브먼트 맵</span>
+                  <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
+                  <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
 
-                {/* Toggle Switch */}
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleAppNotification();
-                  }}
-                  className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
-                >
-                  <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
-                    사전 알림 신청으로<br/>할인 쿠폰 받기 !
-                  </span>
+                  {/* Toggle Switch */}
                   <div
-                    className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
-                      appNotification ? 'bg-[#c0ff00] cursor-not-allowed' : 'bg-gray-500'
-                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleAppNotification();
+                    }}
+                    className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${
-                      appNotification ? 'left-6' : 'left-1'
-                    }`} />
+                    <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
+                      사전 알림 신청으로<br/>할인 쿠폰 받기 !
+                    </span>
+                    <div className="w-12 h-7 rounded-full flex-shrink-0 relative bg-gray-500">
+                      <div className="w-5 h-5 bg-white rounded-full absolute top-1 left-1 shadow-sm" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            )}
 
             {/* 3 & 4. BMTI 과몰입 / BMTI 교환일기 작성 (secondary pair) */}
             <div className="w-full grid grid-cols-2 gap-3">

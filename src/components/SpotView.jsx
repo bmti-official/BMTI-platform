@@ -145,21 +145,20 @@ const SpotView = ({ isLoggedIn, onRequireLogin }) => {
             />
           </div>
 
-          <div className="flex items-center justify-between w-full bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2">
-            <span className="font-bold text-sm md:text-base break-keep text-gray-700 text-left">
-              🎁 지금 사전 등록하면<br/>50% 할인 쿠폰 100% 증정!
-            </span>
-            <button
-              onClick={handleToggleAppNotification}
-              className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
-                appNotification ? 'bg-black cursor-not-allowed' : 'bg-gray-300'
-              }`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${
-                appNotification ? 'left-6' : 'left-1'
-              }`} />
-            </button>
-          </div>
+          {/* 이미 사전 알림 신청을 했다면 이 박스는 숨기고 마이페이지에서만 확인 가능 */}
+          {!appNotification && (
+            <div className="flex items-center justify-between w-full bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2">
+              <span className="font-bold text-sm md:text-base break-keep text-gray-700 text-left">
+                🎁 지금 사전 등록하면<br/>50% 할인 쿠폰 100% 증정!
+              </span>
+              <button
+                onClick={handleToggleAppNotification}
+                className="w-12 h-7 rounded-full flex-shrink-0 relative bg-gray-300"
+              >
+                <div className="w-5 h-5 bg-white rounded-full absolute top-1 left-1 shadow-sm" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

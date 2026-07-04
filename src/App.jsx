@@ -85,12 +85,16 @@ function App() {
                 if (dbUser.bmti_type) {
                   setBmtiCode(dbUser.bmti_type);
                 }
+                if (dbUser.bmti_answers) {
+                  setBmtiAnswers(dbUser.bmti_answers);
+                }
               } else {
                 // fallback
                 localUser.isPremium = true;
                 setUserProfile(localUser);
                 setIsLoggedIn(true);
                 if (localUser.bmti_type) setBmtiCode(localUser.bmti_type);
+                if (localUser.bmti_answers) setBmtiAnswers(localUser.bmti_answers);
               }
             });
         }
@@ -105,18 +109,27 @@ function App() {
     if (isLoggedIn && userProfile && bmtiCode && quizCompleted) {
       const updateBmti = async () => {
         try {
-          const { error } = await supabase
+          let { error } = await supabase
             .from('users')
-            .update({ bmti_type: bmtiCode })
+            .update({ bmti_type: bmtiCode, bmti_answers: bmtiAnswers })
             .eq('id', userProfile.id);
-            
+
+          if (error) {
+            // bmti_answers 컬럼이 아직 DB에 없는 환경(마이그레이션 전)에서도
+            // 최소한 유형 코드만큼은 계속 저장되도록 폴백한다.
+            ({ error } = await supabase
+              .from('users')
+              .update({ bmti_type: bmtiCode })
+              .eq('id', userProfile.id));
+          }
+
           if (!error) {
             await supabase
               .from('bmti_history')
               .insert({ user_id: userProfile.id, bmti_code: bmtiCode })
               .catch(e => console.error(e));
 
-            const updatedProfile = { ...userProfile, bmti_type: bmtiCode };
+            const updatedProfile = { ...userProfile, bmti_type: bmtiCode, bmti_answers: bmtiAnswers };
             setUserProfile(updatedProfile);
             localStorage.setItem('bmti_user', JSON.stringify(updatedProfile));
           }
@@ -153,7 +166,6 @@ function App() {
         .upsert(
           {
             kakao_id: userData.kakaoId,
-            email: userData.email,
             nickname: userData.nickname,
             kakao_gender: userData.kakaoGender,
             kakao_age: userData.kakaoAge,
@@ -175,11 +187,20 @@ function App() {
         await supabase.from('pre_registrations').insert({ user_id: data.id }).catch(e => console.error('Pre-reg error:', e));
       }
       
-      const fullUserData = { ...userData, id: data.id, bmti_type: data.bmti_type, appNotification: userData.appNotification };
+      const fullUserData = { ...userData, id: data.id, bmti_type: data.bmti_type, bmti_answers: data.bmti_answers, appNotification: userData.appNotification };
       setUserProfile(fullUserData);
       setShowSignup(false);
       setIsLoggedIn(true);
       localStorage.setItem('bmti_user', JSON.stringify(fullUserData));
+
+      // 기존 회원이 새 기기에서 로그인하는 경우, 이 기기의 bmtiCode/bmtiAnswers가 비어있거나
+      // 계정에 저장된 최신 결과와 다를 수 있으므로 DB 값으로 동기화한다.
+      if (data.bmti_type) {
+        setBmtiCode(data.bmti_type);
+      }
+      if (data.bmti_answers) {
+        setBmtiAnswers(data.bmti_answers);
+      }
     } catch (e) {
       console.error('Error saving user to Supabase:', e);
       alert('회원가입 처리 중 오류가 발생했습니다.\n상세: ' + (e.message || JSON.stringify(e)));

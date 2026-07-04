@@ -92,3 +92,8 @@ CREATE TABLE IF NOT EXISTS chat_archives (
   expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- 8. BMTI 원본 응답(16문항) 저장 — 기기 간 결과 동기화용
+-- bmti_type(코드)만 저장되고 원본 응답은 기기 로컬에만 있어서, 축별 확신/유연 판정과
+-- 퍼센트가 로그인한 다른 기기·AI챗 등에서 재현되지 않던 문제를 해결하기 위해 추가.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bmti_answers JSONB;
