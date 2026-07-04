@@ -263,6 +263,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           cursorY = margin;
         }
         pdf.addImage(imgData, 'JPEG', margin, cursorY, contentWidth, imgHeight);
+        if (sections[i] === printFooterRef.current) {
+          pdf.link(margin, cursorY, contentWidth, imgHeight, { url: siteUrl });
+        }
         cursorY += imgHeight + gap;
       }
 
@@ -373,6 +376,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400 tracking-tight mt-3">
               {axisCode}
             </span>
+            <p className="text-gray-500 text-sm md:text-base font-medium whitespace-pre-line break-keep text-center mt-4 leading-relaxed">
+              {info.catchphrase}
+            </p>
           </div>
 
           {/* 4 Tendencies Section */}
@@ -858,8 +864,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           {/* Header */}
           <div ref={printHeaderRef} style={{ textAlign: 'center', padding: '8px 8px 24px' }}>
             <p style={{ fontSize: '13px', letterSpacing: '0.3em', color: '#9ca3af', fontWeight: 700, marginBottom: '10px' }}>MY BMTI RESULT</p>
-            <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 6px' }}>{axisCode}</h1>
-            <p style={{ fontSize: '15px', color: '#6b7280', fontWeight: 600, marginBottom: '18px' }}>{info.kr}</p>
+            <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 18px' }}>{axisCode}</h1>
             {charData && (
               <img src={charData.originalImage} alt={axisCode} style={{ width: '280px', height: 'auto', margin: '0 auto 18px', display: 'block', borderRadius: '20px' }} crossOrigin="anonymous" />
             )}
@@ -897,14 +902,18 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           <div ref={printMatchesRef} style={{ display: 'flex', gap: '16px', padding: '8px' }}>
             <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px', textAlign: 'center' }}>
               {bestMatchChar && (
-                <img src={bestMatchChar.image} alt={info.bestMatch} style={{ width: '96px', height: '96px', objectFit: 'contain', margin: '0 auto 10px' }} crossOrigin="anonymous" />
+                <div style={{ width: '110px', height: '110px', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src={bestMatchChar.image} alt={info.bestMatch} style={{ maxWidth: '110px', maxHeight: '110px', width: 'auto', height: 'auto' }} crossOrigin="anonymous" />
+                </div>
               )}
               <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>💖 환상의 짝꿍 ({info.bestMatch})</p>
               <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0, textAlign: 'left' }}>{bestMatchBody}</p>
             </div>
             <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px', textAlign: 'center' }}>
               {diffTempoChar && (
-                <img src={diffTempoChar.image} alt={info.diffTempo} style={{ width: '96px', height: '96px', objectFit: 'contain', margin: '0 auto 10px' }} crossOrigin="anonymous" />
+                <div style={{ width: '110px', height: '110px', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src={diffTempoChar.image} alt={info.diffTempo} style={{ maxWidth: '110px', maxHeight: '110px', width: 'auto', height: 'auto' }} crossOrigin="anonymous" />
+                </div>
               )}
               <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>🤔 조금 다른 템포 ({info.diffTempo})</p>
               <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0, textAlign: 'left' }}>{diffTempoBody}</p>
