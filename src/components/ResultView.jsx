@@ -121,7 +121,14 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   const [showConfirm, setShowConfirm] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSavingPDF, setIsSavingPDF] = useState(false);
-  const printRef = useRef(null);
+  const printHeaderRef = useRef(null);
+  const printTendencyRefs = useRef([]);
+  const printMatchesRef = useRef(null);
+  const printInstructorRef = useRef(null);
+  const printEscapeRef = useRef(null);
+  const printVibeRef = useRef(null);
+  const printBodyGuideRef = useRef(null);
+  const printFooterRef = useRef(null);
 
   const [expandBestMatch, setExpandBestMatch] = useState(false);
   const [expandDiffTempo, setExpandDiffTempo] = useState(false);
@@ -202,34 +209,46 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   const diffTempoBody = resultData.badMatch ? resultData.badMatch.split('\n').slice(2).join(' ') : '';
 
   // 1. "카카오톡으로 내 결과지 저장하기" — 전체 결과지를 PDF로 만들어 카톡(OS 공유 시트)으로 전달
+  // 섹션(카드) 단위로 각각 캡처해 페이지에 배치 — 한 이미지를 통째로 슬라이싱하면
+  // 페이지가 넘어갈 때 문단 중간이 잘리므로, 블록이 페이지 하단을 넘으면 다음 페이지로 통째로 넘긴다.
   const handleSaveResultPDF = async () => {
-    if (!printRef.current || isSavingPDF) return;
+    if (isSavingPDF) return;
     setIsSavingPDF(true);
     try {
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        width: 800,
-        windowWidth: 800,
-      });
+      const sections = [
+        printHeaderRef.current,
+        ...(percentages ? printTendencyRefs.current.filter(Boolean) : []),
+        printMatchesRef.current,
+        printInstructorRef.current,
+        printEscapeRef.current,
+        printVibeRef.current,
+        printBodyGuideRef.current,
+        printFooterRef.current,
+      ].filter(Boolean);
 
       const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const margin = 32;
+      const contentWidth = pageWidth - margin * 2;
+      const gap = 14;
+      let cursorY = margin;
 
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      for (let i = 0; i < sections.length; i++) {
+        const canvas = await html2canvas(sections[i], {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+        if (cursorY !== margin && cursorY + imgHeight > pageHeight - margin) {
+          pdf.addPage();
+          cursorY = margin;
+        }
+        pdf.addImage(imgData, 'JPEG', margin, cursorY, contentWidth, imgHeight);
+        cursorY += imgHeight + gap;
       }
 
       const pdfBlob = pdf.output('blob');
@@ -817,11 +836,12 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         </div>
       )}
 
-      {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) ===== */}
+      {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) =====
+          섹션마다 별도 ref로 캡처해 PDF에서 각 블록이 통째로 다음 페이지로 넘어가도록 한다. */}
       <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
-        <div ref={printRef} style={{ width: '800px', background: '#ffffff', color: '#1f2937', fontFamily: "'Pretendard', sans-serif", padding: '56px' }}>
+        <div style={{ width: '736px', background: '#ffffff', color: '#1f2937', fontFamily: "'Pretendard', sans-serif" }}>
           {/* Header */}
-          <div style={{ textAlign: 'center', paddingBottom: '32px', borderBottom: '2px solid #f3f4f6', marginBottom: '36px' }}>
+          <div ref={printHeaderRef} style={{ textAlign: 'center', padding: '8px 8px 24px' }}>
             <p style={{ fontSize: '13px', letterSpacing: '0.3em', color: '#9ca3af', fontWeight: 700, marginBottom: '10px' }}>MY BMTI RESULT</p>
             <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 6px' }}>{axisCode}</h1>
             <p style={{ fontSize: '15px', color: '#6b7280', fontWeight: 600, marginBottom: '18px' }}>{info.kr}</p>
@@ -831,33 +851,32 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <p style={{ fontSize: '15px', color: '#4b5563', whiteSpace: 'pre-line', lineHeight: 1.6 }}>"{info.catchphrase}"</p>
           </div>
 
-          {/* 4가지 성향 */}
-          {percentages && (
-            <div style={{ marginBottom: '40px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '18px' }}>🔍 나를 움직이게 하는 4가지 성향</h3>
-              {[['A', 'O'], ['C', 'L'], ['D', 'Q'], ['Z', 'M']].map(([l1, l2]) => {
-                const isLeft = percentages[l1] >= 50;
-                const activeLetter = isLeft ? l1 : l2;
-                const percent = Math.max(percentages[l1], percentages[l2]);
-                const level = percent >= 80 ? 'confident' : 'flexible';
-                const data = TENDENCY_DATA[activeLetter];
-                return (
-                  <div key={l1} style={{ marginBottom: '18px', paddingBottom: '18px', borderBottom: '1px solid #f3f4f6' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '16px' }}>{data[level].emoji}</span>
-                      <span style={{ fontWeight: 800, fontSize: '15px' }}>{data[level].modifier} {data.name}</span>
-                      <span style={{ fontWeight: 800, fontSize: '13px', color: '#9ca3af', marginLeft: 'auto' }}>{percent}%</span>
-                    </div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>"{data[level].quote}"</p>
-                    <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{data[level].desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* 4가지 성향 (성향별로 각각 별도 캡처) */}
+          {percentages && [['A', 'O'], ['C', 'L'], ['D', 'Q'], ['Z', 'M']].map(([l1, l2], idx) => {
+            const isLeft = percentages[l1] >= 50;
+            const activeLetter = isLeft ? l1 : l2;
+            const percent = Math.max(percentages[l1], percentages[l2]);
+            const level = percent >= 80 ? 'confident' : 'flexible';
+            const data = TENDENCY_DATA[activeLetter];
+            return (
+              <div
+                key={l1}
+                ref={(el) => { printTendencyRefs.current[idx] = el; }}
+                style={{ background: '#fafaf9', borderRadius: '14px', padding: '18px', margin: '8px' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '16px' }}>{data[level].emoji}</span>
+                  <span style={{ fontWeight: 800, fontSize: '15px' }}>{data[level].modifier} {data.name}</span>
+                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#9ca3af', marginLeft: 'auto' }}>{percent}%</span>
+                </div>
+                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>"{data[level].quote}"</p>
+                <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{data[level].desc}</p>
+              </div>
+            );
+          })}
 
           {/* 궁합 */}
-          <div style={{ marginBottom: '40px', display: 'flex', gap: '16px' }}>
+          <div ref={printMatchesRef} style={{ display: 'flex', gap: '16px', padding: '8px' }}>
             <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px' }}>
               <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>💖 환상의 짝꿍 ({info.bestMatch})</p>
               <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{bestMatchBody}</p>
@@ -869,7 +888,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* 강사 가이드 */}
-          <div style={{ marginBottom: '36px' }}>
+          <div ref={printInstructorRef} style={{ padding: '20px 8px' }}>
             <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법</p>
             <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#7C6FF0', marginBottom: '14px' }}>{guideData.title}</h3>
             <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>맞춤 운동 가이드</p>
@@ -881,7 +900,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* 탈출법 */}
-          <div style={{ marginBottom: '36px' }}>
+          <div ref={printEscapeRef} style={{ padding: '20px 8px' }}>
             <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💸 헬스장 기부천사 탈출법</p>
             <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#C9862A', marginBottom: '14px' }}>{escapeInfo.title}</h3>
             <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>당신의 특징</p>
@@ -893,7 +912,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* 최악의 분위기 */}
-          <div style={{ marginBottom: '36px' }}>
+          <div ref={printVibeRef} style={{ padding: '20px 8px' }}>
             <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💥 멘탈 바사삭 '최악의 운동 분위기'</p>
             <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#D6486D', marginBottom: '14px' }}>{vibeData.name}</h3>
             <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>당신의 특징</p>
@@ -903,7 +922,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* 바디 가이드 */}
-          <div style={{ marginBottom: '20px' }}>
+          <div ref={printBodyGuideRef} style={{ padding: '20px 8px' }}>
             <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💌 바디 가이드의 따뜻한 시선</p>
             {bodyGuideParagraphs.map((para, i) => (
               <p key={i} style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.75, whiteSpace: 'pre-line', marginBottom: i < bodyGuideParagraphs.length - 1 ? '14px' : 0 }}>{para}</p>
@@ -911,7 +930,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* Footer */}
-          <div style={{ textAlign: 'center', marginTop: '44px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
+          <div ref={printFooterRef} style={{ textAlign: 'center', padding: '24px 8px 8px' }}>
             <p style={{ fontSize: '11.5px', color: '#9ca3af', marginBottom: '4px' }}>나도 BMTI 검사하기 👇</p>
             <p style={{ fontSize: '12.5px', fontWeight: 700, color: '#4b5563' }}>{siteUrl}</p>
             <p style={{ fontSize: '10.5px', color: '#d1d5db', marginTop: '6px' }}>BMTI — Body Management Type Indicator</p>
