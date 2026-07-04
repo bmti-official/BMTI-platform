@@ -65,15 +65,18 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     setStarBalance(getStarBalance());
     setRemainingTokens(getRemainingTokens(effTier));
     setTotalTokens(getTotalDailyLimit(effTier));
-    setMemories(getAllMemories());
+    if (userData?.id) {
+      getAllMemories(userData.id).then(setMemories);
+    }
   }, [userData]);
 
-  const handleToggleMemory = (id) => {
-    const result = toggleMemorySelection(id, 5);
+  const handleToggleMemory = async (id) => {
+    if (!userData?.id) return;
+    const result = await toggleMemorySelection(id, userData.id, 5);
     if (!result.success && result.isSelected === undefined) {
       alert(result.message);
     } else {
-      setMemories(getAllMemories());
+      setMemories(await getAllMemories(userData.id));
     }
   };
 

@@ -99,7 +99,7 @@ const AiChatRoom = ({ bmtiCode, setView, userInfo }) => {
     if (!text) return;
 
     // 토큰 비용 계산
-    const memories = isPremium ? getSelectedMemories(5) : [];
+    const memories = isPremium ? await getSelectedMemories(userInfo.id, 5) : [];
     const cost = memories.length > 0 ? TOKEN_COSTS.CHAT_WITH_MEMORY : TOKEN_COSTS.CHAT_MESSAGE_BASE || TOKEN_COSTS.CHAT_MESSAGE;
 
     if (remainingTokens < cost) {

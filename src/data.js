@@ -101,8 +101,10 @@ function calculateWeightedSum(answers, questions) {
 export function calculateAxisCode(answers) {
   return AXES_CONFIG.map(axis => {
     const sum = calculateWeightedSum(answers, axis.questions);
-    // 양수면 왼쪽(left), 음수면 오른쪽(right), 0이면 기본적으로 왼쪽
-    return sum >= 0 ? axis.leftLetter : axis.rightLetter;
+    // min/max가 대칭이 아닌 축(C/L, Z/M)은 0이 아니라 (min+max)/2가 실제 50% 지점이다.
+    // calculateBMTIPercentages와 동일한 기준을 써야 유형 코드와 퍼센트 표시가 어긋나지 않는다.
+    const midpoint = (axis.min + axis.max) / 2;
+    return sum >= midpoint ? axis.leftLetter : axis.rightLetter;
   }).join('');
 }
 

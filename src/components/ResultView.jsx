@@ -125,6 +125,8 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   
   const [expandBestMatch, setExpandBestMatch] = useState(false);
   const [expandDiffTempo, setExpandDiffTempo] = useState(false);
+  const [openTendencies, setOpenTendencies] = useState({});
+  const [openDetailSections, setOpenDetailSections] = useState({});
 
   const [appNotification, setAppNotification] = useState(() => {
     try {
@@ -282,7 +284,8 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 const percent = Math.max(percentages[letter1], percentages[letter2]);
                 const level = percent >= 80 ? 'confident' : 'flexible';
                 const data = TENDENCY_DATA[activeLetter];
-                
+                const isOpen = !!openTendencies[letter1];
+
                 // Colors based on axis
                 let colorClass = 'bg-[#4ECDC4]'; // Default
                 let textClass = 'text-[#4ECDC4]';
@@ -303,12 +306,24 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                       <span className="text-xl md:text-2xl">{data[level].emoji}</span>
                       <span>{data[level].modifier} {data.name}</span>
                     </h4>
-                    <p className="font-bold text-gray-800 text-[16px] md:text-[17px] mb-3 leading-relaxed break-keep">
+                    <p className="font-bold text-gray-800 text-[16px] md:text-[17px] mb-1 leading-relaxed break-keep">
                       "{data[level].quote}"
                     </p>
-                    <p className="text-gray-600 text-[15px] md:text-base leading-[1.7] break-keep">
-                      {data[level].desc}
-                    </p>
+                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <p className="text-gray-600 text-[15px] md:text-base leading-[1.7] break-keep">
+                          {data[level].desc}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenTendencies(prev => ({ ...prev, [letter1]: !prev[letter1] }))}
+                      className={`${textClass} text-sm font-bold mt-3 flex items-center gap-1`}
+                    >
+                      {isOpen ? '접기' : '자세히 보기'}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
                   </div>
                 );
               };
@@ -342,12 +357,13 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             />
           </div>
           
-          {/* New 1-column CTA section */}
-          <div className="w-full mt-8 mb-4">
-            <button 
+          {/* CTA section: 4 buttons in priority order */}
+          <div className="w-full mt-8 mb-4 flex flex-col gap-3">
+            {/* 1. 카톡으로 결과지 받기 */}
+            <button
               onClick={() => {
                 if (window.Kakao && window.Kakao.Channel) {
-                  window.Kakao.Channel.addChannel({ channelPublicId: '_xasxgZX' }); 
+                  window.Kakao.Channel.addChannel({ channelPublicId: '_xasxgZX' });
                 } else {
                   alert('카카오톡 채널 연동이 준비 중입니다.');
                 }
@@ -358,6 +374,60 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
               <span className="font-bold text-[#3C1E1E] text-sm md:text-base mb-1.5">내 BMTI 결과지 카톡으로 받아보기</span>
               <span className="text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">(카카오톡 채널 추가)</span>
             </button>
+
+            {/* 2. 무브먼트 맵 사전 알림 (hero CTA) */}
+            <button
+              onClick={() => setView('spot')}
+              className="w-full bg-black hover:bg-gray-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-gray-800 relative overflow-hidden"
+            >
+              <div className="flex flex-col items-center z-10 w-full">
+                <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">🎁</span>
+                <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
+                <span className="text-white text-3xl md:text-4xl font-black my-3">무브먼트 맵</span>
+                <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
+                <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
+
+                {/* Toggle Switch */}
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleAppNotification();
+                  }}
+                  className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
+                >
+                  <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
+                    사전 알림 신청으로<br/>할인 쿠폰 받기 !
+                  </span>
+                  <div
+                    className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
+                      appNotification ? 'bg-[#c0ff00] cursor-not-allowed' : 'bg-gray-500'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${
+                      appNotification ? 'left-6' : 'left-1'
+                    }`} />
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            {/* 3 & 4. BMTI 과몰입 / BMTI 교환일기 작성 (secondary pair) */}
+            <div className="w-full grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setView('board')}
+                className="bg-[#fdf0f3] hover:bg-[#fce4e9] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#f7d7de]"
+              >
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💌</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 과몰입</span>
+              </button>
+              <button
+                onClick={() => setView('aichat')}
+                className="bg-[#eef4fb] hover:bg-[#e0ecf8] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#d7e6f7]"
+              >
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">✍️</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 교환일기 작성</span>
+              </button>
+            </div>
           </div>
 
         </div>
@@ -409,33 +479,46 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 }
                 const guideData = INSTRUCTOR_GUIDE_DATA[instructorKey] || INSTRUCTOR_GUIDE_DATA['DZ_flexible'];
                 
+                const isOpen = !!openDetailSections.instructor;
                 return (
                   <>
                     <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
                       {guideData.title}
                     </h3>
-                    <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
-                      <div>
-                        <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">맞춤 운동 가이드:</span>
-                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
-                          {guideData.goodGuide}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">최악의 운동 가이드:</span>
-                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
-                          {guideData.badGuide}
-                        </p>
-                      </div>
-                      <div className="pt-2">
-                        <div>
-                          <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">💡 추천하는 자기점검 도구:</span>
-                          <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
-                            {guideData.tools}
-                          </p>
+                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
+                          <div>
+                            <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">맞춤 운동 가이드:</span>
+                            <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                              {guideData.goodGuide}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">최악의 운동 가이드:</span>
+                            <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                              {guideData.badGuide}
+                            </p>
+                          </div>
+                          <div className="pt-2">
+                            <div>
+                              <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">💡 추천하는 자기점검 도구:</span>
+                              <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
+                                {guideData.tools}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDetailSections(prev => ({ ...prev, instructor: !prev.instructor }))}
+                      className="text-[#FF6B6B] text-sm font-bold mt-4 flex items-center gap-1"
+                    >
+                      {isOpen ? '접기' : '자세히 보기'}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
                   </>
                 );
               })()}
@@ -464,33 +547,46 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 }
                 const escapeInfo = ESCAPE_DATA[escapeKey] || ESCAPE_DATA['OQ_flexible'];
                 
+                const isOpen = !!openDetailSections.escape;
                 return (
                   <>
                     <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
                       {escapeInfo.title}
                     </h3>
-                    <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
-                      <div>
-                        <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">당신의 특징:</span>
-                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
-                          {escapeInfo.trait}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">환불 하고 싶어지는 순간:</span>
-                        <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
-                          {escapeInfo.refund}
-                        </p>
-                      </div>
-                      <div className="pt-2">
-                        <span className="inline-block bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm md:text-[15px] font-bold px-3 py-1 rounded-lg mb-2">
-                          💡 기부천사 탈출법
-                        </span>
-                        <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
-                          {escapeInfo.escape}
-                        </p>
+                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
+                          <div>
+                            <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">당신의 특징:</span>
+                            <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                              {escapeInfo.trait}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">환불 하고 싶어지는 순간:</span>
+                            <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
+                              {escapeInfo.refund}
+                            </p>
+                          </div>
+                          <div className="pt-2">
+                            <span className="inline-block bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm md:text-[15px] font-bold px-3 py-1 rounded-lg mb-2">
+                              💡 기부천사 탈출법
+                            </span>
+                            <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
+                              {escapeInfo.escape}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDetailSections(prev => ({ ...prev, escape: !prev.escape }))}
+                      className="text-[#FF6B6B] text-sm font-bold mt-4 flex items-center gap-1"
+                    >
+                      {isOpen ? '접기' : '자세히 보기'}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
                   </>
                 );
               })()}
@@ -519,27 +615,40 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 }
                 const vibeData = WORST_VIBE_DATA[vibeKey] || WORST_VIBE_DATA['OM_flexible'];
                 
+                const isOpen = !!openDetailSections.vibe;
                 return (
                   <>
                     <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
                       {vibeData.name}
                     </h3>
-                    <div className="flex flex-col gap-5 mt-2">
-                      <div className="flex flex-col gap-1.5">
-                        <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">당신의 특징:</h6>
-                        <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.trait}</p>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">최악의 분위기:</h6>
-                        <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.worst}</p>
+                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col gap-5 mt-2">
+                          <div className="flex flex-col gap-1.5">
+                            <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">당신의 특징:</h6>
+                            <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.trait}</p>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">최악의 분위기:</h6>
+                            <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.worst}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDetailSections(prev => ({ ...prev, vibe: !prev.vibe }))}
+                      className="text-[#FF6B6B] text-sm font-bold mt-4 flex items-center gap-1"
+                    >
+                      {isOpen ? '접기' : '자세히 보기'}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
                   </>
                 );
               })()}
             </div>
           </div>
-          
+
           {/* Custom Body Guide Letter Section */}
           <div className="text-left">
             <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
@@ -572,44 +681,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
         </div>
       )}
-
-      {/* Bottom CTA for Movement Map Pre-registration */}
-      <div className="mt-8 mb-6 fade-in px-4 md:px-0">
-        <button 
-          onClick={() => setView('spot')}
-          className="w-full bg-black hover:bg-gray-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-gray-800 relative overflow-hidden"
-        >
-          <div className="flex flex-col items-center z-10 w-full">
-            <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">🎁</span>
-            <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
-            <span className="text-white text-3xl md:text-4xl font-black my-3">무브먼트 맵</span>
-            <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
-            <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
-            
-            {/* Toggle Switch */}
-            <div 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleAppNotification();
-              }}
-              className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
-            >
-              <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
-                사전 알림 신청으로<br/>할인 쿠폰 받기 !
-              </span>
-              <div
-                className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
-                  appNotification ? 'bg-[#c0ff00] cursor-not-allowed' : 'bg-gray-500'
-                }`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${
-                  appNotification ? 'left-6' : 'left-1'
-                }`} />
-              </div>
-            </div>
-          </div>
-        </button>
-      </div>
 
       {/* Logged in Floating FAB */}
       {isLoggedIn && quizCompleted && (

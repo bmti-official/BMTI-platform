@@ -127,7 +127,7 @@ function App() {
       updateBmti();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quizCompleted]);
+  }, [quizCompleted, isLoggedIn, bmtiCode]);
 
   // Handler for login attempts — opens signup modal instead of instant login
   const handleLoginAttempt = () => {
