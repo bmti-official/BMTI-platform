@@ -194,11 +194,16 @@ function App() {
 
       // 기존 회원이 새 기기에서 로그인하는 경우, 이 기기의 bmtiCode/bmtiAnswers가 비어있거나
       // 계정에 저장된 최신 결과와 다를 수 있으므로 DB 값으로 동기화한다.
-      if (data.bmti_type) {
-        setBmtiCode(data.bmti_type);
-      }
-      if (data.bmti_answers) {
-        setBmtiAnswers(data.bmti_answers);
+      // 단, 이번 세션에서 방금 퀴즈를 완료하고 로그인하는 흐름(quizCompleted === true)이라면
+      // 지금 막 나온 새 결과가 최신이므로 DB의 예전 값으로 덮어써서는 안 된다 —
+      // 이 경우는 반대로 "Update Supabase when quiz is completed" 이펙트가 새 값을 DB에 반영한다.
+      if (!quizCompleted) {
+        if (data.bmti_type) {
+          setBmtiCode(data.bmti_type);
+        }
+        if (data.bmti_answers) {
+          setBmtiAnswers(data.bmti_answers);
+        }
       }
     } catch (e) {
       console.error('Error saving user to Supabase:', e);
