@@ -26,22 +26,22 @@ const getKoreanName = (code) => {
 
 // BMTI 유형별 정보
 const BMTI_INFO = {
-  'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '몸으로 먼저 느끼고,\n마음으로 함께 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
-  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '결과로 말하는\n실전 파워 무버', bestMatch: 'OCDM', diffTempo: 'ALQM', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
-  'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '이론과 감성 사이에서\n최적의 균형을 찾는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },
-  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '데이터로 파고드는\n분석형 액티비스트', bestMatch: 'OLQZ', diffTempo: 'ALDM', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
-  'ALDM': { kr: '활동적 전신 실전 공감형', catchphrase: '전신으로 느끼며\n사람과 함께 성장하는 무버', bestMatch: 'OCQZ', diffTempo: 'OCQM', color: '#F472B6', bgGradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 100%)' },
-  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '거침없는 실행력으로\n몸 전체를 깨우는 사람', bestMatch: 'OLDZ', diffTempo: 'OCQM', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
-  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '호기심과 따뜻함이\n공존하는 밸런스 탐험가', bestMatch: 'OLQZ', diffTempo: 'ACDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
-  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '과학적 근거 위에\n움직임을 설계하는 전략가', bestMatch: 'OCQM', diffTempo: 'ACQZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
-  'OCDM': { kr: '안정적 집중 실전 공감형', catchphrase: '조용하지만 깊게,\n마음까지 챙기는 꼼꼼 무버', bestMatch: 'ACDM', diffTempo: 'ALQZ', color: '#FB923C', bgGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' },
-  'OCDZ': { kr: '안정적 집중 실전 팩트형', catchphrase: '묵묵히 집중하며\n효율을 극대화하는 장인', bestMatch: 'OLDZ', diffTempo: 'ACQM', color: '#2DD4BF', bgGradient: 'linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)' },
-  'OCQM': { kr: '안정적 집중 탐구 공감형', catchphrase: '깊이 있는 탐구와\n따뜻한 소통의 조화', bestMatch: 'ACDM', diffTempo: 'ALDZ', color: '#E879F9', bgGradient: 'linear-gradient(135deg, #E879F9 0%, #C026D3 100%)' },
-  'OCQZ': { kr: '안정적 집중 탐구 팩트형', catchphrase: '냉철한 분석력으로\n최적의 루틴을 설계하는 사람', bestMatch: 'ACQZ', diffTempo: 'ALDM', color: '#38BDF8', bgGradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)' },
-  'OLDM': { kr: '안정적 전신 실전 공감형', catchphrase: '편안한 리듬 속에\n모두와 함께 움직이는 힐러', bestMatch: 'ALDM', diffTempo: 'ACQZ', color: '#FB7185', bgGradient: 'linear-gradient(135deg, #FB7185 0%, #E11D48 100%)' },
-  'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '꾸준함의 힘을 아는\n묵직한 실행가', bestMatch: 'ALDZ', diffTempo: 'ACQM', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
+  'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '일단 몸으로 부딪혀 보고,\n곁에서 응원해주면 더 힘나는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
+  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '말보다는 행동으로\n결과를 보여주는 사람', bestMatch: 'OCDM', diffTempo: 'ALQM', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
+  'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '궁금한 건 못 참지만\n마음까지 챙기는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },
+  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '이유부터 확실히 알아야\n몸이 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'ALDM', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
+  'ALDM': { kr: '활동적 전신 실전 공감형', catchphrase: '온몸으로 부딪히면서도\n함께라서 더 힘이 나는 사람', bestMatch: 'OCQZ', diffTempo: 'OCQM', color: '#F472B6', bgGradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 100%)' },
+  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '망설임 없이 몸부터 움직이는\n시원시원한 사람', bestMatch: 'OLDZ', diffTempo: 'OCQM', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
+  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '궁금한 것도 많고\n다정한 것도 많은 사람', bestMatch: 'OLQZ', diffTempo: 'ACDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
+  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '숫자와 원리로\n내 몸을 이해하는 사람', bestMatch: 'OCQM', diffTempo: 'ACQZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
+  'OCDM': { kr: '안정적 집중 실전 공감형', catchphrase: '조용히, 근데 확실하게\n마음까지 챙기는 사람', bestMatch: 'ACDM', diffTempo: 'ALQZ', color: '#FB923C', bgGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' },
+  'OCDZ': { kr: '안정적 집중 실전 팩트형', catchphrase: '군더더기 없이\n필요한 것만 딱 하는 사람', bestMatch: 'OLDZ', diffTempo: 'ACQM', color: '#2DD4BF', bgGradient: 'linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)' },
+  'OCQM': { kr: '안정적 집중 탐구 공감형', catchphrase: '꼼꼼히 알아보고\n다정하게 다가가는 사람', bestMatch: 'ACDM', diffTempo: 'ALDZ', color: '#E879F9', bgGradient: 'linear-gradient(135deg, #E879F9 0%, #C026D3 100%)' },
+  'OCQZ': { kr: '안정적 집중 탐구 팩트형', catchphrase: '원리를 알아야\n안심이 되는 사람', bestMatch: 'ACQZ', diffTempo: 'ALDM', color: '#38BDF8', bgGradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)' },
+  'OLDM': { kr: '안정적 전신 실전 공감형', catchphrase: '편안한 분위기에서\n다 같이 움직이는 게 좋은 사람', bestMatch: 'ALDM', diffTempo: 'ACQZ', color: '#FB7185', bgGradient: 'linear-gradient(135deg, #FB7185 0%, #E11D48 100%)' },
+  'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '꾸준히 하는 게\n제일 잘 맞는 사람', bestMatch: 'ALDZ', diffTempo: 'ACQM', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
   'OLQM': { kr: '안정적 전신 탐구 공감형', catchphrase: '천천히, 하지만 확실하게\n마음을 담아 움직이는 사람', bestMatch: 'ALQM', diffTempo: 'ACDZ', color: '#F9A8D4', bgGradient: 'linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)' },
-  'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '데이터와 균형 감각으로\n최적의 웰니스를 설계하는 사람', bestMatch: 'ALQZ', diffTempo: 'ACDM', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
+  'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '정확한 균형을 찾아야\n마음이 편한 사람', bestMatch: 'ALQZ', diffTempo: 'ACDM', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
 };
 
 const SHORT_NICKNAMES = {
