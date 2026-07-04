@@ -77,7 +77,9 @@ function App() {
           supabase.from('users').select('*').eq('id', localUser.id).single()
             .then(({ data: dbUser, error }) => {
               if (dbUser && !error) {
-                const updatedUser = { ...localUser, ...dbUser, isPremium: true };
+                // isPremium은 실제 구독 정보(dbUser)를 그대로 신뢰한다 — 여기서 임의로 true를 강제하면
+                // 구독하지 않은 유저도 프리미엄으로 취급되어 재검사 횟수 제한 등이 무력화된다.
+                const updatedUser = { ...localUser, ...dbUser };
                 setUserProfile(updatedUser);
                 setIsLoggedIn(true);
                 localStorage.setItem('bmti_user', JSON.stringify(updatedUser)); // keep id for next load
@@ -89,7 +91,6 @@ function App() {
                 }
               } else {
                 // fallback
-                localUser.isPremium = true;
                 setUserProfile(localUser);
                 setIsLoggedIn(true);
                 if (localUser.bmti_type) setBmtiCode(localUser.bmti_type);

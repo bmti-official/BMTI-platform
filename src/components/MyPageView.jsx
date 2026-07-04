@@ -295,7 +295,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                       )}
                     </div>
 
-                    <div className="text-sm font-medium text-gray-600 flex flex-col sm:flex-row sm:items-start gap-1.5 md:gap-2">
+                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1.5 md:gap-2">
                       <span className="w-full md:w-14 text-gray-400 text-xs shrink-0 md:mt-1">운동 빈도</span>
                       {isEditing ? (
                         <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-1.5 w-full">
@@ -316,7 +316,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                       )}
                     </div>
 
-                    <div className="text-sm font-medium text-gray-600 flex flex-col sm:flex-row sm:items-start gap-1.5 md:gap-2">
+                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1.5 md:gap-2">
                       <span className="w-full md:w-14 text-gray-400 text-xs shrink-0 md:mt-1">운동 목적</span>
                       <div className="flex-1 flex flex-wrap gap-1.5 w-full">
                         {isEditing ? (
@@ -431,17 +431,20 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         <h3 className="font-bold text-lg text-gray-900">BMTI 히스토리</h3>
         <button 
           onClick={async () => {
-            const { canRetake, message } = await canRetakeTest(userData);
+            const { canRetake, message, isLastForMonth } = await canRetakeTest(userData);
             if (!canRetake) {
               if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
                 setView('ticket');
               }
               return;
             }
-            if (window.confirm('정말 새로운 검사를 진행하시겠습니까?')) {
+            const confirmText = isLastForMonth
+              ? `⚠️ ${message}\n\n그래도 새로운 검사를 진행하시겠습니까?`
+              : '정말 새로운 검사를 진행하시겠습니까?';
+            if (window.confirm(confirmText)) {
               setView('quiz');
             }
-          }} 
+          }}
           className="border border-gray-200 text-gray-500 font-medium py-1.5 px-4 rounded-full hover:bg-gray-50 transition-colors text-xs shadow-sm whitespace-nowrap"
         >
           새로운 검사하기

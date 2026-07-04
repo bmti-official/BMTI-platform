@@ -48,8 +48,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
     frequency: '',
     appNotification: true,
     marketingConsent: false,
-    privacyConsent: false,
-    isPremium: true
+    privacyConsent: false
   });
   const [errors, setErrors] = useState({});
 

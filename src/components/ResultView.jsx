@@ -119,6 +119,7 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
 
 const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode, bmtiAnswers, userProfile }) => {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [retakeWarning, setRetakeWarning] = useState('');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSavingPDF, setIsSavingPDF] = useState(false);
   const printHeaderRef = useRef(null);
@@ -150,13 +151,14 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       setShowConfirm(true);
       return;
     }
-    const { canRetake, message } = await canRetakeTest(userProfile);
+    const { canRetake, message, isLastForMonth } = await canRetakeTest(userProfile);
     if (!canRetake) {
       if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
         setView('ticket');
       }
       return;
     }
+    setRetakeWarning(isLastForMonth ? message : '');
     setShowConfirm(true);
   };
 
@@ -976,12 +978,17 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm fade-in">
           <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center">
             <h3 className="text-2xl font-bold mb-2 text-gray-900">정말 다시 검사하시겠습니까?</h3>
-            <p className="text-gray-500 mb-8 text-sm">이전 결과지는 사라집니다.</p>
+            {retakeWarning ? (
+              <p className="text-[#C9862A] bg-[#C9862A]/10 rounded-xl px-4 py-3 mb-6 text-sm font-bold break-keep">⚠️ {retakeWarning}</p>
+            ) : (
+              <p className="text-gray-500 mb-8 text-sm">이전 결과지는 히스토리에 저장됩니다.</p>
+            )}
             <div className="flex gap-3 justify-center">
               <button
                 id="confirm-retake-yes"
                 onClick={() => {
                   setShowConfirm(false);
+                  setRetakeWarning('');
                   setQuizCompleted(false);
                   setView('quiz');
                 }}
@@ -991,7 +998,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
               </button>
               <button
                 id="confirm-retake-no"
-                onClick={() => setShowConfirm(false)}
+                onClick={() => { setShowConfirm(false); setRetakeWarning(''); }}
                 className="flex-1 bg-black text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
               >
                 아니요
