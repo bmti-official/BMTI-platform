@@ -186,7 +186,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   const resultData = BMTI_RESULTS[axisCode] || {};
   const charData = CHARACTERS.find(c => c.id === axisCode);
 
-  const siteUrl = 'https://dmdwns777.github.io/BMTI-platform/';
+  const siteUrl = 'https://bmti-official.github.io/BMTI-platform/';
 
   // 상세 결과 4개 섹션(강사 가이드/탈출법/최악의 분위기/바디가이드)의 확신·유연 변형 선택 —
   // 화면 아코디언과 PDF 결과지가 같은 값을 쓰도록 한 번만 계산해 둔다.
