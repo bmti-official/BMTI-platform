@@ -12,7 +12,6 @@ import BodyCheckView from './components/BodyCheckView';
 import MyPageView from './components/MyPageView';
 import SpotView from './components/SpotView';
 import AiChatHub from './components/AiChatHub';
-import AiChatRoom from './components/AiChatRoom';
 function App() {
   const [currentView, setCurrentView] = useState(window.location.hash ? 'result' : 'home');
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -278,11 +277,7 @@ function App() {
             bmtiAnswers={bmtiAnswers} 
             setView={setCurrentView} 
             userInfo={userProfile} 
-            onOpenChat={() => setCurrentView('aichat_room')}
           />
-        )}
-        {currentView === 'aichat_room' && (
-          <AiChatRoom bmtiCode={bmtiCode} setView={setCurrentView} userInfo={userProfile} />
         )}
         {currentView === 'mypage' && (
           <MyPageView 

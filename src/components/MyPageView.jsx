@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
 import { CHARACTERS, calculateBMTIPercentages } from '../data';
-import { getStarBalance } from '../lib/starSystem';
-import { getRemainingTokens, getTotalDailyLimit, isSubscriber } from '../lib/tokenSystem';
-import { getAllMemories, toggleMemorySelection } from '../lib/chatSystem';
 import { supabase } from '../lib/supabaseClient';
 import { canRetakeTest } from '../lib/bmtiSystem';
 
@@ -52,33 +49,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     }
   }, [userInfo]);
 
-  const [starBalance, setStarBalance] = useState(0);
-  const [remainingTokens, setRemainingTokens] = useState(0);
-  const [totalTokens, setTotalTokens] = useState(0);
-  const [memories, setMemories] = useState([]);
-
-  useEffect(() => {
-    const tier = userData?.subscription_tier || userData?.subscriptionTier || 'free';
-    const isPremium = isSubscriber(tier) || userData?.isPremium;
-    const effTier = userData?.nickname === 'BMTI' ? 'admin' : (isPremium ? 'plus_lifetime' : 'free');
-    
-    setStarBalance(getStarBalance());
-    setRemainingTokens(getRemainingTokens(effTier));
-    setTotalTokens(getTotalDailyLimit(effTier));
-    if (userData?.id) {
-      getAllMemories(userData.id).then(setMemories);
-    }
-  }, [userData]);
-
-  const handleToggleMemory = async (id) => {
-    if (!userData?.id) return;
-    const result = await toggleMemorySelection(id, userData.id, 5);
-    if (!result.success && result.isSelected === undefined) {
-      alert(result.message);
-    } else {
-      setMemories(await getAllMemories(userData.id));
-    }
-  };
 
   const handleSaveProfile = async () => {
     let updatedUserData = { ...userData };
@@ -455,62 +425,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         )}
       </div>
 
-      {/* 2. 구독 및 자산 현황 */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8">
-        <h3 className="font-bold text-lg text-gray-900 mb-4">구독 및 토큰 관리</h3>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
-            <span className="text-2xl mb-1">🪙</span>
-            <span className="text-[10px] text-gray-500 font-bold mb-1">오늘 남은 토큰</span>
-            <span className="font-black text-gray-900">{remainingTokens.toLocaleString()} <span className="text-[10px] text-gray-400 font-normal">/ {totalTokens.toLocaleString()}</span></span>
-          </div>
-          <div className="bg-yellow-50 rounded-2xl p-4 border border-yellow-100 flex flex-col items-center justify-center text-center">
-            <span className="text-2xl mb-1">⭐️</span>
-            <span className="text-[10px] text-yellow-700 font-bold mb-1">보유 스타</span>
-            <span className="font-black text-gray-900">{starBalance.toLocaleString()} <span className="text-[10px] font-normal text-yellow-600">개</span></span>
-          </div>
-        </div>
-      </div>
 
-      {/* 3. AI 기억 관리 (구독자 전용) */}
-      {(isSubscriber(userData?.subscription_tier || userData?.subscriptionTier) || userData?.isPremium) && (
-        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <h3 className="font-bold text-lg text-gray-900">AI 기억 관리</h3>
-              <p className="text-xs text-gray-500 mt-1">대화에 참고할 중요한 기억을 선택하세요 (최대 5개)</p>
-            </div>
-            <span className="text-[10px] font-bold bg-[#c0ff00] text-black px-2 py-1 rounded-full">
-              {memories.filter(m => m.isSelected).length} / 5 선택됨
-            </span>
-          </div>
-          
-          {memories.length > 0 ? (
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {memories.map(mem => (
-                <div key={mem.id} className={`p-3 rounded-xl border flex items-center justify-between transition-colors ${mem.isSelected ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
-                  <div className="flex-1 min-w-0 pr-4 cursor-pointer" onClick={() => handleToggleMemory(mem.id)}>
-                    <p className="text-sm text-gray-800 font-medium truncate">{mem.summary}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{mem.chatDate}</p>
-                  </div>
-                  <button 
-                    onClick={() => handleToggleMemory(mem.id)}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${mem.isSelected ? 'bg-purple-500 text-white' : 'bg-gray-200 text-transparent'}`}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
-              <span className="text-2xl block mb-2 text-gray-300">🧠</span>
-              <p className="text-sm text-gray-500">아직 저장된 기억이 없습니다.<br/>BMTI 캐릭터와 대화를 나누면 자동으로 기록됩니다.</p>
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">BMTI 히스토리</h3>

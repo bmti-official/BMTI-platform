@@ -478,7 +478,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 const isOpen = !!openDetailSections.instructor;
                 return (
                   <>
-                    <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
+                    <h3 className="text-2xl md:text-3xl font-black text-[#7C6FF0] leading-snug break-keep tracking-tight">
                       {guideData.title}
                     </h3>
                     <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -491,7 +491,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                             </p>
                           </div>
                           <div>
-                            <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">최악의 운동 가이드:</span>
+                            <span className="text-sm md:text-[15px] font-bold text-[#7C6FF0] mb-1.5 block">최악의 운동 가이드:</span>
                             <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
                               {guideData.badGuide}
                             </p>
@@ -510,7 +510,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <button
                       type="button"
                       onClick={() => setOpenDetailSections(prev => ({ ...prev, instructor: !prev.instructor }))}
-                      className="text-[#FF6B6B] text-sm font-bold mt-4 flex items-center gap-1"
+                      className="text-[#7C6FF0] text-sm font-bold mt-4 flex items-center gap-1"
                     >
                       {isOpen ? '접기' : '자세히 보기'}
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -546,7 +546,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 const isOpen = !!openDetailSections.escape;
                 return (
                   <>
-                    <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
+                    <h3 className="text-2xl md:text-3xl font-black text-[#C9862A] leading-snug break-keep tracking-tight">
                       {escapeInfo.title}
                     </h3>
                     <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -559,13 +559,13 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                             </p>
                           </div>
                           <div>
-                            <span className="text-sm md:text-[15px] font-bold text-[#FF6B6B] mb-1.5 block">환불 하고 싶어지는 순간:</span>
+                            <span className="text-sm md:text-[15px] font-bold text-[#C9862A] mb-1.5 block">환불 하고 싶어지는 순간:</span>
                             <p className="text-[15px] md:text-base text-gray-600 leading-relaxed break-keep">
                               {escapeInfo.refund}
                             </p>
                           </div>
                           <div className="pt-2">
-                            <span className="inline-block bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm md:text-[15px] font-bold px-3 py-1 rounded-lg mb-2">
+                            <span className="inline-block bg-[#C9862A]/10 text-[#C9862A] text-sm md:text-[15px] font-bold px-3 py-1 rounded-lg mb-2">
                               💡 기부천사 탈출법
                             </span>
                             <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
@@ -578,7 +578,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <button
                       type="button"
                       onClick={() => setOpenDetailSections(prev => ({ ...prev, escape: !prev.escape }))}
-                      className="text-[#FF6B6B] text-sm font-bold mt-4 flex items-center gap-1"
+                      className="text-[#C9862A] text-sm font-bold mt-4 flex items-center gap-1"
                     >
                       {isOpen ? '접기' : '자세히 보기'}
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -614,7 +614,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 const isOpen = !!openDetailSections.vibe;
                 return (
                   <>
-                    <h3 className="text-2xl md:text-3xl font-black text-[#FF6B6B] leading-snug break-keep tracking-tight">
+                    <h3 className="text-2xl md:text-3xl font-black text-[#D6486D] leading-snug break-keep tracking-tight">
                       {vibeData.name}
                     </h3>
                     <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -634,7 +634,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <button
                       type="button"
                       onClick={() => setOpenDetailSections(prev => ({ ...prev, vibe: !prev.vibe }))}
-                      className="text-[#FF6B6B] text-sm font-bold mt-4 flex items-center gap-1"
+                      className="text-[#D6486D] text-sm font-bold mt-4 flex items-center gap-1"
                     >
                       {isOpen ? '접기' : '자세히 보기'}
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
