@@ -207,6 +207,20 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
   const bestMatchBody = resultData.goodMatch ? resultData.goodMatch.split('\n').slice(2).join(' ') : '';
   const diffTempoBody = resultData.badMatch ? resultData.badMatch.split('\n').slice(2).join(' ') : '';
+  const bestMatchChar = CHARACTERS.find(c => c.id === info.bestMatch);
+  const diffTempoChar = CHARACTERS.find(c => c.id === info.diffTempo);
+
+  // html2canvas가 아직 로드 안 된 <img>를 빈 채로 캡처하지 않도록, 캡처 전 이미지 로딩을 기다린다.
+  const waitForImages = (el) => {
+    const imgs = Array.from(el.querySelectorAll('img'));
+    return Promise.all(imgs.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+  };
 
   // 1. "카카오톡으로 내 결과지 저장하기" — 전체 결과지를 PDF로 만들어 카톡(OS 공유 시트)으로 전달
   // 섹션(카드) 단위로 각각 캡처해 페이지에 배치 — 한 이미지를 통째로 슬라이싱하면
@@ -235,6 +249,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       let cursorY = margin;
 
       for (let i = 0; i < sections.length; i++) {
+        await waitForImages(sections[i]);
         const canvas = await html2canvas(sections[i], {
           scale: 2,
           useCORS: true,
@@ -845,6 +860,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <p style={{ fontSize: '13px', letterSpacing: '0.3em', color: '#9ca3af', fontWeight: 700, marginBottom: '10px' }}>MY BMTI RESULT</p>
             <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 6px' }}>{axisCode}</h1>
             <p style={{ fontSize: '15px', color: '#6b7280', fontWeight: 600, marginBottom: '18px' }}>{info.kr}</p>
+            {charData && (
+              <img src={charData.originalImage} alt={axisCode} style={{ width: '280px', height: 'auto', margin: '0 auto 18px', display: 'block', borderRadius: '20px' }} crossOrigin="anonymous" />
+            )}
             {resultData.nickname && (
               <h2 style={{ fontSize: '26px', fontWeight: 800, whiteSpace: 'pre-line', lineHeight: 1.3, margin: '0 0 14px' }}>{resultData.nickname}</h2>
             )}
@@ -877,13 +895,19 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
           {/* 궁합 */}
           <div ref={printMatchesRef} style={{ display: 'flex', gap: '16px', padding: '8px' }}>
-            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px' }}>
+            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px', textAlign: 'center' }}>
+              {bestMatchChar && (
+                <img src={bestMatchChar.image} alt={info.bestMatch} style={{ width: '96px', height: '96px', objectFit: 'contain', margin: '0 auto 10px' }} crossOrigin="anonymous" />
+              )}
               <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>💖 환상의 짝꿍 ({info.bestMatch})</p>
-              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{bestMatchBody}</p>
+              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0, textAlign: 'left' }}>{bestMatchBody}</p>
             </div>
-            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px' }}>
+            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px', textAlign: 'center' }}>
+              {diffTempoChar && (
+                <img src={diffTempoChar.image} alt={info.diffTempo} style={{ width: '96px', height: '96px', objectFit: 'contain', margin: '0 auto 10px' }} crossOrigin="anonymous" />
+              )}
               <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>🤔 조금 다른 템포 ({info.diffTempo})</p>
-              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{diffTempoBody}</p>
+              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0, textAlign: 'left' }}>{diffTempoBody}</p>
             </div>
           </div>
 
