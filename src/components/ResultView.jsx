@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 import { CHARACTERS, calculateBMTIPercentages } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
@@ -118,11 +119,10 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
 
 const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode, bmtiAnswers, userProfile }) => {
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showStoryModal, setShowStoryModal] = useState(false);
-  const [urlCopied, setUrlCopied] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
-  const storyRef = useRef(null);
-  
+  const [isSavingPDF, setIsSavingPDF] = useState(false);
+  const printRef = useRef(null);
+
   const [expandBestMatch, setExpandBestMatch] = useState(false);
   const [expandDiffTempo, setExpandDiffTempo] = useState(false);
   const [openTendencies, setOpenTendencies] = useState({});
@@ -175,37 +175,110 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
   // Parse BMTI code
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
-  const suffix = bmtiCode && bmtiCode.includes('-') ? bmtiCode.split('-')[1] : '';
   const info = BMTI_INFO[axisCode] || BMTI_INFO['ACDM'];
   const resultData = BMTI_RESULTS[axisCode] || {};
   const charData = CHARACTERS.find(c => c.id === axisCode);
 
   const siteUrl = 'https://dmdwns777.github.io/BMTI-platform/';
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(siteUrl).then(() => {
-      setUrlCopied(true);
-      setTimeout(() => setUrlCopied(false), 2000);
-    });
-  };
+  // 상세 결과 4개 섹션(강사 가이드/탈출법/최악의 분위기/바디가이드)의 확신·유연 변형 선택 —
+  // 화면 아코디언과 PDF 결과지가 같은 값을 쓰도록 한 번만 계산해 둔다.
+  const percentages = bmtiAnswers && bmtiAnswers.length > 0 ? calculateBMTIPercentages(bmtiAnswers) : null;
+  const getLevel = (letter) => (percentages && percentages[letter] >= 80 ? 'strong' : 'flexible');
 
-  const handleDownloadStory = async () => {
-    if (!storyRef.current) return;
+  const instructorKey = (axisCode && axisCode.length === 4 ? axisCode.substring(2, 4) : 'DZ') + '_' + getLevel(axisCode ? axisCode[2] : 'D');
+  const guideData = INSTRUCTOR_GUIDE_DATA[instructorKey] || INSTRUCTOR_GUIDE_DATA['DZ_flexible'];
+
+  const escapeKey = (axisCode && axisCode.length >= 3 ? axisCode[0] + axisCode[2] : 'OQ') + '_' + getLevel(axisCode ? axisCode[0] : 'O');
+  const escapeInfo = ESCAPE_DATA[escapeKey] || ESCAPE_DATA['OQ_flexible'];
+
+  const vibeKey = (axisCode && axisCode.length >= 4 ? axisCode[0] + axisCode[3] : 'OM') + '_' + getLevel(axisCode ? axisCode[3] : 'M');
+  const vibeData = WORST_VIBE_DATA[vibeKey] || WORST_VIBE_DATA['OM_flexible'];
+
+  const bodyGuideText = (axisCode && BODY_GUIDE_DATA[axisCode]) || BODY_GUIDE_DATA['ACDZ'];
+  const bodyGuideParagraphs = bodyGuideText ? bodyGuideText.split('\n\n') : [];
+
+  const bestMatchBody = resultData.goodMatch ? resultData.goodMatch.split('\n').slice(2).join(' ') : '';
+  const diffTempoBody = resultData.badMatch ? resultData.badMatch.split('\n').slice(2).join(' ') : '';
+
+  // 1. "카카오톡으로 내 결과지 저장하기" — 전체 결과지를 PDF로 만들어 카톡(OS 공유 시트)으로 전달
+  const handleSaveResultPDF = async () => {
+    if (!printRef.current || isSavingPDF) return;
+    setIsSavingPDF(true);
     try {
-      const canvas = await html2canvas(storyRef.current, {
+      const canvas = await html2canvas(printRef.current, {
         scale: 2,
         useCORS: true,
-        backgroundColor: null,
-        width: 540,
-        height: 960,
+        backgroundColor: '#ffffff',
+        width: 800,
+        windowWidth: 800,
       });
-      const link = document.createElement('a');
-      link.download = `BMTI_${axisCode}_story.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const pdfBlob = pdf.output('blob');
+      const fileName = `BMTI_${axisCode}_결과지.pdf`;
+
+      const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: 'BMTI 결과지',
+          text: `${info.kr} — ${axisCode} 전체 결과지예요.`,
+        });
+      } else {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = URL.createObjectURL(pdfBlob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+        alert('결과지 PDF가 저장되었어요. 카카오톡 채팅방에서 파일을 첨부해 보내주세요.');
+      }
     } catch (err) {
-      console.error('Download error:', err);
+      console.error('PDF 생성 오류:', err);
+      alert('결과지를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsSavingPDF(false);
     }
+  };
+
+  // 2. "카카오톡으로 친구에게 자랑하기" — 카카오링크 임베드 카드로 공유
+  const handleShareToFriend = () => {
+    if (!(window.Kakao && window.Kakao.Share)) {
+      alert('카카오톡 공유가 준비 중입니다.');
+      return;
+    }
+    const imageUrl = charData ? new URL(charData.originalImage, window.location.href).href : undefined;
+    const shareUrl = `${siteUrl}#${axisCode}`;
+
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: `나는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode}!`,
+        description: info.catchphrase.replace('\n', ' '),
+        imageUrl,
+        link: { webUrl: shareUrl, mobileWebUrl: shareUrl },
+      },
+      buttons: [
+        { title: '내 BMTI도 확인하기', link: { webUrl: shareUrl, mobileWebUrl: shareUrl } },
+      ],
+    });
   };
 
   if (!bmtiCode && !quizCompleted) {
@@ -359,21 +432,30 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           
           {/* CTA section: 4 buttons in priority order */}
           <div className="w-full mt-8 mb-4 flex flex-col gap-3">
-            {/* 1. 카톡으로 결과지 받기 */}
-            <button
-              onClick={() => {
-                if (window.Kakao && window.Kakao.Channel) {
-                  window.Kakao.Channel.addChannel({ channelPublicId: '_xasxgZX' });
-                } else {
-                  alert('카카오톡 채널 연동이 준비 중입니다.');
-                }
-              }}
-              className="w-full bg-[#FEE500] hover:bg-[#F4DC00] p-6 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#F4DC00]/50"
-            >
-              <span className="text-3xl mb-3 group-hover:scale-110 transition-transform">💬</span>
-              <span className="font-bold text-[#3C1E1E] text-sm md:text-base mb-1.5">내 BMTI 결과지 카톡으로 받아보기</span>
-              <span className="text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">(카카오톡 채널 추가)</span>
-            </button>
+            {/* 1. 카카오톡으로 내 결과지 저장하기 / 친구에게 자랑하기 */}
+            <div className="w-full grid grid-cols-2 gap-3">
+              <button
+                onClick={handleSaveResultPDF}
+                disabled={isSavingPDF}
+                className="w-full bg-[#FEE500] hover:bg-[#F4DC00] disabled:opacity-60 disabled:cursor-wait p-5 md:p-6 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#F4DC00]/50"
+              >
+                <span className="text-2xl md:text-3xl mb-2 md:mb-3 group-hover:scale-110 transition-transform">💬</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-base mb-1.5 leading-snug break-keep">
+                  {isSavingPDF ? '결과지 만드는 중...' : (<>카카오톡으로<br />내 결과지 저장하기</>)}
+                </span>
+                <span className="text-[10px] md:text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">PDF 파일</span>
+              </button>
+              <button
+                onClick={handleShareToFriend}
+                className="w-full bg-[#FEE500] hover:bg-[#F4DC00] p-5 md:p-6 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#F4DC00]/50"
+              >
+                <span className="text-2xl md:text-3xl mb-2 md:mb-3 group-hover:scale-110 transition-transform">💬</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-base mb-1.5 leading-snug break-keep">
+                  카카오톡으로<br />친구에게 자랑하기
+                </span>
+                <span className="text-[10px] md:text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">공유 카드</span>
+              </button>
+            </div>
 
             {/* 2. 무브먼트 맵 사전 알림 (hero CTA) — 이미 신청했다면 마이페이지에서만 확인 가능하도록 숨김 */}
             {!appNotification && (
@@ -414,14 +496,14 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 className="bg-[#fdf0f3] hover:bg-[#fce4e9] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#f7d7de]"
               >
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💌</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 과몰입</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 과몰입 하기</span>
               </button>
               <button
                 onClick={() => setView('aichat')}
                 className="bg-[#eef4fb] hover:bg-[#e0ecf8] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#d7e6f7]"
               >
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">✍️</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 교환일기 작성</span>
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📝</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 교환일기 작성하기</span>
               </button>
             </div>
           </div>
@@ -684,7 +766,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           {/* Menu Items (Vertical Stack) */}
           <div className={`flex flex-col items-end gap-3 transition-all duration-300 origin-bottom ${isFabOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-8 pointer-events-none'}`}>
             <button
-              onClick={() => { alert('카카오톡 공유가 완료되었습니다.'); setIsFabOpen(false); }}
+              onClick={() => { handleShareToFriend(); setIsFabOpen(false); }}
               className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
             >
               <KakaoIcon className="w-5 h-5 fill-[#FEE500]" />
@@ -735,98 +817,107 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         </div>
       )}
 
-      {/* ===== Instagram Story Modal ===== */}
-      {showStoryModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md fade-in" onClick={() => setShowStoryModal(false)}>
-          <div className="flex flex-col items-center gap-4 max-h-[95vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Story Card (9:16 ratio) */}
-            <div
-              ref={storyRef}
-              style={{
-                width: '540px',
-                height: '960px',
-                background: info.bgGradient,
-                fontFamily: "'Pretendard', sans-serif",
-              }}
-              className="rounded-3xl overflow-hidden relative flex flex-col items-center justify-between p-10 text-white shadow-2xl"
-            >
-              {/* Top */}
-              <div className="text-center z-10">
-                <p style={{ fontSize: '14px', letterSpacing: '0.3em', opacity: 0.8, marginBottom: '8px', fontWeight: 600 }}>MY BODY TYPE IS</p>
-                <h2 style={{ fontSize: '72px', fontWeight: 900, letterSpacing: '-2px', lineHeight: 1, marginBottom: '8px' }}>{axisCode}</h2>
-                <p style={{ fontSize: '16px', fontWeight: 600, opacity: 0.9 }}>{info.kr}</p>
-              </div>
+      {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) ===== */}
+      <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
+        <div ref={printRef} style={{ width: '800px', background: '#ffffff', color: '#1f2937', fontFamily: "'Pretendard', sans-serif", padding: '56px' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', paddingBottom: '32px', borderBottom: '2px solid #f3f4f6', marginBottom: '36px' }}>
+            <p style={{ fontSize: '13px', letterSpacing: '0.3em', color: '#9ca3af', fontWeight: 700, marginBottom: '10px' }}>MY BMTI RESULT</p>
+            <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 6px' }}>{axisCode}</h1>
+            <p style={{ fontSize: '15px', color: '#6b7280', fontWeight: 600, marginBottom: '18px' }}>{info.kr}</p>
+            {resultData.nickname && (
+              <h2 style={{ fontSize: '26px', fontWeight: 800, whiteSpace: 'pre-line', lineHeight: 1.3, margin: '0 0 14px' }}>{resultData.nickname}</h2>
+            )}
+            <p style={{ fontSize: '15px', color: '#4b5563', whiteSpace: 'pre-line', lineHeight: 1.6 }}>"{info.catchphrase}"</p>
+          </div>
 
-              {/* Character Image */}
-              <div className="z-10" style={{ width: '240px', height: '240px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '3px solid rgba(255,255,255,0.3)' }}>
-                {charData && <img src={charData.originalImage} alt={axisCode} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-              </div>
-
-              {/* Catchphrase */}
-              <div className="text-center z-10">
-                <p style={{ fontSize: '18px', fontWeight: 600, lineHeight: 1.6, whiteSpace: 'pre-line', marginBottom: '16px', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
-                  "{info.catchphrase}"
-                </p>
-
-                {/* State Indicator */}
-                {suffix && (
-                  <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(5px)', borderRadius: '50px', padding: '6px 20px', fontSize: '13px', fontWeight: 700, border: '1px solid rgba(255,255,255,0.3)' }}>
-                    현재 상태: {axisCode}-{suffix}
+          {/* 4가지 성향 */}
+          {percentages && (
+            <div style={{ marginBottom: '40px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '18px' }}>🔍 나를 움직이게 하는 4가지 성향</h3>
+              {[['A', 'O'], ['C', 'L'], ['D', 'Q'], ['Z', 'M']].map(([l1, l2]) => {
+                const isLeft = percentages[l1] >= 50;
+                const activeLetter = isLeft ? l1 : l2;
+                const percent = Math.max(percentages[l1], percentages[l2]);
+                const level = percent >= 80 ? 'confident' : 'flexible';
+                const data = TENDENCY_DATA[activeLetter];
+                return (
+                  <div key={l1} style={{ marginBottom: '18px', paddingBottom: '18px', borderBottom: '1px solid #f3f4f6' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '16px' }}>{data[level].emoji}</span>
+                      <span style={{ fontWeight: 800, fontSize: '15px' }}>{data[level].modifier} {data.name}</span>
+                      <span style={{ fontWeight: 800, fontSize: '13px', color: '#9ca3af', marginLeft: 'auto' }}>{percent}%</span>
+                    </div>
+                    <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>"{data[level].quote}"</p>
+                    <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{data[level].desc}</p>
                   </div>
-                )}
-              </div>
-
-              {/* Chemistry */}
-              <div className="w-full z-10" style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(5px)', borderRadius: '16px', padding: '14px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
-                  <p style={{ fontSize: '10px', opacity: 0.8, marginBottom: '4px', fontWeight: 600, letterSpacing: '0.1em' }}>환상의 짝꿍</p>
-                  <p style={{ fontSize: '20px', fontWeight: 900 }}>{info.bestMatch}</p>
-                </div>
-                <div style={{ flex: 1, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(5px)', borderRadius: '16px', padding: '14px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
-                  <p style={{ fontSize: '10px', opacity: 0.8, marginBottom: '4px', fontWeight: 600, letterSpacing: '0.1em' }}>다른 템포</p>
-                  <p style={{ fontSize: '20px', fontWeight: 900 }}>{info.diffTempo}</p>
-                </div>
-              </div>
-
-              {/* Bottom: URL area */}
-              <div className="w-full z-10 text-center">
-                <div style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(5px)', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.25)' }}>
-                  <p style={{ fontSize: '11px', opacity: 0.7, marginBottom: '4px' }}>나도 BMTI 검사하기 👇</p>
-                  <p style={{ fontSize: '12px', fontWeight: 700, wordBreak: 'break-all' }}>여기에 붙여넣기</p>
-                </div>
-                <p style={{ fontSize: '10px', opacity: 0.5, marginTop: '8px', fontWeight: 500 }}>BMTI — Body Management Type Indicator</p>
-              </div>
-
-              {/* Decorative Elements */}
-              <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
-              <div style={{ position: 'absolute', bottom: '80px', left: '-40px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }}></div>
+                );
+              })}
             </div>
+          )}
 
-            {/* Action Buttons below the card */}
-            <div className="flex gap-3 w-full max-w-[540px]">
-              <button
-                onClick={handleCopyUrl}
-                className="flex-1 bg-white/20 backdrop-blur-md text-white border border-white/30 px-4 py-3 rounded-2xl text-sm font-bold hover:bg-white/30 transition-all flex items-center justify-center gap-2"
-              >
-                {urlCopied ? '✅ 복사 완료!' : '🔗 URL 복사'}
-              </button>
-              <button
-                onClick={handleDownloadStory}
-                className="flex-1 bg-white text-black px-4 py-3 rounded-2xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 shadow-lg"
-              >
-                📥 이미지 저장
-              </button>
+          {/* 궁합 */}
+          <div style={{ marginBottom: '40px', display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>💖 환상의 짝꿍 ({info.bestMatch})</p>
+              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{bestMatchBody}</p>
             </div>
-            <button
-              onClick={() => setShowStoryModal(false)}
-              className="text-white/60 hover:text-white text-sm transition-colors"
-            >
-              닫기
-            </button>
+            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>🤔 조금 다른 템포 ({info.diffTempo})</p>
+              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{diffTempoBody}</p>
+            </div>
+          </div>
+
+          {/* 강사 가이드 */}
+          <div style={{ marginBottom: '36px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법</p>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#7C6FF0', marginBottom: '14px' }}>{guideData.title}</h3>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>맞춤 운동 가이드</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px' }}>{guideData.goodGuide}</p>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#7C6FF0', marginBottom: '4px' }}>최악의 운동 가이드</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px' }}>{guideData.badGuide}</p>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>💡 추천하는 자기점검 도구</p>
+            <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{guideData.tools}</p>
+          </div>
+
+          {/* 탈출법 */}
+          <div style={{ marginBottom: '36px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💸 헬스장 기부천사 탈출법</p>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#C9862A', marginBottom: '14px' }}>{escapeInfo.title}</h3>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>당신의 특징</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px' }}>{escapeInfo.trait}</p>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#C9862A', marginBottom: '4px' }}>환불 하고 싶어지는 순간</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px' }}>{escapeInfo.refund}</p>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>💡 기부천사 탈출법</p>
+            <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{escapeInfo.escape}</p>
+          </div>
+
+          {/* 최악의 분위기 */}
+          <div style={{ marginBottom: '36px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💥 멘탈 바사삭 '최악의 운동 분위기'</p>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#D6486D', marginBottom: '14px' }}>{vibeData.name}</h3>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>당신의 특징</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px', whiteSpace: 'pre-line' }}>{vibeData.trait}</p>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>최악의 분위기</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{vibeData.worst}</p>
+          </div>
+
+          {/* 바디 가이드 */}
+          <div style={{ marginBottom: '20px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💌 바디 가이드의 따뜻한 시선</p>
+            {bodyGuideParagraphs.map((para, i) => (
+              <p key={i} style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.75, whiteSpace: 'pre-line', marginBottom: i < bodyGuideParagraphs.length - 1 ? '14px' : 0 }}>{para}</p>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div style={{ textAlign: 'center', marginTop: '44px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
+            <p style={{ fontSize: '11.5px', color: '#9ca3af', marginBottom: '4px' }}>나도 BMTI 검사하기 👇</p>
+            <p style={{ fontSize: '12.5px', fontWeight: 700, color: '#4b5563' }}>{siteUrl}</p>
+            <p style={{ fontSize: '10.5px', color: '#d1d5db', marginTop: '6px' }}>BMTI — Body Management Type Indicator</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Retake Confirmation Modal */}
       {showConfirm && (
