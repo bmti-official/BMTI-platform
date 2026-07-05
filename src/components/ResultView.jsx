@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
-import { CHARACTERS, calculateBMTIPercentages } from '../data';
+import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } from '../customResultData';
 
@@ -41,13 +41,6 @@ const BMTI_INFO = {
   'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '꾸준히 하는 게\n제일 잘 맞는 사람', bestMatch: 'ALDZ', diffTempo: 'ACQM', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
   'OLQM': { kr: '안정적 전신 탐구 공감형', catchphrase: '천천히, 하지만 확실하게\n마음을 담아 움직이는 사람', bestMatch: 'ALQM', diffTempo: 'ACDZ', color: '#F9A8D4', bgGradient: 'linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)' },
   'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '정확한 균형을 찾아야\n마음이 편한 사람', bestMatch: 'ALQZ', diffTempo: 'ACDM', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
-};
-
-const SHORT_NICKNAMES = {
-  ACDZ: '단단한 케틀벨', ACDM: '복근 슬라이더', ACQZ: '핵심만 \'아령(알려)\'줘요', ACQM: '수다쟁이 루프밴드',
-  ALDZ: '팩트폭행 짐볼', ALDM: '뜨끈뜨끈 보수볼', ALQZ: '분석가 트레드밀', ALQM: '물음표 운동화',
-  OCDZ: '저격수 땅콩볼', OCDM: '다정한 마사지건', OCQZ: '심리학자 온냉팩', OCQM: '친절한 하트괄사',
-  OLDZ: '실용주의 요가링', OLDM: '포근포근 운동매트', OLQZ: '깐깐한 거꾸리', OLQM: '키다리 폼롤러'
 };
 
 const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) => {

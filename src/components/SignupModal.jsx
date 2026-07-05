@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { isReservedNickname } from '../data';
 
 const KakaoIcon = ({ className = "w-5 h-5 fill-current" }) => (
   <svg viewBox="0 0 24 24" className={className}>
@@ -188,6 +189,10 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
     if (!validateStep(step)) return;
 
     if (step === 1) {
+      if (isReservedNickname(formData.nickname)) {
+        alert('BMTI 유형 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
+        return;
+      }
       try {
         const { data, error } = await supabase
           .from('users')
@@ -195,7 +200,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
           .eq('nickname', formData.nickname);
 
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
           alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
           return;

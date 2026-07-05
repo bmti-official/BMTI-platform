@@ -27,7 +27,7 @@ const getCharScale = (code) => {
 
 
 // Author badge component
-const AuthorBadge = ({ author, bmti, size = 'md' }) => {
+const AuthorBadge = ({ author, bmti, size = 'md', isAi = false }) => {
   const img = getCharImage(bmti);
   const scaleClass = getCharScale(bmti);
   const s = 'w-8 h-8';
@@ -46,6 +46,7 @@ const AuthorBadge = ({ author, bmti, size = 'md' }) => {
         <div className="flex items-center gap-1.5">
           <span className={`${textS} font-bold ${author === 'BMTI' ? 'text-blue-600' : 'text-gray-800'} leading-none flex items-center`}>
             {author === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+            {isAi && <span className="mr-1 text-[10px] bg-gray-700 text-white px-1.5 py-0.5 rounded-md">AI</span>}
             {author}
           </span>
           {bmti && (
@@ -81,23 +82,24 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
         .from('posts')
         .select(`
           id, content, category, tab_type, created_at, likes_count,
-          users ( id, nickname, bmti_type ),
+          users ( id, nickname, bmti_type, is_ai ),
           comments (
             id, content, created_at, parent_id,
-            users ( id, nickname, bmti_type )
+            users ( id, nickname, bmti_type, is_ai )
           )
         `)
         .eq('tab_type', talkType)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       const formattedPosts = data.map(post => {
         const topLevelComments = post.comments.filter(c => !c.parent_id);
         const commentsWithReplies = topLevelComments.map(c => ({
           id: c.id,
           author: c.users?.nickname || '익명',
           bmti: c.users?.bmti_type,
+          isAi: !!c.users?.is_ai,
           text: c.content,
           date: new Date(c.created_at).toLocaleString(),
           replies: post.comments
@@ -106,6 +108,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
               id: r.id,
               author: r.users?.nickname || '익명',
               bmti: r.users?.bmti_type,
+              isAi: !!r.users?.is_ai,
               text: r.content,
               date: new Date(r.created_at).toLocaleString(),
             }))
@@ -116,6 +119,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
           body: post.content,
           author: post.users?.nickname || '익명',
           bmti: post.users?.bmti_type,
+          isAi: !!post.users?.is_ai,
           date: new Date(post.created_at).toLocaleString(),
           likes: post.likes_count || 0,
           tag: post.category,
@@ -258,25 +262,19 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
     }
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('posts')
         .insert({
           user_id: userProfile.id,
           tab_type: talkType,
           category: writeTag,
           content: writeContent.trim()
-        })
-        .select();
+        });
 
       if (error) throw error;
-      
-      // Auto-reply call (Gemini Edge Function)
-      // This runs asynchronously in background
-      if (talkType === 'Z' || talkType === 'M') {
-        supabase.functions.invoke('gemini-reply', {
-          body: { post_id: data[0].id, content: writeContent.trim(), tab_type: talkType }
-        }).catch(err => console.error("AI reply error:", err));
-      }
+
+      // AI 댓글은 여기서 즉시 부르지 않는다 — ai-board-tick(pg_cron)이 무플 상태가
+      // 일정 시간 지속될 때만 나중에 하나 달아준다 (AI가 항상 먼저 반응하지 않도록).
 
       const starResult = earnStar('post');
       alert(`게시글이 등록되었습니다.\n${starResult.message}`);
@@ -427,7 +425,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                           post.tag === '고민' ? 'bg-purple-100 text-purple-700' :
                           'bg-green-100 text-green-700'
                         }`}>{post.tag}</span>
-                        {isLoggedIn && (post.author === myNickname || isAdmin) && (
+                        {isLoggedIn && !post.isAi && (post.author === myNickname || isAdmin) && (
                           <button
                             onClick={(e) => handleDeletePost(post.id, e)}
                             className="text-[11px] text-gray-400 hover:text-red-500 font-bold transition-colors px-2 py-1"
@@ -442,7 +440,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-3">
-                      <AuthorBadge author={post.author} bmti={post.bmti} />
+                      <AuthorBadge author={post.author} bmti={post.bmti} isAi={post.isAi} />
                       <span className="text-[11px] text-gray-400">{post.date}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -469,10 +467,10 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                             {/* Comment */}
                             <div className="flex gap-3 justify-between items-start">
                               <div className="flex gap-3">
-                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" />
+                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" isAi={comment.isAi} />
                                 <span className="text-[11px] text-gray-400 mt-0.5">{comment.date}</span>
                               </div>
-                              {isLoggedIn && (comment.author === myNickname || isAdmin) && (
+                              {isLoggedIn && !comment.isAi && (comment.author === myNickname || isAdmin) && (
                                 <button
                                   onClick={() => handleDeleteComment(post.id, comment.id)}
                                   className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"
@@ -496,10 +494,10 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                                   <div key={reply.id}>
                                     <div className="flex gap-3 justify-between items-start">
                                       <div className="flex gap-3">
-                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" />
+                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" isAi={reply.isAi} />
                                         <span className="text-[10px] text-gray-400 mt-0.5">{reply.date}</span>
                                       </div>
-                                      {isLoggedIn && (reply.author === myNickname || isAdmin) && (
+                                      {isLoggedIn && !reply.isAi && (reply.author === myNickname || isAdmin) && (
                                         <button
                                           onClick={() => handleDeleteReply(post.id, comment.id, reply.id)}
                                           className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"

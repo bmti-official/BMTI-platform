@@ -1,13 +1,11 @@
-import { CHARACTERS, BMTI_INFO } from '../data';
-import { CHARACTER_NAMES } from '../lib/gemini';
+import { CHARACTERS } from '../data';
 
 /**
  * BMTI 교환일기 허브 — 소개 페이지
  */
-const AiChatHub = ({ bmtiCode, setView, userInfo }) => {
+const AiChatHub = ({ bmtiCode, setView }) => {
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
-  const charName = CHARACTER_NAMES[axisCode] || 'BMTI 캐릭터';
 
   // 접근 제어: BMTI 미완료
   if (!bmtiCode) {

@@ -204,7 +204,24 @@ export const CHARACTERS = [
   { id: 'OLQZ', image: imgOLQZ, originalImage: origOLQZ, color: 'bg-[#eaf6f6]', imgClass: 'scale-[1.25]' }
 ];
 
+// BMTI 캐릭터 별명 (짧은 표시용) — ResultView.jsx의 SHORT_NICKNAMES를 정본으로 통합.
+// gemini.js와 ResultView.jsx에 각각 살짝 다른 철자로 중복 정의되어 있던 것을 여기로 모음.
+export const CHARACTER_NAMES = {
+  ACDZ: '단단한 케틀벨', ACDM: '복근 슬라이더', ACQZ: '핵심만 \'아령(알려)\'줘요', ACQM: '수다쟁이 루프밴드',
+  ALDZ: '팩트폭행 짐볼', ALDM: '뜨끈뜨끈 보수볼', ALQZ: '분석가 트레드밀', ALQM: '물음표 운동화',
+  OCDZ: '저격수 땅콩볼', OCDM: '다정한 마사지건', OCQZ: '심리학자 온냉팩', OCQM: '친절한 하트괄사',
+  OLDZ: '실용주의 요가링', OLDM: '포근포근 운동매트', OLQZ: '깐깐한 거꾸리', OLQM: '키다리 폼롤러'
+};
 
+// 사람 유저가 BMTI 유형 코드(ACDZ 등) 자체를 닉네임으로 쓰지 못하게 막는 데 씀 —
+// 게시판의 AI 페르소나 닉네임이 "AI ACDZ" 형식이라, 코드만 딱 따와서 헷갈리게 하는 걸 방지.
+const BMTI_TYPE_CODES = Object.keys(CHARACTER_NAMES);
+
+export function isReservedNickname(nickname) {
+  if (!nickname) return false;
+  const normalized = nickname.trim().toUpperCase();
+  return BMTI_TYPE_CODES.includes(normalized);
+}
 
 
 export const BMTI_INFO = {

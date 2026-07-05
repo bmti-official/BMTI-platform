@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CHARACTERS, calculateBMTIPercentages } from '../data';
+import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../data';
 import { supabase } from '../lib/supabaseClient';
 import { canRetakeTest } from '../lib/bmtiSystem';
 
@@ -64,11 +64,15 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     if (hasChanged) {
       try {
         if (userInfo.nickname !== userData.nickname) {
+          if (isReservedNickname(userData.nickname)) {
+            alert('BMTI 유형 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
+            return;
+          }
           const { data, error } = await supabase
             .from('users')
             .select('id')
             .eq('nickname', userData.nickname);
-            
+
           if (error) throw error;
           if (data && data.length > 0) {
             alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');

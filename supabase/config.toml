@@ -1,0 +1,4 @@
+project_id = "fiesnznufryrkxcpwuja"
+
+[functions.ai-board-tick]
+verify_jwt = false
