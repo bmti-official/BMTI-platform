@@ -110,24 +110,25 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS bmti_answers JSONB;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_ai BOOLEAN NOT NULL DEFAULT false;
 
 -- 9-2. 16개 페르소나 행 시딩
--- 닉네임은 "AI + 유형코드" 형식으로 고정 (이모지 없음) — 사람 닉네임과 절대 헷갈리지 않게.
+-- 닉네임은 유형 코드 그대로(예: OCQM) — 화면에서 검정 "AI" 배지와 나란히 붙어
+-- "AI OCQM"으로 보이므로, 닉네임 자체에 "AI"를 또 넣으면 "AI AI OCQM"처럼 중복돼서 뺐다.
 INSERT INTO users (kakao_id, nickname, bmti_type, is_ai) VALUES
-  ('ai_bot_ACDZ', 'AI ACDZ', 'ACDZ', true),
-  ('ai_bot_ACDM', 'AI ACDM', 'ACDM', true),
-  ('ai_bot_ACQZ', 'AI ACQZ', 'ACQZ', true),
-  ('ai_bot_ACQM', 'AI ACQM', 'ACQM', true),
-  ('ai_bot_ALDZ', 'AI ALDZ', 'ALDZ', true),
-  ('ai_bot_ALDM', 'AI ALDM', 'ALDM', true),
-  ('ai_bot_ALQZ', 'AI ALQZ', 'ALQZ', true),
-  ('ai_bot_ALQM', 'AI ALQM', 'ALQM', true),
-  ('ai_bot_OCDZ', 'AI OCDZ', 'OCDZ', true),
-  ('ai_bot_OCDM', 'AI OCDM', 'OCDM', true),
-  ('ai_bot_OCQZ', 'AI OCQZ', 'OCQZ', true),
-  ('ai_bot_OCQM', 'AI OCQM', 'OCQM', true),
-  ('ai_bot_OLDZ', 'AI OLDZ', 'OLDZ', true),
-  ('ai_bot_OLDM', 'AI OLDM', 'OLDM', true),
-  ('ai_bot_OLQZ', 'AI OLQZ', 'OLQZ', true),
-  ('ai_bot_OLQM', 'AI OLQM', 'OLQM', true)
+  ('ai_bot_ACDZ', 'ACDZ', 'ACDZ', true),
+  ('ai_bot_ACDM', 'ACDM', 'ACDM', true),
+  ('ai_bot_ACQZ', 'ACQZ', 'ACQZ', true),
+  ('ai_bot_ACQM', 'ACQM', 'ACQM', true),
+  ('ai_bot_ALDZ', 'ALDZ', 'ALDZ', true),
+  ('ai_bot_ALDM', 'ALDM', 'ALDM', true),
+  ('ai_bot_ALQZ', 'ALQZ', 'ALQZ', true),
+  ('ai_bot_ALQM', 'ALQM', 'ALQM', true),
+  ('ai_bot_OCDZ', 'OCDZ', 'OCDZ', true),
+  ('ai_bot_OCDM', 'OCDM', 'OCDM', true),
+  ('ai_bot_OCQZ', 'OCQZ', 'OCQZ', true),
+  ('ai_bot_OCQM', 'OCQM', 'OCQM', true),
+  ('ai_bot_OLDZ', 'OLDZ', 'OLDZ', true),
+  ('ai_bot_OLDM', 'OLDM', 'OLDM', true),
+  ('ai_bot_OLQZ', 'OLQZ', 'OLQZ', true),
+  ('ai_bot_OLQM', 'OLQM', 'OLQM', true)
 ON CONFLICT (kakao_id) DO NOTHING;
 
 -- 9-3. 무플 게시물 추적 + 멱등성 (Edge Function이 원자적으로 선점하는 데 씀)
