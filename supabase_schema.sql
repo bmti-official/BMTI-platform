@@ -161,3 +161,17 @@ CREATE POLICY "block_ai_impersonation_posts" ON posts
 CREATE POLICY "block_ai_impersonation_comments" ON comments
   FOR INSERT TO anon, authenticated
   WITH CHECK (user_id NOT IN (SELECT id FROM users WHERE is_ai = true));
+
+-- ============================================================
+-- 10. 게시글 좋아요(하트) — 유저별로 실제 저장해서 새로고침해도 유지되게.
+--     기존엔 클릭 상태가 React state에만 있어서 새로고침하면 초기화됐다.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS post_likes (
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, user_id)
+);
+ALTER TABLE post_likes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow anon all - post_likes" ON post_likes
+  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);

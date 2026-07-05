@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { supabase } from '../lib/supabaseClient';
-import { earnStar, reclaimStar } from '../lib/starSystem';
 
 // Helper: get character image by BMTI code
 const getCharImage = (code) => {
@@ -71,7 +70,6 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
   });
   const [talkSort, setTalkSort] = useState('latest');
   const [expandedId, setExpandedId] = useState(null);
-  const [likedPosts, setLikedPosts] = useState({});
   const [posts, setPosts] = useState({ Z: [], M: [] });
   const [isFetching, setIsFetching] = useState(false);
 
@@ -81,12 +79,13 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          id, content, category, tab_type, created_at, likes_count,
+          id, content, category, tab_type, created_at,
           users ( id, nickname, bmti_type, is_ai ),
           comments (
             id, content, created_at, parent_id,
             users ( id, nickname, bmti_type, is_ai )
-          )
+          ),
+          post_likes ( user_id )
         `)
         .eq('tab_type', talkType)
         .order('created_at', { ascending: false });
@@ -121,7 +120,8 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
           bmti: post.users?.bmti_type,
           isAi: !!post.users?.is_ai,
           date: new Date(post.created_at).toLocaleString(),
-          likes: post.likes_count || 0,
+          likes: post.post_likes?.length || 0,
+          likedByMe: !!userProfile?.id && (post.post_likes || []).some(l => l.user_id === userProfile.id),
           tag: post.category,
           comments: commentsWithReplies
         };
@@ -137,7 +137,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
   useEffect(() => {
     fetchPosts();
-  }, [talkType]);
+  }, [talkType, userProfile?.id]);
   const [lastVisitDate, setLastVisitDate] = useState(localStorage.getItem('last_board_visit'));
   useEffect(() => {
     const handleVisitUpdate = () => setLastVisitDate(localStorage.getItem('last_board_visit'));
@@ -172,8 +172,20 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
   const isAdmin = myNickname === 'BMTI';
   const myBmti = bmtiCode?.split('-')[0] || '';
 
-  const toggleLike = (postId) => {
-    setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
+  const toggleLike = async (postId) => {
+    if (!userProfile?.id) {
+      alert('다시 로그인해주세요.');
+      return;
+    }
+    const post = posts[talkType]?.find(p => p.id === postId);
+    if (!post) return;
+
+    if (post.likedByMe) {
+      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', userProfile.id);
+    } else {
+      await supabase.from('post_likes').insert({ post_id: postId, user_id: userProfile.id });
+    }
+    fetchPosts();
   };
 
   const toggleExpand = (postId) => {
@@ -182,55 +194,22 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
   const handleDeletePost = async (postId, e) => {
     e.stopPropagation();
-    if (window.confirm('정말로 이 글을 삭제하시겠습니까?\n당일 삭제 시 획득한 ⭐️가 회수됩니다.')) {
-      // 당일 작성한 글인지 확인
-      const post = posts[talkType]?.find(p => p.id === postId);
-      const postDate = post?.created_at ? new Date(post.created_at).toDateString() : '';
-      const isToday = postDate === new Date().toDateString();
-      
+    if (window.confirm('정말로 이 글을 삭제하시겠습니까?')) {
       await supabase.from('posts').delete().eq('id', postId);
-      
-      if (isToday) {
-        const result = reclaimStar('post');
-        if (result.success) alert(result.message);
-      }
       fetchPosts();
     }
   };
 
   const handleDeleteComment = async (postId, commentId) => {
-    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?\n당일 삭제 시 획득한 ⭐️가 회수됩니다.')) {
-      // 당일 작성한 댓글인지 확인
-      const post = posts[talkType]?.find(p => p.id === postId);
-      const comment = post?.comments?.find(c => c.id === commentId);
-      const commentDate = comment?.created_at ? new Date(comment.created_at).toDateString() : '';
-      const isToday = commentDate === new Date().toDateString();
-
+    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
       await supabase.from('comments').delete().eq('id', commentId);
-
-      if (isToday) {
-        const result = reclaimStar('comment');
-        if (result.success) alert(result.message);
-      }
       fetchPosts();
     }
   };
 
   const handleDeleteReply = async (postId, commentId, replyId) => {
-    if (window.confirm('정말로 이 답글을 삭제하시겠습니까?\n당일 삭제 시 획득한 ⭐️가 회수됩니다.')) {
-      // 당일 작성한 답글인지 확인
-      const post = posts[talkType]?.find(p => p.id === postId);
-      const comment = post?.comments?.find(c => c.id === commentId);
-      const reply = comment?.replies?.find(r => r.id === replyId);
-      const replyDate = reply?.created_at ? new Date(reply.created_at).toDateString() : '';
-      const isToday = replyDate === new Date().toDateString();
-
+    if (window.confirm('정말로 이 답글을 삭제하시겠습니까?')) {
       await supabase.from('comments').delete().eq('id', replyId);
-
-      if (isToday) {
-        const result = reclaimStar('reply');
-        if (result.success) alert(result.message);
-      }
       fetchPosts();
     }
   };
@@ -276,8 +255,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
       // AI 댓글은 여기서 즉시 부르지 않는다 — ai-board-tick(pg_cron)이 무플 상태가
       // 일정 시간 지속될 때만 나중에 하나 달아준다 (AI가 항상 먼저 반응하지 않도록).
 
-      const starResult = earnStar('post');
-      alert(`게시글이 등록되었습니다.\n${starResult.message}`);
+      alert('게시글이 등록되었습니다.');
 
       setWriteContent('');
       setWriteTag('일상');
@@ -312,8 +290,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
       if (error) throw error;
 
-      const starResult = earnStar('comment');
-      alert(`댓글이 등록되었습니다.\n${starResult.message}`);
+      alert('댓글이 등록되었습니다.');
 
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
       fetchPosts(); // refresh
@@ -345,8 +322,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
         });
       if (error) throw error;
 
-      const starResult = earnStar('reply');
-      alert(`답글이 등록되었습니다.\n${starResult.message}`);
+      alert('답글이 등록되었습니다.');
 
       setReplyInputs(prev => ({ ...prev, [key]: '' }));
       setShowReplyFor(null);
@@ -414,7 +390,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                 talkType === 'VOTE' ? posts.VOTE.filter(p => p.emotionId === selectedEmotion) : posts[talkType]
               ).map(post => {
                 const isExpanded = expandedId === post.id;
-                const isLiked = likedPosts[post.id];
+                const isLiked = post.likedByMe;
                 return (
                   <div key={post.id} className="border border-gray-100 rounded-2xl bg-white overflow-hidden transition-all duration-300 hover:shadow-md">
                     {/* Post Header */}
@@ -448,7 +424,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                         onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
                         className={`flex items-center gap-1 transition-all ${isLiked ? 'text-red-500 scale-110' : 'hover:text-red-400'}`}
                       >
-                        {isLiked ? '❤️' : '🤍'} {post.likes + (isLiked ? 1 : 0)}
+                        {isLiked ? '❤️' : '🤍'} {post.likes}
                       </button>
                       <span className="flex items-center gap-1">💬 {post.comments.length}</span>
                     </div>
