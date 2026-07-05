@@ -399,7 +399,11 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                 setUserData(updatedUser);
                 localStorage.setItem('bmti_user', JSON.stringify(updatedUser));
                 if (userData.id) {
-                  await supabase.from('pre_registrations').insert({ user_id: userData.id }).catch(e => console.error(e));
+                  try {
+                    await supabase.from('pre_registrations').insert({ user_id: userData.id });
+                  } catch (e) {
+                    console.error(e);
+                  }
                 }
               }}
               className={`w-12 h-7 rounded-full flex-shrink-0 transition-all duration-300 relative ${
@@ -429,6 +433,14 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
               ? `⚠️ ${message}\n\n그래도 새로운 검사를 진행하시겠습니까?`
               : '정말 새로운 검사를 진행하시겠습니까?';
             if (window.confirm(confirmText)) {
+              // 재검사로 덮어써지기 전에, 지금까지의 결과를 히스토리에 남겨둔다.
+              if (userData?.id && bmtiCode) {
+                try {
+                  await supabase.from('bmti_history').insert({ user_id: userData.id, bmti_code: bmtiCode });
+                } catch (e) {
+                  console.error(e);
+                }
+              }
               setView('quiz');
             }
           }}

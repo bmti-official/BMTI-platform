@@ -183,8 +183,14 @@ function App() {
       if (error) throw error;
       
       // Save pre-registration if opted in
+      // 주의: supabase-js의 쿼리 빌더는 .then()만 구현한 thenable이라 .catch()가 없다 —
+      // 체이닝하면 즉시 TypeError가 나서 insert 자체가 실행되지 않으므로 try/catch로 감싼다.
       if (userData.appNotification) {
-        await supabase.from('pre_registrations').insert({ user_id: data.id }).catch(e => console.error('Pre-reg error:', e));
+        try {
+          await supabase.from('pre_registrations').insert({ user_id: data.id });
+        } catch (e) {
+          console.error('Pre-reg error:', e);
+        }
       }
       
       const fullUserData = { ...userData, id: data.id, bmti_type: data.bmti_type, bmti_answers: data.bmti_answers, appNotification: userData.appNotification };

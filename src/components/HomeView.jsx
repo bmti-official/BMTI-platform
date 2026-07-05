@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { CHARACTERS } from '../data';
 import { canRetakeTest } from '../lib/bmtiSystem';
+import { supabase } from '../lib/supabaseClient';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
@@ -29,6 +30,14 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
       ? `⚠️ ${message}\n\n그래도 새로운 검사를 진행하시겠습니까?`
       : '정말 다시 검사하시겠습니까?\n이전 결과지는 히스토리에 저장됩니다.';
     if (window.confirm(confirmText)) {
+      // 재검사로 덮어써지기 전에, 지금까지의 결과를 히스토리에 남겨둔다.
+      if (userProfile?.id && bmtiCode) {
+        try {
+          await supabase.from('bmti_history').insert({ user_id: userProfile.id, bmti_code: bmtiCode });
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setView('quiz');
     }
   };

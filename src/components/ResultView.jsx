@@ -156,9 +156,11 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
       localStorage.setItem('bmti_user', JSON.stringify(userObj));
       
       if (userObj.id) {
-        await supabase.from('pre_registrations').insert({ user_id: userObj.id }).catch(e => console.error(e));
+        await supabase.from('pre_registrations').insert({ user_id: userObj.id });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // Parse BMTI code
@@ -599,14 +601,6 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
                               {guideData.badGuide}
                             </p>
                           </div>
-                          <div className="pt-2">
-                            <div>
-                              <span className="text-sm md:text-[15px] font-bold text-gray-800 mb-1.5 block">💡 추천하는 자기점검 도구:</span>
-                              <p className="text-[15px] md:text-base text-gray-700 font-medium leading-relaxed break-keep">
-                                {guideData.tools}
-                              </p>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -851,9 +845,7 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
             <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>맞춤 운동 가이드</p>
             <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px' }}>{guideData.goodGuide}</p>
             <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#7C6FF0', marginBottom: '4px' }}>최악의 운동 가이드</p>
-            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px' }}>{guideData.badGuide}</p>
-            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>💡 추천하는 자기점검 도구</p>
-            <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0 }}>{guideData.tools}</p>
+            <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{guideData.badGuide}</p>
           </div>
 
           {/* 탈출법 */}

@@ -52,9 +52,11 @@ const SpotView = ({ isLoggedIn, onRequireLogin }) => {
       localStorage.setItem('bmti_user', JSON.stringify(userObj));
       
       if (userObj.id) {
-        await supabase.from('pre_registrations').insert({ user_id: userObj.id }).catch(e => console.error(e));
+        await supabase.from('pre_registrations').insert({ user_id: userObj.id });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const differences = [
