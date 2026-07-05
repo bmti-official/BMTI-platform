@@ -1,18 +1,9 @@
 import { supabase } from './supabaseClient';
-import { isSubscriber } from './tokenSystem';
 
 export const canRetakeTest = async (userProfile) => {
   if (!userProfile) return { canRetake: true }; // 비로그인 유저는 즉시 검사 가능 (로그인 모달이 어차피 뜰 수 있음)
-  
-  const tier = userProfile.subscription_tier || userProfile.subscriptionTier || 'free';
-  const isPremium = isSubscriber(tier) || userProfile.isPremium;
 
-  // 플러스 등급(평생구독권) 회원은 언제든 재검사 가능
-  if (isPremium) {
-    return { canRetake: true };
-  }
-
-  // 일반 회원은 이번 달(달력 기준)에 최대 2회까지만 검사 가능
+  // 이번 달(달력 기준)에 최대 2회까지만 검사 가능
   try {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();

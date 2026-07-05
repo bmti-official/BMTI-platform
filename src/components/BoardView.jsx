@@ -27,7 +27,7 @@ const getCharScale = (code) => {
 
 
 // Author badge component
-const AuthorBadge = ({ author, bmti, size = 'md', isPremium = false }) => {
+const AuthorBadge = ({ author, bmti, size = 'md' }) => {
   const img = getCharImage(bmti);
   const scaleClass = getCharScale(bmti);
   const s = 'w-8 h-8';
@@ -46,7 +46,7 @@ const AuthorBadge = ({ author, bmti, size = 'md', isPremium = false }) => {
         <div className="flex items-center gap-1.5">
           <span className={`${textS} font-bold ${author === 'BMTI' ? 'text-blue-600' : 'text-gray-800'} leading-none flex items-center`}>
             {author === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
-            {isPremium && author !== 'BMTI' ? '🎟️ ' : ''}{author}
+            {author}
           </span>
           {bmti && (
             <span className={`${codeS} font-bold px-1.5 py-0.5 rounded-full border leading-none ${
@@ -442,7 +442,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-3">
-                      <AuthorBadge author={post.author} bmti={post.bmti} isPremium={post.isPremium || (post.author === myNickname && userProfile?.isPremium)} />
+                      <AuthorBadge author={post.author} bmti={post.bmti} />
                       <span className="text-[11px] text-gray-400">{post.date}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -469,7 +469,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                             {/* Comment */}
                             <div className="flex gap-3 justify-between items-start">
                               <div className="flex gap-3">
-                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" isPremium={comment.isPremium || (comment.author === myNickname && userProfile?.isPremium)} />
+                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" />
                                 <span className="text-[11px] text-gray-400 mt-0.5">{comment.date}</span>
                               </div>
                               {isLoggedIn && (comment.author === myNickname || isAdmin) && (
@@ -496,7 +496,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                                   <div key={reply.id}>
                                     <div className="flex gap-3 justify-between items-start">
                                       <div className="flex gap-3">
-                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" isPremium={reply.isPremium || (reply.author === myNickname && userProfile?.isPremium)} />
+                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" />
                                         <span className="text-[10px] text-gray-400 mt-0.5">{reply.date}</span>
                                       </div>
                                       {isLoggedIn && (reply.author === myNickname || isAdmin) && (
@@ -595,7 +595,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
             {/* Author Preview */}
             <div className="mb-5">
-              <AuthorBadge author={myNickname} bmti={myBmti} isPremium={userProfile?.isPremium} />
+              <AuthorBadge author={myNickname} bmti={myBmti} />
             </div>
 
             {/* Category Selection */}

@@ -73,11 +73,11 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                 {userProfile && (
                   <div className="flex items-center gap-1.5 sm:gap-2">
 
-                    {/* 닉네임 및 프리미엄 뱃지 영역 */}
+                    {/* 닉네임 영역 */}
                       <div className="flex flex-col">
                         <span className="font-bold text-gray-800 text-sm flex items-center">
                           {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
-                          {userProfile.isPremium && userProfile.nickname !== 'BMTI' ? '🎟️ ' : ''}{userProfile.nickname}
+                          {userProfile.nickname}
                         </span>
                       </div>
 

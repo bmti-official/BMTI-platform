@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabaseClient';
 import { CHARACTERS, calculateBMTIPercentages } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } from '../customResultData';
-import { canRetakeTest } from '../lib/bmtiSystem';
 
 const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   <svg viewBox="0 0 24 24" className={className}>
@@ -117,10 +116,7 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
   );
 };
 
-const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode, bmtiAnswers, userProfile }) => {
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [retakeWarning, setRetakeWarning] = useState('');
-  const [isFabOpen, setIsFabOpen] = useState(false);
+const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode, bmtiAnswers }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
   const printHeaderRef = useRef(null);
   const printTendencyRefs = useRef([]);
@@ -144,23 +140,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       return false;
     }
   });
-
-  const handleRetakeClick = async () => {
-    setIsFabOpen(false);
-    if (!isLoggedIn) {
-      setShowConfirm(true);
-      return;
-    }
-    const { canRetake, message, isLastForMonth } = await canRetakeTest(userProfile);
-    if (!canRetake) {
-      if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
-        setView('ticket');
-      }
-      return;
-    }
-    setRetakeWarning(isLastForMonth ? message : '');
-    setShowConfirm(true);
-  };
 
   const handleToggleAppNotification = async () => {
     if (!isLoggedIn) {
@@ -802,63 +781,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         </div>
       )}
 
-      {/* Logged in Floating FAB */}
-      {isLoggedIn && quizCompleted && (
-        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[100] flex flex-col items-end gap-3 fade-in pointer-events-none">
-          {/* Menu Items (Vertical Stack) */}
-          <div className={`flex flex-col items-end gap-3 transition-all duration-300 origin-bottom ${isFabOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-8 pointer-events-none'}`}>
-            <button
-              onClick={() => { handleShareToFriend(); setIsFabOpen(false); }}
-              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
-            >
-              <KakaoIcon className="w-5 h-5 fill-[#FEE500]" />
-              <span className="text-sm">친구에게 카톡 공유</span>
-            </button>
-            <button
-              onClick={() => { setView('board'); setIsFabOpen(false); }}
-              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
-            >
-              <span className="text-lg leading-none">💌</span>
-              <span className="text-sm">BMTI 과몰입 커뮤</span>
-            </button>
-            <button
-              onClick={() => { setView('bodycheck'); setIsFabOpen(false); }}
-              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
-            >
-              <span className="text-lg leading-none">☘️</span>
-              <span className="text-sm">전문가 코칭상담</span>
-            </button>
-            <button
-              onClick={handleRetakeClick}
-              className="pointer-events-auto bg-white text-black px-5 py-3 rounded-full font-bold shadow-xl border border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-2 whitespace-nowrap transition-transform active:scale-95"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              <span className="text-sm">다시 검사하기</span>
-            </button>
-          </div>
-
-          {/* Main FAB Toggle Button */}
-          <button
-            onClick={() => setIsFabOpen(!isFabOpen)}
-            className={`pointer-events-auto w-14 h-14 md:w-16 md:h-16 rounded-full bg-black text-[#c0ff00] shadow-2xl flex items-center justify-center transition-transform duration-300 hover:scale-105 active:scale-95 ${isFabOpen ? 'rotate-45' : 'rotate-0'}`}
-          >
-            <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-          </button>
-          
-          {/* Overlay when FAB is open */}
-          {isFabOpen && (
-            <div 
-              className="fixed inset-0 bg-black/10 backdrop-blur-sm z-[-1] pointer-events-auto"
-              onClick={() => setIsFabOpen(false)}
-            />
-          )}
-        </div>
-      )}
-
       {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) =====
           섹션마다 별도 ref로 캡처해 PDF에서 각 블록이 통째로 다음 페이지로 넘어가도록 한다. */}
       <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
@@ -973,40 +895,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         </div>
       </div>
 
-      {/* Retake Confirmation Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm fade-in">
-          <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center">
-            <h3 className="text-2xl font-bold mb-2 text-gray-900">정말 다시 검사하시겠습니까?</h3>
-            {retakeWarning ? (
-              <p className="text-[#C9862A] bg-[#C9862A]/10 rounded-xl px-4 py-3 mb-6 text-sm font-bold break-keep">⚠️ {retakeWarning}</p>
-            ) : (
-              <p className="text-gray-500 mb-8 text-sm">이전 결과지는 히스토리에 저장됩니다.</p>
-            )}
-            <div className="flex gap-3 justify-center">
-              <button
-                id="confirm-retake-yes"
-                onClick={() => {
-                  setShowConfirm(false);
-                  setRetakeWarning('');
-                  setQuizCompleted(false);
-                  setView('quiz');
-                }}
-                className="flex-1 bg-white text-black border border-gray-200 font-bold py-3.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
-              >
-                예
-              </button>
-              <button
-                id="confirm-retake-no"
-                onClick={() => { setShowConfirm(false); setRetakeWarning(''); }}
-                className="flex-1 bg-black text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
-              >
-                아니요
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

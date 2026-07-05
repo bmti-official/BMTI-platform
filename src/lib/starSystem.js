@@ -15,15 +15,6 @@ export const STAR_EARN_AMOUNTS = {
   reply: 1,     // 대댓글
 };
 
-// ⭐️ → 토큰 교환 비율
-export const STAR_TO_TOKEN = {
-  free: 1000,
-  plus_monthly: 1000,
-  plus_lifetime: 1000,
-  pro_monthly: 2000,
-  pro_lifetime: 2000,
-};
-
 function getTodayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -97,41 +88,6 @@ export function earnStar(reason) {
     amount: actualAmount, 
     balance: newBalance, 
     message: `⭐️ +${actualAmount} 충전! (잔액: ${newBalance}개)` 
-  };
-}
-
-/**
- * ⭐️ 사용 (토큰 교환)
- * @returns {{ success: boolean, balance: number, tokensAdded: number, message: string }}
- */
-export function spendStar(count, subscriptionTier = 'free') {
-  const balance = getStarBalance();
-  if (balance < count) {
-    return { 
-      success: false, 
-      balance, 
-      tokensAdded: 0, 
-      message: `⭐️가 부족합니다. (보유: ${balance}개, 필요: ${count}개)` 
-    };
-  }
-
-  const newBalance = balance - count;
-  localStorage.setItem(STAR_STORAGE_KEY, String(newBalance));
-
-  const tokenRate = STAR_TO_TOKEN[subscriptionTier] || STAR_TO_TOKEN.free;
-  const tokensAdded = count * tokenRate;
-
-  // 히스토리
-  const history = JSON.parse(localStorage.getItem(STAR_HISTORY_KEY) || '[]');
-  history.push({ amount: -count, reason: 'token_exchange', tokensAdded, date: new Date().toISOString() });
-  if (history.length > 100) history.splice(0, history.length - 100);
-  localStorage.setItem(STAR_HISTORY_KEY, JSON.stringify(history));
-
-  return { 
-    success: true, 
-    balance: newBalance, 
-    tokensAdded, 
-    message: `⭐️ ${count}개 사용 → 🪙 ${tokensAdded.toLocaleString()} 토큰 충전!` 
   };
 }
 

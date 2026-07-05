@@ -35,8 +35,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     weight: 52,
 
     goals: ['🔥 다이어트', '💪 근력 강화'],
-    frequency: '주 3~4회',
-    isPremium: true
+    frequency: '주 3~4회'
   });
   
   const [isEditing, setIsEditing] = useState(false);
@@ -201,11 +200,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                     {userData.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-sm shadow-sm">관리자</span>}
                     {userData.nickname}
                   </h2>
-                  {userData.isPremium && userData.nickname !== 'BMTI' && (
-                    <span className="bg-[#c0ff00] text-black text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex w-fit mt-1 shadow-sm">
-                      🎟️ 자기점검 평생구독권
-                    </span>
-                  )}
                 </div>
               )}
             </div>
@@ -243,11 +237,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                     {userData.nickname === 'BMTI' && <span className="mr-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md shadow-sm align-middle">관리자</span>}
                     {userData.nickname}
                   </h2>
-                  {userData.isPremium && userData.nickname !== 'BMTI' && (
-                    <span className="bg-[#c0ff00] text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                      🎟️ 자기점검 평생구독권
-                    </span>
-                  )}
                 </div>
               )}
             </div>
@@ -433,9 +422,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
           onClick={async () => {
             const { canRetake, message, isLastForMonth } = await canRetakeTest(userData);
             if (!canRetake) {
-              if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
-                setView('ticket');
-              }
+              alert(message);
               return;
             }
             const confirmText = isLastForMonth

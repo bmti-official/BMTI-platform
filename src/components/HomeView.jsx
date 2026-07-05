@@ -19,15 +19,16 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
       return;
     }
     
-    const { canRetake, message } = await canRetakeTest(userProfile);
+    const { canRetake, message, isLastForMonth } = await canRetakeTest(userProfile);
     if (!canRetake) {
-      if (window.confirm(`${message}\n\n평생구독권(Plus)을 구매하시겠습니까?`)) {
-        setView('ticket');
-      }
+      alert(message);
       return;
     }
-    
-    if (window.confirm('정말 다시 검사하시겠습니까?\n이전 결과지는 사라집니다.')) {
+
+    const confirmText = isLastForMonth
+      ? `⚠️ ${message}\n\n그래도 새로운 검사를 진행하시겠습니까?`
+      : '정말 다시 검사하시겠습니까?\n이전 결과지는 히스토리에 저장됩니다.';
+    if (window.confirm(confirmText)) {
       setView('quiz');
     }
   };
