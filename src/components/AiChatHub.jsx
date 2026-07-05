@@ -1,4 +1,4 @@
-import { CHARACTERS } from '../data';
+import { CHARACTERS, CHARACTER_NAMES } from '../data';
 
 /**
  * BMTI 교환일기 허브 — 소개 페이지
@@ -31,21 +31,34 @@ const AiChatHub = ({ bmtiCode, setView }) => {
       <div className="text-center mb-10">
         <h1 className="text-3xl font-black mb-3 flex items-center justify-center gap-2">📝 BMTI 교환일기</h1>
         <p className="text-gray-500 font-medium text-[15px] px-4 break-keep leading-relaxed">
-          나를 대변하는 BMTI 캐릭터와 매일매일<br/>감정과 일상을 기록하고 교환해 보세요.
+          사소한 자세 습관부터 오늘의 컨디션까지, 📝 BMTI 교환일기에 남겨보세요.
         </p>
       </div>
 
       {/* 상세 설명 */}
       <div className="px-2">
-        {/* Quote Box */}
-        <div className="bg-white rounded-[1.5rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 mb-8 mx-auto max-w-sm relative overflow-hidden flex flex-col items-center justify-center gap-1">
-          <p className="text-[15px] font-extrabold text-gray-900 tracking-tight">
-            "오늘 나 이런 일이 있었어..."
-          </p>
-          <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full my-1">vs</span>
-          <p className="text-[15px] font-extrabold text-gray-900 tracking-tight">
-            "내일은 진짜 운동 갈 거야!"
-          </p>
+        {/* Chat Box */}
+        <div className="space-y-3 mb-8 mx-auto max-w-sm">
+          <div className="flex gap-2 items-start">
+            <div className="relative w-10 h-10 flex-shrink-0 mt-1">
+              {charData ? (
+                <div className={`w-10 h-10 rounded-full ${charData.color || 'bg-gray-50'} flex items-center justify-center shadow-sm border border-gray-100 overflow-hidden`}>
+                  <img src={charData.image} alt="AI" className={`w-[85%] h-[85%] object-contain ${charData.imgClass || ''}`} />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-sm shadow-sm border border-blue-100">🤖</div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 w-full">
+              <span className="text-[13px] font-bold text-gray-700 px-1">{charData ? CHARACTER_NAMES[charData.id] : '[유형명]'}</span>
+              <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
+                안녕하세요! 저는 당신의 일기 메이트 {charData ? CHARACTER_NAMES[charData.id] : '[유형명]'}이에요. 오늘 몸을 쓰면서 느꼈던 불편함이나 뻐근함을 일기장에 끄적이듯 남겨주세요. 매일의 기록을 모아 당신의 신체 패턴을 짚어드릴게요.
+              </div>
+              <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
+                단, 저는 진단을 내리지 않아요. 정말 아플 땐 병원이 먼저랍니다.
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="space-y-5">

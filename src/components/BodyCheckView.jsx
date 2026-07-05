@@ -17,8 +17,8 @@ const BodyCheckView = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <span className="text-2xl">📅</span>
           </div>
-          <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">네이버 간편 예약 시스템</h3>
-          <p className="text-sm text-gray-400 text-center">여기에 네이버 예약창이 연동될 예정입니다.</p>
+          <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">간편 예약 시스템</h3>
+          <p className="text-sm text-gray-400 text-center">여기에 예약창이 연동될 예정입니다.</p>
         </div>
 
         <div className="w-full bg-gray-50 rounded-2xl p-6 md:p-8">
@@ -29,7 +29,7 @@ const BodyCheckView = () => {
           <ul className="space-y-3 text-sm text-gray-600">
             <li className="flex gap-2">
               <span className="shrink-0 text-gray-400 font-bold">1.</span>
-              <span className="break-keep">위 네이버 예약을 통해 원하시는 날짜와 시간을 선택해 주세요.</span>
+              <span className="break-keep">위 예약을 통해 원하시는 날짜와 시간을 선택해 주세요.</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0 text-gray-400 font-bold">2.</span>
