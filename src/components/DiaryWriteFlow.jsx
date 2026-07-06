@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { DAY_MOODS } from "../data";
+import workStamp1 from "../assets/work_stamps/work_1_relaxed.jpg";
+import workStamp2 from "../assets/work_stamps/work_2_manageable.jpg";
+import workStamp3 from "../assets/work_stamps/work_3_average.jpg";
+import workStamp4 from "../assets/work_stamps/work_4_overloaded.jpg";
+import workStamp5 from "../assets/work_stamps/work_5_exploded.jpg";
 
 // ============================================
 // BMTI 일기 작성 플로우
@@ -32,8 +37,11 @@ const FONTS = {
 };
 
 const WORK_LEVELS = [
-  { v: 1, icon: "🌱", label: "여유로웠어요" }, { v: 2, icon: "📖", label: "할 만했어요" },
-  { v: 3, icon: "⚖️", label: "보통이었어요" }, { v: 4, icon: "🔥", label: "바빴어요" }, { v: 5, icon: "🌪️", label: "정신없었어요" },
+  { v: 1, icon: "🌱", label: "여유로웠어요", image: workStamp1 },
+  { v: 2, icon: "📖", label: "할 만했어요", image: workStamp2 },
+  { v: 3, icon: "⚖️", label: "보통이었어요", image: workStamp3 },
+  { v: 4, icon: "🔥", label: "과부하왔어요", image: workStamp4 },
+  { v: 5, icon: "🌪️", label: "폭발했어요", image: workStamp5 },
 ];
 const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "발목"];
 const WHEN_OPTS = ["오늘 아침 일어날 때", "자고 일어났을 때", "움직일 때", "특정 자세일 때", "하루 종일"];
@@ -418,7 +426,7 @@ function makeTitle({ dayMood, sore, oneLine }) {
 function buildDiary({ dayMood, workLevel, oneLine, sore, numVals, enabledQ }) {
   const parts = [];
   const moodTxt = { 1: "많이 힘든", 2: "조금 지친", 3: "그저 그런", 4: "괜찮은", 5: "기분 좋은" }[dayMood];
-  const workTxt = { 1: "여유로운", 2: "할 만한", 3: "보통이었", 4: "꽤 바빴", 5: "정신 없이 지나간" }[workLevel];
+  const workTxt = (WORK_LEVELS.find(w => w.v === workLevel)?.label || "").replace(/어요$/, "");
   parts.push(`오늘은 ${moodTxt} 하루였어요. 일이든 공부든 ${workTxt}고요.`);
   if (enabledQ.includes("oneline") && oneLine.text.trim()) parts.push(`${oneLine.slot}엔 ${oneLine.text.trim()}.`);
   if (enabledQ.includes("sore") && sore.part) parts.push(`${sore.part}가 ${sore.when || "하루 종일"} 뻐근했어요 (${sore.level}/10).`);
