@@ -13,13 +13,16 @@ import MyPageView from './components/MyPageView';
 import SpotView from './components/SpotView';
 import AiChatHub from './components/AiChatHub';
 function App() {
-  const [currentView, setCurrentView] = useState(window.location.hash ? 'result' : 'home');
+  const initialHash = window.location.hash.replace('#', '');
+  const [currentView, setCurrentView] = useState(
+    initialHash === 'quiz' ? 'quiz' : (initialHash ? 'result' : 'home')
+  );
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [bmtiCode, setBmtiCode] = useState(() => {
-    if (window.location.hash) return window.location.hash.replace('#', '');
+    if (initialHash && initialHash !== 'quiz') return initialHash;
     const saved = localStorage.getItem('bmti_code');
     return saved || '';
   }); // e.g. "ALDZ-Tl"
@@ -54,7 +57,7 @@ function App() {
     
     if (currentView === 'result' && bmtiCode) {
       window.history.replaceState(null, '', `#${bmtiCode}`);
-    } else if (currentView === 'home') {
+    } else if (currentView === 'home' || currentView === 'quiz') {
       window.history.replaceState(null, '', ' '); // clear hash
     }
   }, [currentView, bmtiCode]);

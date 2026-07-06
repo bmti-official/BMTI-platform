@@ -289,7 +289,7 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
         link: { webUrl: shareUrl, mobileWebUrl: shareUrl },
       },
       buttons: [
-        { title: '내 BMTI도 확인하기', link: { webUrl: shareUrl, mobileWebUrl: shareUrl } },
+        { title: '나의 운동심리유형 확인하기', link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } },
       ],
     });
   };

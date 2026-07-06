@@ -26,7 +26,7 @@ const getCharScale = (code) => {
 
 
 // Author badge component
-const AuthorBadge = ({ author, bmti, size = 'md', isAi = false }) => {
+const AuthorBadge = ({ author, bmti, size = 'md', isAi = false, date }) => {
   const img = getCharImage(bmti);
   const scaleClass = getCharScale(bmti);
   const s = 'w-8 h-8';
@@ -58,6 +58,7 @@ const AuthorBadge = ({ author, bmti, size = 'md', isAi = false }) => {
             </span>
           )}
         </div>
+        {date && <span className="text-[10px] text-gray-400 mt-0.5">{date}</span>}
       </div>
     </div>
   );
@@ -138,29 +139,16 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
   useEffect(() => {
     fetchPosts();
   }, [talkType, userProfile?.id]);
-  const [lastVisitDate, setLastVisitDate] = useState(localStorage.getItem('last_board_visit'));
+
+  // 탭을 한 번이라도 확인하면 그날은 네비게이션 바의 빨강 점을 없앤다.
+  // (Navbar.jsx가 읽는 키/이벤트와 반드시 맞춰야 한다.)
   useEffect(() => {
-    const handleVisitUpdate = () => setLastVisitDate(localStorage.getItem('last_board_visit'));
-    window.addEventListener('board_visited', handleVisitUpdate);
-    return () => window.removeEventListener('board_visited', handleVisitUpdate);
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    localStorage.setItem('last_vote_date', todayStr);
+    window.dispatchEvent(new Event('vote_updated'));
   }, []);
 
-  const getTodayString = () => {
-    const today = new Date();
-    return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-  };
-
-  const shouldShowDot = !!bmtiCode && lastVisitDate !== getTodayString();
-  const showZDot = shouldShowDot && bmtiCode.includes('Z');
-  const showMDot = shouldShowDot && bmtiCode.includes('M');
-
-  const handleTabClick = (type) => {
-    setTalkType(type);
-    if (shouldShowDot) {
-      localStorage.setItem('last_board_visit', getTodayString());
-      window.dispatchEvent(new Event('board_visited'));
-    }
-  };
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [writeContent, setWriteContent] = useState('');
   const [writeTag, setWriteTag] = useState('일상');
@@ -416,8 +404,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-3">
-                      <AuthorBadge author={post.author} bmti={post.bmti} isAi={post.isAi} />
-                      <span className="text-[11px] text-gray-400">{post.date}</span>
+                      <AuthorBadge author={post.author} bmti={post.bmti} isAi={post.isAi} date={post.date} />
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                       <button
@@ -443,8 +430,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                             {/* Comment */}
                             <div className="flex gap-3 justify-between items-start">
                               <div className="flex gap-3">
-                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" isAi={comment.isAi} />
-                                <span className="text-[11px] text-gray-400 mt-0.5">{comment.date}</span>
+                                <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" isAi={comment.isAi} date={comment.date} />
                               </div>
                               {isLoggedIn && !comment.isAi && (comment.author === myNickname || isAdmin) && (
                                 <button
@@ -470,8 +456,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                                   <div key={reply.id}>
                                     <div className="flex gap-3 justify-between items-start">
                                       <div className="flex gap-3">
-                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" isAi={reply.isAi} />
-                                        <span className="text-[10px] text-gray-400 mt-0.5">{reply.date}</span>
+                                        <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" isAi={reply.isAi} date={reply.date} />
                                       </div>
                                       {isLoggedIn && !reply.isAi && (reply.author === myNickname || isAdmin) && (
                                         <button
