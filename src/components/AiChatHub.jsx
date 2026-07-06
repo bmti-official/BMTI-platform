@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
+import DiaryWriteFlow from './DiaryWriteFlow';
 
 /**
  * BMTI 일기장 허브 — 소개 페이지
  */
 const AiChatHub = ({ bmtiCode, setView }) => {
+  const [showDiaryFlow, setShowDiaryFlow] = useState(false);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
 
@@ -22,6 +25,15 @@ const AiChatHub = ({ bmtiCode, setView }) => {
           로그인 및 설문 시작하기
         </button>
       </div>
+    );
+  }
+
+  if (showDiaryFlow) {
+    return (
+      <DiaryWriteFlow
+        onClose={() => setShowDiaryFlow(false)}
+        charName={charData ? CHARACTER_NAMES[charData.id] : undefined}
+      />
     );
   }
 
@@ -59,7 +71,10 @@ const AiChatHub = ({ bmtiCode, setView }) => {
               </div>
             </div>
           </div>
-          <button className="w-full mt-4 bg-black text-white px-6 py-3.5 rounded-2xl font-bold shadow-md hover:bg-gray-800 transition-all text-[15px] flex items-center justify-center gap-2">
+          <button
+            onClick={() => setShowDiaryFlow(true)}
+            className="w-full mt-4 bg-black text-white px-6 py-3.5 rounded-2xl font-bold shadow-md hover:bg-gray-800 transition-all text-[15px] flex items-center justify-center gap-2"
+          >
             📝 BMTI 일기장 작성하기
           </button>
         </div>
@@ -118,13 +133,6 @@ const AiChatHub = ({ bmtiCode, setView }) => {
           </div>
         </div>
 
-        {/* 하단 안내 */}
-        <div className="text-center mt-8 mb-4">
-          <p className="text-[11px] text-gray-400 leading-relaxed">
-            💡 본 기능은 새롭게 단장 중입니다!<br />
-            더 멋진 일기장 서비스로 곧 찾아뵙겠습니다.
-          </p>
-        </div>
       </div>
     </div>
   );
