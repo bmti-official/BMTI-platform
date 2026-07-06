@@ -1,7 +1,7 @@
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
 
 /**
- * BMTI 교환일기 허브 — 소개 페이지
+ * BMTI 일기장 허브 — 소개 페이지
  */
 const AiChatHub = ({ bmtiCode, setView }) => {
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
@@ -14,7 +14,7 @@ const AiChatHub = ({ bmtiCode, setView }) => {
         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-gray-100">
           <span className="text-4xl">📝</span>
         </div>
-        <h2 className="text-2xl font-bold mb-3 text-gray-900">BMTI 교환일기</h2>
+        <h2 className="text-2xl font-bold mb-3 text-gray-900">BMTI 일기장</h2>
         <p className="text-gray-500 mb-8 max-w-sm break-keep leading-relaxed text-sm">
           정확한 맞춤형 코칭을 위해 카카오 간편 로그인 및 BMTI 설문 완료가 필요합니다.
         </p>
@@ -29,9 +29,9 @@ const AiChatHub = ({ bmtiCode, setView }) => {
     <div className="min-h-screen pt-40 pb-32 px-4 md:px-6 max-w-2xl mx-auto fade-in">
       {/* 타이틀 영역 */}
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-black mb-3 flex items-center justify-center gap-2">📝 BMTI 교환일기</h1>
+        <h1 className="text-3xl font-black mb-3 flex items-center justify-center gap-2">📝 BMTI 일기장</h1>
         <p className="text-gray-500 font-medium text-[15px] px-4 break-keep leading-relaxed">
-          사소한 자세 습관부터 오늘의 컨디션까지, 📝 BMTI 교환일기에 남겨보세요.
+          사소한 자세 습관부터 오늘의 컨디션까지, 📝 BMTI 일기장에 남겨보세요.
         </p>
       </div>
 
@@ -59,10 +59,13 @@ const AiChatHub = ({ bmtiCode, setView }) => {
               </div>
             </div>
           </div>
+          <button className="w-full mt-4 bg-black text-white px-6 py-3.5 rounded-2xl font-bold shadow-md hover:bg-gray-800 transition-all text-[15px] flex items-center justify-center gap-2">
+            📝 BMTI 일기장 작성하기
+          </button>
         </div>
         
         <div className="space-y-5">
-          {/* 교환일기 컨셉 1 */}
+          {/* 일기장 컨셉 1 */}
           <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">
             <h4 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
               <span className="text-xl">✍️</span> 나만의 캐릭터와 일상 공유
@@ -88,7 +91,7 @@ const AiChatHub = ({ bmtiCode, setView }) => {
             </div>
           </div>
 
-          {/* 교환일기 컨셉 2 */}
+          {/* 일기장 컨셉 2 */}
           <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100">
             <h4 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
               <span className="text-xl">💌</span> 매일매일 남기는 나의 기록
@@ -119,7 +122,7 @@ const AiChatHub = ({ bmtiCode, setView }) => {
         <div className="text-center mt-8 mb-4">
           <p className="text-[11px] text-gray-400 leading-relaxed">
             💡 본 기능은 새롭게 단장 중입니다!<br />
-            더 멋진 교환일기 서비스로 곧 찾아뵙겠습니다.
+            더 멋진 일기장 서비스로 곧 찾아뵙겠습니다.
           </p>
         </div>
       </div>

@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { supabase } from '../lib/supabaseClient';
 
+// Helper: format a post/comment date without seconds
+const formatDate = (isoString) => new Date(isoString).toLocaleString(undefined, {
+  year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit'
+});
+
 // Helper: get character image by BMTI code
 const getCharImage = (code) => {
   if (!code) return null;
@@ -101,7 +106,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
           bmti: c.users?.bmti_type,
           isAi: !!c.users?.is_ai,
           text: c.content,
-          date: new Date(c.created_at).toLocaleString(),
+          date: formatDate(c.created_at),
           replies: post.comments
             .filter(r => r.parent_id === c.id)
             .map(r => ({
@@ -110,7 +115,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
               bmti: r.users?.bmti_type,
               isAi: !!r.users?.is_ai,
               text: r.content,
-              date: new Date(r.created_at).toLocaleString(),
+              date: formatDate(r.created_at),
             }))
         }));
 
@@ -120,7 +125,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
           author: post.users?.nickname || '익명',
           bmti: post.users?.bmti_type,
           isAi: !!post.users?.is_ai,
-          date: new Date(post.created_at).toLocaleString(),
+          date: formatDate(post.created_at),
           likes: post.post_likes?.length || 0,
           likedByMe: !!userProfile?.id && (post.post_likes || []).some(l => l.user_id === userProfile.id),
           tag: post.category,

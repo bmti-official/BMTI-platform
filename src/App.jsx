@@ -10,7 +10,6 @@ import TicketView from './components/TicketView';
 import SignupModal from './components/SignupModal';
 import BodyCheckView from './components/BodyCheckView';
 import MyPageView from './components/MyPageView';
-import SpotView from './components/SpotView';
 import AiChatHub from './components/AiChatHub';
 function App() {
   const initialHash = window.location.hash.replace('#', '');
@@ -280,12 +279,6 @@ function App() {
           />
         )}
         {currentView === 'bodycheck' && <BodyCheckView />}
-        {currentView === 'spot' && (
-          <SpotView 
-            isLoggedIn={isLoggedIn}
-            onRequireLogin={() => setShowSignup(true)}
-          />
-        )}
         {currentView === 'aichat' && (
           <AiChatHub 
             bmtiCode={bmtiCode} 
@@ -306,7 +299,7 @@ function App() {
       </main>
 
       {/* Footer for Home/Board/Ticket/Bodyscan/MyPage views */}
-      {['home', 'board', 'ticket', 'mypage', 'spot'].includes(currentView) && <Footer />}
+      {['home', 'board', 'ticket', 'mypage'].includes(currentView) && <Footer />}
 
       {/* Signup Modal */}
       <SignupModal

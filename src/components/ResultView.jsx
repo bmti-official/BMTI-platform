@@ -473,25 +473,21 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
               </button>
             </div>
 
-            {/* 2. 무브먼트 맵 사전 알림 (hero CTA) — 이미 신청했다면 마이페이지에서만 확인 가능하도록 숨김 */}
+            {/* 2. 'BMTI: 운동일기' 앱 사전 알림 (hero CTA) — 이미 신청했다면 마이페이지에서만 확인 가능하도록 숨김 */}
             {!appNotification && (
-              <button
-                onClick={() => setView('spot')}
-                className="w-full bg-black hover:bg-gray-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-gray-800 relative overflow-hidden"
+              <div
+                className="w-full bg-black p-8 rounded-3xl flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden"
               >
                 <div className="flex flex-col items-center z-10 w-full">
-                  <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">🎁</span>
+                  <span className="text-4xl mb-4">🎁</span>
                   <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
-                  <span className="text-white text-3xl md:text-4xl font-black my-3">무브먼트 맵</span>
+                  <span className="text-white text-3xl md:text-4xl font-black my-3">BMTI: 운동일기</span>
                   <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
                   <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
 
                   {/* Toggle Switch */}
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleAppNotification();
-                    }}
+                  <button
+                    onClick={handleToggleAppNotification}
                     className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
                   >
                     <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
@@ -500,12 +496,12 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
                     <div className="w-12 h-7 rounded-full flex-shrink-0 relative bg-gray-500">
                       <div className="w-5 h-5 bg-white rounded-full absolute top-1 left-1 shadow-sm" />
                     </div>
-                  </div>
+                  </button>
                 </div>
-              </button>
+              </div>
             )}
 
-            {/* 3 & 4. BMTI 과몰입 / BMTI 교환일기 작성 (secondary pair) */}
+            {/* 3 & 4. BMTI 과몰입 / BMTI 일기장 작성 (secondary pair) */}
             <div className="w-full grid grid-cols-2 gap-3">
               <button
                 onClick={() => setView('board')}
@@ -519,7 +515,7 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
                 className="bg-[#eef4fb] hover:bg-[#e0ecf8] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#d7e6f7]"
               >
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📝</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 교환일기 작성하기</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 일기장 작성하기</span>
               </button>
             </div>
           </div>

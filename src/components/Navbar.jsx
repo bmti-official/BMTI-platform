@@ -41,10 +41,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const [showCategory, setShowCategory] = useState(false);
   const tabs = [
     { id: 'home', label: '🧬 BMTI' },
-    { id: 'aichat', label: '📝 BMTI 교환일기' },
+    { id: 'aichat', label: '📝 BMTI 일기장' },
     { id: 'board', label: '💌 BMTI 과몰입' },
-    { id: 'bodycheck', label: '☘️ 무브먼트 라이브' },
-    { id: 'spot', label: '📍 무브먼트 맵' }
+    { id: 'bodycheck', label: '☘️ BMTI 라이브' }
   ];
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);

@@ -5,7 +5,7 @@ const BodyCheckView = () => {
   return (
     <div className="min-h-screen pt-40 md:pt-48 pb-32 px-6 max-w-4xl mx-auto fade-in">
       <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">☘️ 무브먼트 라이브 예약</h2>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">☘️ BMTI 라이브 예약</h2>
         <p className="text-gray-500 mb-8 max-w-lg mx-auto break-keep leading-relaxed text-sm md:text-base">
           원격으로 체형을 점검하고 맞춤형 피드백을 받아보세요. 예약하신 시간에 구글 미트로 진행됩니다.
         </p>

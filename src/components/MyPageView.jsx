@@ -394,7 +394,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         {!isEditing && (
           <div className="flex justify-between items-center gap-3 mt-4 fade-in bg-gray-50 border border-gray-100 rounded-2xl p-4">
             <span className="text-xs font-bold text-gray-700">
-              {userData.appNotification ? '✅ 무브먼트 맵 사전 알림 신청 완료' : "'무브먼트 맵' 앱 출시 알림 받기"}
+              {userData.appNotification ? "✅ 'BMTI: 운동일기' 사전 알림 신청 완료" : "'BMTI: 운동일기' 앱 출시 알림 받기"}
             </span>
             <button
               onClick={async () => {
@@ -484,7 +484,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
       </div>
 
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
-        <h3 className="font-bold text-lg text-gray-900">무브먼트 라이브 히스토리</h3>
+        <h3 className="font-bold text-lg text-gray-900">BMTI 라이브 히스토리</h3>
         <button onClick={() => setView('bodycheck')} className="bg-black text-white font-medium py-1.5 px-4 rounded-full hover:bg-gray-800 transition-colors text-xs shadow-sm whitespace-nowrap">
           신청하기
         </button>
@@ -505,7 +505,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
             </div>
           ))
         ) : (
-          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 무브먼트 라이브 신청 내역이 없습니다.</div>
+          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 BMTI 라이브 신청 내역이 없습니다.</div>
         )}
       </div>
 
