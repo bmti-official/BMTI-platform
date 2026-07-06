@@ -5,34 +5,26 @@ import DiaryWriteFlow from './DiaryWriteFlow';
 /**
  * BMTI 일기장 허브 — 소개 페이지
  */
-const AiChatHub = ({ bmtiCode, setView, userInfo }) => {
+const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin }) => {
   const [showDiaryFlow, setShowDiaryFlow] = useState(false);
   const [pendingDayMood, setPendingDayMood] = useState(null);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
 
   const handlePickMood = (moodValue) => {
+    if (!isLoggedIn) {
+      alert('카카오톡 로그인이 필요해요.');
+      if (onRequireLogin) onRequireLogin();
+      return;
+    }
+    if (!bmtiCode) {
+      alert('먼저 BMTI 설문을 완료해주세요.');
+      setView('quiz');
+      return;
+    }
     setPendingDayMood(moodValue);
     setShowDiaryFlow(true);
   };
-
-  // 접근 제어: BMTI 미완료
-  if (!bmtiCode) {
-    return (
-      <div className="min-h-[100dvh] pt-32 pb-20 px-6 flex flex-col items-center justify-center text-center fade-in bg-[#f8f9fa]">
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-gray-100">
-          <span className="text-4xl">📝</span>
-        </div>
-        <h2 className="text-2xl font-bold mb-3 text-gray-900">BMTI 일기장</h2>
-        <p className="text-gray-500 mb-8 max-w-sm break-keep leading-relaxed text-sm">
-          정확한 맞춤형 코칭을 위해 카카오 간편 로그인 및 BMTI 설문 완료가 필요합니다.
-        </p>
-        <button onClick={() => setView('quiz')} className="bg-black text-white px-8 py-3.5 rounded-full font-bold shadow-lg shadow-black/20 hover:bg-gray-800 transition-all hover:-translate-y-1">
-          로그인 및 설문 시작하기
-        </button>
-      </div>
-    );
-  }
 
   if (showDiaryFlow) {
     return (
@@ -51,8 +43,17 @@ const AiChatHub = ({ bmtiCode, setView, userInfo }) => {
       <div className="text-center mb-10">
         <h1 className="mb-3 leading-snug break-keep">
           <span className="block text-xl md:text-2xl font-black text-gray-900">
-            {userInfo?.nickname || '회원'}님, 이제 당신의{' '}
-            <span className="bg-[#c0ff00]/70 px-1 rounded whitespace-nowrap">성향을 알았어요</span>
+            {bmtiCode ? (
+              <>
+                {userInfo?.nickname || '회원'}님, 이제 당신의{' '}
+                <span className="bg-[#c0ff00]/70 px-1 rounded whitespace-nowrap">성향을 알았어요</span>
+              </>
+            ) : (
+              <>
+                {userInfo?.nickname || '회원'}님, 아직 당신의{' '}
+                <span className="bg-[#c0ff00]/70 px-1 rounded whitespace-nowrap">성향을 몰라요</span>
+              </>
+            )}
           </span>
           <span className="block text-sm md:text-base font-semibold text-gray-400 mt-1.5">
             근데 이건 시작일 뿐이에요.

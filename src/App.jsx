@@ -280,11 +280,13 @@ function App() {
         )}
         {currentView === 'bodycheck' && <BodyCheckView />}
         {currentView === 'aichat' && (
-          <AiChatHub 
-            bmtiCode={bmtiCode} 
-            bmtiAnswers={bmtiAnswers} 
-            setView={setCurrentView} 
-            userInfo={userProfile} 
+          <AiChatHub
+            bmtiCode={bmtiCode}
+            bmtiAnswers={bmtiAnswers}
+            setView={setCurrentView}
+            userInfo={userProfile}
+            isLoggedIn={isLoggedIn}
+            onRequireLogin={() => setShowSignup(true)}
           />
         )}
         {currentView === 'mypage' && (
