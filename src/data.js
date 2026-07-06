@@ -223,6 +223,13 @@ export function isReservedNickname(nickname) {
   return BMTI_TYPE_CODES.includes(normalized);
 }
 
+// BMTI 일기장의 '오늘 하루 어떠셨어요?' 무드 선택지 — AiChatHub(인라인 선택)와
+// DiaryWriteFlow(작성 플로우 내부 화면) 양쪽에서 같은 정의를 공유하기 위해 여기 둠.
+export const DAY_MOODS = [
+  { v: 1, face: '😣', label: '힘들었어요' }, { v: 2, face: '😩', label: '지쳤어요' },
+  { v: 3, face: '😐', label: '그냥그래요' }, { v: 4, face: '🙂', label: '괜찮아요' }, { v: 5, face: '😊', label: '좋았어요' },
+];
+
 
 export const BMTI_INFO = {
   'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '몸으로 먼저 느끼고, 마음으로 함께 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },

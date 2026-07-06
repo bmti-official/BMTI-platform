@@ -1,14 +1,20 @@
 import { useState } from 'react';
-import { CHARACTERS, CHARACTER_NAMES } from '../data';
+import { CHARACTERS, CHARACTER_NAMES, DAY_MOODS } from '../data';
 import DiaryWriteFlow from './DiaryWriteFlow';
 
 /**
  * BMTI 일기장 허브 — 소개 페이지
  */
-const AiChatHub = ({ bmtiCode, setView }) => {
+const AiChatHub = ({ bmtiCode, setView, userInfo }) => {
   const [showDiaryFlow, setShowDiaryFlow] = useState(false);
+  const [pendingDayMood, setPendingDayMood] = useState(null);
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
+
+  const handlePickMood = (moodValue) => {
+    setPendingDayMood(moodValue);
+    setShowDiaryFlow(true);
+  };
 
   // 접근 제어: BMTI 미완료
   if (!bmtiCode) {
@@ -33,6 +39,8 @@ const AiChatHub = ({ bmtiCode, setView }) => {
       <DiaryWriteFlow
         onClose={() => setShowDiaryFlow(false)}
         charName={charData ? CHARACTER_NAMES[charData.id] : undefined}
+        initialPhase="work"
+        initialDayMood={pendingDayMood}
       />
     );
   }
@@ -41,9 +49,16 @@ const AiChatHub = ({ bmtiCode, setView }) => {
     <div className="min-h-screen pt-40 pb-32 px-4 md:px-6 max-w-2xl mx-auto fade-in">
       {/* 타이틀 영역 */}
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-black mb-3 flex items-center justify-center gap-2">📝 BMTI 일기장</h1>
+        <h1 className="text-xl md:text-2xl font-black mb-3 leading-snug">
+          {userInfo?.nickname || '회원'}님, 이제 당신의 성향을 알았어요.<br />
+          근데 이건 시작일 뿐이에요.
+        </h1>
         <p className="text-gray-500 font-medium text-[15px] px-4 break-keep leading-relaxed">
-          사소한 자세 습관부터 오늘의 컨디션까지, 📝 BMTI 일기장에 남겨보세요.
+          성격이 다 다르듯, 몸이 원하는 방식도 달라요.<br />
+          지금까지 잘 안 됐던 건 의지 탓이 아니라,<br />
+          내 몸을 몰랐던 것뿐이에요.
+          <br /><br />
+          이제부터 매일 조금씩, 진짜 내 몸을 알아가요.
         </p>
       </div>
 
@@ -64,19 +79,32 @@ const AiChatHub = ({ bmtiCode, setView }) => {
             <div className="flex flex-col gap-2 w-full">
               <span className="text-[13px] font-bold text-gray-700 px-1">{charData ? CHARACTER_NAMES[charData.id] : '[유형명]'}</span>
               <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
-                안녕하세요! 저는 당신의 일기 메이트 {charData ? CHARACTER_NAMES[charData.id] : '[유형명]'}이에요. 오늘 몸을 쓰면서 느꼈던 불편함이나 뻐근함을 일기장에 끄적이듯 남겨주세요. 매일의 기록을 모아 당신의 신체 패턴을 짚어드릴게요.
+                {`안녕하세요, 저는 '${charData ? CHARACTER_NAMES[charData.id] : '[유형명]'}'에요.
+앞으로 매일 당신의 하루를 물어보고, 기억해둘게요.
+어렵지 않아요. 하루 10초면 돼요.`}
               </div>
               <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
-                단, 저는 진단을 내리지 않아요. 정말 아플 땐 병원이 먼저랍니다.
+                {`단, 저는 진단을 내리지 않아요.
+정말 아플 땐 병원이 먼저랍니다.`}
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowDiaryFlow(true)}
-            className="w-full mt-4 bg-black text-white px-6 py-3.5 rounded-2xl font-bold shadow-md hover:bg-gray-800 transition-all text-[15px] flex items-center justify-center gap-2"
-          >
-            📝 BMTI 일기장 작성하기
-          </button>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-2">
+            <h3 className="text-base font-black text-gray-900 mb-1">오늘 하루 어떠셨어요?</h3>
+            <p className="text-gray-400 text-xs mb-4">지금 마음에 가장 가까운 표정을 골라주세요.</p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {DAY_MOODS.map(m => (
+                <button
+                  key={m.v}
+                  onClick={() => handlePickMood(m.v)}
+                  className="flex flex-col items-center gap-1 py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-3xl">{m.face}</span>
+                  <span className="text-[10px] font-bold text-gray-500">{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         
         <div className="space-y-5">

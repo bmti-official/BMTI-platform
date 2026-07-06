@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DAY_MOODS } from "../data";
 
 // ============================================
 // BMTI 일기 작성 플로우
@@ -30,10 +31,6 @@ const FONTS = {
   gothic: { label: "고딕체", css: "'Noto Sans KR', sans-serif" },
 };
 
-const DAY_MOODS = [
-  { v: 1, face: "😣", label: "힘들었어요" }, { v: 2, face: "😩", label: "지쳤어요" },
-  { v: 3, face: "😐", label: "그냥 그래요" }, { v: 4, face: "🙂", label: "괜찮았어요" }, { v: 5, face: "😊", label: "좋았어요" },
-];
 const WORK_LEVELS = [
   { v: 1, icon: "🌱", label: "여유로웠어요" }, { v: 2, icon: "📖", label: "할 만했어요" },
   { v: 3, icon: "⚖️", label: "보통이었어요" }, { v: 4, icon: "🔥", label: "바빴어요" }, { v: 5, icon: "🌪️", label: "정신없었어요" },
@@ -63,9 +60,9 @@ const OPTIONAL_QUESTIONS = [
   { id: "selfcare", title: "스트레칭·마사지했어요", short: "스트레칭·마사지", emoji: "🤸", unit: "분", opts: [0, 5, 10, 15, 20, 30, 45], def: 0 },
 ];
 
-export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터" }) {
+export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", initialPhase = "day", initialDayMood = null }) {
   // phase: day | work | opt | writing | diary | done
-  const [phase, setPhase] = useState("day");
+  const [phase, setPhase] = useState(initialPhase);
   const [optIdx, setOptIdx] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -75,7 +72,7 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터" }) {
   const [enabledQ, setEnabledQ] = useState(["oneline", "sore", "sitting", "sleep"]); // 켠 선택질문
 
   // 데이터
-  const [dayMood, setDayMood] = useState(null);
+  const [dayMood, setDayMood] = useState(initialDayMood);
   const [workLevel, setWorkLevel] = useState(null);
   const [oneLine, setOneLine] = useState({ slot: "오후", cat: "daily", text: "" });
   const [sore, setSore] = useState({ part: null, level: 5, when: null });
