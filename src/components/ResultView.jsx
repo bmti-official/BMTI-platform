@@ -289,7 +289,7 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
         link: { webUrl: shareUrl, mobileWebUrl: shareUrl },
       },
       buttons: [
-        { title: '나의 운동심리유형 확인하기', link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } },
+        { title: "내 몸이 원하는 '🧘🏻‍♀️움직임 성향' 확인하기", link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } },
       ],
     });
   };

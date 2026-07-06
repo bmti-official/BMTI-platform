@@ -114,23 +114,23 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
         <h1 className="font-serif leading-tight mb-8">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>
-            <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">운동 심리검사</span>
+            <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>
           </div>
           <span className="text-[min(3vw,11px)] md:text-lg whitespace-nowrap text-gray-400 font-sans tracking-widest md:tracking-[0.3em] font-medium mt-6 block uppercase">
             BODY MANAGEMENT TYPE INDICATOR
           </span>
         </h1>
         <p className="text-[min(3.5vw,16px)] md:text-xl whitespace-nowrap text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed break-keep w-full">
-          운동에 나를 맞추지 말고, 나에게 운동을 맞추다.
+          나를 알아야, 나에게 맞출 수 있다.
         </p>
       </section>
 
-      {/* Sticky CTA Buttons */}
-      <div className="sticky top-32 md:top-28 left-0 right-0 px-6 flex justify-center gap-4 z-50 fade-in mb-16 pointer-events-none">
+      {/* CTA Buttons */}
+      <div className="px-6 flex justify-center gap-4 fade-in mb-16">
         {(!bmtiCode) ? (
           <button
             onClick={() => setView('quiz')}
-            className="pointer-events-auto w-full max-w-sm bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
+            className="w-full max-w-sm bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
           >
             BMTI 테스트 하기!
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,13 +141,13 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
           <>
             <button
               onClick={handleRetakeQuiz}
-              className="pointer-events-auto flex-1 max-w-[200px] bg-white border-2 border-black text-black text-[min(3.5vw,15px)] md:text-lg whitespace-nowrap font-medium px-2 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-50 transition-all duration-300 flex items-center justify-center"
+              className="flex-1 max-w-[200px] bg-white border-2 border-black text-black text-[min(3.5vw,15px)] md:text-lg whitespace-nowrap font-medium px-2 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-50 transition-all duration-300 flex items-center justify-center"
             >
               다시 검사하기
             </button>
             <button
               onClick={() => setView('result')}
-              className="pointer-events-auto flex-1 max-w-[200px] bg-black text-white text-[min(3.5vw,15px)] md:text-lg whitespace-nowrap font-medium px-2 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center"
+              className="flex-1 max-w-[200px] bg-black text-white text-[min(3.5vw,15px)] md:text-lg whitespace-nowrap font-medium px-2 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center"
             >
               나의 BMTI 유형
             </button>
@@ -191,10 +191,10 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
       <section className="max-w-4xl mx-auto px-6 text-center mb-8 relative">
         <div className="relative inline-block px-8 py-4">
           <span className="absolute top-0 left-0 md:-left-4 text-6xl md:text-8xl text-gray-200 font-serif leading-none select-none">"</span>
-          <p className="text-[min(4vw,18px)] md:text-3xl whitespace-nowrap font-serif leading-relaxed italic text-gray-800 tracking-tight font-medium relative z-10 px-0 md:px-8">
-            당신의 의지가 부족했던 게 아니라,<br/>
-            내 몸의 진짜 성향을 몰랐을 뿐입니다.<br/>
-            성격이 모두 다르듯,
+          <p className="text-[min(4vw,18px)] md:text-3xl break-keep font-serif leading-relaxed italic text-gray-800 tracking-tight font-medium relative z-10 px-0 md:px-8">
+            지금까지 잘 안 됐던 건 의지 탓이 아니에요.<br/>
+            남들 방식에 나를 맞추려 했을 뿐이죠.<br/>
+            성격이 다 다르듯, 내 몸에 맞는 방식은 따로 있어요.
           </p>
           <span className="absolute -bottom-4 right-0 md:-right-4 text-6xl md:text-8xl text-gray-200 font-serif leading-none select-none">"</span>
         </div>
