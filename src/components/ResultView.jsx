@@ -508,14 +508,14 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
                 className="bg-[#fdf0f3] hover:bg-[#fce4e9] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#f7d7de]"
               >
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💌</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 과몰입 하기</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 과몰입</span>
               </button>
               <button
                 onClick={() => setView('aichat')}
                 className="bg-[#eef4fb] hover:bg-[#e0ecf8] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#d7e6f7]"
               >
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📝</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 일기장 작성하기</span>
+                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 일기장</span>
               </button>
             </div>
           </div>
