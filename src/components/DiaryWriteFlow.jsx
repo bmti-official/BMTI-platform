@@ -428,14 +428,20 @@ function buildDiary({ dayMood, workLevel, oneLine, sore, numVals, enabledQ }) {
   return parts.join(" ");
 }
 
-// 표정/아이콘 한 줄
+// 표정/아이콘 한 줄 — image가 있으면(무드 스탬프) 문구가 이미지에 포함돼 있어 라벨은 생략
 function FaceRow({ items, value, onPick, render }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginTop: 8 }}>
       {items.map(m => (
         <button key={m.v} onClick={() => onPick(m.v)} style={faceBtn(value === m.v)}>
-          <span style={{ fontSize: 28 }}>{render(m)}</span>
-          <span style={{ fontSize: 10.5, color: value === m.v ? C.ink : C.sub, fontWeight: 700 }}>{m.label}</span>
+          {m.image ? (
+            <img src={m.image} alt={m.label} style={{ width: 48, height: 48, objectFit: "contain" }} />
+          ) : (
+            <>
+              <span style={{ fontSize: 28 }}>{render(m)}</span>
+              <span style={{ fontSize: 10.5, color: value === m.v ? C.ink : C.sub, fontWeight: 700 }}>{m.label}</span>
+            </>
+          )}
         </button>
       ))}
     </div>

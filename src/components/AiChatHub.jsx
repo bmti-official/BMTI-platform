@@ -49,15 +49,16 @@ const AiChatHub = ({ bmtiCode, setView, userInfo }) => {
     <div className="min-h-screen pt-40 pb-32 px-4 md:px-6 max-w-2xl mx-auto fade-in">
       {/* 타이틀 영역 */}
       <div className="text-center mb-10">
-        <h1 className="text-xl md:text-2xl font-black mb-3 leading-snug">
-          {userInfo?.nickname || '회원'}님, 이제 당신의 성향을 알았어요.<br />
-          근데 이건 시작일 뿐이에요.
+        <h1 className="mb-3 leading-snug break-keep">
+          <span className="block text-xl md:text-2xl font-black text-gray-900">
+            {userInfo?.nickname || '회원'}님, 이제 당신의{' '}
+            <span className="bg-[#c0ff00]/70 px-1 rounded whitespace-nowrap">성향을 알았어요</span>
+          </span>
+          <span className="block text-sm md:text-base font-semibold text-gray-400 mt-1.5">
+            근데 이건 시작일 뿐이에요.
+          </span>
         </h1>
         <p className="text-gray-500 font-medium text-[15px] px-4 break-keep leading-relaxed">
-          성격이 다 다르듯, 몸이 원하는 방식도 달라요.<br />
-          지금까지 잘 안 됐던 건 의지 탓이 아니라,<br />
-          내 몸을 몰랐던 것뿐이에요.
-          <br /><br />
           이제부터 매일 조금씩, 진짜 내 몸을 알아가요.
         </p>
       </div>
@@ -87,20 +88,23 @@ const AiChatHub = ({ bmtiCode, setView, userInfo }) => {
                 {`단, 저는 진단을 내리지 않아요.
 정말 아플 땐 병원이 먼저랍니다.`}
               </div>
+              <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
+                {`걱정 마세요, 여기 남기는 이야기는 다른 사람에게 절대 공개되지 않아요.
+오직 저와 당신만 보는 이야기예요.`}
+              </div>
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-2">
             <h3 className="text-base font-black text-gray-900 mb-1">오늘 하루 어떠셨어요?</h3>
             <p className="text-gray-400 text-xs mb-4">지금 마음에 가장 가까운 표정을 골라주세요.</p>
-            <div className="grid grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-5 gap-1">
               {DAY_MOODS.map(m => (
                 <button
                   key={m.v}
                   onClick={() => handlePickMood(m.v)}
-                  className="flex flex-col items-center gap-1 py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-center py-1 rounded-xl hover:bg-gray-50 transition-colors"
                 >
-                  <span className="text-3xl">{m.face}</span>
-                  <span className="text-[10px] font-bold text-gray-500">{m.label}</span>
+                  <img src={m.image} alt={m.label} className="w-full max-w-[64px] object-contain" />
                 </button>
               ))}
             </div>

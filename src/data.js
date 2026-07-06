@@ -223,11 +223,22 @@ export function isReservedNickname(nickname) {
   return BMTI_TYPE_CODES.includes(normalized);
 }
 
+import moodStamp1 from './assets/mood_stamps/mood_1_hard.jpg';
+import moodStamp2 from './assets/mood_stamps/mood_2_tired.jpg';
+import moodStamp3 from './assets/mood_stamps/mood_3_soso.jpg';
+import moodStamp4 from './assets/mood_stamps/mood_4_okay.jpg';
+import moodStamp5 from './assets/mood_stamps/mood_5_good.jpg';
+
 // BMTI 일기장의 '오늘 하루 어떠셨어요?' 무드 선택지 — AiChatHub(인라인 선택)와
 // DiaryWriteFlow(작성 플로우 내부 화면) 양쪽에서 같은 정의를 공유하기 위해 여기 둠.
+// image: 무드 선택 화면에서 쓰는 스탬프 일러스트(문구가 이미지 안에 포함됨).
+// face: 다이어리 페이지 상단처럼 작은 아이콘 자리에 쓰는 이모지 버전.
 export const DAY_MOODS = [
-  { v: 1, face: '😣', label: '힘들었어요' }, { v: 2, face: '😩', label: '지쳤어요' },
-  { v: 3, face: '😐', label: '그냥그래요' }, { v: 4, face: '🙂', label: '괜찮아요' }, { v: 5, face: '😊', label: '좋았어요' },
+  { v: 1, face: '😣', label: '힘들었어요', image: moodStamp1 },
+  { v: 2, face: '😩', label: '지쳤어요', image: moodStamp2 },
+  { v: 3, face: '😐', label: '그냥저냥', image: moodStamp3 },
+  { v: 4, face: '🙂', label: '괜찮았어요', image: moodStamp4 },
+  { v: 5, face: '😊', label: '좋았어요', image: moodStamp5 },
 ];
 
 
