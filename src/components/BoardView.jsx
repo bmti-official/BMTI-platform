@@ -7,6 +7,14 @@ const formatDate = (isoString) => new Date(isoString).toLocaleString(undefined, 
   year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit'
 });
 
+// 인기글 정렬용 시간감쇠 스코어 — 좋아요가 아무리 쌓여도 오래된 글이 계속
+// 상위권을 독점하지 않도록, 경과 시간이 늘어날수록 점수를 지수적으로 깎는다.
+// (레딧 hot 랭킹과 같은 방식: score = likes / (경과시간(h) + 2)^1.5)
+const getHotScore = (post) => {
+  const hoursElapsed = (Date.now() - post.createdAt) / (1000 * 60 * 60);
+  return post.likes / Math.pow(hoursElapsed + 2, 1.5);
+};
+
 // Helper: get character image by BMTI code
 const getCharImage = (code) => {
   if (!code) return null;
@@ -126,6 +134,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
           bmti: post.users?.bmti_type,
           isAi: !!post.users?.is_ai,
           date: formatDate(post.created_at),
+          createdAt: new Date(post.created_at).getTime(),
           likes: post.post_likes?.length || 0,
           likedByMe: !!userProfile?.id && (post.post_likes || []).some(l => l.user_id === userProfile.id),
           tag: post.category,
@@ -208,7 +217,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
   };
 
   const getSortedPosts = (list) => {
-    if (talkSort === 'popular') return [...list].sort((a, b) => b.likes - a.likes);
+    if (talkSort === 'popular') return [...list].sort((a, b) => getHotScore(b) - getHotScore(a));
     if (talkSort === 'comments') return [...list].sort((a, b) => b.comments.length - a.comments.length);
     return list;
   };
