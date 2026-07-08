@@ -45,12 +45,14 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin }) 
           <span className="block text-xl md:text-2xl font-black text-gray-900">
             {bmtiCode ? (
               <>
-                {userInfo?.nickname || '회원'}님, 이제 당신의{' '}
+                <span className="text-pink-300">{userInfo?.nickname || '회원'}</span> 님,<br />
+                이제 당신의{' '}
                 <span className="bg-[#c0ff00]/70 px-1 rounded whitespace-nowrap">성향을 알았어요</span>
               </>
             ) : (
               <>
-                {userInfo?.nickname || '회원'}님, 아직 당신의{' '}
+                <span className="text-pink-300">{userInfo?.nickname || '회원'}</span> 님,<br />
+                아직 당신의{' '}
                 <span className="bg-[#c0ff00]/70 px-1 rounded whitespace-nowrap">성향을 몰라요</span>
               </>
             )}
@@ -81,18 +83,19 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin }) 
             <div className="flex flex-col gap-2 w-full">
               <span className="text-[13px] font-bold text-gray-700 px-1">{charData ? CHARACTER_NAMES[charData.id] : '[유형명]'}</span>
               <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
-                {`하루 10초면 돼요.
-앞으로 매일 당신의 하루를 물어보고,
-🧠 기억해둘게요. 어렵지 않아요.`}
+                {`하루 10초면 충분해요.
+매일 당신의 하루를 물어보고,
+오래오래 기억해둘게요. 🧠`}
               </div>
               <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
-                {`단, 저는 진단을 내리지 않아요.
-정말 아플 땐 🏥 병원이 먼저랍니다.`}
+                {`대신 저는 의사가 아니라,
+진단은 못 해요.
+많이 아플 땐 병원에 먼저 가주세요. 🏥`}
               </div>
               <div className="bg-white text-gray-800 border border-gray-100 text-[14px] px-4 py-3 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.02)] leading-relaxed whitespace-pre-wrap">
-                {`🔒 걱정 마세요, 여기 남기는 이야기는
-다른 사람에게 절대 공개되지 않아요.
-오직 저와 당신만 보는 이야기예요.`}
+                {`여기 남긴 이야기는
+아무에게도 보이지 않아요.
+오직 당신과 저만 아는 비밀이에요. 🔒`}
               </div>
             </div>
           </div>
