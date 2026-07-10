@@ -262,8 +262,13 @@ async function runFeatureA() {
     const quietFor = Date.now() - lastHumanPostAt;
     if (quietFor < threshold * 60 * 60 * 1000) continue;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    // KST 19:00 (UTC 10:00) 기준으로 하루 상한을 리셋 (매일 오후 7시에 새 오프닝 글 작성 가능)
+    const now = new Date();
+    const todayStart = new Date(now);
+    if (now.getUTCHours() < 10) {
+      todayStart.setUTCDate(todayStart.getUTCDate() - 1);
+    }
+    todayStart.setUTCHours(10, 0, 0, 0);
     const { count: postedToday } = await supabase
       .from('ai_actions')
       .select('id', { count: 'exact', head: true })
