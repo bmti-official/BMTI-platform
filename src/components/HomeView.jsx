@@ -185,15 +185,20 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
       {/* CTA Buttons */}
       <div className="px-6 flex justify-center gap-4 fade-in mb-16">
         {(!bmtiCode) ? (
-          <button
-            onClick={() => setView('quiz')}
-            className="w-full max-w-sm bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            BMTI 테스트 하기!
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-            </svg>
-          </button>
+          <div className="flex flex-col items-center w-full max-w-sm">
+            <button
+              onClick={() => setView('quiz')}
+              className="w-full bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              BMTI 테스트 하기!
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+            </button>
+            <p className="mt-3.5 text-xs md:text-sm text-gray-400/80 font-medium tracking-tight">
+              2분이면 끝나요 · 로그인 없이 가능
+            </p>
+          </div>
         ) : (
           <>
             <button

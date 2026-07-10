@@ -12,9 +12,15 @@ const Footer = () => {
         <div className="flex flex-col items-start flex-1 mt-1">
           <button 
             onClick={() => setIsInfoOpen(!isInfoOpen)} 
-            className="font-bold text-gray-500 flex items-center gap-1 hover:text-gray-700 transition-colors text-[10px] md:text-xs text-left break-keep"
+            className="group flex items-center gap-1 text-[10px] md:text-xs font-bold text-gray-500 hover:text-gray-800 transition-all text-left break-keep"
           >
-            자기점검 50분 사업자 정보 {isInfoOpen ? '▲' : '▼'}
+            자기점검 50분 사업자 정보
+            <svg 
+              className={`w-3.5 h-3.5 transition-transform duration-300 ${isInfoOpen ? 'rotate-180' : ''}`} 
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
         </div>
 

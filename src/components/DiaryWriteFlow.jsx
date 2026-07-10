@@ -1,18 +1,10 @@
 import { useState } from "react";
-import { DAY_MOODS } from "../data";
-import workStamp1 from "../assets/work_stamps/work_1_relaxed.jpg";
-import workStamp2 from "../assets/work_stamps/work_2_manageable.jpg";
-import workStamp3 from "../assets/work_stamps/work_3_average.jpg";
-import workStamp4 from "../assets/work_stamps/work_4_overloaded.jpg";
-import workStamp5 from "../assets/work_stamps/work_5_exploded.jpg";
+import { Mallang } from "./Mallang";
+import { MOODS as DAY_MOODS } from "../data";
 
 // ============================================
-// BMTI 일기 작성 플로우
-// 헤더: 좌 이전 / 우 환경설정(글씨체, 일기장 색상, 선택항목 +/-)
-// 필수: 오늘 하루(무드 5) → 오늘 얼마나 바빴어요(5)
-// 선택질문: 한 화면에 하나씩 (켜둔 항목만 순서대로)
-// → AI 정리 일기장 → 완료
-// * 플로우 확인용 프로토타입. 이모지는 임시(추후 이미지로 교체). AI 정리는 mock.
+// BMTI 하루일기 작성 플로우
+// 한 페이지 스크롤 + 아코디언 구조 — 전체화면
 // ============================================
 
 const C = {
@@ -21,14 +13,12 @@ const C = {
   warn: "#FF6B6B", yellow: "#FFF3C4", pink: "#FF6B9D", pinkSoft: "#FEE7EF",
 };
 
-// 일기장 색상 옵션
 const PAPER_COLORS = {
   white: { label: "화이트", bg: "#FFFFFF", line: "#F0F0F0" },
   pink: { label: "핑크", bg: "#FFF5F8", line: "#FBE0EC" },
   ivory: { label: "아이보리", bg: "#FBF7EE", line: "#EFE7D5" },
   green: { label: "그린", bg: "#F2F8F3", line: "#DDEBDF" },
 };
-// 글씨체 옵션
 const FONTS = {
   round: { label: "둥근체", css: "'Pretendard', sans-serif" },
   serif: { label: "명조체", css: "'Nanum Myeongjo', serif" },
@@ -36,13 +26,46 @@ const FONTS = {
   gothic: { label: "고딕체", css: "'Noto Sans KR', sans-serif" },
 };
 
-const WORK_LEVELS = [
-  { v: 1, icon: "🌱", label: "여유로웠어요", image: workStamp1 },
-  { v: 2, icon: "📖", label: "할 만했어요", image: workStamp2 },
-  { v: 3, icon: "⚖️", label: "보통이었어요", image: workStamp3 },
-  { v: 4, icon: "🔥", label: "과부하왔어요", image: workStamp4 },
-  { v: 5, icon: "🌪️", label: "폭발했어요", image: workStamp5 },
+// ── 앉아있던 시간 (통계적으로 3시간 미만 / 10시간 이상이 극단값) ──
+const SITTING_OPTS = [
+  { label: "3시간 미만", title: "3시간 미만" },
+  { label: "3시간", title: "3시간" },
+  { label: "4시간", title: "4시간" },
+  { label: "5시간", title: "5시간" },
+  { label: "6시간", title: "6시간" },
+  { label: "7시간", title: "7시간" },
+  { label: "8시간", title: "8시간" },
+  { label: "9시간", title: "9시간" },
+  { label: "10시간 이상", title: "10시간 이상" },
 ];
+
+// ── 수면 시간 (통계적으로 4시간 미만 / 9시간 이상이 극단값) ──
+const SLEEP_OPTS = [
+  { label: "4시간 미만", title: "4시간 미만" },
+  { label: "4시간", title: "4시간" },
+  { label: "5시간", title: "5시간" },
+  { label: "6시간", title: "6시간" },
+  { label: "7시간", title: "7시간" },
+  { label: "8시간", title: "8시간" },
+  { label: "9시간 이상", title: "9시간 이상" },
+];
+
+// ── 운동 카테고리 ──
+const EXERCISE_CATS = [
+  { name: "개인 집중형 (실내)", items: ["헬스·PT", "웨이트", "요가", "필라테스", "명상·호흡", "수영"] },
+  { name: "야외 활동형 (실외)", items: ["걷기/산책", "러닝·조깅", "자전거", "등산"] },
+  { name: "그룹 및 파트너형", items: ["축구", "농구", "배드민턴", "테니스", "크로스핏", "댄스"] },
+];
+const EXERCISE_TIME_LABELS = ["30분 미만", "1시간 미만", "2시간 미만", "2시간 이상"];
+
+// ── 스트레칭·마사지 카테고리 ──
+const SELFCARE_CATS = [
+  { name: "상체", items: ["목", "어깨", "등(상부)", "가슴", "팔·손목"] },
+  { name: "하체", items: ["허리", "엉덩이·골반", "허벅지", "종아리", "발목·발"] },
+];
+const SELFCARE_TIME_LABELS = ["30분 미만", "1시간 미만", "1시간 이상"];
+
+// ── 기타 상수 ──
 const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "발목"];
 const WHEN_OPTS = ["오늘 아침 일어날 때", "자고 일어났을 때", "움직일 때", "특정 자세일 때", "하루 종일"];
 const CATEGORIES = [
@@ -51,46 +74,64 @@ const CATEGORIES = [
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
 const TIMESLOTS = [
-  { label: "아침", range: "6~11시" },
-  { label: "점심", range: "11~14시" },
-  { label: "오후", range: "14~18시" },
-  { label: "저녁", range: "18~22시" },
-  { label: "밤", range: "22~6시" },
+  { label: "아침" }, { label: "점심" }, { label: "오후" }, { label: "저녁" }, { label: "밤" },
 ];
 
-// 선택 질문 항목 정의 (켜보면/끄면서 순서대로 물어봄)
-const OPTIONAL_QUESTIONS = [
-  { id: "oneline", title: "오늘 한 줄", emoji: "✏️" },
-  { id: "sore", title: "뻐근한 부위", emoji: "🐢" },
-  { id: "sitting", title: "오늘 앉아있었어요", short: "앉아있던 시간", emoji: "🪑", unit: "시간", opts: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], def: 6 },
-  { id: "sleep", title: "잠은 얼마나 주무셨어요", short: "수면", emoji: "😴", unit: "시간", opts: [3, 4, 5, 6, 7, 8, 9, 10], def: 7 },
-  { id: "exercise", title: "운동했어요", short: "운동", emoji: "🏃", unit: "분", opts: [0, 10, 20, 30, 45, 60, 90], def: 0 },
-  { id: "selfcare", title: "스트레칭·마사지했어요", short: "스트레칭·마사지", emoji: "🤸", unit: "분", opts: [0, 5, 10, 15, 20, 30, 45], def: 0 },
-];
+// ── 을/를 조사 헬퍼 ──
+function eulReul(word) {
+  if (!word) return "를";
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xAC00 || code > 0xD7A3) return "를";
+  return (code - 0xAC00) % 28 !== 0 ? "을" : "를";
+}
 
-export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", initialPhase = "day", initialDayMood = null }) {
-  // phase: day | work | opt | writing | diary | done
-  const [phase, setPhase] = useState(initialPhase);
-  const [optIdx, setOptIdx] = useState(0);
+// ============================================
+// 메인 컴포넌트
+// ============================================
+export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐릭터", initialPhase = "form", initialDayMood = null }) {
+  const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
   const [showSettings, setShowSettings] = useState(false);
 
   // 설정
   const [font, setFont] = useState("round");
   const [paper, setPaper] = useState("white");
-  const [enabledQ, setEnabledQ] = useState(["oneline", "sore", "sitting", "sleep"]); // 켠 선택질문
 
-  // 데이터
+  // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
-  const [workLevel, setWorkLevel] = useState(null);
+
+  // 앉아있던 시간
+  const [sittingVal, setSittingVal] = useState(null);
+  // 수면 시간
+  const [sleepVal, setSleepVal] = useState(null);
+
+  // 운동
+  const [exerciseTypes, setExerciseTypes] = useState([]); // max 2
+  const [exerciseTimes, setExerciseTimes] = useState({}); // { "요가": "1시간 미만" }
+  const [exerciseCatIdx, setExerciseCatIdx] = useState(0);
+  const [customExercise, setCustomExercise] = useState("");
+
+  // 스트레칭·마사지
+  const [selfcareParts, setSelfcareParts] = useState([]); // max 3
+  const [selfcareTime, setSelfcareTime] = useState(null);
+  const [selfcareCatIdx, setSelfcareCatIdx] = useState(0);
+
+  // 한 줄 일기
   const [oneLine, setOneLine] = useState({ slot: "오후", cat: "daily", text: "" });
+  // 뻐근한 부위
   const [sore, setSore] = useState({ part: null, level: 5, when: null });
-  const [numVals, setNumVals] = useState(Object.fromEntries(OPTIONAL_QUESTIONS.filter(q => q.opts).map(q => [q.id, q.def])));
+
   const [selDate, setSelDate] = useState(new Date());
   const [showDatePick, setShowDatePick] = useState(false);
 
-  const activeOpts = OPTIONAL_QUESTIONS.filter(q => enabledQ.includes(q.id));
-  const totalSteps = 2 + activeOpts.length + 1; // day, work, opts..., diary
-  const curStep = phase === "day" ? 0 : phase === "work" ? 1 : phase === "diary" ? 2 + activeOpts.length : phase === "done" ? totalSteps : 2 + optIdx;
+  // 아코디언 (true = 펼쳐진 상태)
+  const [expanded, setExpanded] = useState({
+    mood: !initialDayMood, // 초기값이 있으면 접힘
+    sitting: true,
+    sleep: true,
+    exercise: true,
+    selfcare: true,
+  });
+  const toggle = (key) => setExpanded(e => ({ ...e, [key]: !e[key] }));
 
   const F = FONTS[font].css;
 
@@ -104,50 +145,126 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
     setPhase("writing");
     setTimeout(() => {
       setDiaryTitle(makeTitle({ dayMood, sore, oneLine }));
-      setDiaryBody(buildDiary({ dayMood, workLevel, oneLine, sore, numVals, enabledQ }));
+      setDiaryBody(buildDiary({ dayMood, oneLine, sore, sittingVal, sleepVal, exerciseTypes, exerciseTimes, selfcareParts, selfcareTime }));
       setPhase("diary");
     }, 2000);
   };
 
-  // 뒤로가기 (첫 단계에서는 플로우 자체를 닫는다)
   const goBack = () => {
-    if (phase === "day") { if (onClose) onClose(); }
-    else if (phase === "work") setPhase("day");
-    else if (phase === "opt") { if (optIdx === 0) setPhase("work"); else setOptIdx(i => i - 1); }
+    if (phase === "form") { if (onClose) onClose(); }
     else if (phase === "done") setPhase("diary");
   };
-  const startOpts = () => { if (activeOpts.length) { setPhase("opt"); setOptIdx(0); } else goDiary(); };
-  const nextOpt = () => { if (optIdx < activeOpts.length - 1) setOptIdx(i => i + 1); else goDiary(); };
 
   const reset = () => {
-    setPhase("day"); setOptIdx(0); setDayMood(null); setWorkLevel(null);
+    setPhase("form"); setDayMood(null);
+    setSittingVal(null); setSleepVal(null);
+    setExerciseTypes([]); setExerciseTimes({}); setCustomExercise("");
+    setSelfcareParts([]); setSelfcareTime(null);
     setOneLine({ slot: "오후", cat: "daily", text: "" }); setSore({ part: null, level: 5, when: null });
-    setNumVals(Object.fromEntries(OPTIONAL_QUESTIONS.filter(q => q.opts).map(q => [q.id, q.def])));
     setDiaryTitle(""); setEditMode(false);
+    setExpanded({ mood: true, sitting: true, sleep: true, exercise: true, selfcare: true });
   };
 
   const finishFlow = () => {
+    if (onFinish) onFinish(dayMood);
     reset();
     if (onClose) onClose();
   };
 
+  // ── 운동 종목 토글 (최대 2) ──
+  const toggleExerciseType = (type) => {
+    setExerciseTypes(prev => {
+      if (prev.includes(type)) {
+        const next = prev.filter(t => t !== type);
+        setExerciseTimes(times => { const copy = { ...times }; delete copy[type]; return copy; });
+        return next;
+      }
+      if (prev.length >= 2) return prev; // 최대 2개
+      return [...prev, type];
+    });
+  };
+
+  // 기타 운동 추가
+  const addCustomExercise = () => {
+    const name = customExercise.trim();
+    if (!name || exerciseTypes.includes(name) || exerciseTypes.length >= 2) return;
+    setExerciseTypes(prev => [...prev, name]);
+    setCustomExercise("");
+  };
+
+  // ── 스트레칭 부위 토글 (최대 3, 전신은 exclusive) ──
+  const toggleSelfcarePart = (part) => {
+    if (part === "전신") {
+      setSelfcareParts(prev => prev.includes("전신") ? [] : ["전신"]);
+      return;
+    }
+    setSelfcareParts(prev => {
+      if (prev.includes("전신")) return [part]; // 전신 해제하고 새 부위
+      if (prev.includes(part)) return prev.filter(p => p !== part);
+      if (prev.length >= 3) return prev;
+      return [...prev, part];
+    });
+  };
+
+  // ── 아코디언 자동 접기 ──
+  const handleSittingPick = (opt) => {
+    setSittingVal(opt.label);
+    setTimeout(() => setExpanded(e => ({ ...e, sitting: false })), 250);
+  };
+  const handleSleepPick = (opt) => {
+    setSleepVal(opt.label);
+    setTimeout(() => setExpanded(e => ({ ...e, sleep: false })), 250);
+  };
+
+  // 운동 완료 체크 (종목 + 각 종목별 시간 모두 선택)
+  const exerciseComplete = exerciseTypes.length > 0 && exerciseTypes.every(t => exerciseTimes[t]);
+  // 스트레칭 완료 체크 (부위 + 총 시간)
+  const selfcareComplete = selfcareParts.length > 0 && selfcareTime;
+
+  // ── 운동 아코디언 제목 ──
+  const exerciseTitle = () => {
+    if (!exerciseComplete) return "🏃 오늘 운동 했어요?";
+    const parts = exerciseTypes.map(t => `${t}${eulReul(t)} ${exerciseTimes[t]}`);
+    return `🏃 오늘 ${parts.join(", ")} 했어요`;
+  };
+
+  // ── 스트레칭 아코디언 제목 ──
+  const selfcareTitle = () => {
+    if (!selfcareComplete) return "🤸 오늘 스트레칭·마사지 했어요?";
+    const lastPart = selfcareParts[selfcareParts.length - 1];
+    const partStr = selfcareParts.length === 1
+      ? `${lastPart}${eulReul(lastPart)}`
+      : `${selfcareParts.slice(0, -1).join(", ")}, ${lastPart}${eulReul(lastPart)}`;
+    return `🤸 오늘 ${partStr} ${selfcareTime} 스트레칭·마사지 했어요`;
+  };
+
+  // ── 앉아있는 시간 제목 ──
+  const sittingTitle = () => {
+    if (!sittingVal) return "🪑 오늘 얼마나 앉아있었어요?";
+    return `🪑 오늘 ${sittingVal} 앉아있었어요`;
+  };
+
+  // ── 수면 시간 제목 ──
+  const sleepTitle = () => {
+    if (!sleepVal) return "💤 오늘 얼마나 잤어요?";
+    return `💤 오늘 ${sleepVal} 잤어요`;
+  };
+
+  // ── 말랑이 기분 제목 ──
+  const moodData = DAY_MOODS.find(m => m.v === dayMood);
+
   return (
-    <div className="min-h-screen pt-40 pb-10" style={{ background: C.bg, display: "flex", justifyContent: "center", fontFamily: F, color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, minHeight: "70vh", background: phase === "diary" || phase === "writing" ? PAPER_COLORS[paper].bg : C.bg, position: "relative", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, background: C.bg, display: "flex", justifyContent: "center", fontFamily: F, color: C.ink }}>
+      <div style={{ width: "100%", maxWidth: 420, height: "100%", background: phase === "diary" || phase === "writing" ? PAPER_COLORS[paper].bg : C.bg, position: "relative", display: "flex", flexDirection: "column" }}>
 
-        {/* ── 헤더 (일기장/작성중/완료 화면에서는 숨김 — 자체 헤더 사용) ── */}
+        {/* ── 헤더 ── */}
         {phase !== "diary" && phase !== "writing" && phase !== "done" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px 8px" }}>
-          <button onClick={goBack} style={{ width: 38, height: 38, borderRadius: "50%", border: "none",
-            background: `${C.card}CC`, color: C.ink, fontSize: 18, cursor: "pointer" }}>‹</button>
-
-          {/* 가운데 날짜 아이콘버튼 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: C.bg, flexShrink: 0 }}>
+          <button onClick={goBack} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
           <button onClick={() => setShowDatePick(v => !v)} style={{ display: "flex", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", fontSize: 16, fontWeight: 800, color: C.ink }}>
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
             <span style={{ fontSize: 11, color: C.sub, transform: showDatePick ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
           </button>
-
-          {/* 설정 버튼 */}
           <button onClick={() => setShowSettings(true)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", fontSize: 20, cursor: "pointer", opacity: 0.7 }}>⚙️</button>
 
           {showDatePick && (
@@ -167,109 +284,224 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
         </div>
         )}
 
-        {/* ── 진행바 (일기장/작성중/완료 제외) ── */}
-        {phase !== "diary" && phase !== "writing" && phase !== "done" && (
-        <div style={{ display: "flex", gap: 4, padding: "4px 4px 4px" }}>
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div key={i} style={{ flex: 1, height: 4, borderRadius: 4, background: curStep >= i ? C.ink : C.line }} />
-          ))}
-        </div>
-        )}
-
-        <div style={{ flex: 1, padding: "14px 4px 40px" }}>
-          {/* ── 필수 1: 오늘 하루 ── */}
-          {phase === "day" && (
+        {/* ── 스크롤 영역 ── */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 100px", display: "flex", flexDirection: "column", gap: 14 }}>
+          {phase === "form" && (
             <>
-              <Badge>오늘의 BMTI 일기</Badge>
-              <h1 style={h1}>오늘 하루,<br />어떠셨어요?</h1>
-              <p style={sub}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
-              <FaceRow items={DAY_MOODS} value={dayMood} onPick={setDayMood} render={m => m.face} />
-              <button onClick={() => dayMood && setPhase("work")} style={{ ...primary, opacity: dayMood ? 1 : 0.35 }}>다음</button>
-            </>
-          )}
-
-          {/* ── 필수 2: 업무/공부 ── */}
-          {phase === "work" && (
-            <>
-              <Badge>오늘의 BMTI 일기</Badge>
-              <h1 style={h1}>오늘 얼마나<br />바빴어요?</h1>
-              <p style={sub}>일이든 공부든, 오늘 하루 부담이 어느 정도인지 골라주세요.</p>
-              <FaceRow items={WORK_LEVELS} value={workLevel} onPick={setWorkLevel} render={w => w.icon} />
-              <button onClick={() => workLevel && startOpts()} style={{ ...primary, opacity: workLevel ? 1 : 0.35 }}>다음</button>
-            </>
-          )}
-
-          {/* ── 선택질문: 한 화면에 하나씩 ── */}
-          {phase === "opt" && activeOpts[optIdx] && (() => {
-            const q = activeOpts[optIdx];
-            return (
-              <>
-                <div style={{ fontSize: 13, color: C.sub, fontWeight: 700, marginBottom: 10 }}>선택 기록 {optIdx + 1} / {activeOpts.length}</div>
-                <h1 style={h1}>{q.emoji} {q.title}</h1>
-
-                {/* 오늘 한 줄 */}
-                {q.id === "oneline" && (<>
-                  <p style={sub}>언제, 어떤 이야기인지 편하게 남겨요.</p>
-                  <Label>언제 있었던 일이에요?</Label>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
-                    {TIMESLOTS.map(t => {
-                      const on = oneLine.slot === t.label;
-                      return (
-                        <button key={t.label} onClick={() => setOneLine(s => ({ ...s, slot: t.label }))} style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 14px", borderRadius: 16, cursor: "pointer",
-                          border: on ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: on ? C.ink : C.card }}>
-                          <span style={{ fontSize: 13.5, fontWeight: 700, color: on ? "#fff" : C.sub }}>{t.label}</span>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: on ? "rgba(255,255,255,0.7)" : C.sub }}>{t.range}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <Label>어떤 이야기예요?</Label>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {CATEGORIES.map(c => {
-                      const on = oneLine.cat === c.id;
-                      return (
-                        <button key={c.id} onClick={() => setOneLine(s => ({ ...s, cat: c.id }))} style={{ padding: "11px 20px", borderRadius: 22, fontSize: 14, fontWeight: 800, cursor: "pointer",
-                          border: on ? `2px solid ${c.border}` : "2px solid transparent", background: on ? c.bg : "#F2F2F4", color: on ? c.on : C.sub }}>{c.label}</button>
-                      );
-                    })}
-                  </div>
-                  <textarea value={oneLine.text} onChange={e => setOneLine(s => ({ ...s, text: e.target.value }))} placeholder={CATEGORIES.find(c => c.id === oneLine.cat)?.ph}
-                    style={{ width: "100%", marginTop: 12, minHeight: 80, borderRadius: 14, border: `1px solid ${C.line}`, background: C.card, padding: 14, fontSize: 14.5, resize: "none", outline: "none", fontFamily: F, boxSizing: "border-box" }} />
-                </>)}
-
-                {/* 뻐근한 부위 */}
-                {q.id === "sore" && (<>
-                  <p style={sub}>불편한 곳이 있으면 알려주세요. 없으면 넘어가도 돼요.</p>
-                  <Label>어디가 불편했어요?</Label>
-                  <ChipRow opts={PARTS} value={sore.part} onPick={v => setSore(s => ({ ...s, part: v }))} wrap />
-                  {sore.part && <>
-                    <Label>얼마나 불편했어요? ({sore.level})</Label>
-                    <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.warn }} />
-                    <Label>언제 그러셨어요?</Label>
-                    <ChipRow opts={WHEN_OPTS} value={sore.when} onPick={v => setSore(s => ({ ...s, when: v }))} wrap />
-                  </>}
-                </>)}
-
-                {/* 시간대 (숫자 스크롤) */}
-                {q.opts && (<>
-                  <p style={sub}>간편하게 골라주세요.</p>
-                  <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginTop: 6 }}>
-                    {q.opts.map(o => (
-                      <button key={o} onClick={() => setNumVals(s => ({ ...s, [q.id]: o }))} style={{ flex: "0 0 auto", minWidth: 58, padding: "16px 12px", borderRadius: 16, fontSize: 16, fontWeight: 800, cursor: "pointer",
-                        border: numVals[q.id] === o ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: numVals[q.id] === o ? C.ink : C.card, color: numVals[q.id] === o ? "#fff" : C.sub }}>
-                        {o}<span style={{ fontSize: 10, fontWeight: 600 }}> {q.unit}</span>
+              {/* ━━━ 1. 오늘의 말랑이 기분 ━━━ */}
+              <div style={{ background: C.card, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘의 말랑이 기분은</h2>
+                  {dayMood && !expanded.mood && moodData && (
+                    <Mallang v={moodData.v} size={42} />
+                  )}
+                </div>
+                {/* 펼쳐진 상태 */}
+                <div style={{ overflow: "hidden", maxHeight: expanded.mood ? 200 : 0, transition: "max-height 0.35s ease", marginTop: expanded.mood ? 8 : 0 }}>
+                  <p style={{ fontSize: 12, color: C.sub, margin: "0 0 8px" }}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                    {DAY_MOODS.map(m => (
+                      <button key={m.v} onClick={() => { setDayMood(m.v); setTimeout(() => setExpanded(e => ({ ...e, mood: false })), 300); }} style={faceBtn(dayMood === m.v)}>
+                        <Mallang v={m.v} size={42} />
+                        <span style={{ fontSize: 10, color: dayMood === m.v ? C.ink : C.sub, fontWeight: 700, marginTop: 3 }}>{m.label}</span>
                       </button>
                     ))}
                   </div>
-                </>)}
+                </div>
+                {/* 수정하기 버튼 */}
+                {dayMood && !expanded.mood && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                    <button onClick={() => toggle("mood")} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "4px 0" }}>수정하기 ▼</button>
+                  </div>
+                )}
+              </div>
 
-                <button onClick={nextOpt} style={primary}>{optIdx < activeOpts.length - 1 ? "다음" : "일기 정리하기"}</button>
-                <button onClick={nextOpt} style={ghost}>이건 건너뛸게요</button>
-              </>
-            );
-          })()}
+              {/* ━━━ 2. 앉아있던 시간 (아코디언) ━━━ */}
+              <AccordionCard title={sittingTitle()} expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={!!sittingVal}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {SITTING_OPTS.map(opt => {
+                    const on = sittingVal === opt.label;
+                    return <Chip key={opt.label} label={opt.label} on={on} onClick={() => handleSittingPick(opt)} />;
+                  })}
+                </div>
+              </AccordionCard>
 
-          {/* ── 작성중 (2초 로딩) ── */}
+              {/* ━━━ 3. 수면 시간 (아코디언) ━━━ */}
+              <AccordionCard title={sleepTitle()} expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {SLEEP_OPTS.map(opt => {
+                    const on = sleepVal === opt.label;
+                    return <Chip key={opt.label} label={opt.label} on={on} onClick={() => handleSleepPick(opt)} />;
+                  })}
+                </div>
+              </AccordionCard>
+
+              {/* ━━━ 4. 운동 (카테고리 + 아코디언) ━━━ */}
+              <AccordionCard title={exerciseTitle()} expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
+                <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>제일 많이 한 운동 최대 2가지를 골라주세요</div>
+                {/* 카테고리 가로 스크롤 탭 */}
+                <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 8 }}>
+                  {EXERCISE_CATS.map((cat, i) => (
+                    <button key={cat.name} onClick={() => setExerciseCatIdx(i)} style={{ flex: "0 0 auto", padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                      border: exerciseCatIdx === i ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: exerciseCatIdx === i ? C.ink : C.card, color: exerciseCatIdx === i ? "#fff" : C.sub }}>{cat.name}</button>
+                  ))}
+                  <button onClick={() => setExerciseCatIdx(99)} style={{ flex: "0 0 auto", padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                    border: exerciseCatIdx === 99 ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: exerciseCatIdx === 99 ? C.ink : C.card, color: exerciseCatIdx === 99 ? "#fff" : C.sub }}>기타</button>
+                </div>
+                {/* 종목 목록 */}
+                {exerciseCatIdx !== 99 && EXERCISE_CATS[exerciseCatIdx] && (
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 8 }}>
+                    {EXERCISE_CATS[exerciseCatIdx].items.map(type => {
+                      const on = exerciseTypes.includes(type);
+                      const disabled = !on && exerciseTypes.length >= 2;
+                      return <Chip key={type} label={type} on={on} onClick={() => toggleExerciseType(type)} disabled={disabled} />;
+                    })}
+                  </div>
+                )}
+                {/* 기타 입력 */}
+                {exerciseCatIdx === 99 && (
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <input value={customExercise} onChange={e => setCustomExercise(e.target.value)} placeholder="운동 이름 입력"
+                      onKeyDown={e => e.key === "Enter" && addCustomExercise()}
+                      style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: FONTS[font].css }} />
+                    <button onClick={addCustomExercise} disabled={exerciseTypes.length >= 2}
+                      style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: exerciseTypes.length >= 2 ? 0.4 : 1 }}>추가</button>
+                  </div>
+                )}
+                {/* 선택된 종목 표시 */}
+                {exerciseTypes.length > 0 && (
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                    {exerciseTypes.map(t => (
+                      <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 14, background: C.ink, color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                        {t} <button onClick={() => toggleExerciseType(t)} style={{ border: "none", background: "transparent", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* 각 종목별 시간 */}
+                {exerciseTypes.map(type => (
+                  <div key={type} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, marginBottom: 6 }}>{type} — 얼마나 했어요?</div>
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+                      {EXERCISE_TIME_LABELS.map(t => {
+                        const on = exerciseTimes[type] === t;
+                        return (
+                          <button key={t} onClick={() => {
+                            setExerciseTimes(s => ({ ...s, [type]: t }));
+                            // 모든 종목 시간 선택 완료 시 자동 접기
+                            const updated = { ...exerciseTimes, [type]: t };
+                            if (exerciseTypes.every(et => updated[et])) {
+                              setTimeout(() => setExpanded(e => ({ ...e, exercise: false })), 300);
+                            }
+                          }}
+                          style={{ flex: "0 0 auto", padding: "10px 14px", borderRadius: 14, fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
+                            border: on ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: on ? C.ink : C.card, color: on ? "#fff" : C.sub }}>{t}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </AccordionCard>
+
+              {/* ━━━ 5. 스트레칭·마사지 (카테고리 + 아코디언) ━━━ */}
+              <AccordionCard title={selfcareTitle()} expanded={expanded.selfcare} onToggle={() => toggle("selfcare")} done={selfcareComplete}>
+                <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>풀어준 부위 최대 3가지를 골라주세요</div>
+                {/* 카테고리 탭 */}
+                <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 8 }}>
+                  {SELFCARE_CATS.map((cat, i) => (
+                    <button key={cat.name} onClick={() => setSelfcareCatIdx(i)} style={{ flex: "0 0 auto", padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                      border: selfcareCatIdx === i ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: selfcareCatIdx === i ? C.ink : C.card, color: selfcareCatIdx === i ? "#fff" : C.sub }}>{cat.name}</button>
+                  ))}
+                  <button onClick={() => setSelfcareCatIdx(99)} style={{ flex: "0 0 auto", padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                    border: selfcareCatIdx === 99 ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: selfcareCatIdx === 99 ? C.ink : C.card, color: selfcareCatIdx === 99 ? "#fff" : C.sub }}>전신</button>
+                </div>
+                {/* 부위 목록 */}
+                {selfcareCatIdx !== 99 && SELFCARE_CATS[selfcareCatIdx] && (
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 8 }}>
+                    {SELFCARE_CATS[selfcareCatIdx].items.map(part => {
+                      const on = selfcareParts.includes(part);
+                      const disabled = !on && (selfcareParts.includes("전신") || selfcareParts.length >= 3);
+                      return <Chip key={part} label={part} on={on} onClick={() => toggleSelfcarePart(part)} disabled={disabled} />;
+                    })}
+                  </div>
+                )}
+                {/* 전신 */}
+                {selfcareCatIdx === 99 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <Chip label="전신" on={selfcareParts.includes("전신")} onClick={() => toggleSelfcarePart("전신")} />
+                    {selfcareParts.includes("전신") && <p style={{ fontSize: 11, color: C.sub, marginTop: 6 }}>전신을 선택하면 다른 부위는 선택할 수 없어요.</p>}
+                  </div>
+                )}
+                {/* 선택된 부위 표시 */}
+                {selfcareParts.length > 0 && (
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                    {selfcareParts.map(p => (
+                      <span key={p} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 14, background: C.ink, color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                        {p} <button onClick={() => toggleSelfcarePart(p)} style={{ border: "none", background: "transparent", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* 총 시간 */}
+                {selfcareParts.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, marginBottom: 6 }}>총 얼마나 했어요?</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {SELFCARE_TIME_LABELS.map(t => {
+                        const on = selfcareTime === t;
+                        return (
+                          <button key={t} onClick={() => {
+                            setSelfcareTime(t);
+                            setTimeout(() => setExpanded(e => ({ ...e, selfcare: false })), 300);
+                          }}
+                          style={{ flex: 1, padding: "10px 8px", borderRadius: 14, fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
+                            border: on ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: on ? C.ink : C.card, color: on ? "#fff" : C.sub }}>{t}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </AccordionCard>
+
+              {/* ━━━ 6. 한 줄 일기 ━━━ */}
+              <Card title="✏️ 한 줄 일기">
+                <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+                  {TIMESLOTS.map(t => {
+                    const on = oneLine.slot === t.label;
+                    return <Chip key={t.label} label={t.label} on={on} onClick={() => setOneLine(s => ({ ...s, slot: t.label }))} />;
+                  })}
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  {CATEGORIES.map(c => {
+                    const on = oneLine.cat === c.id;
+                    return (
+                      <button key={c.id} onClick={() => setOneLine(s => ({ ...s, cat: c.id }))} style={{ padding: "8px 14px", borderRadius: 16, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                        border: on ? `2px solid ${c.border}` : "2px solid transparent", background: on ? c.bg : "#F2F2F4", color: on ? c.on : C.sub }}>{c.label}</button>
+                    );
+                  })}
+                </div>
+                <textarea value={oneLine.text} onChange={e => setOneLine(s => ({ ...s, text: e.target.value }))} placeholder={CATEGORIES.find(c => c.id === oneLine.cat)?.ph}
+                  style={{ width: "100%", marginTop: 12, minHeight: 80, borderRadius: 14, border: `1px solid ${C.line}`, background: "#F9F9F9", padding: 14, fontSize: 14, resize: "none", outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+              </Card>
+
+              {/* ━━━ 7. 뻐근한 부위 ━━━ */}
+              <Card title="🐢 뻐근한 부위">
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  {PARTS.map(p => <Chip key={p} label={p} on={sore.part === p} onClick={() => setSore(s => ({ ...s, part: s.part === p ? null : p }))} />)}
+                </div>
+                {sore.part && <>
+                  <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
+                  <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.ink }} />
+                  <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>언제 그러셨어요?</div>
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                    {WHEN_OPTS.map(w => <Chip key={w} label={w} on={sore.when === w} onClick={() => setSore(s => ({ ...s, when: w }))} />)}
+                  </div>
+                </>}
+              </Card>
+            </>
+          )}
+
+          {/* ── 작성중 ── */}
           {phase === "writing" && (
             <div style={{ minHeight: "70vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
               <div style={{ fontSize: 52, animation: "pulse 1.2s ease-in-out infinite" }}>📝</div>
@@ -283,8 +515,8 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
           {phase === "done" && (
             <div style={{ textAlign: "center", paddingTop: 20 }}>
               <div style={{ margin: "10px auto" }}><Char big /></div>
-              <h1 style={{ ...h1, textAlign: "center" }}>오늘도 잘 채웠어요</h1>
-              <p style={{ ...sub, textAlign: "center" }}>{charName}이 답장을 남겼어요. 조금 뒤 일기장에서 만나요 📩</p>
+              <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", textAlign: "center" }}>오늘도 잘 채웠어요</h1>
+              <p style={{ fontSize: 14, color: C.sub, margin: "0 0 18px", lineHeight: 1.55, textAlign: "center" }}>{charName}이 답장을 남겼어요. 조금 뒤 일기장에서 만나요 📩</p>
               <div style={{ background: C.pinkSoft, border: `1px solid ${C.line}`, borderRadius: 18, padding: 16, margin: "20px 0", textAlign: "left", display: "flex", gap: 12 }}>
                 <Char />
                 <div style={{ fontSize: 14, lineHeight: 1.6 }}>
@@ -292,10 +524,17 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
                 </div>
               </div>
               <div style={{ fontSize: 13, color: C.sub, marginBottom: 20 }}>📊 3일만 쌓이면, 한 주를 정리한 리포트를 받아볼 수 있어요</div>
-              <button onClick={finishFlow} style={primary}>오늘 기록 마치기</button>
+              <button onClick={finishFlow} style={primaryBtn}>오늘 기록 마치기</button>
             </div>
           )}
         </div>
+
+        {/* ── 하단 고정 CTA 버튼 ── */}
+        {phase === "form" && (
+          <div style={{ flexShrink: 0, padding: "10px 14px 20px", background: `linear-gradient(transparent, ${C.bg} 20%)`, borderTop: `1px solid ${C.line}` }}>
+            <button onClick={goDiary} style={{ ...primaryBtn, background: "#51A351", color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>📔 이대로 저장하기</button>
+          </div>
+        )}
 
         {/* ── 전체화면 일기장 (diary) ── */}
         {phase === "diary" && (
@@ -309,11 +548,10 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
               </button>
               <button onClick={() => setShowSettings(true)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", fontSize: 19, cursor: "pointer", opacity: 0.7 }}>⚙️</button>
             </div>
-
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "6px 18px 14px", gap: 10, borderBottom: `1px solid ${PAPER_COLORS[paper].line}` }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6px 18px 14px", gap: 10, borderBottom: `1px solid ${PAPER_COLORS[paper].line}` }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 52 }}>
-                <span style={{ fontSize: 26 }}>{DAY_MOODS.find(m => m.v === dayMood)?.face}</span>
-                <span style={{ fontSize: 10, color: C.sub, fontWeight: 700 }}>{DAY_MOODS.find(m => m.v === dayMood)?.label}</span>
+                {moodData && <Mallang v={moodData.v} size={26} />}
+                <span style={{ fontSize: 10, color: C.sub, fontWeight: 700 }}>{moodData?.label}</span>
               </div>
               <div style={{ flex: 1, textAlign: "center", paddingTop: 2 }}>
                 {editMode ? (
@@ -323,12 +561,7 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
                   <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, lineHeight: 1.3 }}>{diaryTitle}</div>
                 )}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 52 }}>
-                <span style={{ fontSize: 26 }}>{WORK_LEVELS.find(w => w.v === workLevel)?.icon}</span>
-                <span style={{ fontSize: 10, color: C.sub, fontWeight: 700 }}>{WORK_LEVELS.find(w => w.v === workLevel)?.label}</span>
-              </div>
             </div>
-
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px",
               backgroundImage: `repeating-linear-gradient(transparent 0 31px, ${PAPER_COLORS[paper].line} 31px 32px)`, lineHeight: "32px" }}>
               {editMode ? (
@@ -338,12 +571,10 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
                 <p style={{ fontSize: 15.5, lineHeight: "32px", margin: 0, color: C.ink, fontFamily: F, whiteSpace: "pre-wrap" }}>{diaryBody}</p>
               )}
             </div>
-
             <div style={{ padding: "12px 18px 20px", borderTop: `1px solid ${PAPER_COLORS[paper].line}` }}>
               {!editMode && <p style={{ fontSize: 12, color: C.sub, textAlign: "center", margin: "0 0 10px" }}>고치고 싶으면 왼쪽 위 '고쳐주기'를 눌러 직접 수정할 수 있어요.</p>}
-              <button onClick={() => setPhase("done")} style={{ ...primary, marginTop: 0 }}>맞아요, 이렇게 기억해주세요</button>
+              <button onClick={() => setPhase("done")} style={{ ...primaryBtn, marginTop: 0 }}>맞아요, 이렇게 기억해주세요</button>
             </div>
-
             {showDatePick && (
               <div style={{ position: "absolute", top: 52, left: "50%", transform: "translateX(-50%)", background: C.card, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", padding: 8, zIndex: 40, minWidth: 200 }}>
                 {Array.from({ length: 7 }).map((_, i) => {
@@ -367,8 +598,6 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: C.bg, borderRadius: "24px 24px 0 0", padding: "20px 20px 30px", maxHeight: "85vh", overflowY: "auto" }}>
               <div style={{ width: 40, height: 4, background: C.line, borderRadius: 4, margin: "0 auto 18px" }} />
               <h2 style={{ fontSize: 19, fontWeight: 800, margin: "0 0 20px" }}>환경 설정</h2>
-
-              {/* 글씨체 */}
               <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>글씨체</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 24 }}>
                 {Object.entries(FONTS).map(([k, v]) => (
@@ -376,8 +605,6 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
                     border: font === k ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: font === k ? C.ink : C.card, color: font === k ? "#fff" : C.ink }}>{v.label}</button>
                 ))}
               </div>
-
-              {/* 일기장 색상 */}
               <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>일기장 색상</div>
               <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
                 {Object.entries(PAPER_COLORS).map(([k, v]) => (
@@ -387,25 +614,7 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
                   </button>
                 ))}
               </div>
-
-              {/* 선택 기록 항목 +/- */}
-              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>선택 기록 항목</div>
-              <div style={{ fontSize: 12, color: C.sub, marginBottom: 12 }}>매일 기록할 항목을 켜고 끌 수 있어요.</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {OPTIONAL_QUESTIONS.map(q => {
-                  const on = enabledQ.includes(q.id);
-                  return (
-                    <div key={q.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", background: C.card, borderRadius: 14, border: `1px solid ${C.line}` }}>
-                      <span style={{ fontSize: 14.5, fontWeight: 700 }}>{q.emoji} {q.title}</span>
-                      <button onClick={() => setEnabledQ(e => on ? e.filter(x => x !== q.id) : [...e, q.id])}
-                        style={{ width: 30, height: 30, borderRadius: "50%", border: "none", cursor: "pointer", fontSize: 18, fontWeight: 800,
-                          background: on ? C.ink : C.accentSoft, color: on ? "#fff" : C.pink }}>{on ? "✕" : "+"}</button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button onClick={() => setShowSettings(false)} style={{ ...primary, marginTop: 24 }}>완료</button>
+              <button onClick={() => setShowSettings(false)} style={{ ...primaryBtn, marginTop: 24 }}>완료</button>
             </div>
           </div>
         )}
@@ -414,7 +623,55 @@ export default function DiaryWriteFlow({ onClose, charName = "AI 캐릭터", ini
   );
 }
 
-// 일기 제목 mock 생성
+// ============================================
+// 헬퍼 컴포넌트
+// ============================================
+
+function AccordionCard({ title, expanded, onToggle, done, children }) {
+  return (
+    // flexShrink:0 필수 — 부모가 flex-direction:column인데 이 div에 overflow:hidden이 걸려 있으면
+    // 플렉스 아이템의 자동 최소 높이가 auto 대신 0이 되어 버려서, 브라우저가 이 카드를 통째로
+    // height:0으로 찌그러뜨리는 문제가 있었다(앉은 시간/수면/운동/스트레칭 카드가 안 보이고 클릭도 안 되던 원인).
+    <div style={{ background: C.card, borderRadius: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.02)", overflow: "hidden", flexShrink: 0 }}>
+      <button onClick={onToggle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: C.ink, lineHeight: 1.4, flex: 1, paddingRight: 8 }}>{title}</span>
+        <span style={{ fontSize: 12, color: done ? "#51A351" : C.sub, fontWeight: 700, flexShrink: 0, transition: "transform .2s", transform: expanded ? "rotate(180deg)" : "rotate(0)" }}>
+          {done && !expanded ? "✓" : "▼"}
+        </span>
+      </button>
+      <div style={{ overflow: "hidden", maxHeight: expanded ? 600 : 0, transition: "max-height 0.35s ease" }}>
+        <div style={{ padding: "0 24px 20px" }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Card({ title, children }) {
+  return (
+    <div style={{ background: C.card, borderRadius: 20, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: "0 0 16px" }}>{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function Chip({ label, on, onClick, disabled }) {
+  return (
+    <button onClick={disabled ? undefined : onClick} style={{ flex: "0 0 auto", padding: "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
+      border: on ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: on ? C.ink : C.card, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}>
+      {label}
+    </button>
+  );
+}
+
+function Char({ big }) { const s = big ? 80 : 38; return <div style={{ width: s, height: s, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: big ? 40 : 19, flexShrink: 0 }}>🐧</div>; }
+
+// ============================================
+// Mock 일기 생성
+// ============================================
+
 function makeTitle({ dayMood, sore, oneLine }) {
   if (sore.part) return `${sore.part}가 뻐근한 하루`;
   if (oneLine.text.trim()) return oneLine.text.trim().slice(0, 14) + (oneLine.text.length > 14 ? "…" : "");
@@ -422,56 +679,31 @@ function makeTitle({ dayMood, sore, oneLine }) {
   return t || "오늘의 일기";
 }
 
-// AI 일기 mock
-function buildDiary({ dayMood, workLevel, oneLine, sore, numVals, enabledQ }) {
+function buildDiary({ dayMood, oneLine, sore, sittingVal, sleepVal, exerciseTypes, exerciseTimes, selfcareParts, selfcareTime }) {
   const parts = [];
   const moodTxt = { 1: "많이 힘든", 2: "조금 지친", 3: "그저 그런", 4: "괜찮은", 5: "기분 좋은" }[dayMood];
-  const workTxt = (WORK_LEVELS.find(w => w.v === workLevel)?.label || "").replace(/어요$/, "");
-  parts.push(`오늘은 ${moodTxt} 하루였어요. 일이든 공부든 ${workTxt}고요.`);
-  if (enabledQ.includes("oneline") && oneLine.text.trim()) parts.push(`${oneLine.slot}엔 ${oneLine.text.trim()}.`);
-  if (enabledQ.includes("sore") && sore.part) parts.push(`${sore.part}가 ${sore.when || "하루 종일"} 뻐근했어요 (${sore.level}/10).`);
-  const timeItems = OPTIONAL_QUESTIONS.filter(q => q.opts && enabledQ.includes(q.id));
-  if (timeItems.length) parts.push(timeItems.map(q => `${q.short} ${numVals[q.id]}${q.unit}`).join(", ") + ".");
+  parts.push(`오늘은 ${moodTxt} 하루였어요.`);
+
+  if (sittingVal) parts.push(`오늘 ${sittingVal} 앉아있었어요.`);
+  if (sleepVal) parts.push(`어젯밤엔 ${sleepVal} 잤어요.`);
+
+  if (exerciseTypes.length > 0) {
+    const exDetails = exerciseTypes.map(t => exerciseTimes[t] ? `${t} ${exerciseTimes[t]}` : t).join(", ");
+    parts.push(`운동은 ${exDetails} 했어요.`);
+  }
+  if (selfcareParts.length > 0) {
+    parts.push(`${selfcareParts.join(", ")}를 스트레칭·마사지했어요${selfcareTime ? ` (총 ${selfcareTime})` : ""}.`);
+  }
+  if (oneLine.text.trim()) parts.push(`${oneLine.slot}엔 ${oneLine.text.trim()}.`);
+  if (sore.part) parts.push(`${sore.part}가 ${sore.when || "하루 종일"} 뻐근했어요 (${sore.level}/10).`);
   parts.push("오늘도 나를 채운 하루였어요. 잘하고 있어요 🌿");
   return parts.join(" ");
 }
 
-// 표정/아이콘 한 줄 — image가 있으면(무드 스탬프) 문구가 이미지에 포함돼 있어 라벨은 생략
-function FaceRow({ items, value, onPick, render }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginTop: 8 }}>
-      {items.map(m => (
-        <button key={m.v} onClick={() => onPick(m.v)} style={faceBtn(value === m.v)}>
-          {m.image ? (
-            <img src={m.image} alt={m.label} style={{ width: 48, height: 48, objectFit: "contain" }} />
-          ) : (
-            <>
-              <span style={{ fontSize: 28 }}>{render(m)}</span>
-              <span style={{ fontSize: 10.5, color: value === m.v ? C.ink : C.sub, fontWeight: 700 }}>{m.label}</span>
-            </>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
-function ChipRow({ opts, value, onPick, wrap }) {
-  return (
-    <div style={{ display: "flex", gap: 7, flexWrap: wrap ? "wrap" : "nowrap", overflowX: wrap ? "visible" : "auto", paddingBottom: 2 }}>
-      {opts.map(o => (
-        <button key={o} onClick={() => onPick(o)} style={{ flex: "0 0 auto", padding: "9px 15px", borderRadius: 20, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-          border: value === o ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: value === o ? C.ink : C.card, color: value === o ? "#fff" : C.sub }}>{o}</button>
-      ))}
-    </div>
-  );
-}
-function Label({ children }) { return <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{children}</div>; }
-function Char({ big }) { const s = big ? 80 : 38; return <div style={{ width: s, height: s, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: big ? 40 : 19, flexShrink: 0 }}>🐧</div>; }
-function Badge({ children }) { return <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.pinkSoft, color: C.pink, fontSize: 12.5, fontWeight: 800, padding: "7px 14px", borderRadius: 20, marginBottom: 16 }}>📝 {children}</div>; }
+// ============================================
+// 스타일
+// ============================================
 
-const faceBtn = (on) => ({ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "16px 0", borderRadius: 20, cursor: "pointer", transition: "all .15s",
+const faceBtn = (on) => ({ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", borderRadius: 16, cursor: "pointer", transition: "all .15s",
   border: on ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: "#fff", boxShadow: on ? "0 2px 12px rgba(0,0,0,0.08)" : "none" });
-const h1 = { fontSize: 25, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.32, margin: "0 0 10px" };
-const sub = { fontSize: 14, color: C.sub, margin: "0 0 18px", lineHeight: 1.55 };
-const primary = { width: "100%", marginTop: 26, padding: 17, borderRadius: 16, border: "none", background: C.ink, color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" };
-const ghost = { width: "100%", marginTop: 10, padding: 14, borderRadius: 16, border: "none", background: "transparent", color: C.sub, fontSize: 14, fontWeight: 600, cursor: "pointer" };
+const primaryBtn = { width: "100%", padding: 17, borderRadius: 16, border: "none", background: C.ink, color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" };
