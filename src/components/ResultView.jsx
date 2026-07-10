@@ -24,7 +24,7 @@ const getKoreanName = (code) => {
 };
 
 // BMTI 유형별 정보
-const BMTI_INFO = {
+export const BMTI_INFO = {
   'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '일단 몸으로 부딪혀 보고,\n곁에서 응원해주면 더 힘나는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
   'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '말보다는 행동으로\n결과를 보여주는 사람', bestMatch: 'OCDM', diffTempo: 'ALQM', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
   'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '궁금한 건 못 참지만\n마음까지 챙기는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },

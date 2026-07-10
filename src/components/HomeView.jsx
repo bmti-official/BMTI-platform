@@ -1,8 +1,10 @@
 /* eslint-disable */
 import { useState, useRef, useLayoutEffect } from 'react';
-import { CHARACTERS } from '../data';
+import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import { supabase } from '../lib/supabaseClient';
+import { BMTI_INFO } from './ResultView';
+import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 
 // 줄바꿈 대신, 컨테이너 폭에 안 맞으면 폰트 크기를 줄여 한 줄에 맞추는 컴포넌트.
 // 모바일에서 <br/>로 끊어둔 줄이 폭을 넘어가 엉뚱한 지점에서 또 줄바꿈되던 문제를 해결하기 위해 씀.
@@ -147,6 +149,11 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
     }
   };
 
+  const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
+  const charData = CHARACTERS.find(c => c.id === axisCode);
+  const charInfo = BMTI_INFO[axisCode];
+  const hasLoggedToday = !!getEntryForDate(todayISO());
+
   return (
     <div className="fade-in pb-32">
       {/* Full-screen Modal */}
@@ -200,25 +207,49 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
             </p>
           </div>
         ) : (
-          <>
-            <button
-              onClick={handleRetakeQuiz}
-              className="flex-1 max-w-[200px] bg-white border-2 border-black text-black text-[min(3.5vw,15px)] md:text-lg whitespace-nowrap font-medium px-2 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-50 transition-all duration-300 flex items-center justify-center"
-            >
-              다시 검사하기
-            </button>
-            <button
-              onClick={() => setView('result')}
-              className="flex-1 max-w-[200px] bg-black text-white text-[min(3.5vw,15px)] md:text-lg whitespace-nowrap font-medium px-2 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center"
-            >
-              나의 BMTI 유형
-            </button>
-          </>
+          <div className="w-full max-w-md flex flex-col gap-4">
+            {/* 내 BMTI 유형 미리보기 */}
+            <div className="bg-[#F7F6F3] rounded-[2rem] p-6 md:p-8">
+              <p className="text-xs md:text-sm font-bold text-gray-400 mb-4">내 BMTI 유형</p>
+              <div className="flex items-center gap-4 mb-5">
+                <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
+                  {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || ''}`} />}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="text-2xl md:text-3xl font-black tracking-tight">{axisCode}</span>
+                    <span className="bg-pink-100 text-pink-600 text-xs md:text-sm font-bold px-2.5 py-1 rounded-full whitespace-nowrap">{CHARACTER_NAMES[axisCode]}</span>
+                  </div>
+                  <p className="text-gray-500 text-sm md:text-base leading-snug whitespace-pre-line break-keep">{charInfo?.catchphrase}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setView('result')}
+                className="w-full bg-black text-white text-[min(3.5vw,15px)] md:text-lg font-bold py-4 rounded-2xl hover:bg-gray-900 transition-colors"
+              >
+                내 결과 자세히 보기
+              </button>
+            </div>
+
+            {/* 오늘 하루일기 기록 유도 — 오늘 이미 기록했으면 숨김 */}
+            {!hasLoggedToday && (
+              <button
+                onClick={() => setView('aichat')}
+                className="w-full bg-[#FFEDF3] hover:bg-[#FCE3EC] rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors"
+              >
+                <div>
+                  <p className="font-black text-gray-900 mb-1">오늘 기록, 아직이에요</p>
+                  <p className="text-sm text-pink-400 font-medium">10초면 충분해요</p>
+                </div>
+                <span className="text-2xl text-gray-300">›</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       {/* 16 Characters Scroll Section */}
-      <section className="w-full overflow-hidden mb-24 relative">
+      <section className="w-full overflow-hidden mb-6 relative">
         {/* Gradient Fade Edges */}
         <div className="absolute left-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
         <div className="absolute right-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
@@ -246,6 +277,17 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
           ))}
         </div>
       </section>
+
+      {bmtiCode && (
+        <div className="text-center mb-24">
+          <button
+            onClick={handleRetakeQuiz}
+            className="text-gray-400 hover:text-gray-600 text-xs md:text-sm font-medium underline underline-offset-4 transition-colors"
+          >
+            다시 검사하기
+          </button>
+        </div>
+      )}
 
       {/* Removed Cards Section */}
 
