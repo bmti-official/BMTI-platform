@@ -191,7 +191,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
 
       {/* CTA Buttons */}
       <div className="px-6 flex justify-center gap-4 fade-in mb-16">
-        {(!bmtiCode) ? (
+        {(!isLoggedIn || !bmtiCode) ? (
           <div className="flex flex-col items-center w-full max-w-sm">
             <button
               onClick={() => setView('quiz')}
@@ -278,7 +278,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
         </div>
       </section>
 
-      {bmtiCode && (
+      {isLoggedIn && bmtiCode && (
         <div className="text-center mb-24">
           <button
             onClick={handleRetakeQuiz}
