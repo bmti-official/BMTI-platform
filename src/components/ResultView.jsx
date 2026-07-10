@@ -2,16 +2,9 @@
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { supabase } from '../lib/supabaseClient';
 import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } from '../customResultData';
-
-const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
-  <svg viewBox="0 0 24 24" className={className}>
-    <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" />
-  </svg>
-);
 
 const getKoreanName = (code) => {
   const map = {
@@ -109,7 +102,7 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
   );
 };
 
-const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCode, bmtiAnswers }) => {
+const ResultView = ({ setView, quizCompleted, bmtiCode, bmtiAnswers }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
   const printHeaderRef = useRef(null);
   const printTendencyRefs = useRef([]);
@@ -124,37 +117,6 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
   const [expandDiffTempo, setExpandDiffTempo] = useState(false);
   const [openTendencies, setOpenTendencies] = useState({});
   const [openDetailSections, setOpenDetailSections] = useState({});
-
-  const [appNotification, setAppNotification] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bmti_user');
-      return saved ? JSON.parse(saved).appNotification : false;
-    } catch (e) {
-      return false;
-    }
-  });
-
-  const handleToggleAppNotification = async () => {
-    if (!isLoggedIn) {
-      alert("알림 받기를 위해선 카카오톡 로그인/회원가입이 필요합니다.");
-      if (setIsLoggedIn) setIsLoggedIn(true);
-      return;
-    }
-    if (appNotification) return; // 한번 켜면 끌 수 없음
-    setAppNotification(true);
-    try {
-      const saved = localStorage.getItem('bmti_user');
-      const userObj = saved ? JSON.parse(saved) : {};
-      userObj.appNotification = true;
-      localStorage.setItem('bmti_user', JSON.stringify(userObj));
-      
-      if (userObj.id) {
-        await supabase.from('pre_registrations').insert({ user_id: userObj.id });
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   // Parse BMTI code
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
@@ -473,78 +435,10 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
               </button>
             </div>
 
-            {/* 2. 'BMTI: 운동일기' 앱 사전 알림 (hero CTA) — 이미 신청했다면 마이페이지에서만 확인 가능하도록 숨김 */}
-            {!appNotification && (
-              <div
-                className="w-full bg-black p-8 rounded-3xl flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden"
-              >
-                <div className="flex flex-col items-center z-10 w-full">
-                  <span className="text-4xl mb-4">🎁</span>
-                  <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">☃️ 올 겨울 출시 예정!! 🎅🏻</span>
-                  <span className="text-white text-3xl md:text-4xl font-black my-3">BMTI: 운동일기</span>
-                  <span className="font-bold text-white text-sm md:text-base mb-1 leading-snug break-keep">어플 런칭 시</span>
-                  <span className="text-[#c0ff00] text-[18px] md:text-[20px] font-black mt-1 mb-6">50% 할인 쿠폰 100% 증정!</span>
-
-                  {/* Toggle Switch */}
-                  <button
-                    onClick={handleToggleAppNotification}
-                    className="flex items-center justify-between w-full max-w-[260px] bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
-                  >
-                    <span className="font-bold text-sm md:text-base break-keep text-white text-left leading-tight">
-                      사전 알림 신청으로<br/>할인 쿠폰 받기 !
-                    </span>
-                    <div className="w-12 h-7 rounded-full flex-shrink-0 relative bg-gray-500">
-                      <div className="w-5 h-5 bg-white rounded-full absolute top-1 left-1 shadow-sm" />
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 3 & 4. BMTI 과몰입 / BMTI 일기장 작성 (secondary pair) */}
-            <div className="w-full grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setView('board')}
-                className="bg-[#fdf0f3] hover:bg-[#fce4e9] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#f7d7de]"
-              >
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💌</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 과몰입</span>
-              </button>
-              <button
-                onClick={() => setView('aichat')}
-                className="bg-[#eef4fb] hover:bg-[#e0ecf8] p-5 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#d7e6f7]"
-              >
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📝</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-sm leading-snug break-keep">BMTI 하루일기</span>
-              </button>
-            </div>
           </div>
 
         </div>
       </div>
-      {!isLoggedIn ? (
-        /* Detailed Result Locked CTA */
-        <div className="bg-[#fcfcfc] border border-gray-200 rounded-[2rem] p-8 md:p-10 text-center shadow-sm">
-          <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-            </svg>
-          </div>
-          <h4 className="text-2xl font-bold mb-3 text-gray-900">전체 결과지가 궁금하신가요?</h4>
-          <p className="text-gray-500 text-sm md:text-base mb-8 break-keep">
-            움직임 성향을 보다 자세하게 확인 후 주변 친구들과 소통하세요!
-          </p>
-
-          <button
-            id="kakao-login-unlock"
-            onClick={() => setIsLoggedIn(true)}
-            className="bg-[#FEE500] text-[#000000] text-base md:text-lg font-semibold px-8 py-4 rounded-full shadow hover:bg-[#F4DC00] transition-all duration-300 w-full flex items-center justify-center gap-3"
-          >
-            <KakaoIcon className="w-6 h-6 fill-current" />
-            카카오톡으로 간편 로그인/회원가입
-          </button>
-        </div>
-      ) : (
         <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
           {/* Custom Instructor Guide Section */}
           <div className="border-b border-gray-100 pb-12 text-left">
@@ -762,7 +656,6 @@ const ResultView = ({ setView, quizCompleted, isLoggedIn, setIsLoggedIn, bmtiCod
             </div>
           </div>
         </div>
-      )}
 
       {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) =====
           섹션마다 별도 ref로 캡처해 PDF에서 각 블록이 통째로 다음 페이지로 넘어가도록 한다. */}

@@ -41,7 +41,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const [showCategory, setShowCategory] = useState(false);
   const tabs = [
     { id: 'home', label: '🧬 BMTI' },
-    { id: 'aichat', label: '✏️ BMTI 하루일기' },
+    { id: 'aichat', label: '📝 BMTI 운동일기' },
     { id: 'board', label: '💌 BMTI 과몰입' },
     { id: 'bodycheck', label: '☘️ BMTI 라이브' }
   ];
@@ -123,14 +123,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             ) : (
               <div
                 id="login-button"
-                className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors cursor-pointer"
+                className="flex items-center cursor-pointer"
                 onClick={() => setIsLoggedIn(true)}
               >
-                <div className="w-5 h-5 bg-[#FEE500] rounded-full flex items-center justify-center">
-                  <KakaoIcon className="w-3 h-3 fill-black" />
+                <div className="w-8 h-8 bg-[#FEE500] rounded-full flex items-center justify-center hover:bg-[#F4DC00] transition-colors">
+                  <KakaoIcon className="w-4 h-4 fill-black" />
                 </div>
-                <span className="hidden sm:inline">카카오톡 간편 로그인/회원가입</span>
-                <span className="sm:hidden">로그인</span>
               </div>
             )}
           </div>
