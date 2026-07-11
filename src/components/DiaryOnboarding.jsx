@@ -99,6 +99,9 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
 
             {step.id === "intro" ? (
               <div style={{ textAlign: "center" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 22, animation: "pop .5s ease-out" }}>
+                  <Mallang v={5} size={96} />
+                </div>
                 <h1 style={{ fontSize: "clamp(26px,6.5vw,32px)", fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.03em", margin: 0 }}>
                   {step.title}
                 </h1>

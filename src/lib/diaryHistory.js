@@ -29,3 +29,31 @@ export const saveDiaryEntry = (dateISO, mood) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
   return history;
 };
+
+// ── 주간/월간 리포트 활성화 조건 ──
+// 주간 리포트: 마지막으로 받은 시점(없으면 처음부터) 이후 컨디션 체크 7회 이상 쌓이면 활성.
+const WEEKLY_BASELINE_KEY = 'bmti_weekly_report_baseline';
+
+export const getWeeklyReportBaseline = () => {
+  const v = localStorage.getItem(WEEKLY_BASELINE_KEY);
+  return v ? parseInt(v, 10) : 0;
+};
+
+export const setWeeklyReportBaseline = (count) => {
+  localStorage.setItem(WEEKLY_BASELINE_KEY, String(count));
+};
+
+export const getEntriesSinceWeeklyBaseline = () => {
+  return getDiaryHistory().length - getWeeklyReportBaseline();
+};
+
+export const canClaimWeeklyReport = () => getEntriesSinceWeeklyBaseline() >= 7;
+
+// 월간 리포트: 지난달 총 컨디션 체크가 10회 이상이면 활성 (매달 자연스럽게 갱신됨).
+export const getPrevMonthEntryCount = (baseDate = new Date()) => {
+  const prev = new Date(baseDate.getFullYear(), baseDate.getMonth() - 1, 1);
+  const key = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+  return getDiaryHistory().filter(e => e.date.startsWith(key)).length;
+};
+
+export const canClaimMonthlyReport = () => getPrevMonthEntryCount() >= 10;

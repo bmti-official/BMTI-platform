@@ -13,19 +13,6 @@ const C = {
   warn: "#FF6B6B", yellow: "#FFF3C4", pink: "#FF6B9D", pinkSoft: "#FEE7EF",
 };
 
-const PAPER_COLORS = {
-  white: { label: "화이트", bg: "#FFFFFF", line: "#F0F0F0" },
-  pink: { label: "핑크", bg: "#FFF5F8", line: "#FBE0EC" },
-  ivory: { label: "아이보리", bg: "#FBF7EE", line: "#EFE7D5" },
-  green: { label: "그린", bg: "#F2F8F3", line: "#DDEBDF" },
-};
-const FONTS = {
-  round: { label: "둥근체", css: "'Pretendard', sans-serif" },
-  serif: { label: "명조체", css: "'Nanum Myeongjo', serif" },
-  hand: { label: "손글씨", css: "'Gaegu', cursive" },
-  gothic: { label: "고딕체", css: "'Noto Sans KR', sans-serif" },
-};
-
 // ── 앉아있던 시간 (통계적으로 3시간 미만 / 10시간 이상이 극단값) ──
 const SITTING_OPTS = [
   { label: "3시간 미만", title: "3시간 미만" },
@@ -88,13 +75,8 @@ function eulReul(word) {
 // ============================================
 // 메인 컴포넌트
 // ============================================
-export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐릭터", initialPhase = "form", initialDayMood = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
-  const [showSettings, setShowSettings] = useState(false);
-
-  // 설정
-  const [font, setFont] = useState("round");
-  const [paper, setPaper] = useState("white");
 
   // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
@@ -120,7 +102,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐�
   // 뻐근한 부위
   const [sore, setSore] = useState({ part: null, level: 5, when: null });
 
-  const [selDate, setSelDate] = useState(new Date());
+  const [selDate, setSelDate] = useState(() => targetDate ? new Date(`${targetDate}T00:00:00`) : new Date());
   const [showDatePick, setShowDatePick] = useState(false);
 
   // 아코디언 (true = 펼쳐진 상태)
@@ -133,42 +115,17 @@ export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐�
   });
   const toggle = (key) => setExpanded(e => ({ ...e, [key]: !e[key] }));
 
-  const F = FONTS[font].css;
-
-  // 일기 제목 & 직접 수정
-  const [diaryTitle, setDiaryTitle] = useState("");
-  const [editMode, setEditMode] = useState(false);
-  const [diaryBody, setDiaryBody] = useState("");
-
-  // writing → 2초 후 diary
-  const goDiary = () => {
-    setPhase("writing");
-    setTimeout(() => {
-      setDiaryTitle(makeTitle({ dayMood, sore, oneLine }));
-      setDiaryBody(buildDiary({ dayMood, oneLine, sore, sittingVal, sleepVal, exerciseTypes, exerciseTimes, selfcareParts, selfcareTime }));
-      setPhase("diary");
-    }, 2000);
-  };
+  const F = "'Pretendard', -apple-system, sans-serif";
 
   const goBack = () => {
-    if (phase === "form") { if (onClose) onClose(); }
-    else if (phase === "done") setPhase("diary");
+    if (phase === "form" && onClose) onClose();
   };
 
-  const reset = () => {
-    setPhase("form"); setDayMood(null);
-    setSittingVal(null); setSleepVal(null);
-    setExerciseTypes([]); setExerciseTimes({}); setCustomExercise("");
-    setSelfcareParts([]); setSelfcareTime(null);
-    setOneLine({ slot: "오후", cat: "daily", text: "" }); setSore({ part: null, level: 5, when: null });
-    setDiaryTitle(""); setEditMode(false);
-    setExpanded({ mood: true, sitting: true, sleep: true, exercise: true, selfcare: true });
-  };
-
+  // 기록 저장 → 3초짜리 완료 팝업 → 캘린더로 복귀
   const finishFlow = () => {
     if (onFinish) onFinish(dayMood);
-    reset();
-    if (onClose) onClose();
+    setPhase("celebrate");
+    setTimeout(() => { if (onClose) onClose(); }, 3000);
   };
 
   // ── 운동 종목 토글 (최대 2) ──
@@ -255,17 +212,16 @@ export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐�
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: C.bg, display: "flex", justifyContent: "center", fontFamily: F, color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, height: "100%", background: phase === "diary" || phase === "writing" ? PAPER_COLORS[paper].bg : C.bg, position: "relative", display: "flex", flexDirection: "column" }}>
+      <div style={{ width: "100%", maxWidth: 420, height: "100%", background: C.bg, position: "relative", display: "flex", flexDirection: "column" }}>
 
         {/* ── 헤더 ── */}
-        {phase !== "diary" && phase !== "writing" && phase !== "done" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: C.bg, flexShrink: 0 }}>
-          <button onClick={goBack} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
+        {phase === "form" && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
+          <button onClick={goBack} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
           <button onClick={() => setShowDatePick(v => !v)} style={{ display: "flex", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", fontSize: 16, fontWeight: 800, color: C.ink }}>
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
             <span style={{ fontSize: 11, color: C.sub, transform: showDatePick ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
           </button>
-          <button onClick={() => setShowSettings(true)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", fontSize: 20, cursor: "pointer", opacity: 0.7 }}>⚙️</button>
 
           {showDatePick && (
             <div style={{ position: "absolute", top: 52, left: "50%", transform: "translateX(-50%)", background: C.card, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", padding: 8, zIndex: 40, minWidth: 200 }}>
@@ -363,7 +319,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐�
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                     <input value={customExercise} onChange={e => setCustomExercise(e.target.value)} placeholder="운동 이름 입력"
                       onKeyDown={e => e.key === "Enter" && addCustomExercise()}
-                      style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: FONTS[font].css }} />
+                      style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
                     <button onClick={addCustomExercise} disabled={exerciseTypes.length >= 2}
                       style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: exerciseTypes.length >= 2 ? 0.4 : 1 }}>추가</button>
                   </div>
@@ -501,121 +457,26 @@ export default function DiaryWriteFlow({ onClose, onFinish, charName = "AI 캐�
             </>
           )}
 
-          {/* ── 작성중 ── */}
-          {phase === "writing" && (
-            <div style={{ minHeight: "70vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
-              <div style={{ fontSize: 52, animation: "pulse 1.2s ease-in-out infinite" }}>📝</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>일기장을 작성하고 있어요...</div>
-              <div style={{ fontSize: 13, color: C.sub }}>오늘 하루를 예쁘게 정리하는 중이에요</div>
-              <style>{`@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.6}}`}</style>
-            </div>
-          )}
-
-          {/* ── 완료 ── */}
-          {phase === "done" && (
-            <div style={{ textAlign: "center", paddingTop: 20 }}>
-              <div style={{ margin: "10px auto" }}><Char big /></div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", textAlign: "center" }}>오늘도 잘 채웠어요</h1>
-              <p style={{ fontSize: 14, color: C.sub, margin: "0 0 18px", lineHeight: 1.55, textAlign: "center" }}>{charName}이 답장을 남겼어요. 조금 뒤 일기장에서 만나요 📩</p>
-              <div style={{ background: C.pinkSoft, border: `1px solid ${C.line}`, borderRadius: 18, padding: 16, margin: "20px 0", textAlign: "left", display: "flex", gap: 12 }}>
-                <Char />
-                <div style={{ fontSize: 14, lineHeight: 1.6 }}>
-                  {dayMood <= 2 ? "오늘 많이 힘드셨죠. 그런 날도 있는 거예요. 오늘은 어깨 팡팡 하고 일찍 쉬어요 🫂" : "오늘 하루도 잘 보내셨네요! 내일 또 이야기 들려주세요 🌿"}
-                </div>
-              </div>
-              <div style={{ fontSize: 13, color: C.sub, marginBottom: 20 }}>📊 3일만 쌓이면, 한 주를 정리한 리포트를 받아볼 수 있어요</div>
-              <button onClick={finishFlow} style={primaryBtn}>오늘 기록 마치기</button>
-            </div>
-          )}
         </div>
 
         {/* ── 하단 고정 CTA 버튼 ── */}
         {phase === "form" && (
           <div style={{ flexShrink: 0, padding: "10px 14px 20px", background: `linear-gradient(transparent, ${C.bg} 20%)`, borderTop: `1px solid ${C.line}` }}>
-            <button onClick={goDiary} style={{ ...primaryBtn, background: "#51A351", color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>📔 이대로 저장하기</button>
+            <button onClick={finishFlow} style={{ ...primaryBtn, background: "#51A351", color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>📔 이대로 저장하기</button>
           </div>
         )}
 
-        {/* ── 전체화면 일기장 (diary) ── */}
-        {phase === "diary" && (
-          <div style={{ position: "absolute", inset: 0, background: PAPER_COLORS[paper].bg, display: "flex", flexDirection: "column", zIndex: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 6px" }}>
-              <button onClick={() => setEditMode(e => !e)} style={{ display: "flex", alignItems: "center", gap: 4, border: "none", background: "transparent", cursor: "pointer", fontSize: 13, fontWeight: 800, color: editMode ? C.pink : C.sub }}>
-                {editMode ? "✓ 완료" : "✎ 고쳐주기"}
-              </button>
-              <button onClick={() => setShowDatePick(v => !v)} style={{ display: "flex", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", fontSize: 15, fontWeight: 800, color: C.ink }}>
-                {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
-              </button>
-              <button onClick={() => setShowSettings(true)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", fontSize: 19, cursor: "pointer", opacity: 0.7 }}>⚙️</button>
-            </div>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6px 18px 14px", gap: 10, borderBottom: `1px solid ${PAPER_COLORS[paper].line}` }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 52 }}>
-                {moodData && <Mallang v={moodData.v} size={26} />}
-                <span style={{ fontSize: 10, color: C.sub, fontWeight: 700 }}>{moodData?.label}</span>
+        {/* ── 완료 축하 팝업 (3초 뒤 자동으로 캘린더로 이동) ── */}
+        {phase === "celebrate" && moodData && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 30 }}>
+            <div style={{ background: "#fff", borderRadius: 28, padding: "36px 32px", textAlign: "center", animation: "pop .4s ease-out", boxShadow: "0 12px 40px rgba(0,0,0,0.18)" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                <Mallang v={moodData.v} size={72} />
               </div>
-              <div style={{ flex: 1, textAlign: "center", paddingTop: 2 }}>
-                {editMode ? (
-                  <input value={diaryTitle} onChange={e => setDiaryTitle(e.target.value)} placeholder="제목"
-                    style={{ width: "100%", textAlign: "center", fontSize: 16, fontWeight: 800, border: "none", borderBottom: `2px solid ${C.pink}`, background: "transparent", outline: "none", fontFamily: F, color: C.ink, padding: "2px 0" }} />
-                ) : (
-                  <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, lineHeight: 1.3 }}>{diaryTitle}</div>
-                )}
-              </div>
+              <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: C.ink }}>오늘 기록 완료!</h1>
+              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>오늘도 나를 채운 하루였어요 🌿</p>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px",
-              backgroundImage: `repeating-linear-gradient(transparent 0 31px, ${PAPER_COLORS[paper].line} 31px 32px)`, lineHeight: "32px" }}>
-              {editMode ? (
-                <textarea value={diaryBody} onChange={e => setDiaryBody(e.target.value)}
-                  style={{ width: "100%", minHeight: "50vh", border: "none", background: "transparent", outline: "none", resize: "none", fontSize: 15.5, lineHeight: "32px", fontFamily: F, color: C.ink }} />
-              ) : (
-                <p style={{ fontSize: 15.5, lineHeight: "32px", margin: 0, color: C.ink, fontFamily: F, whiteSpace: "pre-wrap" }}>{diaryBody}</p>
-              )}
-            </div>
-            <div style={{ padding: "12px 18px 20px", borderTop: `1px solid ${PAPER_COLORS[paper].line}` }}>
-              {!editMode && <p style={{ fontSize: 12, color: C.sub, textAlign: "center", margin: "0 0 10px" }}>고치고 싶으면 왼쪽 위 '고쳐주기'를 눌러 직접 수정할 수 있어요.</p>}
-              <button onClick={() => setPhase("done")} style={{ ...primaryBtn, marginTop: 0 }}>맞아요, 이렇게 기억해주세요</button>
-            </div>
-            {showDatePick && (
-              <div style={{ position: "absolute", top: 52, left: "50%", transform: "translateX(-50%)", background: C.card, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", padding: 8, zIndex: 40, minWidth: 200 }}>
-                {Array.from({ length: 7 }).map((_, i) => {
-                  const d = new Date(); d.setDate(d.getDate() - i);
-                  const on = d.toDateString() === selDate.toDateString();
-                  return (
-                    <button key={i} onClick={() => { setSelDate(d); setShowDatePick(false); }} style={{ width: "100%", textAlign: "left", padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: on ? C.ink : "transparent", color: on ? "#fff" : C.ink, fontSize: 14, fontWeight: on ? 800 : 600 }}>
-                      {d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}{i === 0 && <span style={{ fontSize: 11, color: on ? "rgba(255,255,255,0.7)" : C.sub }}> · 오늘</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── 환경설정 모달 ── */}
-        {showSettings && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 60 }} onClick={() => setShowSettings(false)}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: C.bg, borderRadius: "24px 24px 0 0", padding: "20px 20px 30px", maxHeight: "85vh", overflowY: "auto" }}>
-              <div style={{ width: 40, height: 4, background: C.line, borderRadius: 4, margin: "0 auto 18px" }} />
-              <h2 style={{ fontSize: 19, fontWeight: 800, margin: "0 0 20px" }}>환경 설정</h2>
-              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>글씨체</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 24 }}>
-                {Object.entries(FONTS).map(([k, v]) => (
-                  <button key={k} onClick={() => setFont(k)} style={{ padding: "13px 0", borderRadius: 14, cursor: "pointer", fontSize: 15, fontWeight: 700, fontFamily: v.css,
-                    border: font === k ? `2px solid ${C.ink}` : `1px solid ${C.line}`, background: font === k ? C.ink : C.card, color: font === k ? "#fff" : C.ink }}>{v.label}</button>
-                ))}
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>일기장 색상</div>
-              <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
-                {Object.entries(PAPER_COLORS).map(([k, v]) => (
-                  <button key={k} onClick={() => setPaper(k)} style={{ flex: 1, cursor: "pointer", border: "none", background: "none", padding: 0 }}>
-                    <div style={{ height: 52, borderRadius: 14, background: v.bg, border: paper === k ? `3px solid ${C.ink}` : `1px solid ${C.line}`, marginBottom: 6 }} />
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: paper === k ? C.ink : C.sub, textAlign: "center" }}>{v.label}</div>
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setShowSettings(false)} style={{ ...primaryBtn, marginTop: 24 }}>완료</button>
-            </div>
+            <style>{`@keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}`}</style>
           </div>
         )}
       </div>
@@ -664,40 +525,6 @@ function Chip({ label, on, onClick, disabled }) {
       {label}
     </button>
   );
-}
-
-function Char({ big }) { const s = big ? 80 : 38; return <div style={{ width: s, height: s, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: big ? 40 : 19, flexShrink: 0 }}>🐧</div>; }
-
-// ============================================
-// Mock 일기 생성
-// ============================================
-
-function makeTitle({ dayMood, sore, oneLine }) {
-  if (sore.part) return `${sore.part}가 뻐근한 하루`;
-  if (oneLine.text.trim()) return oneLine.text.trim().slice(0, 14) + (oneLine.text.length > 14 ? "…" : "");
-  const t = { 1: "조금 버거웠던 하루", 2: "지친 하루", 3: "그저 그런 하루", 4: "괜찮았던 하루", 5: "기분 좋은 하루" }[dayMood];
-  return t || "오늘의 일기";
-}
-
-function buildDiary({ dayMood, oneLine, sore, sittingVal, sleepVal, exerciseTypes, exerciseTimes, selfcareParts, selfcareTime }) {
-  const parts = [];
-  const moodTxt = { 1: "많이 힘든", 2: "조금 지친", 3: "그저 그런", 4: "괜찮은", 5: "기분 좋은" }[dayMood];
-  parts.push(`오늘은 ${moodTxt} 하루였어요.`);
-
-  if (sittingVal) parts.push(`오늘 ${sittingVal} 앉아있었어요.`);
-  if (sleepVal) parts.push(`어젯밤엔 ${sleepVal} 잤어요.`);
-
-  if (exerciseTypes.length > 0) {
-    const exDetails = exerciseTypes.map(t => exerciseTimes[t] ? `${t} ${exerciseTimes[t]}` : t).join(", ");
-    parts.push(`운동은 ${exDetails} 했어요.`);
-  }
-  if (selfcareParts.length > 0) {
-    parts.push(`${selfcareParts.join(", ")}를 스트레칭·마사지했어요${selfcareTime ? ` (총 ${selfcareTime})` : ""}.`);
-  }
-  if (oneLine.text.trim()) parts.push(`${oneLine.slot}엔 ${oneLine.text.trim()}.`);
-  if (sore.part) parts.push(`${sore.part}가 ${sore.when || "하루 종일"} 뻐근했어요 (${sore.level}/10).`);
-  parts.push("오늘도 나를 채운 하루였어요. 잘하고 있어요 🌿");
-  return parts.join(" ");
 }
 
 // ============================================
