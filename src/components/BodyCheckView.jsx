@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState, useEffect } from 'react';
+import { Mallang } from './Mallang';
 
 // ─────────────────────────────────────────────
 // BMTI 라이브 — 랜딩페이지
@@ -101,7 +102,7 @@ function Signature() {
     <Section className="py-16">
       <Eyebrow>BMTI 일기와 연결돼요</Eyebrow>
       <h2 className="text-[clamp(24px,5.5vw,30px)] font-extrabold leading-[1.35] tracking-tight mt-3.5">
-        이미 당신을 아는<br />코치를 만나세요
+        이미 당신을 아는<br />BMTI 가이드를 만나세요
       </h2>
       <p className="text-[15.5px] leading-7 text-[#8A8378] mt-4">
         처음부터 다시 설명하지 않아도 돼요.<br />
@@ -113,9 +114,9 @@ function Signature() {
         <div className="bg-white border border-[#EAE6DF] rounded-[20px] p-[18px] pb-4 shadow-[0_2px_16px_rgba(0,0,0,0.04)] -rotate-[1.2deg]">
           <div className="text-[11.5px] text-[#8A8378] font-bold mb-2.5">지난주 기록</div>
           <div className="flex gap-1.5 mb-3">
-            {['😐', '😕', '🙂', '😕', '😞', '😌', '🙂'].map((f, i) => (
-              <div key={i} className="flex-1 text-center">
-                <div className="text-[17px]">{f}</div>
+            {[3, 2, 4, 2, 1, 5, 4].map((v, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center">
+                <Mallang v={v} size={24} />
                 <div className="text-[9px] text-[#8A8378] mt-0.5">{'월화수목금토일'[i]}</div>
               </div>
             ))}
@@ -134,12 +135,14 @@ function Signature() {
         <div className="bg-[#1C1A17] rounded-[20px] p-5 text-white">
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-[34px] h-[34px] rounded-full bg-[#FFEDF3] flex items-center justify-center text-base">🩺</div>
-            <div className="text-[12.5px] text-white/60 font-semibold">코치가 먼저 건네는 말</div>
+            <div className="text-[12.5px] text-white/60 font-semibold">BMTI 가이드가 먼저 건네는 말</div>
           </div>
           <p className="text-[15.5px] leading-7 font-medium">
-            "회의 많던 화요일, 목요일에 목이 뻐근했네요.<br />
-            오늘은 그때 어깨에 어떻게 힘이 들어가는지<br />
-            같이 한번 볼까요?"
+            "목이 많이 아프셨고, 긴시간 앉아서 회의가 많으셨나봐요.<br />
+            한주간 정말 고생 많으셨어요.<br />
+            이런 경우 일반적으로 목 앞쪽 근육과 가슴 근육이 짧아지고,<br />
+            뒷목과 날개뼈 사이 근육이 약해지기 쉬워요.<br />
+            그럼 스트레칭과 운동을 같이 해볼게요."
           </p>
         </div>
       </div>
@@ -185,20 +188,36 @@ function WhatWeDo() {
   );
 }
 
-// ── ⑤ 코치 소개 ──
+// ── ⑤ BMTI 가이드 ──
 function Coach() {
+  const guides = [
+    { icon: '🩺', t: '물리치료사', d: '근골격계 평가와 안전한 동작 지도' },
+    { icon: '🏋️', t: '운동처방사', d: '개인 체력과 목적에 맞는 루틴 설계' },
+    { icon: '🧘', t: '움직임 전문가', d: '자세 습관과 스트레칭 코칭' },
+  ];
   return (
     <Section className="py-16">
-      <Eyebrow>코치 소개</Eyebrow>
-      <div className="flex gap-4 items-center mt-5">
-        <div className="w-[78px] h-[78px] rounded-full bg-[#E9F1EC] flex items-center justify-center text-[34px] shrink-0">🩺</div>
-        <div>
-          <div className="text-[19px] font-extrabold">물리치료사 ○○○</div>
-          <div className="text-[13.5px] text-[#8A8378] mt-1">근골격계 도수치료 경력 ○년</div>
-        </div>
+      <Eyebrow>BMTI 가이드</Eyebrow>
+      <h2 className="text-[clamp(24px,5.5vw,30px)] font-extrabold leading-[1.35] tracking-tight mt-3.5">
+        여러 전문가가<br />함께 봐드려요
+      </h2>
+      <p className="text-[15.5px] leading-7 text-[#8A8378] mt-4">
+        한 사람의 의견이 아니라,<br />
+        분야가 다른 전문가들이 함께 살펴봐요.
+      </p>
+      <div className="mt-6 flex flex-col gap-3">
+        {guides.map((g, i) => (
+          <div key={i} className="flex gap-3.5 items-center bg-[#E9F1EC] rounded-[18px] p-4">
+            <div className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-xl shrink-0">{g.icon}</div>
+            <div>
+              <div className="text-[15px] font-extrabold">{g.t}</div>
+              <div className="text-[12.5px] text-[#8A8378] mt-0.5">{g.d}</div>
+            </div>
+          </div>
+        ))}
       </div>
       <blockquote className="mt-7 p-5 bg-[#1C1A17] text-white rounded-[20px] text-base leading-7 font-medium not-italic">
-        "저는 진단하지 않습니다.<br />
+        "저희는 진단하지 않습니다.<br />
         대신 안전하게 움직이는 법을 알려드리고,<br />
         <span className="text-[#FF6B9D] font-bold">병원에 가야 할 때를 정확히 알려드립니다.</span>"
       </blockquote>
@@ -211,15 +230,15 @@ function Programs({ isLoggedIn, onRequireLogin }) {
   const [pick, setPick] = useState(1);
   const progs = [
     {
-      n: '미니', min: '15분', tag: '처음이라면', price: '첫 클래스 특가',
+      n: '미니 점검', min: '15분', tag: '처음이라면', price: '첫 클래스 특가',
       pts: ['일기 기록 함께 보기', '지금 가장 불편한 것 이야기', '가벼운 움직임 한두 개', '어떤 방향이 맞을지 안내'],
     },
     {
-      n: '핵심', min: '30분', tag: '가장 많이 선택해요', price: '기본 클래스',
+      n: '핵심 점검', min: '30분', tag: '가장 많이 선택해요', price: '기본 클래스',
       pts: ['이번 주 기록 함께 보기', '오늘 몸에 맞춰 함께 움직이기', '일상 자세 습관 이야기', '집에서 할 루틴 한두 개'],
     },
     {
-      n: '자기', min: '50분', tag: '깊이 있게', price: '심화 클래스',
+      n: '자기 점검', min: '50분', tag: '깊이 있게', price: '심화 클래스',
       pts: ['긴 호흡으로 움직임 익히기', 'BMTI 성향에 맞춘 방식으로', '생활 전반 습관 이야기', '나만의 루틴 함께 만들기'],
     },
   ];
@@ -280,7 +299,7 @@ function Programs({ isLoggedIn, onRequireLogin }) {
       <div className="bg-white rounded-[18px] px-[18px] py-4 mt-3 flex justify-between items-center">
         <div>
           <div className="text-[14.5px] font-extrabold">4회 패키지</div>
-          <div className="text-[12.5px] text-[#8A8378] mt-0.5">핵심 30분 × 4회 · 함께 이어가요</div>
+          <div className="text-[12.5px] text-[#8A8378] mt-0.5">핵심 점검 30분 × 4회 · 함께 이어가요</div>
         </div>
         <span className="text-[12.5px] font-extrabold text-[#FF6B9D]">할인 →</span>
       </div>
