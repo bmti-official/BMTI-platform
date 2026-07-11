@@ -86,13 +86,17 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
             const dow = idx % 7;
             return (
               <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {entry ? (
+                {entry && isToday ? (
                   <button
                     onClick={() => onEditDay && onEditDay(dateStr, entry.mood)}
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
                   >
                     <Mallang v={entry.mood} size={36} />
                   </button>
+                ) : entry ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
+                    <Mallang v={entry.mood} size={36} />
+                  </div>
                 ) : isToday ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, border: `2px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: weekdayColor(dow) || C.ink }}>
