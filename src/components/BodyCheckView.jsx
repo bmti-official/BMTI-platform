@@ -456,7 +456,7 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
           onClick={onBack}
           className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#8A8378] hover:text-[#1C1A17] transition-colors bg-transparent border-none cursor-pointer p-0"
         >
-          <span className="text-base">←</span> 어떤 클래스인지 보기
+          <span className="text-base">←</span> 이전
         </button>
       </Section>
 
