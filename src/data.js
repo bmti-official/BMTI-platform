@@ -215,12 +215,15 @@ export const CHARACTER_NAMES = {
 
 // 사람 유저가 BMTI 유형 코드(ACDZ 등) 자체를 닉네임으로 쓰지 못하게 막는 데 씀 —
 // 게시판의 AI 페르소나 닉네임이 "AI ACDZ" 형식이라, 코드만 딱 따와서 헷갈리게 하는 걸 방지.
+// 'BMTI'도 함께 막는다 — BoardView의 관리자 삭제 권한이 닉네임이 정확히 'BMTI'인지만으로
+// 판별되므로, 이 닉네임을 아무나 선점하면 게시판 전체 삭제 권한을 가로챌 수 있기 때문.
 const BMTI_TYPE_CODES = Object.keys(CHARACTER_NAMES);
+const RESERVED_NICKNAMES = [...BMTI_TYPE_CODES, 'BMTI'];
 
 export function isReservedNickname(nickname) {
   if (!nickname) return false;
   const normalized = nickname.trim().toUpperCase();
-  return BMTI_TYPE_CODES.includes(normalized);
+  return RESERVED_NICKNAMES.includes(normalized);
 }
 
 // BMTI 하루일기의 무드 마스코트 '말랑이' 5단계 — Mallang.jsx의 SVG 컴포넌트가 그린다.
