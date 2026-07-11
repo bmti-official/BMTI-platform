@@ -9,14 +9,26 @@ import { MOODS } from "../data";
 // ─────────────────────────────────────────────
 
 const C = {
-  bg: "#F7F6F3", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
+  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
   pink: "#FF6B9D", pinkSoft: "#FFEDF3", lime: "#DFF56B",
 };
+
+// BMTI 코드별로 고정된(=새로고침해도 안 바뀌는) "같은 유형 n명" 안내용 숫자
+function reportCountFor(axisCode) {
+  if (!axisCode) return 480;
+  let hash = 0;
+  for (let i = 0; i < axisCode.length; i++) hash = (hash * 31 + axisCode.charCodeAt(i)) >>> 0;
+  return 320 + (hash % 660); // 320 ~ 979
+}
 
 export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charName, isLoggedIn, onRequireLogin, setView, onComplete }) {
   const [i, setI] = useState(0);
   const [mood, setMood] = useState(null);
   const [phase, setPhase] = useState("talk"); // talk | pick | react | save
+
+  const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
+  const isMType = axisCode.charAt(3) === 'M';
+  const reportCount = reportCountFor(axisCode);
 
   const STEPS = [
     {
@@ -104,6 +116,20 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
                 </h1>
                 <p style={{ fontSize: 15, color: C.sub, margin: "18px 0 0" }}>{step.sub}</p>
                 <p style={{ fontSize: 16, fontWeight: 600, margin: "28px 0 0", lineHeight: 1.6 }}>{step.lead}</p>
+
+                <p style={{ fontSize: 15, fontWeight: 600, margin: "14px 0 0", lineHeight: 1.6, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, flexWrap: "wrap" }}>
+                  <span>말랑이</span>
+                  <Mallang v={3} size={20} />
+                  <span>로 한번의 클릭해 나의 기분을 기록하고,</span>
+                </p>
+                <p style={{ fontSize: 15, fontWeight: 600, margin: "6px 0 0", lineHeight: 1.6 }}>
+                  {isMType
+                    ? "일주일 뒤 주간 리포트로 BMTI 파트너가 공감해주고 나에 대해서 알려줘요."
+                    : "일주일 뒤 주간 리포트로 BMTI 파트너가 분석하고 나에 대해서 이해시켜줘요."}
+                </p>
+                <p style={{ fontSize: 13, color: C.sub, fontWeight: 700, margin: "16px 0 0" }}>
+                  🔥 지금 나와 같은 BMTI 유형 {reportCount}명이 주간 리포트를 받아 봤어요.
+                </p>
               </div>
             ) : (
               <>

@@ -4,7 +4,7 @@ import { MOODS } from "../data";
 import { getDiaryHistory, getEntryForDate, todayISO } from "../lib/diaryHistory";
 
 const C = {
-  bg: "#F7F6F3", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
+  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
 };
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];

@@ -11,7 +11,7 @@ import { Mallang } from './Mallang';
 
 const BodyCheckView = ({ isLoggedIn, onRequireLogin }) => {
   return (
-    <div className="min-h-screen bg-[#FBFAF8] text-[#1C1A17] pt-28">
+    <div className="min-h-screen bg-white text-[#1C1A17] pt-28">
       <Hero isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
       <ForYou />
       <Signature />

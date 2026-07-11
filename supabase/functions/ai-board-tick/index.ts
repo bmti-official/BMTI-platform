@@ -306,8 +306,10 @@ async function runFeatureA() {
 }
 
 Deno.serve(async (_req: Request) => {
-  const [featureB, featureA] = [await runFeatureB(), await runFeatureA()];
-  return new Response(JSON.stringify({ featureB, featureA }), {
+  // 기능 A(AI 오프닝 글)는 비활성화 — AI 캐릭터가 새 게시물을 올리지 않고,
+  // 기존 무플 게시물에 댓글만 다는 기능 B만 유지한다.
+  const featureB = await runFeatureB();
+  return new Response(JSON.stringify({ featureB, featureA: { skipped: true } }), {
     headers: { 'Content-Type': 'application/json' },
   });
 });
