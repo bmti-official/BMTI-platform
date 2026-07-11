@@ -17,7 +17,7 @@ const BodyCheckView = ({ isLoggedIn, onRequireLogin }) => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#1C1A17] pt-28">
+    <div className="min-h-screen bg-white text-[#1C1A17] pt-32">
       <Hero isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} onShowDetail={() => setShowDetail(true)} />
       <ForYou />
       <Signature />
@@ -450,7 +450,7 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
   const timeline = TIMELINES[progKeys[pick]];
 
   return (
-    <div className="min-h-screen bg-white text-[#1C1A17] pt-28 pb-10">
+    <div className="min-h-screen bg-white text-[#1C1A17] pt-32 pb-10">
       <Section className="pb-2">
         <button
           onClick={onBack}
