@@ -403,7 +403,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                           post.tag === '고민' ? 'bg-purple-100 text-purple-700' :
                           'bg-green-100 text-green-700'
                         }`}>{post.tag}</span>
-                        {isLoggedIn && !post.isAi && (post.author === myNickname || isAdmin) && (
+                        {isLoggedIn && (isAdmin || (!post.isAi && post.author === myNickname)) && (
                           <button
                             onClick={(e) => handleDeletePost(post.id, e)}
                             className="text-[11px] text-gray-400 hover:text-red-500 font-bold transition-colors px-2 py-1"
@@ -446,7 +446,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                               <div className="flex gap-3">
                                 <AuthorBadge author={comment.author} bmti={comment.bmti} size="sm" isAi={comment.isAi} date={comment.date} />
                               </div>
-                              {isLoggedIn && !comment.isAi && (comment.author === myNickname || isAdmin) && (
+                              {isLoggedIn && (isAdmin || (!comment.isAi && comment.author === myNickname)) && (
                                 <button
                                   onClick={() => handleDeleteComment(post.id, comment.id)}
                                   className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"
@@ -472,7 +472,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                                       <div className="flex gap-3">
                                         <AuthorBadge author={reply.author} bmti={reply.bmti} size="sm" isAi={reply.isAi} date={reply.date} />
                                       </div>
-                                      {isLoggedIn && !reply.isAi && (reply.author === myNickname || isAdmin) && (
+                                      {isLoggedIn && (isAdmin || (!reply.isAi && reply.author === myNickname)) && (
                                         <button
                                           onClick={() => handleDeleteReply(post.id, comment.id, reply.id)}
                                           className="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors"
