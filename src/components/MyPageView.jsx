@@ -65,7 +65,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
       try {
         if (userInfo.nickname !== userData.nickname) {
           if (isReservedNickname(userData.nickname)) {
-            alert('BMTI 유형 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
+            alert('BMTI 파트너 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
             return;
           }
           const { data, error } = await supabase

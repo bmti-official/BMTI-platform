@@ -208,9 +208,9 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           </div>
         ) : (
           <div className="w-full max-w-md flex flex-col gap-4">
-            {/* 내 BMTI 유형 미리보기 */}
+            {/* 내 BMTI 파트너 미리보기 */}
             <div className="bg-[#F7F6F3] rounded-[2rem] p-6 md:p-8">
-              <p className="text-xs md:text-sm font-bold text-gray-400 mb-4">내 BMTI 유형</p>
+              <p className="text-xs md:text-sm font-bold text-gray-400 mb-4">내 BMTI 파트너</p>
               <div className="flex items-center gap-4 mb-5">
                 <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
                   {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || ''}`} />}

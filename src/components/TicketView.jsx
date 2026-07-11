@@ -237,7 +237,7 @@ const TicketView = ({ isLoggedIn, bmtiCode, setView, onRequireLogin }) => {
       {/* ===== 사용자 정보 + 주간 진척도 (가로 배치) ===== */}
       <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5 shadow-sm mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="text-center sm:text-left">
-          <p className="text-xs text-gray-400 font-bold tracking-wider mb-1">나의 BMTI 유형</p>
+          <p className="text-xs text-gray-400 font-bold tracking-wider mb-1">나의 BMTI 파트너</p>
           <p className="text-lg font-black text-gray-900">{userBMTI} <span className="text-sm font-medium text-gray-400">· {bmtiCode?.split('-')[0]}</span></p>
         </div>
 

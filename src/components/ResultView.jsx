@@ -292,7 +292,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     <div className="min-h-screen pt-44 md:pt-52 pb-32 px-6 max-w-2xl mx-auto fade-in">
       <div className="text-center mb-10">
         <p className="text-gray-500 mb-2 font-medium tracking-widest text-sm">ANALYSIS COMPLETE</p>
-        <h2 className="text-3xl md:text-4xl font-serif font-bold">당신의 BMTI 유형은</h2>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold">당신의 BMTI 파트너는</h2>
       </div>
 
       {/* Brief Character Card */}

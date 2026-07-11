@@ -10,9 +10,15 @@ import { Mallang } from './Mallang';
 // ─────────────────────────────────────────────
 
 const BodyCheckView = ({ isLoggedIn, onRequireLogin }) => {
+  const [showDetail, setShowDetail] = useState(false);
+
+  if (showDetail) {
+    return <ClassDetail isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} onBack={() => setShowDetail(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-white text-[#1C1A17] pt-28">
-      <Hero isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
+      <Hero isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} onShowDetail={() => setShowDetail(true)} />
       <ForYou />
       <Signature />
       <WhatWeDo />
@@ -26,7 +32,7 @@ const BodyCheckView = ({ isLoggedIn, onRequireLogin }) => {
 };
 
 // ── ① 히어로 ──
-function Hero({ isLoggedIn, onRequireLogin }) {
+function Hero({ isLoggedIn, onRequireLogin, onShowDetail }) {
   return (
     <Section className="pt-14 pb-16">
       <Eyebrow>물리치료사와 함께하는 1:1 온라인 클래스</Eyebrow>
@@ -58,7 +64,7 @@ function Hero({ isLoggedIn, onRequireLogin }) {
             예약하기
           </button>
         )}
-        <button className="px-5.5 py-4 rounded-[15px] border border-[#EAE6DF] bg-transparent text-[#1C1A17] text-[15.5px] font-bold cursor-pointer hover:bg-white/60 transition-colors">
+        <button onClick={onShowDetail} className="px-5.5 py-4 rounded-[15px] border border-[#EAE6DF] bg-transparent text-[#1C1A17] text-[15.5px] font-bold cursor-pointer hover:bg-white/60 transition-colors">
           어떤 클래스인지 보기
         </button>
       </div>
@@ -190,36 +196,27 @@ function WhatWeDo() {
 
 // ── ⑤ BMTI 가이드 ──
 function Coach() {
-  const guides = [
-    { icon: '🩺', t: '물리치료사', d: '근골격계 평가와 안전한 동작 지도' },
-    { icon: '🏋️', t: '운동처방사', d: '개인 체력과 목적에 맞는 루틴 설계' },
-    { icon: '🧘', t: '움직임 전문가', d: '자세 습관과 스트레칭 코칭' },
-  ];
   return (
     <Section className="py-16">
       <Eyebrow>BMTI 가이드</Eyebrow>
       <h2 className="text-[clamp(24px,5.5vw,30px)] font-extrabold leading-[1.35] tracking-tight mt-3.5">
-        여러 전문가가<br />함께 봐드려요
+        물리치료사가<br />운동을 지도해드려요
       </h2>
       <p className="text-[15.5px] leading-7 text-[#8A8378] mt-4">
-        한 사람의 의견이 아니라,<br />
-        분야가 다른 전문가들이 함께 살펴봐요.
+        근골격계를 전공한 물리치료사가<br />
+        안전하고 정확한 움직임을 함께 찾아드려요.
       </p>
-      <div className="mt-6 flex flex-col gap-3">
-        {guides.map((g, i) => (
-          <div key={i} className="flex gap-3.5 items-center bg-[#E9F1EC] rounded-[18px] p-4">
-            <div className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-xl shrink-0">{g.icon}</div>
-            <div>
-              <div className="text-[15px] font-extrabold">{g.t}</div>
-              <div className="text-[12.5px] text-[#8A8378] mt-0.5">{g.d}</div>
-            </div>
-          </div>
-        ))}
+
+      <div className="mt-7 bg-[#E9F1EC] rounded-[18px] px-[18px] py-4 text-[13.5px] leading-relaxed text-[#3F5F4E] font-semibold">
+        🚨 본 서비스는 운동·습관 코칭이며,<br />
+        진단·치료·물리치료 행위가 아닙니다.
       </div>
-      <blockquote className="mt-7 p-5 bg-[#1C1A17] text-white rounded-[20px] text-base leading-7 font-medium not-italic">
-        "저희는 진단하지 않습니다.<br />
+
+      <blockquote className="mt-3.5 p-5 bg-[#1C1A17] text-white rounded-[20px] text-base leading-7 font-medium not-italic">
+        "저는 진단하지 않습니다.<br />
         대신 안전하게 움직이는 법을 알려드리고,<br />
-        <span className="text-[#FF6B9D] font-bold">병원에 가야 할 때를 정확히 알려드립니다.</span>"
+        무리해 보이거나 걱정되는 부분이 있으면,<br />
+        병원에 먼저 가보시길 권해드려요."
       </blockquote>
     </Section>
   );
@@ -392,6 +389,225 @@ function LiveFooter() {
         본 서비스는 의료행위(진단·치료)가 아닌 일반적인 운동·습관 코칭입니다.<br />
         통증·질환이 있는 경우 반드시 의료기관에서 진료받으시기 바랍니다.
       </p>
+    </div>
+  );
+}
+
+// ── 클래스 상세 안내 페이지 ("어떤 클래스인지 보기") ──
+const TIMELINES = {
+  mini: {
+    tab: '미니 점검 15분',
+    headline: '미니 점검 15분은 이렇게 흘러가요',
+    blocks: [
+      { time: '0~8분', t: '오늘 컨디션과 신체 고민 듣기', type: 'quote',
+        quote: '"요즘 일상생활이 어떠신가요?\n몸을 사용할 때 고민이 있으신가요?"' },
+      { time: '8~10분', t: '일상의 움직임 체크', type: 'quote',
+        quote: '"평소 많이 하는 자세는 뭔가요?"' },
+      { time: '10~15분', t: '나에게 필요한 내용 듣기', type: 'quote',
+        quote: '"말씀해주신 생활 패턴을 들어보니,\n평소 이런 방향으로 관리해 보시면 좋을 것 같아요.\n다음 번에는 30분/50분 세션에서\n오늘 파악한 내용에 맞춰 저와 함께해보면 좋겠습니다."' },
+    ],
+  },
+  core: {
+    tab: '핵심 점검 30분',
+    headline: '핵심 점검 30분은 이렇게 흘러가요',
+    blocks: [
+      { time: '0~5분', t: '오늘 컨디션 이야기', type: 'quote',
+        quote: '"이번 주 컨디션을 보니 힘든 한주를 보내셨네요,\n오늘은 좀 어때요?"' },
+      { time: '5~20분', t: '함께 움직이기', type: 'quote',
+        quote: '"오늘 몸 상태에 맞춰 스트레칭·운동을 같이 해봐요 !"' },
+      { time: '20~25분', t: '일상 습관 이야기', type: 'quote',
+        quote: '"오래 앉을 때 이렇게 해보면 어때요?"' },
+      { time: '25~30분', t: '집에서 할 루틴 정리', type: 'note',
+        quote: '오늘 한 것 중 1~2개, 혼자 할 수 있게' },
+    ],
+  },
+  self: {
+    tab: '자기 점검 50분',
+    headline: '자기 점검 50분은 이렇게 흘러가요',
+    blocks: [
+      { time: '0~5분', t: '주간 컨디션 & 생활 패턴 돌아보기', type: 'quote',
+        quote: '"이번 주 컨디션을 보니 힘든 한주를 보내셨네요,\n오늘은 좀 어때요?"' },
+      { time: '5~30분', t: '함께 움직이기', type: 'quote',
+        quote: '"오늘 몸 상태에 맞춰 스트레칭·운동을 같이 해봐요 !"' },
+      { time: '30~40분', t: '일상 습관 이야기', type: 'quote',
+        quote: '"오래 앉을 때 이렇게 해보면 어때요?"' },
+      { time: '40~50분', t: '집에서 할 루틴 정리', type: 'note',
+        quote: '오늘 한 것 중 1~2개, 혼자 할 수 있게' },
+    ],
+  },
+};
+
+const DETAIL_FAQS = [
+  { q: '운동을 잘 못해도 되나요?', a: '물론이에요. 운동을 잘하기 위해서가 아니라, 내 몸에 편안하게 맞는 움직임을 찾아가는 시간입니다.' },
+  { q: '화면으로 제 몸을 정확히 알 수 있나요?', a: '직접 만져보는 검사는 할 수 없지만, 함께 다양한 동작을 해보며 어떤 자세에서 뻣뻣함이나 불편함을 느끼시는지 확인하고, 가장 편안하게 움직일 수 있는 방법을 같이 찾아가요.' },
+  { q: '15분과 30분, 50분 중 무엇을 골라야 할지 모르겠어요.', a: '처음이시라면 내 몸의 뻐근한 부분을 먼저 체크해보는 15분 미니 점검으로 가볍게 시작해 보세요. 이후에 저와 함께 본격적으로 몸을 움직여보고 싶으실 때 30분이나 50분 세션을 선택해 주시면 됩니다.' },
+];
+
+function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
+  const [pick, setPick] = useState(1);
+  const [openFaq, setOpenFaq] = useState(null);
+  const progKeys = ['mini', 'core', 'self'];
+  const timeline = TIMELINES[progKeys[pick]];
+
+  return (
+    <div className="min-h-screen bg-white text-[#1C1A17] pt-28 pb-10">
+      <Section className="pb-2">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#8A8378] hover:text-[#1C1A17] transition-colors bg-transparent border-none cursor-pointer p-0"
+        >
+          <span className="text-base">←</span> 어떤 클래스인지 보기
+        </button>
+      </Section>
+
+      {/* ① 세션 타임라인 */}
+      <Section className="py-8">
+        <Eyebrow>세션 타임라인</Eyebrow>
+        <div className="flex gap-[7px] mt-5">
+          {progKeys.map((key, i) => (
+            <button
+              key={key}
+              onClick={() => setPick(i)}
+              className={`flex-1 py-[11px] rounded-[14px] cursor-pointer text-[12.5px] font-extrabold transition-all ${
+                pick === i
+                  ? 'bg-[#1C1A17] text-white border-2 border-[#1C1A17]'
+                  : 'bg-[#FBFAF8] text-[#8A8378] border border-[#EAE6DF] hover:border-[#1C1A17]/30'
+              }`}
+            >
+              {TIMELINES[key].tab}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-7">
+          {timeline.headline}
+        </h2>
+
+        <div className="mt-6 flex flex-col">
+          {timeline.blocks.map((b, i) => (
+            <div key={i} className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B9D] mt-1.5 shrink-0" />
+                {i < timeline.blocks.length - 1 && <div className="w-[1.5px] flex-1 bg-[#EAE6DF] my-1" />}
+              </div>
+              <div className={i < timeline.blocks.length - 1 ? 'pb-7' : 'pb-0'}>
+                <div className="text-[12px] font-extrabold text-[#FF6B9D] mb-1">{b.time}</div>
+                <div className="text-[15.5px] font-extrabold mb-2">{b.t}</div>
+                {b.type === 'note' ? (
+                  <div className="text-[13.5px] text-[#8A8378] leading-relaxed">{b.quote}</div>
+                ) : (
+                  <div className="bg-[#FBFAF8] border border-[#EAE6DF] rounded-[14px] px-4 py-3 text-[13.5px] leading-relaxed text-[#5B5650] whitespace-pre-line">
+                    {b.quote}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ② 코치의 실제 대화 예시 */}
+      <Section className="bg-[#E9F1EC] py-14">
+        <Eyebrow color="sage">전문성</Eyebrow>
+        <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-3.5">
+          코치는 이렇게<br />이야기해요
+        </h2>
+        <blockquote className="mt-6 p-5 bg-[#1C1A17] text-white rounded-[20px] text-[15px] leading-7 font-medium not-italic">
+          "목이 많이 아프셨고, 긴 시간 앉아서 회의가 많으셨나 봐요.<br />
+          한 주간 정말 고생 많으셨어요.<br />
+          이런 경우 일반적으로 목 앞쪽 근육과 가슴 근육이 짧아지고,<br />
+          뒷목과 날개뼈 사이 근육이 약해지기 쉬워요.<br />
+          그럼 스트레칭과 운동을 같이 해볼게요."
+        </blockquote>
+      </Section>
+
+      {/* ③ 이런 건 안 해요 */}
+      <Section className="py-14">
+        <Eyebrow>안심하세요</Eyebrow>
+        <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-3.5">
+          이런 건<br />하지 않아요
+        </h2>
+        <div className="mt-6 flex flex-col gap-2.5">
+          <div className="flex gap-2.5 items-start bg-[#FBFAF8] border border-[#EAE6DF] px-[18px] py-4 rounded-2xl">
+            <span className="text-[#E0554F] font-extrabold text-sm shrink-0 mt-px">✗</span>
+            <span className="text-[14.5px] leading-relaxed font-medium">무리한 운동을 강요하지 않아요</span>
+          </div>
+          <div className="flex gap-2.5 items-start bg-[#FBFAF8] border border-[#EAE6DF] px-[18px] py-4 rounded-2xl">
+            <span className="text-[#E0554F] font-extrabold text-sm shrink-0 mt-px">✗</span>
+            <span className="text-[14.5px] leading-relaxed font-medium">
+              의료적인 진단이나 치료를 하지 않아요 <span className="text-[#8A8378] font-normal">(안전하고 올바른 움직임을 제안합니다)</span>
+            </span>
+          </div>
+          <div className="flex gap-2.5 items-start bg-[#FBFAF8] border border-[#EAE6DF] px-[18px] py-4 rounded-2xl">
+            <span className="text-[#E0554F] font-extrabold text-sm shrink-0 mt-px">✗</span>
+            <span className="text-[14.5px] leading-relaxed font-medium">모두에게 똑같은 정해진 프로그램을 시키지 않아요</span>
+          </div>
+        </div>
+        <p className="text-[15px] leading-7 mt-6 font-bold text-center">
+          <span className="text-[#FF6B9D]">→</span> 나에게 맞는 방식을, 내 속도로
+        </p>
+      </Section>
+
+      {/* ④ 준비물 */}
+      <Section className="bg-[#E9F1EC] py-14">
+        <Eyebrow color="sage">준비물</Eyebrow>
+        <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-3.5">
+          이것만 있으면<br />돼요
+        </h2>
+        <div className="mt-6 flex flex-col gap-2.5">
+          {['매트 한 장', '몸을 움직일 작은 공간', '가장 편한 옷 차림'].map((t, i) => (
+            <div key={i} className="flex gap-2.5 items-center bg-white px-[18px] py-4 rounded-2xl">
+              <span className="text-[#5F8A76] font-extrabold">·</span>
+              <span className="text-[14.5px] font-semibold">{t}</span>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ⑤ FAQ */}
+      <Section className="py-14">
+        <Eyebrow>FAQ</Eyebrow>
+        <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-3.5">
+          궁금한 게<br />있으실 거예요
+        </h2>
+        <div className="mt-7 flex flex-col gap-2">
+          {DETAIL_FAQS.map((item, i) => (
+            <div key={i} className="bg-white border border-[#EAE6DF] rounded-2xl overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="w-full flex justify-between items-center gap-3 px-[18px] py-[17px] bg-transparent border-none cursor-pointer text-left text-[14.5px] font-bold text-[#1C1A17]"
+              >
+                {item.q}
+                <span className={`text-[#8A8378] text-[15px] shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>+</span>
+              </button>
+              {openFaq === i && (
+                <div className="px-[18px] pb-[18px] text-sm leading-7 text-[#8A8378] animate-fade-in">
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ⑥ 예약 CTA */}
+      <Section className="pt-4 pb-6">
+        <div className="bg-[#1C1A17] rounded-3xl px-6 py-9 text-center text-white">
+          {!isLoggedIn ? (
+            <button onClick={onRequireLogin} className="w-full flex items-center justify-center gap-2 py-[17px] rounded-[15px] bg-[#FEE500] text-[#3C1E1E] text-base font-extrabold border-none cursor-pointer hover:bg-[#F4DC00] transition">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
+              카카오로 10초 예약
+            </button>
+          ) : (
+            <button className="w-full py-[17px] rounded-[15px] bg-[#FF6B9D] text-white text-base font-extrabold border-none cursor-pointer hover:brightness-110 transition">
+              예약하기
+            </button>
+          )}
+          <p className="text-[12.5px] text-white/55 mt-3.5">
+            "먼저 15분으로 가볍게 만나봐도 좋아요"
+          </p>
+        </div>
+      </Section>
     </div>
   );
 }
