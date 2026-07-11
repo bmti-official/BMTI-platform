@@ -102,7 +102,7 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
   );
 };
 
-const ResultView = ({ setView, quizCompleted, bmtiCode, bmtiAnswers }) => {
+const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, onRequireLogin, bmtiCode, bmtiAnswers, userProfile }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
   const printHeaderRef = useRef(null);
   const printTendencyRefs = useRef([]);
@@ -164,6 +164,10 @@ const ResultView = ({ setView, quizCompleted, bmtiCode, bmtiAnswers }) => {
   // 섹션(카드) 단위로 각각 캡처해 페이지에 배치 — 한 이미지를 통째로 슬라이싱하면
   // 페이지가 넘어갈 때 문단 중간이 잘리므로, 블록이 페이지 하단을 넘으면 다음 페이지로 통째로 넘긴다.
   const handleSaveResultPDF = async () => {
+    if (!isLoggedIn) {
+      if (onRequireLogin) onRequireLogin();
+      return;
+    }
     if (isSavingPDF) return;
     setIsSavingPDF(true);
     try {
@@ -235,6 +239,11 @@ const ResultView = ({ setView, quizCompleted, bmtiCode, bmtiAnswers }) => {
 
   // 2. "카카오톡으로 친구에게 자랑하기" — 카카오링크 임베드 카드로 공유
   const handleShareToFriend = () => {
+    if (!isLoggedIn) {
+      if (onRequireLogin) onRequireLogin();
+      return;
+    }
+
     if (!(window.Kakao && window.Kakao.Share)) {
       alert('카카오톡 공유가 준비 중입니다.');
       return;

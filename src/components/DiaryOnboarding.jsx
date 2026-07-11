@@ -21,12 +21,12 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
   const STEPS = [
     {
       id: "intro",
-      title: bmtiCode ? (
+      title: isLoggedIn ? (
         <><span style={{ color: C.pink }}>{nickname}</span> 님,<br />이제 당신의 <Mark>성향을 알았어요.</Mark></>
       ) : (
-        <><span style={{ color: C.pink }}>{nickname}</span> 님,<br />아직 당신의 <Mark>성향을 몰라요.</Mark></>
+        <>당신의 성향 알려줘요.</>
       ),
-      sub: "근데 이건 시작일 뿐이에요.",
+      sub: isLoggedIn ? "근데 이건 시작일 뿐이에요." : "",
       lead: "이제부터 매일 조금씩, 진짜 내 몸을 알아가요.",
     },
     {
@@ -211,9 +211,21 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
         {/* 하단 버튼 (대화 단계에서만) */}
         {phase === "talk" && (
           <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, padding: "14px 24px 28px", background: `linear-gradient(transparent, ${C.bg} 30%)` }}>
-            <button onClick={next} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: C.ink, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
-              {i < STEPS.length - 1 ? "다음" : "그럼 시작해볼까요"}
-            </button>
+            {!isLoggedIn ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <button onClick={() => { if (onRequireLogin) onRequireLogin(); }} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: "#FEE500", color: "#3C1E1E", fontSize: 15.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, fill: "#3C1E1E" }}><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
+                  카카오로 10초 기록
+                </button>
+                <p style={{ fontSize: 11, color: C.sub, marginTop: 10, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span>🔕</span> 광고 안 보냄 · 결과만 저장
+                </p>
+              </div>
+            ) : (
+              <button onClick={next} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: C.ink, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
+                {i < STEPS.length - 1 ? "다음" : "그럼 시작해볼까요"}
+              </button>
+            )}
           </div>
         )}
 

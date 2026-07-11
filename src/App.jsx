@@ -11,6 +11,7 @@ import SignupModal from './components/SignupModal';
 import BodyCheckView from './components/BodyCheckView';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
+import SavePromptModal from './components/SavePromptModal';
 function App() {
   const initialHash = window.location.hash.replace('#', '');
   const [currentView, setCurrentView] = useState(
@@ -30,6 +31,22 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
   const [currentGroupRoom, setCurrentGroupRoom] = useState(null);
+
+  // 비로그인 + 테스트 완료 유저 → 다른 탭 클릭 시 카카오 저장 팝업 (세션당 1회)
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [pendingView, setPendingView] = useState(null);
+  const savePromptShownRef = useState(() => ({ current: false }))[0];
+
+  const handleViewChange = (nextView) => {
+    // 비로그인 + bmtiCode 존재(테스트 완료) + 아직 팝업 안 뜸 + result에서 다른 탭으로 이동
+    if (!isLoggedIn && bmtiCode && !savePromptShownRef.current && currentView === 'result' && nextView !== 'result' && nextView !== 'quiz') {
+      savePromptShownRef.current = true;
+      setPendingView(nextView);
+      setShowSavePrompt(true);
+      return;
+    }
+    setCurrentView(nextView);
+  };
 
   // Save bmtiAnswers to localStorage whenever it changes
   useEffect(() => {
@@ -224,7 +241,7 @@ function App() {
     <div className="bg-white min-h-screen text-[var(--color-brand)] relative pb-10">
       <Navbar
         currentView={currentView}
-        setView={setCurrentView}
+        setView={handleViewChange}
         isLoggedIn={isLoggedIn}
         setIsLoggedIn={handleLoginAttempt}
         userProfile={userProfile}
@@ -237,6 +254,7 @@ function App() {
             setView={setCurrentView}
             quizCompleted={quizCompleted}
             isLoggedIn={isLoggedIn}
+            onRequireLogin={() => setShowSignup(true)}
             bmtiCode={bmtiCode}
             userProfile={userProfile}
           />
@@ -251,11 +269,12 @@ function App() {
         )}
         {currentView === 'result' && (
           <ResultView
-            setView={setCurrentView}
+            setView={handleViewChange}
             quizCompleted={quizCompleted}
             setQuizCompleted={setQuizCompleted}
             isLoggedIn={isLoggedIn}
             setIsLoggedIn={handleLoginAttempt}
+            onRequireLogin={() => setShowSignup(true)}
             bmtiCode={bmtiCode}
             bmtiAnswers={bmtiAnswers}
             userProfile={userProfile}
@@ -278,7 +297,12 @@ function App() {
             onRequireLogin={() => setShowSignup(true)}
           />
         )}
-        {currentView === 'bodycheck' && <BodyCheckView />}
+        {currentView === 'bodycheck' && (
+          <BodyCheckView
+            isLoggedIn={isLoggedIn}
+            onRequireLogin={() => setShowSignup(true)}
+          />
+        )}
         {currentView === 'aichat' && (
           <AiChatHub
             bmtiCode={bmtiCode}
@@ -302,6 +326,24 @@ function App() {
 
       {/* Footer for Home/Board/Ticket/Bodyscan/MyPage views */}
       {['home', 'board', 'ticket', 'mypage'].includes(currentView) && <Footer />}
+
+      {/* 비로그인 저장 유도 팝업 */}
+      <SavePromptModal
+        isOpen={showSavePrompt}
+        onClose={() => {
+          setShowSavePrompt(false);
+          if (pendingView) {
+            setCurrentView(pendingView);
+            setPendingView(null);
+          }
+        }}
+        onLogin={() => {
+          setShowSavePrompt(false);
+          setPendingView(null);
+          setShowSignup(true);
+        }}
+        bmtiCode={bmtiCode}
+      />
 
       {/* Signup Modal */}
       <SignupModal

@@ -63,7 +63,7 @@ function AutoFitLines({ lines, mobileSize = 16, desktopSize = 28, className = ''
   );
 }
 
-const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile }) => {
+const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
   const sliderRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -191,7 +191,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
 
       {/* CTA Buttons */}
       <div className="px-6 flex justify-center gap-4 fade-in mb-16">
-        {(!isLoggedIn || !bmtiCode) ? (
+        {(!bmtiCode) ? (
           <div className="flex flex-col items-center w-full max-w-sm">
             <button
               onClick={() => setView('quiz')}
@@ -223,16 +223,33 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, bmtiCode, userProfile })
                   <p className="text-gray-500 text-sm md:text-base leading-snug whitespace-pre-line break-keep">{charInfo?.catchphrase}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setView('result')}
-                className="w-full bg-black text-white text-[min(3.5vw,15px)] md:text-lg font-bold py-4 rounded-2xl hover:bg-gray-900 transition-colors"
-              >
-                내 결과 자세히 보기
-              </button>
+              {!isLoggedIn ? (
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => { if (onRequireLogin) onRequireLogin(); }}
+                    className="w-full bg-[#FEE500] text-[#3C1E1E] font-bold py-4 rounded-2xl text-[min(3.5vw,15px)] md:text-lg hover:bg-[#F4DC00] transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md mb-3"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]">
+                      <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" />
+                    </svg>
+                    카카오로 10초 저장
+                  </button>
+                  <p className="text-[11px] text-gray-400 flex items-center justify-center gap-1">
+                    <span>🔕</span> 광고 안 보냄 · 결과만 저장
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setView('result')}
+                  className="w-full bg-black text-white text-[min(3.5vw,15px)] md:text-lg font-bold py-4 rounded-2xl hover:bg-gray-900 transition-colors"
+                >
+                  내 결과 자세히 보기
+                </button>
+              )}
             </div>
 
             {/* 오늘 하루일기 기록 유도 — 오늘 이미 기록했으면 숨김 */}
-            {!hasLoggedToday && (
+            {(isLoggedIn && !hasLoggedToday) && (
               <button
                 onClick={() => setView('aichat')}
                 className="w-full bg-[#FFEDF3] hover:bg-[#FCE3EC] rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors"
