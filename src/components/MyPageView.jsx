@@ -16,7 +16,7 @@ const POSTURE_LABELS = {
   sitting: '주로 앉아요', standing: '주로 서요', moving: '계속 움직여요', mixed: '앉았다 섰다', other: '기타',
 };
 
-const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) => {
+const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onLogout }) => {
   const getCharImage = (fullCode) => {
     if (!fullCode) return null;
     const axis = fullCode.split('-')[0];
@@ -171,18 +171,28 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#c0ff00]/10 rounded-bl-full -z-10"></div>
         <div className="flex justify-between items-start mb-4">
           <h3 className="font-bold text-lg text-gray-900">내 기본 정보</h3>
-          <button 
-            onClick={() => {
-              if (isEditing) {
-                handleSaveProfile();
-              } else {
-                setIsEditing(true);
-              }
-            }}
-            className="text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
-          >
-            {isEditing ? '저장하기' : '수정하기'}
-          </button>
+          <div className="flex items-center gap-2">
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="text-xs font-bold text-gray-400 bg-gray-100 hover:bg-red-50 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors"
+              >
+                로그아웃
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (isEditing) {
+                  handleSaveProfile();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+              className="text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
+            >
+              {isEditing ? '저장하기' : '수정하기'}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">

@@ -311,12 +311,13 @@ function App() {
           />
         )}
         {currentView === 'mypage' && (
-          <MyPageView 
+          <MyPageView
             setView={setCurrentView}
             userInfo={userProfile}
             bmtiCode={bmtiCode}
             setBmtiCode={setBmtiCode}
             bmtiAnswers={bmtiAnswers}
+            onLogout={handleLoginAttempt}
           />
         )}
       </main>

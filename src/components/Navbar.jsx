@@ -5,6 +5,13 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   </svg>
 );
 
+const UserIcon = ({ className = "w-4 h-4" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <circle cx="12" cy="8.5" r="3.4" fill="currentColor" />
+    <path d="M4.8 19.2c0-3.6 3.2-5.6 7.2-5.6s7.2 2 7.2 5.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+  </svg>
+);
+
 import { useState, useEffect } from 'react';
 import { BMTI_RESULTS } from '../bmti_results';
 import { CHARACTERS } from '../data';
@@ -103,22 +110,17 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                     {/* My Page Button */}
                     <button
                       onClick={() => setView('mypage')}
-                      className={`text-[10px] sm:text-xs md:text-sm font-bold border px-2 sm:px-3 py-1 sm:py-1.5 rounded-full transition-colors whitespace-nowrap ${
-                        currentView === 'mypage' 
-                          ? 'bg-black text-[#c0ff00] border-black' 
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                      aria-label="마이페이지"
+                      className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border transition-colors flex-shrink-0 ${
+                        currentView === 'mypage'
+                          ? 'bg-black text-[#c0ff00] border-black'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      마이페이지
+                      <UserIcon className="w-4 h-4" />
                     </button>
                   </div>
                 )}
-                <div
-                  className="text-[10px] sm:text-xs md:text-sm font-bold text-gray-600 hover:text-black border border-gray-200 hover:border-gray-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full transition-colors cursor-pointer whitespace-nowrap"
-                  onClick={() => setIsLoggedIn(false)}
-                >
-                  로그아웃
-                </div>
               </div>
             ) : (
               <div
