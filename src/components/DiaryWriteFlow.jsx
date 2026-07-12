@@ -52,7 +52,7 @@ const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "
 const WHEN_OPTS = ["오늘 아침 일어날 때", "자고 일어났을 때", "움직일 때", "특정 자세일 때", "하루 종일"];
 const CATEGORIES = [
   { id: "exercise", label: "운동습관", on: "#3F9F5B", bg: "#E4F5E7", border: "#B6E4C0", ph: "예: 오늘 아침에 스트레칭 10분 했어요 🧘" },
-  { id: "daily", label: "일상", on: "#B8912A", bg: "#FDF6D3", border: "#F2E3A0", ph: "예: 오후에 커피 마시면서 잠깐 여유 부렸어요 ☕" },
+  { id: "daily", label: "일상", on: "#B8912A", bg: "#FDF6D3", border: "#F2E3A0", ph: "예: 🧍🏻‍♀️아침마다 50점프 챌린지 하기로 했다." },
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
 
@@ -274,7 +274,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </AccordionCard>
 
               {/* ━━━ 4. 운동 (했다/안했다 → 이유 또는 종목) ━━━ */}
-              <AccordionCard question="오늘 몸 좀 움직였어요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
+              <AccordionCard question="오늘 운동 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
                 expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
                 {exerciseDidIt === null && (
                   <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
@@ -545,7 +545,7 @@ const DEFAULT_BLOCKS = [
   { id: "mood", label: "오늘의 말랑이 기분", removable: false },
   { id: "sitting", label: "얼마나 앉았어요", removable: true },
   { id: "sleep", label: "얼마나 푹 잤나요", removable: true },
-  { id: "exercise", label: "오늘 몸 좀 움직였어요", removable: true },
+  { id: "exercise", label: "오늘 운동 했나요", removable: true },
   { id: "oneLine", label: "한 줄 일기", removable: true },
   { id: "sore", label: "뻐근한 부위", removable: true },
 ];

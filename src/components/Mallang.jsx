@@ -12,7 +12,10 @@ export function Mallang({ v, size = 44 }) {
   const blinkDelay = useRef(-(Math.random() * 5).toFixed(2) + "s").current;
   const eyeStyle = { animationDelay: blinkDelay };
   return (
-    <svg viewBox="0 0 100 82" width={size} height={size * 0.82} style={{ display: "block", margin: "0 auto", overflow: "visible" }}>
+    // key={v} — 표정(무드)이 바뀔 때마다 이 svg를 새로 마운트시켜서 아래 눌렸다 펴지는
+    // squish 애니메이션이 매번 다시 재생되게 한다.
+    <svg key={v} className="mallang-squish" viewBox="0 0 100 82" width={size} height={size * 0.82}
+      style={{ display: "block", margin: "0 auto", overflow: "visible", transformBox: "fill-box", transformOrigin: "50% 100%" }}>
       <path d="M9 58 C9 22, 32 9, 51 9 C71 9, 92 24, 92 56 C92 68, 74 74, 50 74 C26 74, 9 69, 9 58 Z"
         fill={m.fill} stroke={m.stroke} strokeWidth="1.6" strokeLinejoin="round" />
       {v === 1 && <>
