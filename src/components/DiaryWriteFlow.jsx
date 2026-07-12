@@ -91,10 +91,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 뻐근한 부위
   const [sore, setSore] = useState({ part: null, level: 5, when: null });
 
-  // 생략 여부 (앉은 정도/수면/운동/한 줄 일기/뻐근한 부위 — 무드는 필수라 제외)
-  const [skipped, setSkipped] = useState({ sitting: false, sleep: false, exercise: false, oneLine: false, sore: false });
-  const toggleSkip = (key) => setSkipped(s => ({ ...s, [key]: !s[key] }));
-
   const [selDate, setSelDate] = useState(() => targetDate ? new Date(`${targetDate}T00:00:00`) : new Date());
   const [showDatePick, setShowDatePick] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -163,23 +159,22 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       ? (exerciseTypes.length > 0 && exerciseTypes.every(t => exerciseTimes[t]))
       : false;
 
-  // ── 운동 아코디언 제목 ──
-  const exerciseTitle = () => {
-    if (exerciseDidIt === "no" && exerciseReason) return `🏃🏻 오늘은 ${exerciseReason}`;
-    if (exerciseDidIt === "yes" && exerciseComplete) {
-      const parts = exerciseTypes.map(t => `${t}${eulReul(t)} ${exerciseTimes[t]}`);
-      return `🏃🏻 오늘 ${parts.join(", ")} 했어요`;
-    }
-    return "🏃🏻 오늘 몸 좀 움직였어요?";
-  };
+  // ── 선택하면 제목 자리에 아이콘+내용으로 바뀌는 답변 정보 ──
+  const sittingOpt = SITTING_OPTS.find(o => o.label === sittingVal);
+  const sleepOpt = SLEEP_OPTS.find(o => o.label === sleepVal);
+  const exerciseReasonOpt = NO_EXERCISE_REASONS.find(r => r.label === exerciseReason);
 
-  // ── 앉아있는 정도 제목 ──
-  const sittingTitle = () => sittingVal ? `🪑 ${sittingVal}` : "🪑 얼마나 앉았어요?";
+  let exerciseAnswerIcon = null;
+  let exerciseAnswerText = null;
+  if (exerciseDidIt === "no" && exerciseReasonOpt) {
+    exerciseAnswerIcon = exerciseReasonOpt.icon;
+    exerciseAnswerText = `오늘은 ${exerciseReasonOpt.label}`;
+  } else if (exerciseDidIt === "yes" && exerciseComplete) {
+    exerciseAnswerIcon = "flex";
+    exerciseAnswerText = `오늘 ${exerciseTypes.map(t => `${t}${eulReul(t)} ${exerciseTimes[t]}`).join(", ")} 했어요`;
+  }
 
-  // ── 수면 제목 ──
-  const sleepTitle = () => sleepVal ? `🫧 ${sleepVal}` : "🫧 얼마나 푹 잤나요?";
-
-  // ── 말랑이 기분 제목 ──
+  // ── 말랑이 기분 ──
   const moodData = DAY_MOODS.find(m => m.v === dayMood);
 
   return (
@@ -194,7 +189,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
             <span style={{ fontSize: 11, color: C.sub, transform: showDatePick ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
           </button>
-          <button onClick={() => setShowSettings(true)} style={{ position: "absolute", right: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: C.sageSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, cursor: "pointer" }}>⚙️</button>
+          <button onClick={() => setShowSettings(true)} style={{ position: "absolute", right: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: C.sageSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <DiaryIcon name="gear" size={19} />
+          </button>
 
           {showDatePick && (
             <div style={{ position: "absolute", top: 52, left: "50%", transform: "translateX(-50%)", background: C.card, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", padding: 8, zIndex: 40, minWidth: 200 }}>
@@ -222,7 +219,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘의 말랑이 기분은</h2>
                   {dayMood && !expanded.mood && moodData && (
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: moodData.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: moodData.circleBg || moodData.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Mallang v={moodData.v} size={34} />
                     </div>
                   )}
@@ -233,10 +230,11 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
                     {DAY_MOODS.map(m => {
                       const on = dayMood === m.v;
+                      const circleBg = m.circleBg || m.fill;
                       return (
                         <button key={m.v} onClick={() => { setDayMood(m.v); setTimeout(() => setExpanded(e => ({ ...e, mood: false })), 300); }}
                           style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "6px 0", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer" }}>
-                          <div style={{ width: 54, height: 54, borderRadius: "50%", background: on ? m.fill : C.tileOff, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: on ? `0 4px 14px ${m.fill}99` : "none", transition: "all .15s" }}>
+                          <div style={{ width: 54, height: 54, borderRadius: "50%", background: on ? circleBg : C.tileOff, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: on ? `0 4px 14px ${circleBg}99` : "none", transition: "all .15s" }}>
                             <div style={{ filter: on ? "none" : "grayscale(1) opacity(0.55)", transition: "filter .15s" }}>
                               <Mallang v={m.v} size={38} />
                             </div>
@@ -256,8 +254,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </div>
 
               {/* ━━━ 2. 얼마나 앉았어요 (아코디언) ━━━ */}
-              <AccordionCard title={sittingTitle()} expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={!!sittingVal}
-                skippable skipped={skipped.sitting} onToggleSkip={() => toggleSkip("sitting")}>
+              <AccordionCard question="얼마나 앉았어요?" answerIcon={sittingOpt?.icon} answerText={sittingVal}
+                expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={!!sittingVal}>
                 <div style={{ display: "flex", gap: 6 }}>
                   {SITTING_OPTS.map(opt => (
                     <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sittingVal === opt.label} onClick={() => handleSittingPick(opt)} />
@@ -266,8 +264,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </AccordionCard>
 
               {/* ━━━ 3. 얼마나 푹 잤나요 (아코디언) ━━━ */}
-              <AccordionCard title={sleepTitle()} expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}
-                skippable skipped={skipped.sleep} onToggleSkip={() => toggleSkip("sleep")}>
+              <AccordionCard question="얼마나 푹 잤나요?" answerIcon={sleepOpt?.icon} answerText={sleepVal}
+                expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
                 <div style={{ display: "flex", gap: 6 }}>
                   {SLEEP_OPTS.map(opt => (
                     <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} />
@@ -276,8 +274,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </AccordionCard>
 
               {/* ━━━ 4. 운동 (했다/안했다 → 이유 또는 종목) ━━━ */}
-              <AccordionCard title={exerciseTitle()} expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}
-                skippable skipped={skipped.exercise} onToggleSkip={() => toggleSkip("exercise")}>
+              <AccordionCard question="오늘 몸 좀 움직였어요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
+                expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
                 {exerciseDidIt === null && (
                   <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
                     <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} />
@@ -366,7 +364,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </AccordionCard>
 
               {/* ━━━ 5. 한 줄 일기 ━━━ */}
-              <Card title="✏️ 한 줄 일기" skippable skipped={skipped.oneLine} onToggleSkip={() => toggleSkip("oneLine")}>
+              <Card title="한 줄 일기">
                 <div style={{ display: "flex", gap: 8 }}>
                   {CATEGORIES.map(c => {
                     const on = oneLine.cat === c.id;
@@ -381,7 +379,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </Card>
 
               {/* ━━━ 6. 뻐근한 부위 ━━━ */}
-              <Card title="🐢 뻐근한 부위" skippable skipped={skipped.sore} onToggleSkip={() => toggleSkip("sore")}>
+              <Card title="뻐근한 부위">
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
                   {PARTS.map(p => <Tile key={p} content={p} on={sore.part === p} onClick={() => setSore(s => ({ ...s, part: s.part === p ? null : p }))} />)}
                 </div>
@@ -402,7 +400,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {/* ── 하단 고정 CTA 버튼 ── */}
         {phase === "form" && (
           <div style={{ flexShrink: 0, padding: "10px 14px 20px", background: `linear-gradient(transparent, ${C.bg} 20%)`, borderTop: `1px solid ${C.line}` }}>
-            <button onClick={finishFlow} style={{ ...primaryBtn, background: C.sage, color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>📔 이대로 저장하기</button>
+            <button onClick={finishFlow} style={{ ...primaryBtn, background: C.sage, color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>이대로 기록하기</button>
           </div>
         )}
 
@@ -433,42 +431,46 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 // 헬퍼 컴포넌트
 // ============================================
 
-function SkipButton({ skipped, onToggleSkip }) {
+// 답변 전에는 질문 텍스트만, 답변하면 그 답의 아이콘+내용으로 바뀌는 제목.
+function AccordionTitle({ question, answerIcon, answerText, muted }) {
   return (
-    <button onClick={onToggleSkip} style={{ position: "absolute", top: 10, right: 14, fontSize: 9.5, fontWeight: 700, color: skipped ? C.pink : C.tileOffText, background: "transparent", border: "none", cursor: "pointer", padding: "4px 6px", zIndex: 2 }}>
-      {skipped ? "생략 취소" : "생략"}
-    </button>
+    <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 15, fontWeight: 800, color: muted ? C.tileOffText : C.ink, lineHeight: 1.4, flex: 1, paddingRight: 12 }}>
+      {answerIcon && (
+        <span style={{ width: 24, height: 24, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <DiaryIcon name={answerIcon} size={16} />
+        </span>
+      )}
+      {answerText || question}
+    </span>
   );
 }
 
-function AccordionCard({ title, expanded, onToggle, done, children, skippable, skipped, onToggleSkip }) {
+function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, done, children }) {
   return (
     // flexShrink:0 필수 — 부모가 flex-direction:column인데 이 div에 overflow:hidden이 걸려 있으면
     // 플렉스 아이템의 자동 최소 높이가 auto 대신 0이 되어 버려서, 브라우저가 이 카드를 통째로
     // height:0으로 찌그러뜨리는 문제가 있었다(앉은 시간/수면/운동/스트레칭 카드가 안 보이고 클릭도 안 되던 원인).
     <div style={{ position: "relative", background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.02)", overflow: "hidden", flexShrink: 0 }}>
-      {skippable && <SkipButton skipped={skipped} onToggleSkip={onToggleSkip} />}
       <button onClick={onToggle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: skipped ? C.tileOffText : C.ink, lineHeight: 1.4, flex: 1, paddingRight: 44, textDecoration: skipped ? "line-through" : "none" }}>{title}</span>
+        <AccordionTitle question={question} answerIcon={answerIcon} answerText={answerText} />
         <span style={{ fontSize: 12, color: done ? C.sage : C.sub, fontWeight: 700, flexShrink: 0, transition: "transform .2s", transform: expanded ? "rotate(180deg)" : "rotate(0)" }}>
           {done && !expanded ? "✓" : "▾"}
         </span>
       </button>
       <div style={{ overflow: "hidden", maxHeight: expanded ? 700 : 0, transition: "max-height 0.35s ease" }}>
         <div style={{ padding: "0 24px 20px" }}>
-          {skipped ? <p style={{ fontSize: 12.5, color: C.sub, margin: 0 }}>이 항목은 생략했어요.</p> : children}
+          {children}
         </div>
       </div>
     </div>
   );
 }
 
-function Card({ title, children, skippable, skipped, onToggleSkip }) {
+function Card({ title, children }) {
   return (
-    <div style={{ position: "relative", background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
-      {skippable && <SkipButton skipped={skipped} onToggleSkip={onToggleSkip} />}
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: skipped ? C.tileOffText : C.ink, margin: "0 0 16px", paddingRight: 44, textDecoration: skipped ? "line-through" : "none" }}>{title}</h2>
-      {skipped ? <p style={{ fontSize: 12.5, color: C.sub, margin: 0 }}>이 항목은 생략했어요.</p> : children}
+    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: "0 0 16px" }}>{title}</h2>
+      {children}
     </div>
   );
 }
@@ -539,61 +541,6 @@ function EmojiTile({ icon, label, on, onClick }) {
 // 내 블럭 커스텀 (환경설정)
 // ============================================
 
-const BLOCK_TEMPLATES = [
-  { group: "감정", items: [
-    { label: "신나는", emoji: "🎉" }, { label: "편안한", emoji: "🛋️" }, { label: "뿌듯한", emoji: "🏆" }, { label: "기대되는", emoji: "🎈" },
-    { label: "행복한", emoji: "🌷" }, { label: "의욕적인", emoji: "🚀" }, { label: "설레는", emoji: "💗" }, { label: "상쾌한", emoji: "🍃" },
-    { label: "차분한", emoji: "🌙" }, { label: "감사한", emoji: "🕯️" }, { label: "우울한", emoji: "☁️" }, { label: "외로운", emoji: "🍂" },
-    { label: "불안한", emoji: "🌀" }, { label: "슬픈", emoji: "😢" }, { label: "화난", emoji: "🌋" }, { label: "부담되는", emoji: "🎒" },
-    { label: "짜증나는", emoji: "⚡" }, { label: "피곤한", emoji: "😴" }, { label: "스트레스", emoji: "🌩️" }, { label: "지루한", emoji: "💬" },
-  ]},
-  { group: "사람", items: [
-    { label: "친구", emoji: "⭐" }, { label: "가족", emoji: "👨‍👩‍👧" }, { label: "애인", emoji: "❤️" }, { label: "안 만남", emoji: "🚫" },
-  ]},
-  { group: "날씨", items: [
-    { label: "맑음", emoji: "☀️" }, { label: "흐림", emoji: "⛅" }, { label: "비", emoji: "☔" }, { label: "눈", emoji: "❄️" },
-  ]},
-  { group: "취미", items: [
-    { label: "운동", emoji: "🏋️" }, { label: "TV & 컨텐츠", emoji: "📺" }, { label: "영화", emoji: "🍿" }, { label: "게임", emoji: "🎮" },
-  ]},
-  { group: "식사", items: [
-    { label: "아침", emoji: "🍳" }, { label: "점심", emoji: "🍕" }, { label: "저녁", emoji: "🍖" }, { label: "야식", emoji: "🍗" },
-  ]},
-  { group: "자기관리", items: [
-    { label: "샤워", emoji: "🚿" }, { label: "양치", emoji: "🪥" }, { label: "세수", emoji: "🧼" }, { label: "물 마시기", emoji: "🥛" },
-  ]},
-  { group: "학교", items: [
-    { label: "수업", emoji: "📖" }, { label: "공부", emoji: "🔍" }, { label: "과제", emoji: "📝" }, { label: "시험", emoji: "📋" },
-  ]},
-  { group: "외출", items: [
-    { label: "집콕", emoji: "🏠" }, { label: "학교", emoji: "🏫" }, { label: "식당", emoji: "🍽️" }, { label: "카페", emoji: "☕" },
-  ]},
-  { group: "뷰티", items: [
-    { label: "헤어", emoji: "✂️" }, { label: "네일", emoji: "💅" }, { label: "스킨케어", emoji: "🧴" }, { label: "메이크업", emoji: "💄" },
-  ]},
-  { group: "건강", items: [
-    { label: "아픔", emoji: "🤕" }, { label: "입원", emoji: "🏥" }, { label: "진료", emoji: "🩺" }, { label: "약", emoji: "💊" },
-  ]},
-  { group: "집안일", items: [
-    { label: "청소", emoji: "🧹" }, { label: "요리", emoji: "🍳" }, { label: "빨래", emoji: "🧺" }, { label: "설거지", emoji: "✨" },
-  ]},
-  { group: "연애", items: [
-    { label: "데이트", emoji: "📍" }, { label: "기념일", emoji: "📅" }, { label: "선물", emoji: "🎁" }, { label: "다툼", emoji: "💔" },
-  ]},
-  { group: "직장", items: [
-    { label: "출근", emoji: "💼" }, { label: "칼퇴", emoji: "🚪" }, { label: "야근", emoji: "🌙" }, { label: "휴가", emoji: "🏖️" },
-  ]},
-  { group: "기호품", items: [
-    { label: "간식", emoji: "🍪" }, { label: "커피", emoji: "☕" }, { label: "음료", emoji: "🥤" }, { label: "차", emoji: "🍵" },
-  ]},
-];
-
-const SPECIAL_BLOCKS = [
-  { id: "steps", label: "걸음수", emoji: "👣" },
-  { id: "music", label: "음악", emoji: "🎵" },
-  { id: "photo", label: "오늘의 사진", emoji: "📷" },
-];
-
 const DEFAULT_BLOCKS = [
   { id: "mood", label: "오늘의 말랑이 기분", removable: false },
   { id: "sitting", label: "얼마나 앉았어요", removable: true },
@@ -603,21 +550,84 @@ const DEFAULT_BLOCKS = [
   { id: "sore", label: "뻐근한 부위", removable: true },
 ];
 
+// 각 블럭의 실제 색·아이콘을 그대로 보여주는 미리보기.
+function BlockPreview({ id }) {
+  if (id === "mood") {
+    return (
+      <div style={{ display: "flex", gap: 8 }}>
+        {DAY_MOODS.map(m => (
+          <div key={m.v} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: m.circleBg || m.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Mallang v={m.v} size={30} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (id === "sitting" || id === "sleep") {
+    const opts = id === "sitting" ? SITTING_OPTS : SLEEP_OPTS;
+    return (
+      <div style={{ display: "flex", gap: 8 }}>
+        {opts.map(o => (
+          <div key={o.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <DiaryIcon name={o.icon} size={20} />
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: C.sub, textAlign: "center" }}>{o.label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (id === "exercise") {
+    return (
+      <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+        {[{ label: "안했어요!", icon: "restNo" }, { label: "했어요!", icon: "flex" }].map(o => (
+          <div key={o.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <DiaryIcon name={o.icon} size={20} />
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: C.sub }}>{o.label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (id === "oneLine") {
+    return (
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {CATEGORIES.map(c => (
+          <span key={c.id} style={{ padding: "7px 13px", borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: c.bg, color: c.on, border: `1.5px solid ${c.border}` }}>{c.label}</span>
+        ))}
+      </div>
+    );
+  }
+  if (id === "sore") {
+    return (
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {PARTS.slice(0, 5).map(p => (
+          <span key={p} style={{ padding: "7px 13px", borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: C.pinkSoft, color: C.pink }}>{p}</span>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
 function BlockSettingsModal({ onClose }) {
   const [tab, setTab] = useState("active"); // active | hidden
-  const [showCreate, setShowCreate] = useState(false);
   const [blocks, setBlocks] = useState(DEFAULT_BLOCKS.map(b => ({ ...b, hidden: false })));
 
   const activeBlocks = blocks.filter(b => !b.hidden);
   const hiddenBlocks = blocks.filter(b => b.hidden);
 
-  const hideBlock = (id) => setBlocks(bs => bs.map(b => b.id === id ? { ...b, hidden: true } : b));
-  const showBlock = (id) => setBlocks(bs => bs.map(b => b.id === id ? { ...b, hidden: false } : b));
-
-  const addCustomBlock = (group, items) => {
-    const id = `custom-${group}-${Date.now()}`;
-    setBlocks(bs => [...bs, { id, label: group, items, hidden: false, removable: true, custom: true }]);
+  const hideBlock = (id) => {
+    if (window.confirm("숨긴 블럭으로 이동할까요?")) {
+      setBlocks(bs => bs.map(b => b.id === id ? { ...b, hidden: true } : b));
+    }
   };
+  const showBlock = (id) => setBlocks(bs => bs.map(b => b.id === id ? { ...b, hidden: false } : b));
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 80, background: C.bg, display: "flex", justifyContent: "center" }}>
@@ -638,16 +648,9 @@ function BlockSettingsModal({ onClose }) {
 
         {/* 목록 */}
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {tab === "active" && (
-            <>
-              <button onClick={() => setShowCreate(true)} style={{ width: "100%", padding: 16, borderRadius: 18, border: "none", background: C.sageSoft, color: C.sage, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-                + 새 블럭
-              </button>
-              {activeBlocks.map(block => (
-                <BlockCard key={block.id} block={block} onHide={block.removable ? () => hideBlock(block.id) : null} />
-              ))}
-            </>
-          )}
+          {tab === "active" && activeBlocks.map(block => (
+            <BlockCard key={block.id} block={block} onHide={block.removable ? () => hideBlock(block.id) : null} />
+          ))}
           {tab === "hidden" && (
             hiddenBlocks.length === 0
               ? <p style={{ fontSize: 13, color: C.sub, textAlign: "center", marginTop: 20 }}>숨긴 블럭이 없어요.</p>
@@ -662,112 +665,24 @@ function BlockSettingsModal({ onClose }) {
           <button onClick={onClose} style={{ ...primaryBtn, background: C.sage }}>변경 사항 저장</button>
         </div>
       </div>
-
-      {showCreate && (
-        <BlockCreateModal
-          onClose={() => setShowCreate(false)}
-          onAdd={(group, items) => { addCustomBlock(group, items); setShowCreate(false); }}
-        />
-      )}
     </div>
   );
 }
 
 function BlockCard({ block, onHide, onShow }) {
-  const [open, setOpen] = useState(true);
-  const items = block.items || BLOCK_TEMPLATES.find(g => g.group === block.label)?.items
-    || SPECIAL_BLOCKS.filter(s => s.label === block.label);
-
   return (
     <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "16px 18px 20px" }}>
       <div style={{ width: 36, height: 4, background: C.line, borderRadius: 4, margin: "0 auto 12px", cursor: "grab" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: open ? 14 : 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: 15, fontWeight: 800 }}>{block.label}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {onHide && <button onClick={onHide} style={{ border: "none", background: "transparent", color: C.tileOffText, fontSize: 16, cursor: "pointer", padding: 4 }}>···</button>}
-          {onShow && <button onClick={onShow} style={{ border: "none", background: C.sageSoft, color: C.sage, fontSize: 11.5, fontWeight: 800, borderRadius: 12, padding: "6px 12px", cursor: "pointer" }}>다시 쓰기</button>}
-          <button onClick={() => setOpen(v => !v)} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 13, cursor: "pointer", padding: 4, transform: open ? "rotate(0)" : "rotate(180deg)" }}>▴</button>
-        </div>
+        {onHide && (
+          <button onClick={onHide} style={{ width: 26, height: 26, borderRadius: "50%", border: "none", background: C.pinkSoft, color: C.pink, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>−</button>
+        )}
+        {onShow && (
+          <button onClick={onShow} style={{ width: 26, height: 26, borderRadius: "50%", border: "none", background: C.sageSoft, color: C.sage, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>+</button>
+        )}
       </div>
-      {open && items && items.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 16, justifyItems: "center" }}>
-          {items.slice(0, 8).map(it => (
-            <div key={it.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: C.sageSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{it.emoji}</div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{it.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BlockCreateModal({ onClose, onAdd }) {
-  const [tab, setTab] = useState("template");
-
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "24px 24px 0 0", height: "85vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "18px 18px 10px", position: "relative" }}>
-          <h2 style={{ fontSize: 16.5, fontWeight: 800, margin: 0 }}>블럭 생성</h2>
-          <button onClick={onClose} style={{ position: "absolute", right: 14, border: "none", background: "transparent", fontSize: 20, color: C.sub, cursor: "pointer" }}>✕</button>
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 24, padding: "6px 20px 12px", borderBottom: `1px solid ${C.line}` }}>
-          {[["template", "템플릿"], ["custom", "커스텀"]].map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "6px 0 10px", fontSize: 14, fontWeight: 800,
-              color: tab === k ? C.sage : C.sub, borderBottom: tab === k ? `2px solid ${C.sage}` : "2px solid transparent" }}>{label}</button>
-          ))}
-        </div>
-
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-          {tab === "template" ? (
-            <>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: C.sub, marginBottom: 10 }}>스페셜 블럭</div>
-              <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 16, marginBottom: 4 }}>
-                {SPECIAL_BLOCKS.map(s => (
-                  <div key={s.id} style={{ flex: "0 0 auto", width: 110, border: `1px solid ${C.line}`, borderRadius: 16, padding: "14px 12px", textAlign: "center" }}>
-                    <div style={{ fontSize: 24, marginBottom: 6 }}>{s.emoji}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.sub }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-              {BLOCK_TEMPLATES.map(group => (
-                <TemplateGroup key={group.group} group={group} onAdd={(items) => onAdd(group.group, items)} />
-              ))}
-            </>
-          ) : (
-            <p style={{ fontSize: 13, color: C.sub, textAlign: "center", marginTop: 30 }}>내가 원하는 아이콘과 문구로 직접 블럭을 만드는 기능은 준비 중이에요.</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TemplateGroup({ group, onAdd }) {
-  const [picked, setPicked] = useState([]);
-  const togglePick = (item) => setPicked(p => p.includes(item) ? p.filter(x => x !== item) : [...p, item]);
-
-  return (
-    <div style={{ border: `1px solid ${C.line}`, borderRadius: 18, padding: 16, marginBottom: 14 }}>
-      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>{group.group}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center", marginBottom: picked.length > 0 ? 12 : 0 }}>
-        {group.items.map(it => {
-          const on = picked.includes(it);
-          return (
-            <button key={it.label} onClick={() => togglePick(it)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
-              <div style={{ width: 54, height: 54, borderRadius: "50%", background: on ? C.pink : C.sageSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none" }}>{it.emoji}</div>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: on ? C.ink : C.sub }}>{it.label}</span>
-            </button>
-          );
-        })}
-      </div>
-      {picked.length > 0 && (
-        <button onClick={() => onAdd(picked)} style={{ width: "100%", padding: 12, borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-          {group.group} 블럭 추가 ({picked.length})
-        </button>
-      )}
+      <BlockPreview id={block.id} />
     </div>
   );
 }

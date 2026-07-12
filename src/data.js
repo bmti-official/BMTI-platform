@@ -227,12 +227,14 @@ export function isReservedNickname(nickname) {
 }
 
 // BMTI 하루일기의 무드 마스코트 '말랑이' 5단계 — Mallang.jsx의 SVG 컴포넌트가 그린다.
+// circleBg: 캘린더 위 말랑이 몸통 색과 별개로, 픽커 등에서 감싸는 원형 배경에 쓰는
+// 더 옅은 색 (없으면 fill을 그대로 씀).
 export const MOODS = [
-  { v: 1, label: '힘들었어요', fill: '#6B2323', stroke: '#4A1717', line: '#FBE7E4' },
+  { v: 1, label: '힘들었어요', fill: '#E23B3B', stroke: '#C22F2F', line: '#FBE7E4', circleBg: '#FBD9E0' },
   { v: 2, label: '지쳤어요', fill: '#F7E0E0', stroke: '#E3C4C4' },
   { v: 3, label: '그냥저냥', fill: '#FBFBFA', stroke: '#DEDCD8' },
   { v: 4, label: '괜찮았어요', fill: '#E4F0DE', stroke: '#C3DBBA' },
-  { v: 5, label: '좋았어요', fill: '#B6FA3D', stroke: '#8FD91A' },
+  { v: 5, label: '좋았어요', fill: '#B6FA3D', stroke: '#8FD91A', circleBg: '#DFF3C4' },
 ];
 
 

@@ -149,11 +149,22 @@ function IconForgot({ size = 28 }) {
   );
 }
 
+function IconGear({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M16 3.5 l1.8 3.2 3.5-1.3 1 3.6 3.6 1 -1.3 3.5 1.3 3.5 -3.6 1 -1 3.6 -3.5-1.3 -1.8 3.2 -1.8-3.2 -3.5 1.3 -1-3.6 -3.6-1 1.3-3.5 -1.3-3.5 3.6-1 1-3.6 3.5 1.3Z"
+        fill="#CFE4D6" stroke="#5F8A76" strokeWidth="1.3" strokeLinejoin="round" />
+      <circle cx="16" cy="16" r="5.2" fill="#F3F9F1" stroke="#5F8A76" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
 const ICONS = {
   walk: IconWalk, chair: IconChair, sofa: IconSofa, slump: IconSlump,
   toss: IconToss, mehMoon: IconMehMoon, sleepWell: IconSleepWell,
   restNo: IconRestNo, flex: IconFlex,
   clock: IconClock, yawn: IconYawn, bandage: IconBandage, blanket: IconBlanket, forgot: IconForgot,
+  gear: IconGear,
 };
 
 export function DiaryIcon({ name, size = 28 }) {
