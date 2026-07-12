@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mallang } from "./Mallang";
+import { DiaryIcon } from "./DiaryIcons";
 import { MOODS as DAY_MOODS } from "../data";
 
 // ============================================
@@ -16,17 +17,17 @@ const C = {
 
 // ── 앉아있던 정도 ──
 const SITTING_OPTS = [
-  { label: "거의 안 앉음", emoji: "🚶" },
-  { label: "보통이었어요", emoji: "🪑" },
-  { label: "많이 앉았어요", emoji: "🛋️" },
-  { label: "하루 종일 앉음", emoji: "🥱" },
+  { label: "거의 안 앉음", icon: "walk" },
+  { label: "보통이었어요", icon: "chair" },
+  { label: "많이 앉았어요", icon: "sofa" },
+  { label: "하루 종일 앉음", icon: "slump" },
 ];
 
 // ── 수면의 질 ──
 const SLEEP_OPTS = [
-  { label: "뒤척였어요", emoji: "😖" },
-  { label: "그냥 그랬어요", emoji: "😐" },
-  { label: "푹 잤어요", emoji: "😴" },
+  { label: "뒤척였어요", icon: "toss" },
+  { label: "그냥 그랬어요", icon: "mehMoon" },
+  { label: "푹 잤어요", icon: "sleepWell" },
 ];
 
 // ── 운동 카테고리 (개인 집중형에 스트레칭 포함) ──
@@ -39,11 +40,11 @@ const EXERCISE_TIME_LABELS = ["30분 미만", "1시간 미만", "2시간 미만"
 
 // ── 운동을 안 한 이유 ──
 const NO_EXERCISE_REASONS = [
-  { label: "바빴어요", emoji: "⏰" },
-  { label: "피곤해요", emoji: "🥱" },
-  { label: "몸이 안 좋아요", emoji: "🤒" },
-  { label: "그냥 쉬고 싶었어요", emoji: "🛌" },
-  { label: "깜빡했어요", emoji: "💭" },
+  { label: "바빴어요", icon: "clock" },
+  { label: "피곤해요", icon: "yawn" },
+  { label: "몸이 안 좋아요", icon: "bandage" },
+  { label: "그냥 쉬고 싶었어요", icon: "blanket" },
+  { label: "깜빡했어요", icon: "forgot" },
 ];
 
 // ── 기타 상수 ──
@@ -259,7 +260,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 skippable skipped={skipped.sitting} onToggleSkip={() => toggleSkip("sitting")}>
                 <div style={{ display: "flex", gap: 6 }}>
                   {SITTING_OPTS.map(opt => (
-                    <EmojiTile key={opt.label} emoji={opt.emoji} label={opt.label} on={sittingVal === opt.label} onClick={() => handleSittingPick(opt)} />
+                    <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sittingVal === opt.label} onClick={() => handleSittingPick(opt)} />
                   ))}
                 </div>
               </AccordionCard>
@@ -269,7 +270,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 skippable skipped={skipped.sleep} onToggleSkip={() => toggleSkip("sleep")}>
                 <div style={{ display: "flex", gap: 6 }}>
                   {SLEEP_OPTS.map(opt => (
-                    <EmojiTile key={opt.label} emoji={opt.emoji} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} />
+                    <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} />
                   ))}
                 </div>
               </AccordionCard>
@@ -279,8 +280,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 skippable skipped={skipped.exercise} onToggleSkip={() => toggleSkip("exercise")}>
                 {exerciseDidIt === null && (
                   <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
-                    <EmojiTile emoji="🙅" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} />
-                    <EmojiTile emoji="🙆" label="했어요!" on={false} onClick={() => setExerciseDidIt("yes")} />
+                    <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} />
+                    <EmojiTile icon="flex" label="했어요!" on={false} onClick={() => setExerciseDidIt("yes")} />
                   </div>
                 )}
 
@@ -289,7 +290,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>오늘은 어떤 이유였어요?</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
                       {NO_EXERCISE_REASONS.map(r => (
-                        <Tile key={r.label} content={r.emoji} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} />
+                        <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} />
                       ))}
                     </div>
                     <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
@@ -517,17 +518,17 @@ function Tile({ content, label, on, onClick, disabled, size = 60 }) {
   );
 }
 
-// 원 안에 이모지를 넣는 타일(시간대·감정·이유 등 실제 아이콘이 있는 항목용).
-function EmojiTile({ emoji, label, on, onClick }) {
+// 원 안에 2D 아이콘을 넣는 타일(시간대·감정·이유 등 실제 아이콘이 있는 항목용).
+function EmojiTile({ icon, label, on, onClick }) {
   return (
     <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, flex: 1 }}>
       <div style={{
         width: 54, height: 54, borderRadius: "50%", background: on ? C.pink : C.tileOff,
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-        filter: on ? "none" : "grayscale(0.4) opacity(0.8)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        filter: on ? "none" : "grayscale(0.4) opacity(0.85)",
         boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none", transition: "all .15s",
       }}>
-        {emoji}
+        <DiaryIcon name={icon} size={28} />
       </div>
       <span style={{ fontSize: 10.5, fontWeight: 700, color: on ? C.ink : C.sub, textAlign: "center", lineHeight: 1.2 }}>{label}</span>
     </button>

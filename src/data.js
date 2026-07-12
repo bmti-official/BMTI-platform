@@ -228,11 +228,11 @@ export function isReservedNickname(nickname) {
 
 // BMTI 하루일기의 무드 마스코트 '말랑이' 5단계 — Mallang.jsx의 SVG 컴포넌트가 그린다.
 export const MOODS = [
-  { v: 1, label: '힘들었어요', fill: '#F2C4C4', stroke: '#DBA5A5' },
+  { v: 1, label: '힘들었어요', fill: '#6B2323', stroke: '#4A1717', line: '#FBE7E4' },
   { v: 2, label: '지쳤어요', fill: '#F7E0E0', stroke: '#E3C4C4' },
   { v: 3, label: '그냥저냥', fill: '#FBFBFA', stroke: '#DEDCD8' },
   { v: 4, label: '괜찮았어요', fill: '#E4F0DE', stroke: '#C3DBBA' },
-  { v: 5, label: '좋았어요', fill: '#D2E9C4', stroke: '#AECF9C' },
+  { v: 5, label: '좋았어요', fill: '#B6FA3D', stroke: '#8FD91A' },
 ];
 
 
