@@ -51,8 +51,8 @@ const NO_EXERCISE_REASONS = [
 const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "발목"];
 const WHEN_OPTS = ["오늘 아침 일어날 때", "자고 일어났을 때", "움직일 때", "특정 자세일 때", "하루 종일"];
 const CATEGORIES = [
-  { id: "exercise", label: "운동습관", on: "#3F9F5B", bg: "#E4F5E7", border: "#B6E4C0", ph: "예: 오늘 아침에 스트레칭 10분 했어요 🧘" },
-  { id: "daily", label: "일상", on: "#B8912A", bg: "#FDF6D3", border: "#F2E3A0", ph: "예: 🧍🏻‍♀️아침마다 50점프 챌린지 하기로 했다." },
+  { id: "exercise", label: "운동습관", on: "#3F9F5B", bg: "#E4F5E7", border: "#B6E4C0", ph: "예: 🧍🏻‍♀️아침마다 50점프 챌린지 하기로 했다." },
+  { id: "daily", label: "일상", on: "#B8912A", bg: "#FDF6D3", border: "#F2E3A0", ph: "예: 🛍️ 퇴근하고 친구랑 만나서 저녁 먹고 카페 갔다." },
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
 

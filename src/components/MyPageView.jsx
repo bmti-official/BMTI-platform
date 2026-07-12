@@ -3,21 +3,18 @@ import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../dat
 import { supabase } from '../lib/supabaseClient';
 import { canRetakeTest } from '../lib/bmtiSystem';
 
-const EXERCISE_GOALS = [
-  { id: 'diet', label: '다이어트', emoji: '🔥' },
-  { id: 'muscle', label: '근력 강화', emoji: '💪' },
-  { id: 'health', label: '건강 유지', emoji: '💚' },
-  { id: 'flexibility', label: '유연성 향상', emoji: '🧘' },
-  { id: 'stress', label: '스트레스 해소', emoji: '🧠' },
-  { id: 'posture', label: '체형 교정', emoji: '🦴' },
-];
-
-const EXERCISE_FREQUENCY = [
-  { id: 'none', label: '거의 안 함' },
-  { id: '1-2', label: '주 1~2회' },
-  { id: '3-4', label: '주 3~4회' },
-  { id: '5+', label: '주 5회 이상' },
-];
+// BMTI 운동일기 첫 진입 온보딩 팝업(DiaryOnboarding.jsx)에서 물어보는 항목과 동일한
+// id/문구 — 저장된 id를 사람이 읽을 문구로 보여주기 위한 매핑표.
+const EXERCISE_FREQ_LABELS = {
+  none: '거의 안 해요', sometimes: '가끔 생각날 때', weekly: '일주일에 몇 번', daily: '거의 매일',
+};
+const EXERCISE_GOAL_LABELS = {
+  diet: '다이어트', muscle: '근력강화', health: '건강유지',
+  flexibility: '유연성 향상', stress: '스트레스 해소', posture: '체형교정',
+};
+const POSTURE_LABELS = {
+  sitting: '주로 앉아요', standing: '주로 서요', moving: '계속 움직여요', mixed: '앉았다 섰다', other: '기타',
+};
 
 const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) => {
   const getCharImage = (fullCode) => {
@@ -31,11 +28,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     nickname: '건강한요기니658',
     kakaoAge: '20대',
     kakaoGender: '여성',
-    height: 162,
-    weight: 52,
-
-    goals: ['🔥 다이어트', '💪 근력 강화'],
-    frequency: '주 3~4회'
   });
   
   const [isEditing, setIsEditing] = useState(false);
@@ -53,13 +45,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     let updatedUserData = { ...userData };
     
     // Check if any field changed
-    const hasChanged = userInfo && (
-      userInfo.nickname !== userData.nickname ||
-      userInfo.height !== userData.height ||
-      userInfo.weight !== userData.weight ||
-      userInfo.frequency !== userData.frequency ||
-      JSON.stringify(userInfo.goals) !== JSON.stringify(userData.goals)
-    );
+    const hasChanged = userInfo && userInfo.nickname !== userData.nickname;
 
     if (hasChanged) {
       try {
@@ -84,12 +70,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         // Update all fields in Supabase
         const { error: updateError } = await supabase
           .from('users')
-          .update({ 
+          .update({
             nickname: userData.nickname,
-            height: userData.height,
-            weight: userData.weight,
-            frequency: userData.frequency,
-            goals: userData.goals
           })
           .eq('id', userData.id);
           
@@ -116,15 +98,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     }
     
     setIsEditing(false);
-  };
-
-  const toggleGoal = (goal) => {
-    setUserData(prev => ({
-      ...prev,
-      goals: prev.goals.includes(goal)
-        ? prev.goals.filter(g => g !== goal)
-        : [...prev.goals, goal]
-    }));
   };
 
   const axisCode = bmtiCode ? String(bmtiCode).split('-')[0] : '';
@@ -276,66 +249,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
                       )}
                     </div>
 
-                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-                      <span className="w-full md:w-14 text-gray-400 text-xs shrink-0">신체 정보</span>
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input type="number" value={userData.height} onChange={(e) => setUserData({...userData, height: e.target.value})} className="w-16 border rounded px-2 py-1 text-xs text-center" /> cm / 
-                          <input type="number" value={userData.weight} onChange={(e) => setUserData({...userData, weight: e.target.value})} className="w-16 border rounded px-2 py-1 text-xs text-center" /> kg
-                        </div>
-                      ) : (
-                        <span className="text-sm md:text-sm">{userData.height}cm / {userData.weight}kg</span>
-                      )}
-                    </div>
-
-                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1.5 md:gap-2">
-                      <span className="w-full md:w-14 text-gray-400 text-xs shrink-0 md:mt-1">운동 빈도</span>
-                      {isEditing ? (
-                        <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-1.5 w-full">
-                          {EXERCISE_FREQUENCY.map(freq => (
-                            <button
-                              key={freq.id}
-                              onClick={() => setUserData({...userData, frequency: freq.id})}
-                              className={`text-xs py-1.5 px-1 md:px-2 rounded-lg border font-bold transition-colors text-center ${
-                                userData.frequency === freq.id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                              }`}
-                            >
-                              {freq.label}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="md:mt-0.5 text-sm">{EXERCISE_FREQUENCY.find(f => f.id === userData.frequency)?.label || userData.frequency}</span>
-                      )}
-                    </div>
-
-                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1.5 md:gap-2">
-                      <span className="w-full md:w-14 text-gray-400 text-xs shrink-0 md:mt-1">운동 목적</span>
-                      <div className="flex-1 flex flex-wrap gap-1.5 w-full">
-                        {isEditing ? (
-                          EXERCISE_GOALS.map(goal => (
-                            <button
-                              key={goal.id}
-                              onClick={() => toggleGoal(goal.id)}
-                              className={`text-xs py-1.5 px-2 md:px-2.5 rounded-lg border font-bold transition-colors ${
-                                (userData.goals || []).includes(goal.id) ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                              }`}
-                            >
-                              {goal.emoji} {goal.label}
-                            </button>
-                          ))
-                        ) : (
-                          (userData.goals || []).map((goalId, i) => {
-                            const found = EXERCISE_GOALS.find(g => g.id === goalId);
-                            const text = found ? `${found.emoji} ${found.label}` : goalId;
-                            return (
-                              <span key={i} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-[11px] whitespace-nowrap font-bold">{text}</span>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-
                     {!bmtiCode && (
                       <div className="flex items-center justify-start py-4 mt-2">
                         <button 
@@ -422,7 +335,38 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         )}
       </div>
 
-
+      {/* 2. 운동 정보 — BMTI 운동일기 첫 진입 온보딩 팝업에서 자동으로 채워지는 항목 */}
+      <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
+        <h3 className="font-bold text-lg text-gray-900">운동 정보</h3>
+      </div>
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8">
+        {(userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">운동 빈도</span>
+              <span className="text-sm">{EXERCISE_FREQ_LABELS[userData.exercise_frequency] || '아직 입력 전이에요'}</span>
+            </div>
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0 md:mt-0.5">운동 목적</span>
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {(userData.exercise_goals && userData.exercise_goals.length > 0) ? (
+                  userData.exercise_goals.map((id) => (
+                    <span key={id} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-[11px] whitespace-nowrap font-bold">{EXERCISE_GOAL_LABELS[id] || id}</span>
+                  ))
+                ) : (
+                  <span className="text-sm">아직 입력 전이에요</span>
+                )}
+              </div>
+            </div>
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">자주 하는 자세</span>
+              <span className="text-sm">{POSTURE_LABELS[userData.common_posture] || '아직 입력 전이에요'}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-center text-gray-400 text-sm py-2">BMTI 운동일기를 처음 시작할 때 물어보는 질문에 답하면 여기에 자동으로 채워져요.</p>
+        )}
+      </div>
 
       <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">BMTI 히스토리</h3>

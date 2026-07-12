@@ -188,10 +188,6 @@ function App() {
             nickname: userData.nickname,
             kakao_gender: userData.kakaoGender,
             kakao_age: userData.kakaoAge,
-            height: userData.height,
-            weight: userData.weight,
-            frequency: userData.frequency,
-            goals: userData.goals,
             // bmti_type is updated separately when they complete the quiz
           },
           { onConflict: 'kakao_id' }
@@ -311,6 +307,7 @@ function App() {
             userInfo={userProfile}
             isLoggedIn={isLoggedIn}
             onRequireLogin={() => setShowSignup(true)}
+            setUserProfile={setUserProfile}
           />
         )}
         {currentView === 'mypage' && (

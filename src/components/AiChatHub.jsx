@@ -8,7 +8,7 @@ import DiaryWriteFlow from './DiaryWriteFlow';
 /**
  * BMTI 하루일기 허브 — 첫 방문자는 온보딩, 이미 기록해본 사람은 캘린더로 바로 진입.
  */
-const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin }) => {
+const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, setUserProfile }) => {
   const [hasHistory, setHasHistory] = useState(() => hasDiaryHistory());
   const [showDiaryFlow, setShowDiaryFlow] = useState(false);
   const [pendingDayMood, setPendingDayMood] = useState(null);
@@ -76,6 +76,8 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin }) 
       onRequireLogin={onRequireLogin}
       setView={setView}
       onComplete={handleOnboardingComplete}
+      userId={userInfo?.id}
+      setUserProfile={setUserProfile}
     />
   );
 };

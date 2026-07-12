@@ -1,22 +1,83 @@
 import { useState } from "react";
 import { Mallang } from "./Mallang";
 import { MOODS } from "../data";
+import { supabase } from "../lib/supabaseClient";
 
 // ─────────────────────────────────────────────
 // BMTI 하루일기 — 첫 방문자용 온보딩 대화
 // 한 화면에 하나의 대화만. 탭하면 다음으로.
-// 마지막에 말랑이 5개 → 첫 기록 → 완료
+// 마지막에 말랑이 5개 → 첫 기록 → (운동 정보 팝업, 1회) → 완료
 // ─────────────────────────────────────────────
 
 const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
-  pink: "#FF6B9D", pinkSoft: "#FFEDF3", lime: "#DFF56B",
+  pink: "#FF6B9D", pinkSoft: "#FFEDF3", lime: "#DFF56B", sage: "#5F8A76", sageSoft: "#E9F1EC",
+  tileOff: "#F3F1EC",
 };
 
-export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charName, isLoggedIn, onRequireLogin, setView, onComplete }) {
+const FREQ_OPTS = [
+  { id: "none", label: "거의 안 해요" },
+  { id: "sometimes", label: "가끔 생각날 때" },
+  { id: "weekly", label: "일주일에 몇 번" },
+  { id: "daily", label: "거의 매일" },
+];
+const GOAL_OPTS = [
+  { id: "diet", label: "다이어트" },
+  { id: "muscle", label: "근력강화" },
+  { id: "health", label: "건강유지" },
+  { id: "flexibility", label: "유연성 향상" },
+  { id: "stress", label: "스트레스 해소" },
+  { id: "posture", label: "체형교정" },
+];
+const POSTURE_OPTS = [
+  { id: "sitting", label: "주로 앉아요" },
+  { id: "standing", label: "주로 서요" },
+  { id: "moving", label: "계속 움직여요" },
+  { id: "mixed", label: "앉았다 섰다" },
+  { id: "other", label: "기타" },
+];
+
+export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charName, isLoggedIn, onRequireLogin, setView, onComplete, userId, setUserProfile }) {
   const [i, setI] = useState(0);
   const [mood, setMood] = useState(null);
   const [phase, setPhase] = useState("talk"); // talk | pick | react | save
+
+  // 첫 진입 마지막에 딱 한 번만 물어보는 운동 정보 팝업
+  const [showExerciseInfo, setShowExerciseInfo] = useState(false);
+  const [freq, setFreq] = useState(null);
+  const [goals, setGoals] = useState([]);
+  const [posture, setPosture] = useState(null);
+  const [savingInfo, setSavingInfo] = useState(false);
+  const toggleGoal = (id) => setGoals(g => g.includes(id) ? g.filter(x => x !== id) : (g.length >= 2 ? g : [...g, id]));
+
+  const finishOnboarding = () => {
+    setShowExerciseInfo(false);
+    if (onComplete) onComplete(mood);
+  };
+
+  const submitExerciseInfo = async () => {
+    if (userId) {
+      setSavingInfo(true);
+      try {
+        await supabase.from("users").update({
+          exercise_frequency: freq,
+          exercise_goals: goals,
+          common_posture: posture,
+        }).eq("id", userId);
+        if (setUserProfile) {
+          setUserProfile(prev => {
+            const updated = { ...prev, exercise_frequency: freq, exercise_goals: goals, common_posture: posture };
+            localStorage.setItem("bmti_user", JSON.stringify(updated));
+            return updated;
+          });
+        }
+      } catch (e) {
+        console.error("운동 정보 저장 실패", e);
+      }
+      setSavingInfo(false);
+    }
+    finishOnboarding();
+  };
 
   const STEPS = [
     {
@@ -204,10 +265,50 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
               <div style={{ position: "absolute", right: 16, bottom: 14, fontSize: 11, fontWeight: 700, color: C.sub }}>기록이 쌓이면 열려요</div>
             </div>
 
-            <button onClick={() => onComplete && onComplete(mood)} style={{ width: "100%", marginTop: 26, padding: 17, borderRadius: 15, border: "none",
+            <button onClick={() => setShowExerciseInfo(true)} style={{ width: "100%", marginTop: 26, padding: 17, borderRadius: 15, border: "none",
               background: C.ink, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
               캘린더에서 계속 기록하기
             </button>
+          </div>
+        )}
+
+        {/* ── 운동 정보 팝업 (첫 진입 시 딱 한 번) ── */}
+        {showExerciseInfo && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+            <div style={{ width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto", background: "#fff", borderRadius: "26px 26px 0 0", padding: "26px 22px 22px", animation: "fadeUp .3s ease-out" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px", textAlign: "center" }}>운동 습관을 알려주세요</h2>
+              <p style={{ fontSize: 12.5, color: C.sub, textAlign: "center", margin: "0 0 22px" }}>딱 한 번만 물어볼게요. 앞으로의 기록에 참고할게요.</p>
+
+              <ExerciseQuestion label="평소 운동, 어떻게 하세요?">
+                {FREQ_OPTS.map(o => (
+                  <PillOption key={o.id} label={o.label} on={freq === o.id} onClick={() => setFreq(o.id)} />
+                ))}
+              </ExerciseQuestion>
+
+              <ExerciseQuestion label="몸 관리에서 제일 신경 쓰는 건? (최대 2개)">
+                {GOAL_OPTS.map(o => (
+                  <PillOption key={o.id} label={o.label} on={goals.includes(o.id)} onClick={() => toggleGoal(o.id)} disabled={!goals.includes(o.id) && goals.length >= 2} />
+                ))}
+              </ExerciseQuestion>
+
+              <ExerciseQuestion label="요즘 하루 대부분 어떻게 지내요?">
+                {POSTURE_OPTS.map(o => (
+                  <PillOption key={o.id} label={o.label} on={posture === o.id} onClick={() => setPosture(o.id)} />
+                ))}
+              </ExerciseQuestion>
+
+              <button
+                onClick={submitExerciseInfo}
+                disabled={!freq || !posture || goals.length === 0 || savingInfo}
+                style={{ width: "100%", marginTop: 8, padding: 16, borderRadius: 15, border: "none", background: C.sage, color: "#fff",
+                  fontSize: 15, fontWeight: 800, cursor: "pointer", opacity: (!freq || !posture || goals.length === 0) ? 0.4 : 1 }}
+              >
+                {savingInfo ? "저장하는 중..." : "저장하고 계속하기"}
+              </button>
+              <button onClick={finishOnboarding} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 4 }}>
+                다음에 입력할게요
+              </button>
+            </div>
           </div>
         )}
 
@@ -252,5 +353,26 @@ function Companion({ image }) {
     <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
       {image ? <img src={image} alt="AI" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
     </div>
+  );
+}
+
+function ExerciseQuestion({ label, children }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, marginBottom: 10 }}>{label}</div>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>{children}</div>
+    </div>
+  );
+}
+
+function PillOption({ label, on, onClick, disabled }) {
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      style={{ padding: "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
+        border: "none", background: on ? C.pink : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}
+    >
+      {label}
+    </button>
   );
 }

@@ -9,22 +9,6 @@ const KakaoIcon = ({ className = "w-5 h-5 fill-current" }) => (
   </svg>
 );
 
-const EXERCISE_GOALS = [
-  { id: 'diet', label: '다이어트', emoji: '🔥' },
-  { id: 'muscle', label: '근력 강화', emoji: '💪' },
-  { id: 'health', label: '건강 유지', emoji: '💚' },
-  { id: 'flexibility', label: '유연성 향상', emoji: '🧘' },
-  { id: 'stress', label: '스트레스 해소', emoji: '🧠' },
-  { id: 'posture', label: '체형 교정', emoji: '🦴' },
-];
-
-const EXERCISE_FREQUENCY = [
-  { id: 'none', label: '거의 안 함' },
-  { id: '1-2', label: '주 1~2회' },
-  { id: '3-4', label: '주 3~4회' },
-  { id: '5+', label: '주 5회 이상' },
-];
-
 const AGE_RANGES = [
   { id: '10s', label: '10대' },
   { id: '20s', label: '20대' },
@@ -36,17 +20,12 @@ const AGE_RANGES = [
 
 
 const SignupModal = ({ isOpen, onClose, onComplete }) => {
-  const [step, setStep] = useState(0); // 0: kakao intro, 1: basic & body info, 2: goals, 3: consent
+  const [step, setStep] = useState(0); // 0: kakao intro, 1: 닉네임, 2: 약관 동의
   const [formData, setFormData] = useState({
     nickname: '',
     email: '',
     gender: '',
     ageRange: '',
-    height: '160',
-    weight: '60',
-
-    goals: [],
-    frequency: '',
     appNotification: true,
     marketingConsent: false,
     privacyConsent: false
@@ -55,7 +34,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
 
   if (!isOpen) return null;
 
-  const totalSteps = 3;
+  const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
   const updateField = (field, value) => {
@@ -63,26 +42,10 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
-  const toggleGoal = (goalId) => {
-    setFormData(prev => ({
-      ...prev,
-      goals: prev.goals.includes(goalId)
-        ? prev.goals.filter(g => g !== goalId)
-        : [...prev.goals, goalId]
-    }));
-  };
-
   const validateStep = (currentStep) => {
     const newErrors = {};
     if (currentStep === 1) {
       if (!formData.nickname || !formData.nickname.trim()) newErrors.nickname = true;
-      if (!formData.height) newErrors.height = true;
-      if (!formData.weight) newErrors.weight = true;
-
-    }
-    if (currentStep === 2) {
-      if (formData.goals.length === 0) newErrors.goals = true;
-      if (!formData.frequency) newErrors.frequency = true;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -126,10 +89,6 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                   nickname: existingUser.nickname,
                   kakaoGender: existingUser.kakao_gender,
                   kakaoAge: existingUser.kakao_age,
-                  height: existingUser.height,
-                  weight: existingUser.weight,
-                  frequency: existingUser.frequency,
-                  goals: existingUser.goals || [],
                   bmti_type: existingUser.bmti_type
                 });
                 return;
@@ -140,7 +99,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
 
             const profile = res.kakao_account?.profile;
             const nickname = profile?.nickname || generateRandomNickname();
-            
+
             const kakaoGenderRaw = profile?.gender || res.kakao_account?.gender;
             const kakaoGender = kakaoGenderRaw === 'male' ? '남성' : kakaoGenderRaw === 'female' ? '여성' : '성별 비공개';
 
@@ -153,7 +112,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
             } else {
               kakaoAge = '연령 비공개';
             }
-            
+
             const email = res.kakao_account?.email || '';
 
             // 프로필 정보 세팅 및 Step 1으로 이동
@@ -165,7 +124,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
               kakaoGender: kakaoGender,
               kakaoAge: kakaoAge
             }));
-            
+
             setStep(1);
           },
           fail: function(error) {
@@ -289,7 +248,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
             </div>
           )}
 
-          {/* ===== STEP 1: Gender & Age ===== */}
+          {/* ===== STEP 1: 닉네임 ===== */}
           {step === 1 && (
             <div className="fade-in">
               <button onClick={handleBack} className="mb-4 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
@@ -298,7 +257,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
               </button>
               <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP 1 / {totalSteps}</p>
               <h3 className="text-2xl font-bold mb-1 text-gray-900">기본 정보</h3>
-              <p className="text-sm text-gray-500 mb-8">맞춤 분석을 위해 기본 정보를 알려주세요.</p>
+              <p className="text-sm text-gray-500 mb-8">사용하실 닉네임을 알려주세요.</p>
 
               {/* Nickname */}
               <div className="mb-6">
@@ -307,7 +266,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                     닉네임
                     {errors.nickname && <span className="text-red-400 ml-2 font-medium text-xs">입력해주세요</span>}
                   </label>
-                  <button 
+                  <button
                     onClick={() => updateField('nickname', generateRandomNickname())}
                     className="text-xs font-bold text-gray-400 hover:text-black transition-colors flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-full"
                   >
@@ -326,67 +285,6 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                 />
               </div>
 
-
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {/* Height */}
-                <div>
-                  <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    키 <span className="text-xs text-gray-400 font-normal ml-1">(cm)</span>
-                    {errors.height && <span className="text-red-400 ml-2 font-medium text-xs block">입력</span>}
-                  </label>
-                  <div className="flex items-center justify-between border-2 border-gray-200 rounded-xl p-1.5 bg-white transition-colors focus-within:border-black hover:border-gray-300">
-                    <button 
-                      onClick={() => updateField('height', String(Math.max(140, parseInt(formData.height || 160) - 1)))} 
-                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
-                    >-</button>
-                    <input
-                      type="number"
-                      value={formData.height}
-                      onChange={(e) => updateField('height', e.target.value)}
-                      className="text-sm md:text-base font-bold text-gray-900 w-12 text-center bg-transparent focus:outline-none hide-number-spin"
-                    />
-                    <button 
-                      onClick={() => updateField('height', String(Math.min(220, parseInt(formData.height || 160) + 1)))} 
-                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
-                    >+</button>
-                  </div>
-                </div>
-
-                {/* Weight */}
-                <div>
-                  <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    체중 <span className="text-xs text-gray-400 font-normal ml-1">(kg)</span>
-                    {errors.weight && <span className="text-red-400 ml-2 font-medium text-xs block">입력</span>}
-                  </label>
-                  <div className="flex items-center justify-between border-2 border-gray-200 rounded-xl p-1.5 bg-white transition-colors focus-within:border-black hover:border-gray-300">
-                    <button 
-                      onClick={() => updateField('weight', String(Math.max(40, parseInt(formData.weight || 60) - 1)))} 
-                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
-                    >-</button>
-                    <input
-                      type="number"
-                      value={formData.weight}
-                      onChange={(e) => updateField('weight', e.target.value)}
-                      className="text-sm md:text-base font-bold text-gray-900 w-12 text-center bg-transparent focus:outline-none hide-number-spin"
-                    />
-                    <button 
-                      onClick={() => updateField('weight', String(Math.min(150, parseInt(formData.weight || 60) + 1)))} 
-                      className="w-8 h-8 shrink-0 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 font-bold text-gray-600 text-lg transition-colors"
-                    >+</button>
-                  </div>
-                </div>
-              </div>
-
-
-
-              <div className="bg-gray-50 rounded-2xl p-4 mb-6 flex items-start gap-3">
-                <span className="text-lg mt-0.5">🔒</span>
-                <p className="text-xs text-gray-500 leading-relaxed break-keep">
-                  입력하신 신체 정보는 BMTI 분석에만 활용되며, 외부에 공개되지 않습니다. 더 정확한 맞춤 결과를 위해 입력을 권장합니다.
-                </p>
-              </div>
-
               <button
                 id="step1-next"
                 onClick={handleNext}
@@ -397,84 +295,14 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
             </div>
           )}
 
-          {/* ===== STEP 2: Goals & Frequency ===== */}
+          {/* ===== STEP 2: Consent & Complete ===== */}
           {step === 2 && (
             <div className="fade-in">
               <button onClick={handleBack} className="mb-4 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                 이전
               </button>
-              <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP 3 / {totalSteps}</p>
-              <h3 className="text-2xl font-bold mb-1 text-gray-900">운동 성향</h3>
-              <p className="text-sm text-gray-500 mb-8">관심 있는 운동 목적을 모두 선택해주세요.</p>
-
-              {/* Exercise Goals (Multi-select) */}
-              <div className="mb-8">
-                <label className="text-sm font-bold text-gray-700 mb-3 block">
-                  운동 목적 <span className="text-gray-400 font-medium">(복수 선택 가능)</span>
-                  {errors.goals && <span className="text-red-400 ml-2 font-medium text-xs">1개 이상 선택해주세요</span>}
-                </label>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {EXERCISE_GOALS.map(goal => (
-                    <button
-                      key={goal.id}
-                      id={`goal-${goal.id}`}
-                      onClick={() => toggleGoal(goal.id)}
-                      className={`py-3.5 px-4 rounded-2xl border-2 text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
-                        formData.goals.includes(goal.id)
-                          ? 'border-black bg-black text-white shadow-md'
-                          : `border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50 ${errors.goals ? 'border-red-200' : ''}`
-                      }`}
-                    >
-                      <span className="text-base">{goal.emoji}</span>
-                      {goal.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Exercise Frequency */}
-              <div className="mb-8">
-                <label className="text-sm font-bold text-gray-700 mb-3 block">
-                  현재 운동 빈도
-                  {errors.frequency && <span className="text-red-400 ml-2 font-medium text-xs">선택해주세요</span>}
-                </label>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {EXERCISE_FREQUENCY.map(freq => (
-                    <button
-                      key={freq.id}
-                      id={`freq-${freq.id}`}
-                      onClick={() => updateField('frequency', freq.id)}
-                      className={`py-3 px-4 rounded-2xl border-2 text-sm font-bold transition-all duration-200 ${
-                        formData.frequency === freq.id
-                          ? 'border-black bg-black text-white shadow-md'
-                          : `border-gray-200 text-gray-600 hover:border-gray-400 ${errors.frequency ? 'border-red-200' : ''}`
-                      }`}
-                    >
-                      {freq.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                id="step3-next"
-                onClick={handleNext}
-                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                다음
-              </button>
-            </div>
-          )}
-
-          {/* ===== STEP 3: Consent & Complete ===== */}
-          {step === 3 && (
-            <div className="fade-in">
-              <button onClick={handleBack} className="mb-4 text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                이전
-              </button>
-              <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP 3 / {totalSteps}</p>
+              <p className="text-xs font-semibold text-gray-400 tracking-wider mb-1">STEP {totalSteps} / {totalSteps}</p>
               <h3 className="text-2xl font-bold mb-1 text-gray-900">거의 다 왔어요!</h3>
               <p className="text-sm text-gray-500 mb-8">아래 내용을 확인하고 가입을 완료해주세요.</p>
 
@@ -489,20 +317,6 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                   <div className="flex justify-between">
                     <span className="text-gray-500">닉네임</span>
                     <span className="font-bold text-gray-800">{formData.nickname}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">키 / 체중</span>
-                    <span className="font-bold text-gray-800">{formData.height}cm / {formData.weight}kg</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">운동 빈도</span>
-                    <span className="font-bold text-gray-800">{EXERCISE_FREQUENCY.find(f => f.id === formData.frequency)?.label}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <span className="text-gray-500">운동 목적</span>
-                    <span className="font-bold text-gray-800 text-right">
-                      {formData.goals.map(g => EXERCISE_GOALS.find(eg => eg.id === g)?.label).join(', ')}
-                    </span>
                   </div>
                 </div>
               </div>
