@@ -3,8 +3,9 @@ import { Mallang } from "./Mallang";
 import { MOODS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO,
-  getEntriesSinceWeeklyBaseline, canClaimWeeklyReport, setWeeklyReportBaseline,
-  getPrevMonthEntryCount, canClaimMonthlyReport,
+  getEntriesSinceWeeklyBaseline, canClaimWeeklyReport, setWeeklyReportBaseline, markWeeklyReportIssued,
+  getPrevMonthEntryCount, canClaimMonthlyReport, getPrevMonthKey, markMonthlyReportIssued,
+  isDayWritable,
 } from "../lib/diaryHistory";
 
 const C = {
@@ -12,6 +13,9 @@ const C = {
 };
 const SAT_BLUE = "#2F6FE0";
 const SUN_RED = "#E0554F";
+const PINK = "#FF6B9D";
+const MIN_YEAR = 2026;
+const MIN_MONTH = 7; // 2026년 7월 이전은 선택 불가
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
@@ -44,12 +48,15 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
   const claimWeeklyReport = () => {
     if (!weeklyActive) return;
     setWeeklyReportBaseline(getDiaryHistory().length);
+    markWeeklyReportIssued(); // 발행 시점까지의 기록은 이제 수정 불가
     setReportTick(t => t + 1);
     alert("📋 주간 리포트는 곧 만나볼 수 있어요! 열심히 준비하고 있어요.");
   };
 
   const claimMonthlyReport = () => {
     if (!monthlyActive) return;
+    markMonthlyReportIssued(getPrevMonthKey()); // 리포트로 나간 달의 기록은 이제 수정 불가
+    setReportTick(t => t + 1);
     alert("📊 월간 리포트는 곧 만나볼 수 있어요! 열심히 준비하고 있어요.");
   };
 
@@ -84,9 +91,10 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
             const entry = getEntryForDate(dateStr);
             const isToday = dateStr === todayStr;
             const dow = idx % 7;
+            const writable = isDayWritable(dateStr);
             return (
               <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {entry && isToday ? (
+                {entry && writable ? (
                   <button
                     onClick={() => onEditDay && onEditDay(dateStr, entry.mood)}
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
@@ -104,6 +112,16 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
                     </div>
                     <div style={{ width: 5, height: 5, borderRadius: "50%", background: SUN_RED }} />
                   </div>
+                ) : writable ? (
+                  // 아직 안 썼지만 7일 이내라 쓸 수 있는 날 — 살짝 강조해서 표시
+                  <button
+                    onClick={() => onEditDay && onEditDay(dateStr, null)}
+                    style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${PINK}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
+                      {d}
+                    </div>
+                  </button>
                 ) : (
                   <span style={{ fontSize: 15, color: weekdayColor(dow) || "#C9C4BB", fontWeight: 500 }}>{d}</span>
                 )}
@@ -193,15 +211,23 @@ function DatePickerModal({ year, month, onCancel, onConfirm }) {
 
   const nowYear = new Date().getFullYear();
   const years = [];
-  for (let y = nowYear - 5; y <= nowYear + 1; y++) years.push(y);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  for (let y = MIN_YEAR; y <= nowYear + 1; y++) years.push(y);
+  const months = selYear === MIN_YEAR
+    ? Array.from({ length: 12 - MIN_MONTH + 1 }, (_, i) => MIN_MONTH + i)
+    : Array.from({ length: 12 }, (_, i) => i + 1);
+
+  // 연도를 2026년으로 바꿨는데 이미 골라둔 월이 7월 이전이면 7월로 당겨온다.
+  const handleYearChange = (y) => {
+    setSelYear(y);
+    if (y === MIN_YEAR && selMonth < MIN_MONTH) setSelMonth(MIN_MONTH);
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "flex-end", justifyContent: "center", background: "rgba(0,0,0,0.4)" }} onClick={onCancel}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "24px 24px 0 0", padding: "22px 20px 28px" }}>
         <h3 style={{ textAlign: "center", fontSize: 17, fontWeight: 800, margin: "0 0 16px", color: C.ink }}>날짜 선택</h3>
         <div style={{ display: "flex", gap: 12 }}>
-          <WheelColumn options={years} value={selYear} onChange={setSelYear} formatLabel={y => `${y}년`} />
+          <WheelColumn options={years} value={selYear} onChange={handleYearChange} formatLabel={y => `${y}년`} />
           <WheelColumn options={months} value={selMonth} onChange={setSelMonth} formatLabel={m => `${m}월`} />
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
@@ -223,9 +249,10 @@ function WheelColumn({ options, value, onChange, formatLabel }) {
 
   useEffect(() => {
     if (scrollRef.current && selIdx >= 0) scrollRef.current.scrollTop = selIdx * itemHeight;
-    // 최초 마운트 시 선택값 위치로만 스크롤 — 이후엔 사용자 스크롤에 맡긴다.
+    // 마운트 시, 그리고 목록 길이가 바뀔 때(예: 연도가 2026년이 되어 월 목록이
+    // 7~12월로 줄어들 때)만 강제로 다시 스크롤 위치를 맞추고, 그 외엔 사용자 스크롤에 맡긴다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [options.length]);
 
   const settle = () => {
     const el = scrollRef.current;

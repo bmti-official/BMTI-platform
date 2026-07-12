@@ -50,10 +50,50 @@ export const getEntriesSinceWeeklyBaseline = () => {
 export const canClaimWeeklyReport = () => getEntriesSinceWeeklyBaseline() >= 7;
 
 // 월간 리포트: 지난달 총 컨디션 체크가 10회 이상이면 활성 (매달 자연스럽게 갱신됨).
-export const getPrevMonthEntryCount = (baseDate = new Date()) => {
+export const getPrevMonthKey = (baseDate = new Date()) => {
   const prev = new Date(baseDate.getFullYear(), baseDate.getMonth() - 1, 1);
-  const key = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+  return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+};
+
+export const getPrevMonthEntryCount = (baseDate = new Date()) => {
+  const key = getPrevMonthKey(baseDate);
   return getDiaryHistory().filter(e => e.date.startsWith(key)).length;
 };
 
 export const canClaimMonthlyReport = () => getPrevMonthEntryCount() >= 10;
+
+// ── 작성/수정 가능 기간 ──
+// 오늘로부터 최근 7일(오늘 포함)까지만 새로 쓰거나 고칠 수 있다.
+export const isWithinEditableWindow = (dateISO) => {
+  const today = new Date(`${todayISO()}T00:00:00`);
+  const d = new Date(`${dateISO}T00:00:00`);
+  const diffDays = Math.round((today - d) / 86400000);
+  return diffDays >= 0 && diffDays <= 6;
+};
+
+// 리포트를 이미 발행받은 기록은, 7일 이내라도 다시 고치면 리포트 내용과 어긋나므로 잠근다.
+const WEEKLY_ISSUED_AT_KEY = 'bmti_weekly_report_issued_at';
+const MONTHLY_REPORTED_MONTHS_KEY = 'bmti_monthly_reported_months';
+
+export const getWeeklyReportIssuedAt = () => localStorage.getItem(WEEKLY_ISSUED_AT_KEY) || null;
+export const markWeeklyReportIssued = () => localStorage.setItem(WEEKLY_ISSUED_AT_KEY, todayISO());
+
+export const getMonthlyReportedMonths = () => {
+  try { return JSON.parse(localStorage.getItem(MONTHLY_REPORTED_MONTHS_KEY) || '[]'); } catch { return []; }
+};
+export const markMonthlyReportIssued = (monthKey) => {
+  const months = getMonthlyReportedMonths();
+  if (!months.includes(monthKey)) {
+    months.push(monthKey);
+    localStorage.setItem(MONTHLY_REPORTED_MONTHS_KEY, JSON.stringify(months));
+  }
+};
+
+export const isEntryLocked = (dateISO) => {
+  const issuedAt = getWeeklyReportIssuedAt();
+  if (issuedAt && dateISO <= issuedAt) return true;
+  const monthKey = dateISO.slice(0, 7);
+  return getMonthlyReportedMonths().includes(monthKey);
+};
+
+export const isDayWritable = (dateISO) => isWithinEditableWindow(dateISO) && !isEntryLocked(dateISO);
