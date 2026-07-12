@@ -189,8 +189,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
             <span style={{ fontSize: 11, color: C.sub, transform: showDatePick ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
           </button>
-          <button onClick={() => setShowSettings(true)} style={{ position: "absolute", right: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: C.sageSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <DiaryIcon name="gear" size={19} />
+          <button onClick={() => setShowSettings(true)} style={{ position: "absolute", right: 10, width: 38, height: 38, border: "none", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <DiaryIcon name="gear" size={22} />
           </button>
 
           {showDatePick && (

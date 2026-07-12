@@ -149,12 +149,18 @@ function IconForgot({ size = 28 }) {
   );
 }
 
-function IconGear({ size = 20 }) {
+function IconGear({ size = 20, color = "#5F8A76" }) {
+  // 사용자가 준 레퍼런스(8개 톱니 + 큰 가운데 구멍)와 같은 실루엣, 색만 사이트 톤으로.
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M16 3.5 l1.8 3.2 3.5-1.3 1 3.6 3.6 1 -1.3 3.5 1.3 3.5 -3.6 1 -1 3.6 -3.5-1.3 -1.8 3.2 -1.8-3.2 -3.5 1.3 -1-3.6 -3.6-1 1.3-3.5 -1.3-3.5 3.6-1 1-3.6 3.5 1.3Z"
-        fill="#CFE4D6" stroke="#5F8A76" strokeWidth="1.3" strokeLinejoin="round" />
-      <circle cx="16" cy="16" r="5.2" fill="#F3F9F1" stroke="#5F8A76" strokeWidth="1.3" />
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <g fill={color}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <rect key={i} x="13.6" y="1.4" width="4.8" height="10.5" rx="1.8" transform={`rotate(${i * 45} 16 16)`} />
+        ))}
+      </g>
+      <path fillRule="evenodd" clipRule="evenodd"
+        d="M16 5.4a10.6 10.6 0 1 0 0 21.2 10.6 10.6 0 0 0 0-21.2Zm0 5.8a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6Z"
+        fill={color} />
     </svg>
   );
 }
