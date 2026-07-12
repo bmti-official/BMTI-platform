@@ -32,6 +32,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
   
   const [isEditing, setIsEditing] = useState(false);
   const [showBmtiDetails, setShowBmtiDetails] = useState(false);
+  const [isEditingExercise, setIsEditingExercise] = useState(false);
+  const [savingExercise, setSavingExercise] = useState(false);
 
   // 상위에서 userInfo가 업데이트될 경우(ex. 새로운 BMTI 검사 완료 후) 동기화
   useEffect(() => {
@@ -98,6 +100,41 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
     }
     
     setIsEditing(false);
+  };
+
+  const toggleExerciseGoal = (id) => {
+    setUserData(prev => {
+      const goals = prev.exercise_goals || [];
+      const nextGoals = goals.includes(id)
+        ? goals.filter(g => g !== id)
+        : (goals.length >= 2 ? goals : [...goals, id]);
+      return { ...prev, exercise_goals: nextGoals };
+    });
+  };
+
+  const handleSaveExerciseInfo = async () => {
+    if (userData?.id) {
+      setSavingExercise(true);
+      try {
+        const { error } = await supabase
+          .from('users')
+          .update({
+            exercise_frequency: userData.exercise_frequency || null,
+            exercise_goals: userData.exercise_goals || [],
+            common_posture: userData.common_posture || null,
+          })
+          .eq('id', userData.id);
+        if (error) throw error;
+        localStorage.setItem('bmti_user', JSON.stringify(userData));
+      } catch (e) {
+        console.error('운동 정보 저장 오류:', e);
+        alert('운동 정보 저장 중 오류가 발생했습니다.');
+        setSavingExercise(false);
+        return;
+      }
+      setSavingExercise(false);
+    }
+    setIsEditingExercise(false);
   };
 
   const axisCode = bmtiCode ? String(bmtiCode).split('-')[0] : '';
@@ -335,12 +372,81 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers }) =
         )}
       </div>
 
-      {/* 2. 운동 정보 — BMTI 운동일기 첫 진입 온보딩 팝업에서 자동으로 채워지는 항목 */}
+      {/* 2. 운동 정보 — BMTI 운동일기 첫 진입 온보딩 팝업에서 자동으로 채워지고, 여기서도 수정 가능 */}
       <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">운동 정보</h3>
+        <button
+          onClick={() => {
+            if (isEditingExercise) {
+              handleSaveExerciseInfo();
+            } else {
+              setIsEditingExercise(true);
+            }
+          }}
+          disabled={savingExercise}
+          className="text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
+        >
+          {savingExercise ? '저장 중...' : isEditingExercise ? '저장하기' : '수정하기'}
+        </button>
       </div>
       <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8">
-        {(userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
+        {isEditingExercise ? (
+          <div className="space-y-5">
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">평소 운동, 어떻게 하세요?</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {Object.entries(EXERCISE_FREQ_LABELS).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setUserData({ ...userData, exercise_frequency: id })}
+                    className={`text-xs py-1.5 px-2 rounded-lg border font-bold transition-colors text-center ${
+                      userData.exercise_frequency === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">몸 관리에서 제일 신경 쓰는 건? (최대 2개)</span>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(EXERCISE_GOAL_LABELS).map(([id, label]) => {
+                  const on = (userData.exercise_goals || []).includes(id);
+                  const disabled = !on && (userData.exercise_goals || []).length >= 2;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => toggleExerciseGoal(id)}
+                      disabled={disabled}
+                      className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
+                        on ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      } ${disabled ? 'opacity-40' : ''}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">요즘 하루 대부분 어떻게 지내요?</span>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(POSTURE_LABELS).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setUserData({ ...userData, common_posture: id })}
+                    className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
+                      userData.common_posture === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
           <div className="space-y-3">
             <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">운동 빈도</span>
