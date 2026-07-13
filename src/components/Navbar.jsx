@@ -48,7 +48,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const defaultAiImage = '⭐️';
-  const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain drop-shadow-sm scale-125" /> : <div className="text-xl">{defaultAiImage}</div>;
+  const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain drop-shadow-md scale-125" /> : <div className="text-3xl md:text-4xl">{defaultAiImage}</div>;
 
   // 다른 화면으로 넘어가면 펼쳐둔 카테고리는 자동으로 접는다.
   useEffect(() => {
@@ -61,33 +61,15 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
     <nav id="main-nav" className="fixed top-0 left-0 right-0 z-40 flex flex-col">
       {/* Top Row: Logo & Login */}
       {!isChat && (
-      <div className="bg-white/95 backdrop-blur-md border-b border-gray-100">
+      <div className="relative bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto h-14 md:h-16 flex items-center justify-between px-4 md:px-6">
-          {/* Logo + 카테고리 토글 (캐릭터 아바타) */}
-          <div className="flex items-center gap-2.5 md:gap-3">
-            <div
-              className="cursor-pointer flex items-baseline gap-2"
-              onClick={() => setView('home')}
-            >
-              <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
-              <span className="hidden sm:inline-block text-xs md:text-sm font-sans font-medium text-gray-400 whitespace-nowrap">자기점검 50</span>
-            </div>
-
-            <button
-              onClick={() => setShowCategory(v => !v)}
-              aria-label="카테고리 열기"
-              aria-expanded={showCategory}
-              className={`relative w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center overflow-visible flex-shrink-0 transition-transform active:scale-95 ${
-                showCategory ? 'ring-2 ring-black/70' : 'ring-1 ring-gray-200'
-              }`}
-            >
-              <div className="w-full h-full rounded-full bg-gray-50 overflow-hidden flex items-center justify-center shadow-sm">
-                {aiAvatar}
-              </div>
-              {hasUnreadDot && !showCategory && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-              )}
-            </button>
+          {/* Logo */}
+          <div
+            className="cursor-pointer flex items-baseline gap-2"
+            onClick={() => setView('home')}
+          >
+            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
+            <span className="hidden sm:inline-block text-xs md:text-sm font-sans font-medium text-gray-400 whitespace-nowrap">자기점검 50</span>
           </div>
 
           {/* Right: Login */}
@@ -142,6 +124,21 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             )}
           </div>
         </div>
+
+        {/* 카테고리 토글 캐릭터 아바타 — 상단바 중앙 하단 경계에 살짝 걸치게, 배경원 없이 누끼 캐릭터만 */}
+        <button
+          onClick={() => setShowCategory(v => !v)}
+          aria-label="카테고리 열기"
+          aria-expanded={showCategory}
+          className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-3 md:translate-y-3.5 z-20 active:scale-95 transition-transform"
+        >
+          <div className="relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
+            {aiAvatar}
+            {hasUnreadDot && !showCategory && (
+              <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+            )}
+          </div>
+        </button>
       </div>
       )}
 
