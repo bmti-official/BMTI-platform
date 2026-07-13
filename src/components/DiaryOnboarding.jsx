@@ -22,18 +22,16 @@ const FREQ_OPTS = [
   { id: "daily", label: "거의 매일" },
 ];
 const GOAL_OPTS = [
-  { id: "diet", label: "다이어트" },
-  { id: "muscle", label: "근력강화" },
-  { id: "health", label: "건강유지" },
-  { id: "flexibility", label: "유연성 향상" },
-  { id: "stress", label: "스트레스 해소" },
-  { id: "posture", label: "체형교정" },
+  { id: "flexibility", label: "💢 뻐근함 줄이기" },
+  { id: "posture", label: "🧘🏻‍♀️ 자세 바로잡기" },
+  { id: "health", label: "🏃🏻 체력 기르기" },
+  { id: "stress", label: "💥 스트레스 풀기" },
 ];
 const POSTURE_OPTS = [
-  { id: "sitting", label: "주로 앉아요" },
-  { id: "standing", label: "주로 서요" },
-  { id: "moving", label: "계속 움직여요" },
-  { id: "mixed", label: "앉았다 섰다" },
+  { id: "sitting", label: "🪑 주로 앉아요" },
+  { id: "standing", label: "🧍🏻‍♀️ 주로 서요" },
+  { id: "moving", label: "👣 계속 움직여요" },
+  { id: "mixed", label: "🪑🧍🏻‍♀️ 앉았다 섰다" },
   { id: "other", label: "기타" },
 ];
 
@@ -47,6 +45,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
   const [freq, setFreq] = useState(null);
   const [goals, setGoals] = useState([]);
   const [posture, setPosture] = useState(null);
+  const [postureCustom, setPostureCustom] = useState("");
   const [savingInfo, setSavingInfo] = useState(false);
   const toggleGoal = (id) => setGoals(g => g.includes(id) ? g.filter(x => x !== id) : (g.length >= 2 ? g : [...g, id]));
 
@@ -56,17 +55,18 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
   };
 
   const submitExerciseInfo = async () => {
+    const finalPosture = posture === "other" ? postureCustom.trim() : posture;
     if (userId) {
       setSavingInfo(true);
       try {
         await supabase.from("users").update({
           exercise_frequency: freq,
           exercise_goals: goals,
-          common_posture: posture,
+          common_posture: finalPosture,
         }).eq("id", userId);
         if (setUserProfile) {
           setUserProfile(prev => {
-            const updated = { ...prev, exercise_frequency: freq, exercise_goals: goals, common_posture: posture };
+            const updated = { ...prev, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture };
             localStorage.setItem("bmti_user", JSON.stringify(updated));
             return updated;
           });
@@ -295,13 +295,22 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
                 {POSTURE_OPTS.map(o => (
                   <PillOption key={o.id} label={o.label} on={posture === o.id} onClick={() => setPosture(o.id)} />
                 ))}
+                {posture === "other" && (
+                  <input
+                    type="text"
+                    value={postureCustom}
+                    onChange={(e) => setPostureCustom(e.target.value.slice(0, 20))}
+                    placeholder="짧게 적어주세요 (예: 운전을 오래 해요)"
+                    style={{ width: "100%", marginTop: 4, padding: "10px 13px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 13, outline: "none" }}
+                  />
+                )}
               </ExerciseQuestion>
 
               <button
                 onClick={submitExerciseInfo}
-                disabled={!freq || !posture || goals.length === 0 || savingInfo}
+                disabled={!freq || !posture || (posture === "other" && !postureCustom.trim()) || goals.length === 0 || savingInfo}
                 style={{ width: "100%", marginTop: 8, padding: 16, borderRadius: 15, border: "none", background: C.sage, color: "#fff",
-                  fontSize: 15, fontWeight: 800, cursor: "pointer", opacity: (!freq || !posture || goals.length === 0) ? 0.4 : 1 }}
+                  fontSize: 15, fontWeight: 800, cursor: "pointer", opacity: (!freq || !posture || (posture === "other" && !postureCustom.trim()) || goals.length === 0) ? 0.4 : 1 }}
               >
                 {savingInfo ? "저장하는 중..." : "저장하고 계속하기"}
               </button>
@@ -319,7 +328,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <button onClick={() => { if (onRequireLogin) onRequireLogin(); }} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: "#FEE500", color: "#3C1E1E", fontSize: 15.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
                   <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, fill: "#3C1E1E" }}><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-                  카카오로 10초 기록
+                  카카오로 3초 기록
                 </button>
                 <p style={{ fontSize: 11, color: C.sub, marginTop: 10, display: "flex", alignItems: "center", gap: 4 }}>
                   <span>🔕</span> 광고 안 보냄 · 결과만 저장

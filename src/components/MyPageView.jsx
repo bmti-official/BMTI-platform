@@ -9,12 +9,12 @@ const EXERCISE_FREQ_LABELS = {
   none: '거의 안 해요', sometimes: '가끔 생각날 때', weekly: '일주일에 몇 번', daily: '거의 매일',
 };
 const EXERCISE_GOAL_LABELS = {
-  diet: '다이어트', muscle: '근력강화', health: '건강유지',
-  flexibility: '유연성 향상', stress: '스트레스 해소', posture: '체형교정',
+  flexibility: '💢 뻐근함 줄이기', posture: '🧘🏻‍♀️ 자세 바로잡기', health: '🏃🏻 체력 기르기', stress: '💥 스트레스 풀기',
 };
 const POSTURE_LABELS = {
-  sitting: '주로 앉아요', standing: '주로 서요', moving: '계속 움직여요', mixed: '앉았다 섰다', other: '기타',
+  sitting: '🪑 주로 앉아요', standing: '🧍🏻‍♀️ 주로 서요', moving: '👣 계속 움직여요', mixed: '🪑🧍🏻‍♀️ 앉았다 섰다', other: '기타',
 };
+const POSTURE_KNOWN_IDS = ['sitting', 'standing', 'moving', 'mixed'];
 
 const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onLogout }) => {
   const getCharImage = (fullCode) => {
@@ -34,6 +34,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const [showBmtiDetails, setShowBmtiDetails] = useState(false);
   const [isEditingExercise, setIsEditingExercise] = useState(false);
   const [savingExercise, setSavingExercise] = useState(false);
+  const [posturePick, setPosturePick] = useState(null);
+  const [postureOther, setPostureOther] = useState('');
 
   // 상위에서 userInfo가 업데이트될 경우(ex. 새로운 BMTI 검사 완료 후) 동기화
   useEffect(() => {
@@ -113,6 +115,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   };
 
   const handleSaveExerciseInfo = async () => {
+    const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
     if (userData?.id) {
       setSavingExercise(true);
       try {
@@ -121,11 +124,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           .update({
             exercise_frequency: userData.exercise_frequency || null,
             exercise_goals: userData.exercise_goals || [],
-            common_posture: userData.common_posture || null,
+            common_posture: finalPosture || null,
           })
           .eq('id', userData.id);
         if (error) throw error;
-        localStorage.setItem('bmti_user', JSON.stringify(userData));
+        const updated = { ...userData, common_posture: finalPosture };
+        setUserData(updated);
+        localStorage.setItem('bmti_user', JSON.stringify(updated));
       } catch (e) {
         console.error('운동 정보 저장 오류:', e);
         alert('운동 정보 저장 중 오류가 발생했습니다.');
@@ -390,6 +395,16 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             if (isEditingExercise) {
               handleSaveExerciseInfo();
             } else {
+              if (userData.common_posture && POSTURE_KNOWN_IDS.includes(userData.common_posture)) {
+                setPosturePick(userData.common_posture);
+                setPostureOther('');
+              } else if (userData.common_posture) {
+                setPosturePick('other');
+                setPostureOther(userData.common_posture);
+              } else {
+                setPosturePick(null);
+                setPostureOther('');
+              }
               setIsEditingExercise(true);
             }
           }}
@@ -445,15 +460,24 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 {Object.entries(POSTURE_LABELS).map(([id, label]) => (
                   <button
                     key={id}
-                    onClick={() => setUserData({ ...userData, common_posture: id })}
+                    onClick={() => setPosturePick(id)}
                     className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
-                      userData.common_posture === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      posturePick === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                     }`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
+              {posturePick === 'other' && (
+                <input
+                  type="text"
+                  value={postureOther}
+                  onChange={(e) => setPostureOther(e.target.value.slice(0, 20))}
+                  placeholder="짧게 적어주세요 (예: 운전을 오래 해요)"
+                  className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400"
+                />
+              )}
             </div>
           </div>
         ) : (userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
@@ -476,7 +500,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             </div>
             <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">자주 하는 자세</span>
-              <span className="text-sm">{POSTURE_LABELS[userData.common_posture] || '아직 입력 전이에요'}</span>
+              <span className="text-sm">{POSTURE_LABELS[userData.common_posture] || userData.common_posture || '아직 입력 전이에요'}</span>
             </div>
           </div>
         ) : (

@@ -63,10 +63,16 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {!isChat && (
       <div className="relative bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 md:px-6 py-3 md:py-3.5">
-          {/* Left: 여백 (가운데 아바타를 정중앙에 맞추기 위한 자리) */}
-          <div />
+          {/* Left: 로고 */}
+          <div
+            className="cursor-pointer flex items-baseline gap-2 justify-self-start"
+            onClick={() => setView('home')}
+          >
+            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
+            <span className="hidden sm:inline-block text-xs md:text-sm font-sans font-medium text-gray-400 whitespace-nowrap">자기점검 50</span>
+          </div>
 
-          {/* Center: 캐릭터 아바타 + BMTI 로고 — 바 경계/카테고리와 겹치지 않게 자체 높이 안에 위치 */}
+          {/* Center: 캐릭터 아바타 + 본인 BMTI 유형 배지 — 바 경계/카테고리와 겹치지 않게 자체 높이 안에 위치 */}
           <div className="flex flex-col items-center justify-self-center">
             <button
               onClick={() => setShowCategory(v => !v)}
@@ -81,12 +87,15 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                 )}
               </div>
             </button>
-            <button
-              onClick={() => setView('home')}
-              className="mt-0.5 text-sm md:text-base font-serif font-bold tracking-tight text-gray-800 leading-none whitespace-nowrap"
-            >
-              BMTI
-            </button>
+            {bmtiCode && (
+              <span className={`mt-0.5 text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full border leading-none whitespace-nowrap ${
+                axisCode.includes('Z') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                axisCode.includes('M') ? 'bg-pink-100 text-pink-700 border-pink-200' :
+                'bg-[#c0ff00] text-black border-[#9BB31B]/30'
+              }`}>
+                {axisCode}
+              </span>
+            )}
           </div>
 
           {/* Right: Login */}

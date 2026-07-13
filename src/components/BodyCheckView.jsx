@@ -53,7 +53,7 @@ function Hero({ isLoggedIn, onRequireLogin, onShowDetail }) {
           <div className="flex flex-col items-start gap-1.5 w-full sm:w-auto">
             <button onClick={onRequireLogin} className="flex items-center justify-center gap-2 px-7 py-4 rounded-[15px] bg-[#FEE500] text-[#3C1E1E] text-[15.5px] font-extrabold border-none cursor-pointer hover:scale-[1.03] hover:bg-[#F4DC00] transition-transform w-full sm:w-auto shadow-sm">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-              카카오로 10초 예약
+              카카오로 3초 예약
             </button>
             <p className="text-[11px] text-[#8A8378] flex items-center gap-1">
               <span>🔕</span> 광고 안 보냄 · 결과만 저장
@@ -280,7 +280,7 @@ function Programs({ isLoggedIn, onRequireLogin }) {
           <div className="w-full mt-5">
             <button onClick={onRequireLogin} className="w-full flex items-center justify-center gap-2 px-7 py-4 rounded-[15px] bg-[#FEE500] text-[#3C1E1E] text-[15.5px] font-extrabold border-none cursor-pointer hover:scale-[1.02] hover:bg-[#F4DC00] transition-transform shadow-sm">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-              카카오로 10초 예약
+              카카오로 3초 예약
             </button>
             <p className="text-[11px] text-[#8A8378] mt-2 flex items-center justify-center gap-1">
               <span>🔕</span> 광고 안 보냄 · 결과만 저장
@@ -358,7 +358,7 @@ function FinalCta({ isLoggedIn, onRequireLogin }) {
           <div className="w-full">
             <button onClick={onRequireLogin} className="w-full flex items-center justify-center gap-2 py-[17px] rounded-[15px] bg-[#FEE500] text-[#3C1E1E] text-base font-extrabold border-none cursor-pointer hover:bg-[#F4DC00] transition">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-              카카오로 10초 예약
+              카카오로 3초 예약
             </button>
             <p className="text-[11px] text-white/45 mt-2.5 flex items-center justify-center gap-1">
               <span>🔕</span> 광고 안 보냄 · 결과만 저장
@@ -596,7 +596,7 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
           {!isLoggedIn ? (
             <button onClick={onRequireLogin} className="w-full flex items-center justify-center gap-2 py-[17px] rounded-[15px] bg-[#FEE500] text-[#3C1E1E] text-base font-extrabold border-none cursor-pointer hover:bg-[#F4DC00] transition">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-              카카오로 10초 예약
+              카카오로 3초 예약
             </button>
           ) : (
             <button className="w-full py-[17px] rounded-[15px] bg-[#FF6B9D] text-white text-base font-extrabold border-none cursor-pointer hover:brightness-110 transition">

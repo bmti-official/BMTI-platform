@@ -551,7 +551,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
                 <svg viewBox="0 0 24 24" className="w-4 h-4 fill-[#3C1E1E]">
                   <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" />
                 </svg>
-                {talkType === 'Z' ? '카카오로 10초 해답 얻기' : '카카오로 10초 위로 받기'}
+                {talkType === 'Z' ? '카카오로 3초 해답 얻기' : '카카오로 3초 위로 받기'}
               </button>
               <p className="text-[11px] text-gray-500 mt-2 flex items-center gap-1 drop-shadow-md bg-white/70 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
                 <span>🔕</span> 광고 안 보냄 · 결과만 저장
