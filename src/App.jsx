@@ -4,7 +4,6 @@ import Navbar from './components/Navbar';
 import HomeView from './components/HomeView';
 import QuizView from './components/QuizView';
 import ResultView from './components/ResultView';
-import BoardView from './components/BoardView';
 import Footer from './components/Footer';
 import TicketView from './components/TicketView';
 import SignupModal from './components/SignupModal';
@@ -30,8 +29,6 @@ function App() {
     const saved = localStorage.getItem('bmti_answers');
     return saved ? JSON.parse(saved) : null;
   });
-  const [currentGroupRoom, setCurrentGroupRoom] = useState(null);
-
   // 비로그인 + 테스트 완료 유저 → 다른 탭 클릭 시 카카오 저장 팝업 (세션당 1회)
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [pendingView, setPendingView] = useState(null);
@@ -276,15 +273,6 @@ function App() {
             userProfile={userProfile}
           />
         )}
-        {currentView === 'board' && (
-          <BoardView 
-            isLoggedIn={isLoggedIn}
-            onRequireLogin={() => setShowSignup(true)}
-            userProfile={userProfile}
-            bmtiCode={bmtiCode}
-          />
-        )}
-
         {currentView === 'ticket' && (
           <TicketView 
             isLoggedIn={isLoggedIn}
@@ -322,8 +310,8 @@ function App() {
         )}
       </main>
 
-      {/* Footer for Home/Board/Ticket/Bodyscan/MyPage views */}
-      {['home', 'board', 'ticket', 'mypage'].includes(currentView) && <Footer />}
+      {/* Footer for Home/Ticket/Bodyscan/MyPage views */}
+      {['home', 'ticket', 'mypage'].includes(currentView) && <Footer />}
 
       {/* 비로그인 저장 유도 팝업 */}
       <SavePromptModal

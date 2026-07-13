@@ -381,7 +381,7 @@ function FinalCta({ isLoggedIn, onRequireLogin }) {
 // ── 라이브 전용 Footer ──
 function LiveFooter() {
   return (
-    <div className="py-5 px-5 pb-11 text-center">
+    <div className="py-5 px-5 pb-24 text-center">
       <div className="text-[13px] font-extrabold mb-2">
         BMTI <span className="text-[#FF6B9D]">라이브</span>
       </div>
@@ -450,7 +450,7 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
   const timeline = TIMELINES[progKeys[pick]];
 
   return (
-    <div className="min-h-screen bg-white text-[#1C1A17] pt-24 pb-10">
+    <div className="min-h-screen bg-white text-[#1C1A17] pt-24 pb-24">
       <Section className="pb-2">
         <button
           onClick={onBack}

@@ -8,7 +8,7 @@ const Footer = () => {
   const [isAdInquiryOpen, setIsAdInquiryOpen] = useState(false);
 
   return (
-    <footer className="py-8 mt-8 border-t border-gray-100 fade-in px-4 md:px-6 w-full relative">
+    <footer className="pt-8 pb-28 mt-8 border-t border-gray-100 fade-in px-4 md:px-6 w-full relative">
       <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
         {/* Brand & Copyright */}
         <div className="flex flex-col items-center">

@@ -323,7 +323,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
 
         {/* 하단 버튼 (대화 단계에서만) */}
         {phase === "talk" && (
-          <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, padding: "14px 24px 28px", background: `linear-gradient(transparent, ${C.bg} 30%)` }}>
+          <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, padding: "14px 24px 28px", background: `linear-gradient(transparent, ${C.bg} 30%)`, zIndex: 45 }}>
             {!isLoggedIn ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <button onClick={() => { if (onRequireLogin) onRequireLogin(); }} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: "#FEE500", color: "#3C1E1E", fontSize: 15.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
