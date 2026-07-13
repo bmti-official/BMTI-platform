@@ -28,10 +28,10 @@ const GOAL_OPTS = [
   { id: "stress", label: "💥 스트레스 풀기" },
 ];
 const POSTURE_OPTS = [
-  { id: "sitting", label: "🪑 주로 앉아요" },
-  { id: "standing", label: "🧍🏻‍♀️ 주로 서요" },
-  { id: "moving", label: "👣 계속 움직여요" },
-  { id: "mixed", label: "🪑🧍🏻‍♀️ 앉았다 섰다" },
+  { id: "sitting", label: "🪑 주로 앉아 있어요", sub: "사무직, 공부 등" },
+  { id: "standing", label: "🧍 주로 서 있어요", sub: "판매, 요리, 미용 등" },
+  { id: "moving", label: "🚶 계속 움직여요", sub: "간호, 육아, 서비스 등" },
+  { id: "mixed", label: "🔄 앉았다 섰다 해요", sub: "다양" },
   { id: "other", label: "기타" },
 ];
 
@@ -293,7 +293,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
 
               <ExerciseQuestion label="요즘 하루 대부분 어떻게 지내요?">
                 {POSTURE_OPTS.map(o => (
-                  <PillOption key={o.id} label={o.label} on={posture === o.id} onClick={() => setPosture(o.id)} />
+                  <PillOption key={o.id} label={o.label} sub={o.sub} on={posture === o.id} onClick={() => setPosture(o.id)} />
                 ))}
                 {posture === "other" && (
                   <input
@@ -374,14 +374,16 @@ function ExerciseQuestion({ label, children }) {
   );
 }
 
-function PillOption({ label, on, onClick, disabled }) {
+function PillOption({ label, sub, on, onClick, disabled }) {
   return (
     <button
       onClick={disabled ? undefined : onClick}
-      style={{ padding: "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
-        border: "none", background: on ? C.pink : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}
+      style={{ padding: sub ? "8px 15px" : "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
+        border: "none", background: on ? C.pink : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s",
+        display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}
     >
-      {label}
+      <span>{label}</span>
+      {sub && <span style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.75 }}>{sub}</span>}
     </button>
   );
 }

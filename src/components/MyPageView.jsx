@@ -11,9 +11,14 @@ const EXERCISE_FREQ_LABELS = {
 const EXERCISE_GOAL_LABELS = {
   flexibility: '💢 뻐근함 줄이기', posture: '🧘🏻‍♀️ 자세 바로잡기', health: '🏃🏻 체력 기르기', stress: '💥 스트레스 풀기',
 };
-const POSTURE_LABELS = {
-  sitting: '🪑 주로 앉아요', standing: '🧍🏻‍♀️ 주로 서요', moving: '👣 계속 움직여요', mixed: '🪑🧍🏻‍♀️ 앉았다 섰다', other: '기타',
-};
+const POSTURE_OPTS = [
+  { id: 'sitting', label: '🪑 주로 앉아 있어요', sub: '사무직, 공부 등' },
+  { id: 'standing', label: '🧍 주로 서 있어요', sub: '판매, 요리, 미용 등' },
+  { id: 'moving', label: '🚶 계속 움직여요', sub: '간호, 육아, 서비스 등' },
+  { id: 'mixed', label: '🔄 앉았다 섰다 해요', sub: '다양' },
+  { id: 'other', label: '기타' },
+];
+const POSTURE_LABELS = Object.fromEntries(POSTURE_OPTS.map(o => [o.id, o.label]));
 const POSTURE_KNOWN_IDS = ['sitting', 'standing', 'moving', 'mixed'];
 
 const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onLogout }) => {
@@ -457,15 +462,16 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             <div>
               <span className="text-gray-400 text-xs font-bold block mb-2">요즘 하루 대부분 어떻게 지내요?</span>
               <div className="flex flex-wrap gap-1.5">
-                {Object.entries(POSTURE_LABELS).map(([id, label]) => (
+                {POSTURE_OPTS.map(({ id, label, sub }) => (
                   <button
                     key={id}
                     onClick={() => setPosturePick(id)}
-                    className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
+                    className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors flex flex-col items-start gap-0.5 ${
                       posturePick === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                     }`}
                   >
-                    {label}
+                    <span>{label}</span>
+                    {sub && <span className={`text-[10px] font-semibold ${posturePick === id ? 'text-white/75' : 'text-gray-400'}`}>{sub}</span>}
                   </button>
                 ))}
               </div>

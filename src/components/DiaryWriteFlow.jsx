@@ -15,13 +15,8 @@ const C = {
   tileOff: "#F3F1EC", tileOffText: "#B7B2A9",
 };
 
-// ── 앉아있던 정도 ──
-const SITTING_OPTS = [
-  { label: "거의 안 앉음", icon: "walk" },
-  { label: "보통이었어요", icon: "chair" },
-  { label: "많이 앉았어요", icon: "sofa" },
-  { label: "하루 종일 앉음", icon: "slump" },
-];
+// ── 평소보다 무리한 이유 ──
+const OVEREXERT_REASONS = ["오래 앉음", "오래 선 자세", "많이 걸음", "무거운 물건 들기"];
 
 // ── 수면의 질 ──
 const SLEEP_OPTS = [
@@ -73,8 +68,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
 
-  // 앉아있던 정도
-  const [sittingVal, setSittingVal] = useState(null);
+  // 평소보다 무리했는지
+  const [overexertVal, setOverexertVal] = useState(null); // null | 'no' | 'yes'
+  const [overexertPick, setOverexertPick] = useState(null); // OVEREXERT_REASONS 중 하나 | 'other' | null
+  const [overexertOther, setOverexertOther] = useState("");
   // 수면의 질
   const [sleepVal, setSleepVal] = useState(null);
 
@@ -139,8 +136,20 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   };
 
   // ── 아코디언 자동 접기 ──
-  const handleSittingPick = (opt) => {
-    setSittingVal(opt.label);
+  const pickOverexertNo = () => {
+    setOverexertVal("no");
+    setOverexertPick(null);
+    setOverexertOther("");
+    setTimeout(() => setExpanded(e => ({ ...e, sitting: false })), 250);
+  };
+  const pickOverexertReason = (r) => {
+    setOverexertPick(r);
+    if (r !== "other") {
+      setTimeout(() => setExpanded(e => ({ ...e, sitting: false })), 250);
+    }
+  };
+  const confirmOverexertOther = () => {
+    if (!overexertOther.trim()) return;
     setTimeout(() => setExpanded(e => ({ ...e, sitting: false })), 250);
   };
   const handleSleepPick = (opt) => {
@@ -159,8 +168,14 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       ? (exerciseTypes.length > 0 && exerciseTypes.every(t => exerciseTimes[t]))
       : false;
 
+  // 무리했는지 완료 체크 — 아니요는 바로 완료, 맞아요는 이유(또는 직접 입력)까지 골라야 완료
+  const overexertReason = overexertPick === "other" ? overexertOther.trim() : overexertPick;
+  const overexertComplete = overexertVal === "no" || (overexertVal === "yes" && !!overexertReason);
+  let overexertAnswerText = null;
+  if (overexertVal === "no") overexertAnswerText = "무리하지 않았어요";
+  else if (overexertVal === "yes" && overexertReason) overexertAnswerText = overexertReason;
+
   // ── 선택하면 제목 자리에 아이콘+내용으로 바뀌는 답변 정보 ──
-  const sittingOpt = SITTING_OPTS.find(o => o.label === sittingVal);
   const sleepOpt = SLEEP_OPTS.find(o => o.label === sleepVal);
   const exerciseReasonOpt = NO_EXERCISE_REASONS.find(r => r.label === exerciseReason);
 
@@ -253,14 +268,38 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 )}
               </div>
 
-              {/* ━━━ 2. 얼마나 앉았어요 (아코디언) ━━━ */}
-              <AccordionCard question="얼마나 앉았어요?" answerIcon={sittingOpt?.icon} answerText={sittingVal}
-                expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={!!sittingVal}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {SITTING_OPTS.map(opt => (
-                    <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sittingVal === opt.label} onClick={() => handleSittingPick(opt)} />
-                  ))}
-                </div>
+              {/* ━━━ 2. 평소보다 무리했나요 (아코디언) ━━━ */}
+              <AccordionCard question="평소보다 무리했나요?" answerText={overexertAnswerText}
+                expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={overexertComplete}>
+                {overexertVal === null && (
+                  <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
+                    <EmojiTile icon="restNo" label="아니요!" on={false} onClick={pickOverexertNo} />
+                    <EmojiTile icon="flex" label="맞아요!" on={false} onClick={() => setOverexertVal("yes")} />
+                  </div>
+                )}
+
+                {overexertVal === "yes" && (
+                  <>
+                    <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>어떻게 무리했어요?</div>
+                    <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                      {OVEREXERT_REASONS.map(r => (
+                        <Chip key={r} label={r} on={overexertPick === r} onClick={() => pickOverexertReason(r)} />
+                      ))}
+                      <Chip label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} />
+                    </div>
+                    {overexertPick === "other" && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                        <input value={overexertOther} onChange={e => setOverexertOther(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && confirmOverexertOther()}
+                          placeholder="짧게 적어주세요 (예: 무거운 짐 옮기기)"
+                          style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
+                        <button onClick={confirmOverexertOther} disabled={!overexertOther.trim()}
+                          style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: overexertOther.trim() ? 1 : 0.4 }}>확인</button>
+                      </div>
+                    )}
+                    <button onClick={() => { setOverexertVal(null); setOverexertPick(null); setOverexertOther(""); }} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
+                  </>
+                )}
               </AccordionCard>
 
               {/* ━━━ 3. 얼마나 푹 잤나요 (아코디언) ━━━ */}
@@ -543,7 +582,7 @@ function EmojiTile({ icon, label, on, onClick }) {
 
 const DEFAULT_BLOCKS = [
   { id: "mood", label: "오늘의 말랑이 기분", removable: false },
-  { id: "sitting", label: "얼마나 앉았어요", removable: true },
+  { id: "sitting", label: "평소보다 무리했나요", removable: true },
   { id: "sleep", label: "얼마나 푹 잤나요", removable: true },
   { id: "exercise", label: "오늘 운동 했나요", removable: true },
   { id: "oneLine", label: "한 줄 일기", removable: true },
@@ -565,11 +604,24 @@ function BlockPreview({ id }) {
       </div>
     );
   }
-  if (id === "sitting" || id === "sleep") {
-    const opts = id === "sitting" ? SITTING_OPTS : SLEEP_OPTS;
+  if (id === "sitting") {
+    return (
+      <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+        {[{ label: "아니요!", icon: "restNo" }, { label: "맞아요!", icon: "flex" }].map(o => (
+          <div key={o.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <DiaryIcon name={o.icon} size={20} />
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: C.sub }}>{o.label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (id === "sleep") {
     return (
       <div style={{ display: "flex", gap: 8 }}>
-        {opts.map(o => (
+        {SLEEP_OPTS.map(o => (
           <div key={o.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <DiaryIcon name={o.icon} size={20} />
