@@ -267,7 +267,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
   if (!bmtiCode && !quizCompleted) {
     return (
-      <div className="min-h-screen pt-44 md:pt-52 pb-20 px-6 flex flex-col items-center justify-center text-center fade-in">
+      <div className="min-h-screen pt-36 md:pt-44 pb-20 px-6 flex flex-col items-center justify-center text-center fade-in">
         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-200">
           <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -289,7 +289,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   }
 
   return (
-    <div className="min-h-screen pt-44 md:pt-52 pb-32 px-6 max-w-2xl mx-auto fade-in">
+    <div className="min-h-screen pt-36 md:pt-44 pb-32 px-6 max-w-2xl mx-auto fade-in">
       <div className="text-center mb-10">
         <p className="text-gray-500 mb-2 font-medium tracking-widest text-sm">ANALYSIS COMPLETE</p>
         <h2 className="text-3xl md:text-4xl font-serif font-bold">당신의 BMTI 파트너는</h2>

@@ -62,18 +62,35 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {/* Top Row: Logo & Login */}
       {!isChat && (
       <div className="relative bg-white/95 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto h-14 md:h-16 flex items-center justify-between px-4 md:px-6">
-          {/* Logo */}
-          <div
-            className="cursor-pointer flex items-baseline gap-2"
-            onClick={() => setView('home')}
-          >
-            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
-            <span className="hidden sm:inline-block text-xs md:text-sm font-sans font-medium text-gray-400 whitespace-nowrap">자기점검 50</span>
+        <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 md:px-6 py-3 md:py-3.5">
+          {/* Left: 여백 (가운데 아바타를 정중앙에 맞추기 위한 자리) */}
+          <div />
+
+          {/* Center: 캐릭터 아바타 + BMTI 로고 — 바 경계/카테고리와 겹치지 않게 자체 높이 안에 위치 */}
+          <div className="flex flex-col items-center justify-self-center">
+            <button
+              onClick={() => setShowCategory(v => !v)}
+              aria-label="카테고리 열기"
+              aria-expanded={showCategory}
+              className="relative active:scale-95 transition-transform"
+            >
+              <div className="relative w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
+                {aiAvatar}
+                {hasUnreadDot && !showCategory && (
+                  <span className="absolute -top-1.5 -right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                )}
+              </div>
+            </button>
+            <button
+              onClick={() => setView('home')}
+              className="mt-0.5 text-sm md:text-base font-serif font-bold tracking-tight text-gray-800 leading-none whitespace-nowrap"
+            >
+              BMTI
+            </button>
           </div>
 
           {/* Right: Login */}
-          <div className="flex font-medium items-center gap-1 sm:gap-3 md:gap-4">
+          <div className="flex font-medium items-center gap-1 sm:gap-3 md:gap-4 justify-self-end">
             {isLoggedIn ? (
               <div className="flex items-center gap-1.5 sm:gap-3">
                 {userProfile && (
@@ -88,26 +105,6 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                       {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
                       {userProfile.nickname}
                     </span>
-
-                    {/* BMTI Badge */}
-                    {bmtiCode && (() => {
-                      const code = bmtiCode.split('-')[0];
-                      const isZ = code.includes('Z');
-                      const isM = code.includes('M');
-
-                      let badgeColors = "bg-[#c0ff00] text-black border-[#9BB31B]/30";
-                      if (isZ) {
-                        badgeColors = "bg-blue-100 text-blue-700 border-blue-200";
-                      } else if (isM) {
-                        badgeColors = "bg-pink-100 text-pink-700 border-pink-200";
-                      }
-
-                      return (
-                        <span className={`inline-flex items-center justify-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border ${badgeColors}`}>
-                          {code}
-                        </span>
-                      );
-                    })()}
                   </button>
                 )}
               </div>
@@ -124,21 +121,6 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             )}
           </div>
         </div>
-
-        {/* 카테고리 토글 캐릭터 아바타 — 상단바 중앙 하단 경계에 살짝 걸치게, 배경원 없이 누끼 캐릭터만 */}
-        <button
-          onClick={() => setShowCategory(v => !v)}
-          aria-label="카테고리 열기"
-          aria-expanded={showCategory}
-          className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-3 md:translate-y-3.5 z-20 active:scale-95 transition-transform"
-        >
-          <div className="relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
-            {aiAvatar}
-            {hasUnreadDot && !showCategory && (
-              <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-            )}
-          </div>
-        </button>
       </div>
       )}
 
