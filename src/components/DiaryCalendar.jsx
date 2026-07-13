@@ -62,7 +62,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "112px 20px 40px" }}>
+      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "96px 20px 40px" }}>
 
         {/* 헤더 */}
         <div style={{ textAlign: "center", marginBottom: 22 }}>

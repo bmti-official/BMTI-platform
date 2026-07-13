@@ -169,7 +169,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const liveHistory = [];
 
   return (
-    <div className="pt-28 pb-32 px-4 md:px-6 max-w-3xl mx-auto fade-in">
+    <div className="pt-24 pb-32 px-4 md:px-6 max-w-3xl mx-auto fade-in">
 
       {/* 1. 프로필 요약 카드 */}
       <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8 relative overflow-hidden">

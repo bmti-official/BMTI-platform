@@ -339,7 +339,7 @@ const BoardView = ({ isLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
   };
 
   return (
-    <div className="min-h-screen pt-36 px-4 md:px-6 max-w-4xl mx-auto pb-24 fade-in">
+    <div className="min-h-screen pt-32 px-4 md:px-6 max-w-4xl mx-auto pb-24 fade-in">
 
       {/* ===== 과몰입 톡톡 ===== */}
       <div className="fade-in">

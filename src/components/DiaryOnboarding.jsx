@@ -145,7 +145,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
 
         {/* 진행 점 */}
         {phase === "talk" && (
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "112px 0 0" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "96px 0 0" }}>
             {STEPS.map((_, n) => (
               <div key={n} style={{ width: n === i ? 18 : 6, height: 6, borderRadius: 6, transition: "all .3s",
                 background: n <= i ? C.ink : C.line }} />
