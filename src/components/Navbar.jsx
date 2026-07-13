@@ -5,13 +5,6 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   </svg>
 );
 
-const UserIcon = ({ className = "w-4 h-4" }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none">
-    <circle cx="12" cy="8.5" r="3.4" fill="currentColor" />
-    <path d="M4.8 19.2c0-3.6 3.2-5.6 7.2-5.6s7.2 2 7.2 5.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-  </svg>
-);
-
 import { useState, useEffect } from 'react';
 import { BMTI_RESULTS } from '../bmti_results';
 import { CHARACTERS } from '../data';
@@ -55,7 +48,14 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const defaultAiImage = '⭐️';
-  const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain drop-shadow-sm scale-110" /> : <div className="text-2xl">{defaultAiImage}</div>;
+  const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain drop-shadow-sm scale-125" /> : <div className="text-xl">{defaultAiImage}</div>;
+
+  // 다른 화면으로 넘어가면 펼쳐둔 카테고리는 자동으로 접는다.
+  useEffect(() => {
+    setShowCategory(false);
+  }, [currentView]);
+
+  const hasUnreadDot = showAiChatDot || showBoardDot;
 
   return (
     <nav id="main-nav" className="fixed top-0 left-0 right-0 z-40 flex flex-col">
@@ -63,13 +63,31 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {!isChat && (
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto h-14 md:h-16 flex items-center justify-between px-4 md:px-6">
-          {/* Logo */}
-          <div
-            className="cursor-pointer flex items-baseline gap-2"
-            onClick={() => setView('home')}
-          >
-            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
-            <span className="hidden sm:inline-block text-xs md:text-sm font-sans font-medium text-gray-400 whitespace-nowrap">자기점검 50</span>
+          {/* Logo + 카테고리 토글 (캐릭터 아바타) */}
+          <div className="flex items-center gap-2.5 md:gap-3">
+            <div
+              className="cursor-pointer flex items-baseline gap-2"
+              onClick={() => setView('home')}
+            >
+              <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
+              <span className="hidden sm:inline-block text-xs md:text-sm font-sans font-medium text-gray-400 whitespace-nowrap">자기점검 50</span>
+            </div>
+
+            <button
+              onClick={() => setShowCategory(v => !v)}
+              aria-label="카테고리 열기"
+              aria-expanded={showCategory}
+              className={`relative w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center overflow-visible flex-shrink-0 transition-transform active:scale-95 ${
+                showCategory ? 'ring-2 ring-black/70' : 'ring-1 ring-gray-200'
+              }`}
+            >
+              <div className="w-full h-full rounded-full bg-gray-50 overflow-hidden flex items-center justify-center shadow-sm">
+                {aiAvatar}
+              </div>
+              {hasUnreadDot && !showCategory && (
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+              )}
+            </button>
           </div>
 
           {/* Right: Login */}
@@ -77,22 +95,24 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             {isLoggedIn ? (
               <div className="flex items-center gap-1.5 sm:gap-3">
                 {userProfile && (
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-
+                  <button
+                    onClick={() => setView('mypage')}
+                    className={`flex items-center gap-1.5 sm:gap-2 pl-2 pr-2.5 py-1 -mx-2 rounded-full transition-colors ${
+                      currentView === 'mypage' ? 'bg-gray-100' : 'hover:bg-gray-50'
+                    }`}
+                  >
                     {/* 닉네임 영역 */}
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-800 text-sm flex items-center">
-                          {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
-                          {userProfile.nickname}
-                        </span>
-                      </div>
+                    <span className="font-bold text-gray-800 text-sm flex items-center">
+                      {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+                      {userProfile.nickname}
+                    </span>
 
                     {/* BMTI Badge */}
                     {bmtiCode && (() => {
                       const code = bmtiCode.split('-')[0];
                       const isZ = code.includes('Z');
                       const isM = code.includes('M');
-                      
+
                       let badgeColors = "bg-[#c0ff00] text-black border-[#9BB31B]/30";
                       if (isZ) {
                         badgeColors = "bg-blue-100 text-blue-700 border-blue-200";
@@ -106,20 +126,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                         </span>
                       );
                     })()}
-
-                    {/* My Page Button */}
-                    <button
-                      onClick={() => setView('mypage')}
-                      aria-label="마이페이지"
-                      className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border transition-colors flex-shrink-0 ${
-                        currentView === 'mypage'
-                          ? 'bg-black text-[#c0ff00] border-black'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <UserIcon className="w-4 h-4" />
-                    </button>
-                  </div>
+                  </button>
                 )}
               </div>
             ) : (
@@ -138,13 +145,14 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       </div>
       )}
 
-      {/* Bottom Row: Navigation Tabs */}
-      <div 
-        className={`origin-top transition-all duration-300 ${isChat && !showCategory ? 'hidden' : 'block'} ${isChat ? 'absolute top-3 left-0 right-0 z-30' : 'bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100/50 relative'}`}
+      {/* Bottom Row: Navigation Tabs — 캐릭터 아바타를 눌러야 펼쳐진다 */}
+      <div
+        className={`origin-top overflow-hidden transition-all duration-300 ease-out bg-white/90 backdrop-blur-md relative ${
+          showCategory ? 'max-h-24 opacity-100 shadow-sm border-b border-gray-100/50' : 'max-h-0 opacity-0'
+        }`}
       >
-        <div 
-          className={`max-w-7xl mx-auto flex overflow-x-auto hide-scrollbar ${isChat ? 'pl-[140px] pr-[80px] md:pl-[200px] md:pr-[100px] justify-start py-0 w-full' : 'px-4 md:px-6 justify-center py-2.5'}`}
-          style={isChat ? { maskImage: 'linear-gradient(to right, transparent, black 130px, black calc(100% - 70px), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 130px, black calc(100% - 70px), transparent)' } : {}}
+        <div
+          className="max-w-7xl mx-auto flex overflow-x-auto hide-scrollbar px-4 md:px-6 justify-center py-2.5"
         >
           <div className="bg-gray-100/90 backdrop-blur-lg border border-gray-200/50 rounded-full p-1 flex gap-1 items-center shadow-[0_4px_20px_rgba(0,0,0,0.08)] whitespace-nowrap flex-shrink-0 h-10 md:h-12">
             {tabs.map(tab => (
