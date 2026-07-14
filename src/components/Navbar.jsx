@@ -96,43 +96,45 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         </div>
       </nav>
 
-      {/* 하단 바: 운동일기 / 캐릭터(홈) / 라이브 */}
-      <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
-        <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
-          <div className="max-w-7xl mx-auto grid grid-cols-3 items-center px-8 md:px-16" style={{ height: 66 }}>
-            {/* 말랑 다이어리 */}
-            <button onClick={() => setView('aichat')} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
-              <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
-                <Mallang v={diaryMoodTick} size={26} />
+      {/* 하단 바: 운동일기 / 캐릭터(홈) / 라이브 — BMTI 설문 중에는 숨긴다 */}
+      {currentView !== 'quiz' && (
+        <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
+          <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
+            <div className="max-w-7xl mx-auto grid grid-cols-3 items-center px-8 md:px-16" style={{ height: 66 }}>
+              {/* 말랑 다이어리 */}
+              <button onClick={() => setView('aichat')} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+                <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
+                  <Mallang v={diaryMoodTick} size={26} />
+                </div>
+                <span className={`text-[10px] font-bold whitespace-nowrap ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>말랑 다이어리</span>
+              </button>
+
+              {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
+              <div />
+
+              {/* 라이브 */}
+              <button onClick={() => setView('bodycheck')} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
+                <PlayIcon className={`w-7 h-7 ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-300'}`} />
+                <span className={`text-[10px] font-bold ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-400'}`}>라이브</span>
+              </button>
+            </div>
+
+            {/* 캐릭터 — 바 위로 떠 있는 홈 버튼, 배경원 없이 누끼 캐릭터만 */}
+            <button
+              onClick={() => setView('home')}
+              aria-label="홈으로"
+              className="absolute left-1/2 -translate-x-1/2 -top-5 z-30 active:scale-95 transition-transform"
+            >
+              <div className="relative w-14 h-14 flex items-center justify-center">
+                {aiAvatar}
+                {showAiChatDot && (
+                  <span className="absolute top-0.5 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                )}
               </div>
-              <span className={`text-[10px] font-bold whitespace-nowrap ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>말랑 다이어리</span>
-            </button>
-
-            {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
-            <div />
-
-            {/* 라이브 */}
-            <button onClick={() => setView('bodycheck')} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
-              <PlayIcon className={`w-7 h-7 ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-300'}`} />
-              <span className={`text-[10px] font-bold ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-400'}`}>라이브</span>
             </button>
           </div>
-
-          {/* 캐릭터 — 바 위로 떠 있는 홈 버튼, 배경원 없이 누끼 캐릭터만 */}
-          <button
-            onClick={() => setView('home')}
-            aria-label="홈으로"
-            className="absolute left-1/2 -translate-x-1/2 -top-5 z-30 active:scale-95 transition-transform"
-          >
-            <div className="relative w-14 h-14 flex items-center justify-center">
-              {aiAvatar}
-              {showAiChatDot && (
-                <span className="absolute top-0.5 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-              )}
-            </div>
-          </button>
-        </div>
-      </nav>
+        </nav>
+      )}
     </>
   );
 };

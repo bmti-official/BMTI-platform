@@ -3,8 +3,6 @@ import { Mallang } from "./Mallang";
 import { MOODS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
-  getEntriesSinceWeeklyBaseline, canClaimWeeklyReport, setWeeklyReportBaseline, markWeeklyReportIssued,
-  getPrevMonthEntryCount, canClaimMonthlyReport, getPrevMonthKey, markMonthlyReportIssued,
   isDayWritable,
 } from "../lib/diaryHistory";
 
@@ -24,7 +22,6 @@ const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null
 export default function DiaryCalendar({ onPickMood, onEditDay }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [, setReportTick] = useState(0); // 리포트 수령 후 활성 조건을 강제로 다시 계산시키는 용도
   const year = cursor.getFullYear();
   const month = cursor.getMonth(); // 0-indexed
   const monthKey = `${year}-${pad(month + 1)}`;
@@ -32,7 +29,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
 
   const history = getDiaryHistory();
   const entryCountThisMonth = history.filter(e => e.date.startsWith(monthKey)).length;
-  const todayEntry = getEntryForDate(todayStr);
 
   // 오늘 기분 팝업 — 오늘 기록이 없으면 탭에 들어오자마자 자동으로 뜬다.
   const [showMoodPopup, setShowMoodPopup] = useState(() => !getEntryForDate(todayISO()));
@@ -55,26 +51,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
   const cells = [];
   for (let i = 0; i < firstWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  const weeklyActive = canClaimWeeklyReport();
-  const weeklyProgress = Math.min(getEntriesSinceWeeklyBaseline(), 7);
-  const monthlyActive = canClaimMonthlyReport();
-  const monthlyProgress = Math.min(getPrevMonthEntryCount(), 10);
-
-  const claimWeeklyReport = () => {
-    if (!weeklyActive) return;
-    setWeeklyReportBaseline(getDiaryHistory().length);
-    markWeeklyReportIssued(); // 발행 시점까지의 기록은 이제 수정 불가
-    setReportTick(t => t + 1);
-    alert("📋 주간 리포트는 곧 만나볼 수 있어요! 열심히 준비하고 있어요.");
-  };
-
-  const claimMonthlyReport = () => {
-    if (!monthlyActive) return;
-    markMonthlyReportIssued(getPrevMonthKey()); // 리포트로 나간 달의 기록은 이제 수정 불가
-    setReportTick(t => t + 1);
-    alert("📊 월간 리포트는 곧 만나볼 수 있어요! 열심히 준비하고 있어요.");
-  };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
@@ -147,40 +123,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
         </div>
 
         <div style={{ flex: 1 }} />
-
-        {/* 오늘 기록 카드 */}
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 24, padding: "26px 22px", marginTop: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
-          {todayEntry ? (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Mallang v={todayEntry.mood} size={48} /></div>
-              <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>오늘 기록 완료했어요 ✓</p>
-              <p style={{ fontSize: 12.5, color: C.sub, margin: "6px 0 0" }}>내일 또 만나요!</p>
-            </div>
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 14px", color: C.sub }}>아직 오늘 기분을 기록하지 않았어요</p>
-              <button onClick={() => setShowMoodPopup(true)} style={{ padding: "11px 22px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
-                오늘 기분 기록하기
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 주간/월간 리포트 버튼 */}
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-          <ReportButton
-            label="📋 주간 리포트"
-            active={weeklyActive}
-            progressLabel={`${weeklyProgress}/7`}
-            onClick={claimWeeklyReport}
-          />
-          <ReportButton
-            label="📊 월간 리포트"
-            active={monthlyActive}
-            progressLabel={`${monthlyProgress}/10`}
-            onClick={claimMonthlyReport}
-          />
-        </div>
       </div>
 
       {showDatePicker && (
@@ -193,65 +135,48 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
       )}
 
       {showMoodPopup && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "26px 26px 0 0", padding: "26px 22px 30px", position: "relative", animation: "diaryPopupUp .3s ease-out" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "28px 28px 0 0", padding: "14px 24px 34px", position: "relative", animation: "diaryPopupUp .32s cubic-bezier(.22,.9,.32,1)" }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#E5E1D8", margin: "0 auto 18px" }} />
             <button
               onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
-              style={{ position: "absolute", top: 16, right: 16, width: 30, height: 30, border: "none", background: "#F3F1EC", borderRadius: "50%", color: C.sub, fontSize: 14, cursor: "pointer" }}
+              style={{ position: "absolute", top: 16, right: 18, width: 28, height: 28, border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer" }}
             >
               ✕
             </button>
 
             {poppedMood === null ? (
               <>
-                <h2 style={{ fontSize: 18, fontWeight: 800, margin: "4px 0 6px", textAlign: "center" }}>오늘 기분은 어떤 말랑이에 가까워요?</h2>
-                <p style={{ fontSize: 13, color: C.sub, textAlign: "center", margin: "0 0 22px" }}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
+                <h2 style={{ fontSize: 19, fontWeight: 800, margin: "6px 0 6px", textAlign: "center", letterSpacing: "-0.01em" }}>오늘 기분, 어떤 말랑이에 가까워요?</h2>
+                <p style={{ fontSize: 13, color: C.sub, textAlign: "center", margin: "0 0 26px" }}>지금 마음에 가장 가까운 표정을 골라주세요</p>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                   {MOODS.map(m => (
                     <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                      padding: "8px 2px", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer" }}>
-                      <Mallang v={m.v} size={48} />
+                      padding: "10px 2px", borderRadius: 18, border: "none", background: "transparent", cursor: "pointer" }}>
+                      <Mallang v={m.v} size={46} />
                       <span style={{ fontSize: 10, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" }}>{m.label}</span>
                     </button>
                   ))}
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", paddingTop: 4 }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><Mallang v={poppedMood} size={76} /></div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px" }}>오늘도 기록했네요, 잘했어요! 🎉</h2>
-                <p style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.6, margin: "0 0 24px" }}>이 김에 오늘 하루,<br />조금 더 자세히 기록해볼까요?</p>
-                <button onClick={continueToFullForm} style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 10 }}>
+              <div style={{ textAlign: "center", paddingTop: 6 }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><Mallang v={poppedMood} size={80} /></div>
+                <h2 style={{ fontSize: 19, fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.01em" }}>오늘도 잘 기록했어요</h2>
+                <p style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.6, margin: "0 0 26px" }}>내친김에 오늘 하루,<br />조금 더 자세히 남겨볼까요?</p>
+                <button onClick={continueToFullForm} style={{ width: "100%", padding: 16, borderRadius: 16, border: "none", background: "#5F8A76", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 10, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}>
                   네, 조금 더 기록할게요
                 </button>
-                <button onClick={quickSaveMood} style={{ width: "100%", padding: 14, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                  오늘은 여기까지만 할게요
+                <button onClick={quickSaveMood} style={{ width: "100%", padding: 13, borderRadius: 16, border: "none", background: "transparent", color: C.sub, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  오늘은 여기까지 할게요
                 </button>
               </div>
             )}
           </div>
-          <style>{`@keyframes diaryPopupUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
+          <style>{`@keyframes diaryPopupUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
         </div>
       )}
     </div>
-  );
-}
-
-function ReportButton({ label, active, progressLabel, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: 1, padding: "14px 10px", borderRadius: 18, border: active ? "none" : `1px solid ${C.line}`,
-        background: active ? C.ink : "#FBFAF8", color: active ? "#fff" : C.sub,
-        cursor: active ? "pointer" : "default", textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 13, fontWeight: 800 }}>{label}</div>
-      <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, opacity: active ? 0.7 : 1 }}>
-        {active ? "받으러 가기" : `${progressLabel} 기록하면 열려요`}
-      </div>
-    </button>
   );
 }
 

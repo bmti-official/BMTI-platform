@@ -16,7 +16,12 @@ const C = {
 };
 
 // ── 평소보다 무리한 이유 ──
-const OVEREXERT_REASONS = ["오래 앉음", "오래 선 자세", "많이 걸음", "무거운 물건 들기"];
+const OVEREXERT_REASONS = [
+  { label: "오래 앉음", icon: "chair" },
+  { label: "오래 선 자세", icon: "standing" },
+  { label: "많이 걸음", icon: "walk" },
+  { label: "무거운 물건 들기", icon: "heavyLift" },
+];
 
 // ── 수면의 질 ──
 const SLEEP_OPTS = [
@@ -28,7 +33,7 @@ const SLEEP_OPTS = [
 
 // ── 운동 카테고리 (개인 집중형에 스트레칭 포함) ──
 const EXERCISE_CATS = [
-  { name: "개인 집중형 (실내)", items: ["헬스·PT", "웨이트", "요가", "필라테스", "스트레칭", "명상·호흡", "수영"] },
+  { name: "개인 집중형 (실내)", items: ["헬스·PT", "요가", "필라테스", "스트레칭", "명상·호흡", "수영"] },
   { name: "야외 활동형 (실외)", items: ["걷기/산책", "러닝·조깅", "자전거", "등산"] },
   { name: "그룹 및 파트너형", items: ["축구", "농구", "배드민턴", "테니스", "크로스핏", "댄스"] },
 ];
@@ -272,9 +277,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               {/* ━━━ 2. 평소보다 무리했나요 (아코디언) ━━━ */}
               <AccordionCard question="오늘 평소보다 무리했나요?" answerText={overexertAnswerText}
                 expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={overexertComplete}>
-                {overexertVal === null && (
+                {(overexertVal === null || overexertVal === "no") && (
                   <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
-                    <EmojiTile icon="restNo" label="아니요!" on={false} onClick={pickOverexertNo} />
+                    <EmojiTile icon="restNo" label="아니요!" on={overexertVal === "no"} onClick={pickOverexertNo} />
                     <EmojiTile icon="flex" label="맞아요!" on={false} onClick={() => setOverexertVal("yes")} />
                   </div>
                 )}
@@ -282,11 +287,11 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 {overexertVal === "yes" && (
                   <>
                     <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>어떻게 무리했어요?</div>
-                    <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
                       {OVEREXERT_REASONS.map(r => (
-                        <Chip key={r} label={r} on={overexertPick === r} onClick={() => pickOverexertReason(r)} />
+                        <EmojiTile key={r.label} icon={r.icon} label={r.label} on={overexertPick === r.label} onClick={() => pickOverexertReason(r.label)} />
                       ))}
-                      <Chip label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} />
+                      <EmojiTile icon="editPencil" label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} />
                     </div>
                     {overexertPick === "other" && (
                       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -328,7 +333,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>오늘은 어떤 이유였어요?</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
                       {NO_EXERCISE_REASONS.map(r => (
-                        <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} />
+                        <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} iconSize={36} />
                       ))}
                     </div>
                     <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
@@ -561,7 +566,7 @@ function Tile({ content, label, on, onClick, disabled, size = 60 }) {
 }
 
 // 원 안에 2D 아이콘을 넣는 타일(시간대·감정·이유 등 실제 아이콘이 있는 항목용).
-function EmojiTile({ icon, label, on, onClick }) {
+function EmojiTile({ icon, label, on, onClick, iconSize = 28 }) {
   return (
     <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, flex: 1 }}>
       <div style={{
@@ -570,7 +575,7 @@ function EmojiTile({ icon, label, on, onClick }) {
         filter: on ? "none" : "grayscale(0.4) opacity(0.85)",
         boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none", transition: "all .15s",
       }}>
-        <DiaryIcon name={icon} size={28} />
+        <DiaryIcon name={icon} size={iconSize} />
       </div>
       <span style={{ fontSize: 10.5, fontWeight: 700, color: on ? C.ink : C.sub, textAlign: "center", lineHeight: 1.2 }}>{label}</span>
     </button>

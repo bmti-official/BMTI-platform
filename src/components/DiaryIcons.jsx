@@ -134,14 +134,50 @@ function IconYawn({ size = 28 }) {
 }
 
 function IconBandage({ size = 28 }) {
+  // 몸이 안 좋아요 — 누구나 알아보는 클래식 반창고 모양
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <g transform="rotate(-18 16 17)">
-        <rect x="5" y="13" width="22" height="8" rx="4" fill="#F0DCC0" />
-        <circle cx="11" cy="14.6" r="1.3" fill="#C97575" />
-        <circle cx="14" cy="16.4" r="1.3" fill="#C97575" />
-        <circle cx="20" cy="15.5" r="1.3" fill="#C97575" />
+      <g transform="rotate(-32 16 16)">
+        <rect x="4" y="11" width="24" height="10" rx="5" fill="#F0DCC0" stroke="#D9C2A0" strokeWidth="1" />
+        <rect x="12.5" y="11" width="7" height="10" fill="#FBF6EE" stroke="#D9C2A0" strokeWidth="1" />
+        <circle cx="15" cy="14.4" r="0.9" fill="#C9B48C" />
+        <circle cx="17.3" cy="14.4" r="0.9" fill="#C9B48C" />
+        <circle cx="15" cy="17.6" r="0.9" fill="#C9B48C" />
+        <circle cx="17.3" cy="17.6" r="0.9" fill="#C9B48C" />
       </g>
+    </svg>
+  );
+}
+
+function IconStanding({ size = 28 }) {
+  // 오래 선 자세 — 다리를 가지런히 모으고 서 있는 사람
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="7" r="4" fill="#E8B77D" />
+      <path d="M16 11 v9 M12.6 13.4 v7.5 M19.4 13.4 v7.5 M14.3 20.5 l-1 7.5 M17.7 20.5 l1 7.5"
+        stroke="#8A5A3B" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconHeavyLift({ size = 28 }) {
+  // 무거운 물건 들기 — 바벨(덤벨) 아이콘
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="2.5" y="10" width="6.5" height="12" rx="2.4" fill="#8A5A3B" />
+      <rect x="23" y="10" width="6.5" height="12" rx="2.4" fill="#8A5A3B" />
+      <rect x="9" y="14.5" width="14" height="3.4" rx="1.7" fill="#B58956" />
+    </svg>
+  );
+}
+
+function IconEditPencil({ size = 28 }) {
+  // 기타(직접 입력) — 연필
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M8 24.5 L9.6 18.3 L20.6 7.3 L24.7 11.4 L13.7 22.4 Z" fill="#F2D06B" stroke="#C9A227" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M18.6 9.3 L22.7 13.4" stroke="#C9A227" strokeWidth="1.6" />
+      <path d="M8 24.5 L9.6 18.3 L13.7 22.4 Z" fill="#8A6A46" />
     </svg>
   );
 }
@@ -186,6 +222,7 @@ const ICONS = {
   allNighter: IconAllNighter, toss: IconToss, mehMoon: IconMehMoon, sleepWell: IconSleepWell,
   restNo: IconRestNo, flex: IconFlex,
   clock: IconClock, yawn: IconYawn, bandage: IconBandage, blanket: IconBlanket, forgot: IconForgot,
+  standing: IconStanding, heavyLift: IconHeavyLift, editPencil: IconEditPencil,
   gear: IconGear,
 };
 

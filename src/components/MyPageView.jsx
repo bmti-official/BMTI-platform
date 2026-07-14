@@ -168,7 +168,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           if (data) {
             setBmtiHistory(data.map(d => ({
               code: d.bmti_code,
-              date: new Date(d.created_at).toLocaleDateString()
+              displayDate: new Date(d.created_at).toLocaleDateString()
             })));
           }
         })
@@ -183,9 +183,10 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     <div className="pt-24 pb-32 px-4 md:px-6 max-w-3xl mx-auto fade-in">
 
       {/* 1. 프로필 요약 카드 */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8 relative overflow-hidden">
-        <div className={`absolute top-0 left-0 right-0 h-28 bg-gradient-to-b ${typeAccent.wash} to-transparent -z-10`}></div>
-        <div className="flex justify-between items-start mb-4">
+      <div className="bg-white rounded-[28px] p-6 md:p-8 shadow-[0_2px_24px_rgba(0,0,0,0.05)] border border-gray-100 mb-8 relative overflow-hidden">
+        <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${typeAccent.wash} to-transparent -z-10`}></div>
+
+        <div className="flex justify-between items-start mb-6">
           <h3 className="font-bold text-lg text-gray-900">내 기본 정보</h3>
           <div className="flex items-center gap-2">
             {onLogout && (
@@ -211,161 +212,111 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">
-          <div className="flex items-center gap-4 md:flex-col md:items-start flex-shrink-0 w-full md:w-auto">
-            <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 ring-4 ${typeAccent.ring} overflow-hidden flex-shrink-0 relative shadow-sm`}>
-              {charInfo ? (
-                <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
-              ) : (
-                <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
-              )}
-            </div>
-            
-            <div className="flex-1 md:hidden">
-              {isEditing ? (
-                <div className="flex flex-col">
-                  <input 
-                    type="text" 
-                    value={userData.nickname}
-                    onChange={(e) => setUserData({...userData, nickname: e.target.value})}
-                    disabled={userData.hasEditedNickname}
-                    className={`text-lg font-black text-gray-900 border-b-2 ${userData.hasEditedNickname ? 'border-transparent bg-transparent text-gray-500' : 'border-black'} focus:outline-none w-full pb-0.5`}
-                  />
-                  {!userData.hasEditedNickname && <div className="text-[10px] text-red-500 font-medium mt-1">※ 가입 후 1회만 수정 가능</div>}
-                  {userData.hasEditedNickname && <div className="text-[10px] text-gray-400 font-medium mt-1">수정 횟수 초과</div>}
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <h2 className="text-xl font-black text-gray-900 flex flex-wrap items-center gap-1.5">
-                    {userData.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-sm shadow-sm">관리자</span>}
-                    {userData.nickname}
-                  </h2>
-                </div>
-              )}
-            </div>
-            
-            {charInfo && !isEditing && (
-                <div className="md:hidden flex-shrink-0">
-                  <button
-                    onClick={() => setShowBmtiDetails(!showBmtiDetails)}
-                    className={`w-14 h-14 ${typeAccent.badgeBg} border ${typeAccent.badgeBorder} rounded-xl flex flex-col items-center justify-center hover:opacity-80 transition-opacity shadow-sm`}
-                  >
-                    <span className={`text-[9px] font-bold ${typeAccent.badgeText} opacity-70`}>현재 BMTI</span>
-                    <span className={`text-sm font-black ${typeAccent.badgeText}`}>{axisCode}</span>
-                  </button>
-                </div>
+        <div className="flex items-center gap-4 md:gap-5">
+          <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 ring-4 ${typeAccent.ring} overflow-hidden flex-shrink-0 relative shadow-sm`}>
+            {charInfo ? (
+              <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
             )}
           </div>
-          
-          <div className="flex-1 w-full">
-            <div className="hidden md:flex flex-col mb-4">
-              {isEditing ? (
-                <div>
-                  <input 
-                    type="text" 
-                    value={userData.nickname}
-                    onChange={(e) => setUserData({...userData, nickname: e.target.value})}
-                    disabled={userData.hasEditedNickname}
-                    className={`text-xl font-black text-gray-900 border-b-2 ${userData.hasEditedNickname ? 'border-transparent bg-transparent text-gray-500' : 'border-black'} focus:outline-none w-48 pb-0.5`}
-                  />
-                  {!userData.hasEditedNickname && <div className="text-[10px] text-red-500 font-medium mt-1">※ 닉네임은 가입 후 1회만 수정 가능합니다.</div>}
-                  {userData.hasEditedNickname && <div className="text-[10px] text-gray-400 font-medium mt-1">닉네임 수정 횟수 초과</div>}
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-black text-gray-900 flex items-center">
-                    {userData.nickname === 'BMTI' && <span className="mr-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md shadow-sm align-middle">관리자</span>}
-                    {userData.nickname}
-                  </h2>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-4 items-start">
-              <div className="space-y-3 md:space-y-2.5 flex-1 w-full">
-                    <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-                      <span className="w-full md:w-16 text-gray-400 text-xs shrink-0">연령대/성별</span>
-                      {isEditing ? (
-                        <div className="flex gap-2">
-                          <select 
-                            value={userData.kakaoAge} 
-                            onChange={(e) => setUserData({...userData, kakaoAge: e.target.value})} 
-                            className="border rounded px-2 py-1 text-xs w-24"
-                          >
-                            <option value="10대">10대</option>
-                            <option value="20대">20대</option>
-                            <option value="30대">30대</option>
-                            <option value="40대">40대</option>
-                            <option value="50대 이상">50대 이상</option>
-                          </select>
-                          <select 
-                            value={userData.kakaoGender} 
-                            onChange={(e) => setUserData({...userData, kakaoGender: e.target.value})} 
-                            className="border rounded px-2 py-1 text-xs w-20"
-                          >
-                            <option value="남성">남성</option>
-                            <option value="여성">여성</option>
-                          </select>
-                        </div>
-                      ) : (
-                        <span className="inline-flex w-fit items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1 text-xs font-bold text-gray-600">{userData.kakaoAge} · {userData.kakaoGender}</span>
-                      )}
-                    </div>
 
-                    {!bmtiCode && (
-                      <div className="flex items-center justify-start py-4 mt-2">
-                        <button 
-                          onClick={() => setView('home')} 
-                          className="bg-black text-[#c0ff00] font-bold py-2.5 px-6 rounded-full hover:bg-gray-900 transition-colors shadow-sm text-sm w-full md:w-auto"
-                        >
-                          🧬 BMTI 검사하기
-                        </button>
-                      </div>
-                    )}
-                  </div>
-              
-              {charInfo && !isEditing && (
-                <div className="hidden md:block w-24 flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <div>
+                <input
+                  type="text"
+                  value={userData.nickname}
+                  onChange={(e) => setUserData({...userData, nickname: e.target.value})}
+                  disabled={userData.hasEditedNickname}
+                  className={`text-lg md:text-xl font-black text-gray-900 border-b-2 ${userData.hasEditedNickname ? 'border-transparent bg-transparent text-gray-500' : 'border-black'} focus:outline-none w-full max-w-[220px] pb-0.5`}
+                />
+                {!userData.hasEditedNickname && <div className="text-[10px] text-red-500 font-medium mt-1">※ 닉네임은 가입 후 1회만 수정 가능합니다.</div>}
+                {userData.hasEditedNickname && <div className="text-[10px] text-gray-400 font-medium mt-1">닉네임 수정 횟수 초과</div>}
+              </div>
+            ) : (
+              <h2 className="text-xl md:text-2xl font-black text-gray-900 flex flex-wrap items-center gap-1.5 mb-2">
+                {userData.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md shadow-sm">관리자</span>}
+                {userData.nickname}
+              </h2>
+            )}
+
+            {!isEditing && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1 text-xs font-bold text-gray-600">{userData.kakaoAge} · {userData.kakaoGender}</span>
+                {charInfo && (
                   <button
                     onClick={() => setShowBmtiDetails(!showBmtiDetails)}
-                    className={`w-full aspect-square ${typeAccent.badgeBg} border ${typeAccent.badgeBorder} rounded-xl flex flex-col items-center justify-center hover:opacity-80 transition-opacity shadow-sm`}
+                    className={`inline-flex items-center gap-1 ${typeAccent.badgeBg} border ${typeAccent.badgeBorder} rounded-full pl-3 pr-2 py-1 text-xs font-black ${typeAccent.badgeText} hover:opacity-80 transition-opacity`}
                   >
-                    <span className={`text-[10px] font-bold ${typeAccent.badgeText} opacity-70`}>현재 BMTI</span>
-                    <span className={`text-lg font-black ${typeAccent.badgeText} mt-0.5`}>{axisCode}</span>
-                    <svg className={`w-3.5 h-3.5 ${typeAccent.badgeText} opacity-60 mt-1.5 transition-transform ${showBmtiDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    {axisCode}
+                    <svg className={`w-3 h-3 opacity-60 transition-transform ${showBmtiDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
-            {charInfo && !isEditing && showBmtiDetails && (
-              <div className="bg-gray-50 p-3.5 md:p-4 rounded-xl border border-gray-200 mt-3 fade-in relative z-10">
-                <div className="flex flex-wrap items-center gap-y-2 text-xs md:text-sm">
-                  {(() => {
-                    const percentages = calculateBMTIPercentages(bmtiAnswers);
-                    const chars = (axisCode || '').split('');
-                    return chars.map((char, index) => {
-                      let isConfident = false;
-                      if (percentages && percentages[char] !== undefined) {
-                        isConfident = percentages[char] >= 80;
-                      }
-                      
-                      return (
-                        <div key={index} className="flex items-center gap-1.5 whitespace-nowrap">
-                          {index > 0 && <span className="text-gray-300 mx-1 md:mx-1.5">/</span>}
-                          <span className={`w-1.5 h-1.5 rounded-full ${isConfident ? 'bg-black' : 'bg-gray-300'}`}></span>
-                          <span className="font-bold text-gray-600">{isConfident ? '확신의' : '유연한'}</span>
-                          <span className="font-black text-gray-800 text-sm">{char}</span>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+            {isEditing && (
+              <div className="flex gap-2 mt-2">
+                <select
+                  value={userData.kakaoAge}
+                  onChange={(e) => setUserData({...userData, kakaoAge: e.target.value})}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs"
+                >
+                  <option value="10대">10대</option>
+                  <option value="20대">20대</option>
+                  <option value="30대">30대</option>
+                  <option value="40대">40대</option>
+                  <option value="50대 이상">50대 이상</option>
+                </select>
+                <select
+                  value={userData.kakaoGender}
+                  onChange={(e) => setUserData({...userData, kakaoGender: e.target.value})}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs"
+                >
+                  <option value="남성">남성</option>
+                  <option value="여성">여성</option>
+                </select>
               </div>
             )}
           </div>
         </div>
-        
+
+        {!bmtiCode && !isEditing && (
+          <button
+            onClick={() => setView('home')}
+            className="mt-5 w-full bg-black text-[#c0ff00] font-bold py-3 rounded-2xl hover:bg-gray-900 transition-colors shadow-sm text-sm"
+          >
+            🧬 BMTI 검사하기
+          </button>
+        )}
+
+        {charInfo && !isEditing && showBmtiDetails && (
+          <div className="bg-gray-50 p-3.5 md:p-4 rounded-xl border border-gray-200 mt-4 fade-in">
+            <div className="flex flex-wrap items-center gap-y-2 text-xs md:text-sm">
+              {(() => {
+                const percentages = calculateBMTIPercentages(bmtiAnswers);
+                const chars = (axisCode || '').split('');
+                return chars.map((char, index) => {
+                  let isConfident = false;
+                  if (percentages && percentages[char] !== undefined) {
+                    isConfident = percentages[char] >= 80;
+                  }
+
+                  return (
+                    <div key={index} className="flex items-center gap-1.5 whitespace-nowrap">
+                      {index > 0 && <span className="text-gray-300 mx-1 md:mx-1.5">/</span>}
+                      <span className={`w-1.5 h-1.5 rounded-full ${isConfident ? 'bg-black' : 'bg-gray-300'}`}></span>
+                      <span className="font-bold text-gray-600">{isConfident ? '확신의' : '유연한'}</span>
+                      <span className="font-black text-gray-800 text-sm">{char}</span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* App Notification Toggle — 이 페이지에서만 신청 여부를 확인/변경 가능 */}
         {!isEditing && (
           <div className="flex justify-between items-center gap-3 mt-5 fade-in bg-gray-50 border border-gray-100 rounded-2xl p-4">
@@ -554,19 +505,22 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           새로운 검사하기
         </button>
       </div>
-      {/* BMTI 히스토리 리스트 (가로 스크롤) */}
+      {/* BMTI 히스토리 리스트 (가로 스크롤) — 현재 유형을 맨 앞에 두고, 그 뒤로 과거 재검사 이력을 최신순으로 */}
       <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {bmtiHistory.length > 0 ? (
-          [...bmtiHistory].sort((a, b) => new Date(b.date) - new Date(a.date)).map((item, idx) => {
+        {(() => {
+          const fullHistory = [
+            ...(bmtiCode ? [{ code: bmtiCode, displayDate: '현재', isCurrent: true }] : []),
+            ...bmtiHistory.map(h => ({ ...h, isCurrent: false })),
+          ];
+          return fullHistory.length > 0 ? fullHistory.map((item, idx) => {
             const codeStr = item.code || '';
             const shortCode = codeStr ? codeStr.split('-')[0] : '알수없음';
-            const isCurrent = idx === 0; // Since it's sorted descending, newest is index 0
             return (
-              <div 
-                key={idx} 
-                className={`min-w-[140px] md:min-w-[160px] bg-white border p-4 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm snap-start ${isCurrent ? 'border-[#c0ff00]' : 'border-gray-200'}`}
+              <div
+                key={idx}
+                className={`min-w-[140px] md:min-w-[160px] bg-white border p-4 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm snap-start ${item.isCurrent ? 'border-[#c0ff00]' : 'border-gray-200'}`}
               >
-                {isCurrent && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#c0ff00]"></div>}
+                {item.isCurrent && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#c0ff00]"></div>}
                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
                   {codeStr && getCharImage(codeStr) ? (
                     <img src={getCharImage(codeStr)} alt={shortCode} className="w-full h-full object-contain scale-110" />
@@ -575,13 +529,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                   )}
                 </div>
                 <h4 className="font-black text-gray-900 text-lg mb-1">{shortCode}</h4>
-                <span className="text-[10px] text-gray-400 font-medium">{item.date}</span>
+                <span className="text-[10px] text-gray-400 font-medium">{item.displayDate}</span>
               </div>
             );
-          })
-        ) : (
-          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 BMTI 검사 내역이 없습니다.</div>
-        )}
+          }) : (
+            <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 BMTI 검사 내역이 없습니다.</div>
+          );
+        })()}
       </div>
 
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
