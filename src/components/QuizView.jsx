@@ -94,7 +94,7 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) =>
   }, [phase]);
 
   return (
-    <div className="min-h-screen pt-24 pb-24 px-6 max-w-3xl mx-auto fade-in">
+    <div className="min-h-screen pt-20 pb-24 px-6 max-w-3xl mx-auto fade-in">
       {/* Progress bar */}
       <div className="mb-12">
         <div className="flex items-center mb-2">

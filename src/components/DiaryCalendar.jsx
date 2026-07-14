@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Mallang } from "./Mallang";
 import { MOODS } from "../data";
 import {
-  getDiaryHistory, getEntryForDate, todayISO,
+  getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   getEntriesSinceWeeklyBaseline, canClaimWeeklyReport, setWeeklyReportBaseline, markWeeklyReportIssued,
   getPrevMonthEntryCount, canClaimMonthlyReport, getPrevMonthKey, markMonthlyReportIssued,
   isDayWritable,
@@ -34,6 +34,22 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
   const entryCountThisMonth = history.filter(e => e.date.startsWith(monthKey)).length;
   const todayEntry = getEntryForDate(todayStr);
 
+  // 오늘 기분 팝업 — 오늘 기록이 없으면 탭에 들어오자마자 자동으로 뜬다.
+  const [showMoodPopup, setShowMoodPopup] = useState(() => !getEntryForDate(todayISO()));
+  const [poppedMood, setPoppedMood] = useState(null);
+
+  const quickSaveMood = () => {
+    saveDiaryEntry(todayStr, poppedMood);
+    setShowMoodPopup(false);
+    setPoppedMood(null);
+  };
+  const continueToFullForm = () => {
+    setShowMoodPopup(false);
+    const v = poppedMood;
+    setPoppedMood(null);
+    onPickMood && onPickMood(v);
+  };
+
   const firstWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = [];
@@ -62,7 +78,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "96px 20px 96px" }}>
+      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "76px 20px 96px" }}>
 
         {/* 헤더 */}
         <div style={{ textAlign: "center", marginBottom: 22 }}>
@@ -141,19 +157,12 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
               <p style={{ fontSize: 12.5, color: C.sub, margin: "6px 0 0" }}>내일 또 만나요!</p>
             </div>
           ) : (
-            <>
-              <h3 style={{ fontSize: 17, fontWeight: 800, margin: "0 0 6px", textAlign: "center" }}>오늘 기분은 어떤 말랑이에 가까워요?</h3>
-              <p style={{ fontSize: 12.5, color: C.sub, textAlign: "center", margin: "0 0 18px" }}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
-                {MOODS.map(m => (
-                  <button key={m.v} onClick={() => onPickMood && onPickMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                    padding: "6px 2px", borderRadius: 14, border: "none", background: "transparent", cursor: "pointer" }}>
-                    <Mallang v={m.v} size={44} />
-                    <span style={{ fontSize: 9.5, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" }}>{m.label}</span>
-                  </button>
-                ))}
-              </div>
-            </>
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 14px", color: C.sub }}>아직 오늘 기분을 기록하지 않았어요</p>
+              <button onClick={() => setShowMoodPopup(true)} style={{ padding: "11px 22px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+                오늘 기분 기록하기
+              </button>
+            </div>
           )}
         </div>
 
@@ -181,6 +190,48 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
           onCancel={() => setShowDatePicker(false)}
           onConfirm={(y, m) => { setCursor(new Date(y, m, 1)); setShowDatePicker(false); }}
         />
+      )}
+
+      {showMoodPopup && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "26px 26px 0 0", padding: "26px 22px 30px", position: "relative", animation: "diaryPopupUp .3s ease-out" }}>
+            <button
+              onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
+              style={{ position: "absolute", top: 16, right: 16, width: 30, height: 30, border: "none", background: "#F3F1EC", borderRadius: "50%", color: C.sub, fontSize: 14, cursor: "pointer" }}
+            >
+              ✕
+            </button>
+
+            {poppedMood === null ? (
+              <>
+                <h2 style={{ fontSize: 18, fontWeight: 800, margin: "4px 0 6px", textAlign: "center" }}>오늘 기분은 어떤 말랑이에 가까워요?</h2>
+                <p style={{ fontSize: 13, color: C.sub, textAlign: "center", margin: "0 0 22px" }}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
+                  {MOODS.map(m => (
+                    <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                      padding: "8px 2px", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer" }}>
+                      <Mallang v={m.v} size={48} />
+                      <span style={{ fontSize: 10, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" }}>{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: "center", paddingTop: 4 }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><Mallang v={poppedMood} size={76} /></div>
+                <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px" }}>오늘도 기록했네요, 잘했어요! 🎉</h2>
+                <p style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.6, margin: "0 0 24px" }}>이 김에 오늘 하루,<br />조금 더 자세히 기록해볼까요?</p>
+                <button onClick={continueToFullForm} style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 10 }}>
+                  네, 조금 더 기록할게요
+                </button>
+                <button onClick={quickSaveMood} style={{ width: "100%", padding: 14, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  오늘은 여기까지만 할게요
+                </button>
+              </div>
+            )}
+          </div>
+          <style>{`@keyframes diaryPopupUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
+        </div>
       )}
     </div>
   );

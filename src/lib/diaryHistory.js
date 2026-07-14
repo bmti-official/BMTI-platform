@@ -27,6 +27,13 @@ export const saveDiaryEntry = (dateISO, mood) => {
   const history = getDiaryHistory().filter(e => e.date !== dateISO);
   history.push({ date: dateISO, mood });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+
+  // 오늘 기록을 남긴 경우, 네비게이션 하단의 '오늘 아직 안 썼어요' 빨간 점을 끈다.
+  if (dateISO === todayISO()) {
+    localStorage.setItem('last_chat_date', dateISO);
+    window.dispatchEvent(new Event('chat_updated'));
+  }
+
   return history;
 };
 

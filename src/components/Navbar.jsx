@@ -16,6 +16,7 @@ const PlayIcon = ({ className }) => (
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
+import { todayISO } from '../lib/diaryHistory';
 
 const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, bmtiCode }) => {
 
@@ -31,12 +32,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
     };
   }, []);
 
-  const getTodayString = () => {
-    const today = new Date();
-    return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-  };
-
-  const todayStr = getTodayString();
+  const todayStr = todayISO();
   const showAiChatDot = !!bmtiCode && lastChatDate !== todayStr;
 
   // 하단 '말랑 다이어리' 탭 아이콘 — 5가지 말랑이 표정이 번갈아가며 나온다.

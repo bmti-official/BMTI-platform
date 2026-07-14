@@ -149,6 +149,12 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
 
   const axisCode = bmtiCode ? String(bmtiCode).split('-')[0] : '';
   const charInfo = axisCode ? CHARACTERS.find(c => c.id === axisCode) : null;
+  // 유형 톤 — Z=파랑, M=핑크, 그 외(미검사)=라임(사이트 기본 포인트 컬러)
+  const typeAccent = axisCode.includes('Z')
+    ? { ring: 'ring-blue-200', badgeBg: 'bg-blue-50', badgeBorder: 'border-blue-200', badgeText: 'text-blue-700', wash: 'from-blue-50' }
+    : axisCode.includes('M')
+    ? { ring: 'ring-pink-200', badgeBg: 'bg-pink-50', badgeBorder: 'border-pink-200', badgeText: 'text-pink-700', wash: 'from-pink-50' }
+    : { ring: 'ring-[#c0ff00]/40', badgeBg: 'bg-[#c0ff00]/10', badgeBorder: 'border-[#9BB31B]/30', badgeText: 'text-[#6b7d1f]', wash: 'from-[#c0ff00]/10' };
 
   const [bmtiHistory, setBmtiHistory] = useState([]);
 
@@ -178,7 +184,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
 
       {/* 1. 프로필 요약 카드 */}
       <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#c0ff00]/10 rounded-bl-full -z-10"></div>
+        <div className={`absolute top-0 left-0 right-0 h-28 bg-gradient-to-b ${typeAccent.wash} to-transparent -z-10`}></div>
         <div className="flex justify-between items-start mb-4">
           <h3 className="font-bold text-lg text-gray-900">내 기본 정보</h3>
           <div className="flex items-center gap-2">
@@ -207,7 +213,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
 
         <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">
           <div className="flex items-center gap-4 md:flex-col md:items-start flex-shrink-0 w-full md:w-auto">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 border border-gray-200 overflow-hidden flex-shrink-0 relative shadow-inner">
+            <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 ring-4 ${typeAccent.ring} overflow-hidden flex-shrink-0 relative shadow-sm`}>
               {charInfo ? (
                 <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
               ) : (
@@ -240,12 +246,12 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             
             {charInfo && !isEditing && (
                 <div className="md:hidden flex-shrink-0">
-                  <button 
+                  <button
                     onClick={() => setShowBmtiDetails(!showBmtiDetails)}
-                    className="w-14 h-14 bg-gray-50 border border-gray-200 rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
+                    className={`w-14 h-14 ${typeAccent.badgeBg} border ${typeAccent.badgeBorder} rounded-xl flex flex-col items-center justify-center hover:opacity-80 transition-opacity shadow-sm`}
                   >
-                    <span className="text-[9px] font-bold text-gray-500">현재 BMTI</span>
-                    <span className="text-sm font-black text-[#9BB31B]">{axisCode}</span>
+                    <span className={`text-[9px] font-bold ${typeAccent.badgeText} opacity-70`}>현재 BMTI</span>
+                    <span className={`text-sm font-black ${typeAccent.badgeText}`}>{axisCode}</span>
                   </button>
                 </div>
             )}
@@ -302,7 +308,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                           </select>
                         </div>
                       ) : (
-                        <span className="text-sm md:text-sm">{userData.kakaoAge} {userData.kakaoGender}</span>
+                        <span className="inline-flex w-fit items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1 text-xs font-bold text-gray-600">{userData.kakaoAge} · {userData.kakaoGender}</span>
                       )}
                     </div>
 
@@ -320,13 +326,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
               
               {charInfo && !isEditing && (
                 <div className="hidden md:block w-24 flex-shrink-0">
-                  <button 
+                  <button
                     onClick={() => setShowBmtiDetails(!showBmtiDetails)}
-                    className="w-full aspect-square bg-gray-50 border border-gray-200 rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
+                    className={`w-full aspect-square ${typeAccent.badgeBg} border ${typeAccent.badgeBorder} rounded-xl flex flex-col items-center justify-center hover:opacity-80 transition-opacity shadow-sm`}
                   >
-                    <span className="text-[10px] font-bold text-gray-500">현재 BMTI</span>
-                    <span className="text-lg font-black text-[#9BB31B] mt-0.5">{axisCode}</span>
-                    <svg className={`w-3.5 h-3.5 text-gray-400 mt-1.5 transition-transform ${showBmtiDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <span className={`text-[10px] font-bold ${typeAccent.badgeText} opacity-70`}>현재 BMTI</span>
+                    <span className={`text-lg font-black ${typeAccent.badgeText} mt-0.5`}>{axisCode}</span>
+                    <svg className={`w-3.5 h-3.5 ${typeAccent.badgeText} opacity-60 mt-1.5 transition-transform ${showBmtiDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
                 </div>
               )}
@@ -362,10 +368,15 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         
         {/* App Notification Toggle — 이 페이지에서만 신청 여부를 확인/변경 가능 */}
         {!isEditing && (
-          <div className="flex justify-between items-center gap-3 mt-4 fade-in bg-gray-50 border border-gray-100 rounded-2xl p-4">
-            <span className="text-xs font-bold text-gray-700">
-              {userData.appNotification ? "✅ 'BMTI: 운동일기' 사전 알림 신청 완료" : "'BMTI: 운동일기' 앱 출시 알림 받기"}
-            </span>
+          <div className="flex justify-between items-center gap-3 mt-5 fade-in bg-gray-50 border border-gray-100 rounded-2xl p-4">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${userData.appNotification ? 'bg-green-50' : 'bg-white border border-gray-200'}`}>
+                {userData.appNotification ? '✅' : '🔔'}
+              </span>
+              <span className="text-xs font-bold text-gray-700 leading-snug">
+                {userData.appNotification ? "'BMTI: 운동일기' 사전 알림 신청 완료" : "'BMTI: 운동일기' 앱 출시 알림 받기"}
+              </span>
+            </div>
             <button
               onClick={async () => {
                 if (userData.appNotification) return; // 한번 켜면 끌 수 없음
