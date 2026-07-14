@@ -174,7 +174,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       )}
 
       {/* Hero Section */}
-      <section className="pt-40 pb-12 px-6 max-w-5xl mx-auto text-center">
+      <section className="pt-24 pb-12 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-8">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>

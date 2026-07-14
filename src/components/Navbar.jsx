@@ -5,17 +5,6 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   </svg>
 );
 
-// 하단 네비 좌측 — 캘린더(운동일기)
-const CalendarIcon = ({ className }) => (
-  <svg viewBox="0 0 32 32" className={className} fill="none">
-    <rect x="4" y="7" width="24" height="21" rx="4" fill="currentColor" opacity="0.15" />
-    <rect x="4" y="7" width="24" height="21" rx="4" stroke="currentColor" strokeWidth="2.2" />
-    <path d="M10 4v5M22 4v5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    <rect x="9" y="15" width="4.5" height="4.5" rx="1" fill="currentColor" />
-    <rect x="18.5" y="15" width="4.5" height="4.5" rx="1" fill="currentColor" />
-  </svg>
-);
-
 // 하단 네비 우측 — 재생 버튼(라이브)
 const PlayIcon = ({ className }) => (
   <svg viewBox="0 0 32 32" className={className} fill="none">
@@ -26,6 +15,7 @@ const PlayIcon = ({ className }) => (
 
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
+import { Mallang } from './Mallang';
 
 const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, bmtiCode }) => {
 
@@ -48,6 +38,15 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   const todayStr = getTodayString();
   const showAiChatDot = !!bmtiCode && lastChatDate !== todayStr;
+
+  // 하단 '말랑 다이어리' 탭 아이콘 — 5가지 말랑이 표정이 번갈아가며 나온다.
+  const [diaryMoodTick, setDiaryMoodTick] = useState(1);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDiaryMoodTick(v => (v % 5) + 1);
+    }, 1400);
+    return () => clearInterval(id);
+  }, []);
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -106,10 +105,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
         <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
           <div className="max-w-7xl mx-auto grid grid-cols-3 items-center px-8 md:px-16" style={{ height: 66 }}>
-            {/* 운동일기 */}
+            {/* 말랑 다이어리 */}
             <button onClick={() => setView('aichat')} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
-              <CalendarIcon className={`w-7 h-7 ${currentView === 'aichat' ? 'text-black' : 'text-gray-300'}`} />
-              <span className={`text-[10px] font-bold ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>운동일기</span>
+              <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
+                <Mallang v={diaryMoodTick} size={26} />
+              </div>
+              <span className={`text-[10px] font-bold whitespace-nowrap ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>말랑 다이어리</span>
             </button>
 
             {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
