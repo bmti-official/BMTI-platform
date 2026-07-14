@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mallang } from "./Mallang";
+import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
 import { MOODS as DAY_MOODS } from "../data";
 
@@ -67,7 +68,7 @@ const CATEGORIES = [
 // ============================================
 // 메인 컴포넌트
 // ============================================
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
@@ -110,11 +111,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     if (phase === "form" && onClose) onClose();
   };
 
-  // 기록 저장 → 3초짜리 완료 팝업 → 캘린더로 복귀
+  // 기록 저장 → 말랑이 스트레스 해소 팝업 → '다음'을 누르면 캘린더로 복귀
   const finishFlow = () => {
     if (onFinish) onFinish(dayMood);
     setPhase("celebrate");
-    setTimeout(() => { if (onClose) onClose(); }, 3000);
   };
 
   // ── 운동 종목 토글 (최대 2) ──
@@ -429,18 +429,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           </div>
         )}
 
-        {/* ── 완료 축하 팝업 (3초 뒤 자동으로 캘린더로 이동) ── */}
+        {/* ── 완료 팝업 — 캐릭터가 말랑이를 눌러보라고 채팅하듯 안내 ── */}
         {phase === "celebrate" && moodData && (
-          <div style={{ position: "absolute", inset: 0, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 30 }}>
-            <div style={{ background: "#fff", borderRadius: 28, padding: "36px 32px", textAlign: "center", animation: "pop .4s ease-out", boxShadow: "0 12px 40px rgba(0,0,0,0.18)" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-                <Mallang v={moodData.v} size={72} />
-              </div>
-              <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: C.ink }}>오늘 기록 완료!</h1>
-              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>오늘도 나를 채운 하루였어요 🌿</p>
-            </div>
-            <style>{`@keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}`}</style>
-          </div>
+          <MallangStressPopup mood={moodData.v} charImage={charImage} nextLabel="완료" onNext={() => { if (onClose) onClose(); }} />
         )}
 
         {/* ── 환경설정(내 블럭 커스텀) ── */}

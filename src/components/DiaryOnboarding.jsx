@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mallang } from "./Mallang";
+import MallangStressPopup from "./MallangStressPopup";
 import { MOODS } from "../data";
 import { supabase } from "../lib/supabaseClient";
 
@@ -135,7 +136,6 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
     }
     setMood(v);
     setPhase("react");
-    setTimeout(() => setPhase("save"), 1800);
   };
 
   return (
@@ -228,25 +228,9 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
           </div>
         )}
 
-        {/* ── 첫 기록 직후 반응 ── */}
+        {/* ── 첫 기록 직후 반응 — 캐릭터가 말랑이를 눌러보라고 채팅하듯 안내하는 팝업 ── */}
         {phase === "react" && (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 24px 80px" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 24, animation: "pop .5s ease-out" }}>
-              <Mallang v={mood} size={92} />
-            </div>
-            <div style={{ display: "flex", gap: 9, alignItems: "flex-end", animation: "fadeUp .5s ease-out .3s both" }}>
-              <Companion image={charImage} />
-              <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "15px 17px", fontSize: 14.5, lineHeight: 1.7 }}>
-                {{
-                  1: "많이 힘든 하루였네요.\n기억해둘게요. 오늘은 푹 쉬어요.",
-                  2: "오늘 좀 지치셨군요.\n여기 남겨두면 돼요.",
-                  3: "그런 날도 있죠.\n기억해둘게요.",
-                  4: "괜찮은 하루였네요.\n다행이에요 :)",
-                  5: "좋은 하루였군요!\n저도 기분이 좋아져요 ✨",
-                }[mood]}
-              </div>
-            </div>
-          </div>
+          <MallangStressPopup mood={mood} charImage={charImage} onNext={() => setPhase("save")} />
         )}
 
         {/* ── 저장(완료) ── */}

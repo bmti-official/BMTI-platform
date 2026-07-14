@@ -58,6 +58,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
         initialPhase="form"
         initialDayMood={pendingDayMood}
         targetDate={editingDate || todayISO()}
+        charImage={charData?.image}
       />
     );
   }

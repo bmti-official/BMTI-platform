@@ -2,7 +2,7 @@
 import { useRef } from "react";
 import { MOODS } from "../data";
 
-export function Mallang({ v, size = 44 }) {
+export function Mallang({ v, size = 44, tapKey = 0 }) {
   const m = MOODS.find(x => x.v === v) || MOODS[2];
   // 힘들었어요(v=1)는 배경이 짙은 검붉은색이라 기본 잉크색 선화가 거의 안 보여서,
   // 무드별로 밝은 선 색을 따로 지정할 수 있게 함 (없으면 기존 어두운 잉크색 사용).
@@ -12,9 +12,10 @@ export function Mallang({ v, size = 44 }) {
   const blinkDelay = useRef(-(Math.random() * 5).toFixed(2) + "s").current;
   const eyeStyle = { animationDelay: blinkDelay };
   return (
-    // key={v} — 표정(무드)이 바뀔 때마다 이 svg를 새로 마운트시켜서 아래 눌렸다 펴지는
-    // squish 애니메이션이 매번 다시 재생되게 한다.
-    <svg key={v} className="mallang-squish" viewBox="0 0 100 82" width={size} height={size * 0.82}
+    // key에 tapKey를 같이 섞어서, 표정(무드)이 바뀔 때뿐 아니라 (기본 동작 그대로 유지)
+    // 외부에서 tapKey를 올려주는 경우(예: 스트레스 해소 팝업에서 말랑이를 꾹 눌렀을 때)에도
+    // svg가 다시 마운트되어 squish 애니메이션이 재생된다.
+    <svg key={`${v}-${tapKey}`} className="mallang-squish" viewBox="0 0 100 82" width={size} height={size * 0.82}
       style={{ display: "block", margin: "0 auto", overflow: "visible", transformBox: "fill-box", transformOrigin: "50% 100%" }}>
       <path d="M9 58 C9 22, 32 9, 51 9 C71 9, 92 24, 92 56 C92 68, 74 74, 50 74 C26 74, 9 69, 9 58 Z"
         fill={m.fill} stroke={m.stroke} strokeWidth="1.6" strokeLinejoin="round" />
