@@ -46,53 +46,69 @@ function IconSlump({ size = 28 }) {
   );
 }
 
-function IconToss({ size = 28 }) {
+function IconAllNighter({ size = 28 }) {
+  // 밤을 새웠어요 — 눈이 새까만 사람 표정 (탈진, 동공이 커진 느낌)
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect x="4" y="18" width="24" height="9" rx="4" fill="#9BB8D9" />
-      <rect x="4" y="14" width="8" height="7" rx="3.2" fill="#C7D9EC" />
-      <path d="M14 9 q2 -4 4 0 q2 -4 4 0" stroke="#5B7CA3" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      <circle cx="16" cy="16" r="13.5" fill="#ADA6C4" />
+      <circle cx="11.2" cy="15.3" r="3.3" fill="#2B2A3A" />
+      <circle cx="20.8" cy="15.3" r="3.3" fill="#2B2A3A" />
+      <path d="M10.8 22.6 q5.2 -2.6 10.4 0" stroke="#544E6B" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconToss({ size = 28 }) {
+  // 뒤척였어요 — 눈이 째진(가늘게 뜬) 표정
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="13.5" fill="#9BB8D9" />
+      <path d="M8.3 15.2 q2.9 -2.2 5.8 0" stroke="#3E5C80" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      <path d="M17.9 15.2 q2.9 -2.2 5.8 0" stroke="#3E5C80" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      <path d="M11.8 23 q4.2 -2 8.4 0" stroke="#3E5C80" strokeWidth="2.2" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
 
 function IconMehMoon({ size = 28 }) {
+  // 그냥 그랬어요 — 눈이 동그란 표정
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M20 5 A11 11 0 1 0 20 27 A8.5 8.5 0 1 1 20 5Z" fill="#C9C4BC" />
-      <circle cx="15" cy="15" r="1.6" fill="#5B5650" />
-      <circle cx="21" cy="15" r="1.6" fill="#5B5650" />
-      <line x1="16" y1="20" x2="20" y2="20" stroke="#5B5650" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="16" cy="16" r="13.5" fill="#C9C4BC" />
+      <circle cx="11.2" cy="15.3" r="2" fill="#5B5650" />
+      <circle cx="20.8" cy="15.3" r="2" fill="#5B5650" />
+      <line x1="11.8" y1="22.6" x2="20.2" y2="22.6" stroke="#5B5650" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }
 
 function IconSleepWell({ size = 28 }) {
+  // 푹 잤어요 — 아주 개운한 표정
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <circle cx="14" cy="17" r="10" fill="#FFD873" />
-      <path d="M11 15 q2 -2.4 4 0 M15 15 q2 -2.4 4 0" stroke="#8A6A1E" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M11 20 q3 2.4 6 0" stroke="#8A6A1E" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <text x="22" y="11" fontSize="7" fontWeight="700" fill="#C9A227">z</text>
-      <text x="26" y="7" fontSize="5" fontWeight="700" fill="#C9A227">z</text>
+      <circle cx="16" cy="16" r="13.5" fill="#FFD873" />
+      <path d="M9.4 14.4 q1.9 -3.2 3.8 0" stroke="#8A6A1E" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      <path d="M18.8 14.4 q1.9 -3.2 3.8 0" stroke="#8A6A1E" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      <path d="M10 20.4 q6 6.4 12 0" stroke="#8A6A1E" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      <path d="M5 8 l1.6 1.6M27 8 l-1.6 1.6" stroke="#F2C94C" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
 
 function IconRestNo({ size = 28 }) {
+  // 아니요! — 직관적인 X
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M4 20 Q4 12 16 12 Q28 12 28 20 L28 24 Q16 28 4 24 Z" fill="#D9C7A8" />
-      <path d="M4 20 Q16 24 28 20" stroke="#B39A72" strokeWidth="2" fill="none" />
+      <path d="M9.5 9.5 L22.5 22.5 M22.5 9.5 L9.5 22.5" stroke="#E0645C" strokeWidth="4.4" strokeLinecap="round" />
     </svg>
   );
 }
 
 function IconFlex({ size = 28 }) {
+  // 맞아요! — 직관적인 O
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M8 22 Q6 12 14 10 Q22 8 24 16 Q26 22 20 24 L14 25 Q9 25 8 22 Z" fill="#E8A857" />
-      <circle cx="16" cy="14" r="3.4" fill="#F6D9B0" />
+      <circle cx="16" cy="16" r="9.6" stroke="#4CAF6E" strokeWidth="4.4" fill="none" />
     </svg>
   );
 }
@@ -167,7 +183,7 @@ function IconGear({ size = 20, color = "#5F8A76" }) {
 
 const ICONS = {
   walk: IconWalk, chair: IconChair, sofa: IconSofa, slump: IconSlump,
-  toss: IconToss, mehMoon: IconMehMoon, sleepWell: IconSleepWell,
+  allNighter: IconAllNighter, toss: IconToss, mehMoon: IconMehMoon, sleepWell: IconSleepWell,
   restNo: IconRestNo, flex: IconFlex,
   clock: IconClock, yawn: IconYawn, bandage: IconBandage, blanket: IconBlanket, forgot: IconForgot,
   gear: IconGear,

@@ -20,6 +20,7 @@ const OVEREXERT_REASONS = ["오래 앉음", "오래 선 자세", "많이 걸음"
 
 // ── 수면의 질 ──
 const SLEEP_OPTS = [
+  { label: "밤을 새웠어요", icon: "allNighter" },
   { label: "뒤척였어요", icon: "toss" },
   { label: "그냥 그랬어요", icon: "mehMoon" },
   { label: "푹 잤어요", icon: "sleepWell" },
@@ -269,7 +270,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               </div>
 
               {/* ━━━ 2. 평소보다 무리했나요 (아코디언) ━━━ */}
-              <AccordionCard question="평소보다 무리했나요?" answerText={overexertAnswerText}
+              <AccordionCard question="오늘 평소보다 무리했나요?" answerText={overexertAnswerText}
                 expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={overexertComplete}>
                 {overexertVal === null && (
                   <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
@@ -582,7 +583,7 @@ function EmojiTile({ icon, label, on, onClick }) {
 
 const DEFAULT_BLOCKS = [
   { id: "mood", label: "오늘의 말랑이 기분", removable: false },
-  { id: "sitting", label: "평소보다 무리했나요", removable: true },
+  { id: "sitting", label: "오늘 평소보다 무리했나요", removable: true },
   { id: "sleep", label: "얼마나 푹 잤나요", removable: true },
   { id: "exercise", label: "오늘 운동 했나요", removable: true },
   { id: "oneLine", label: "한 줄 일기", removable: true },
