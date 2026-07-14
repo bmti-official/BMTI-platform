@@ -37,7 +37,6 @@ const EXERCISE_CATS = [
   { name: "야외 활동형 (실외)", items: ["걷기/산책", "러닝·조깅", "자전거", "등산"] },
   { name: "그룹 및 파트너형", items: ["축구", "농구", "배드민턴", "테니스", "크로스핏", "댄스"] },
 ];
-const EXERCISE_TIME_LABELS = ["30분 미만", "1시간 미만", "2시간 미만", "2시간 이상"];
 
 // ── 운동을 안 한 이유 ──
 const NO_EXERCISE_REASONS = [
@@ -51,19 +50,19 @@ const NO_EXERCISE_REASONS = [
 // ── 기타 상수 ──
 const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "발목"];
 const WHEN_OPTS = ["오늘 아침 일어날 때", "자고 일어났을 때", "움직일 때", "특정 자세일 때", "하루 종일"];
+
+// ── 받침 유무로 이/가 조사 고르는 헬퍼 ──
+function hasBatchim(word) {
+  if (!word) return false;
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xAC00 || code > 0xD7A3) return false;
+  return (code - 0xAC00) % 28 !== 0;
+}
 const CATEGORIES = [
   { id: "exercise", label: "운동습관", on: "#3F9F5B", bg: "#E4F5E7", border: "#B6E4C0", ph: "예: 🧍🏻‍♀️아침마다 50점프 챌린지 하기로 했다." },
   { id: "daily", label: "일상", on: "#B8912A", bg: "#FDF6D3", border: "#F2E3A0", ph: "예: 🛍️ 퇴근하고 친구랑 만나서 저녁 먹고 카페 갔다." },
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
-
-// ── 을/를 조사 헬퍼 ──
-function eulReul(word) {
-  if (!word) return "를";
-  const code = word.charCodeAt(word.length - 1);
-  if (code < 0xAC00 || code > 0xD7A3) return "를";
-  return (code - 0xAC00) % 28 !== 0 ? "을" : "를";
-}
 
 // ============================================
 // 메인 컴포넌트
@@ -85,17 +84,15 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [exerciseDidIt, setExerciseDidIt] = useState(null); // null | 'no' | 'yes'
   const [exerciseReason, setExerciseReason] = useState(null); // 안 했을 때 이유
   const [exerciseTypes, setExerciseTypes] = useState([]); // max 2
-  const [exerciseTimes, setExerciseTimes] = useState({}); // { "요가": "1시간 미만" }
   const [customExercise, setCustomExercise] = useState("");
   const [showCustomExercise, setShowCustomExercise] = useState(false);
 
   // 한 줄 일기
   const [oneLine, setOneLine] = useState({ cat: "daily", text: "" });
   // 뻐근한 부위
-  const [sore, setSore] = useState({ part: null, level: 5, when: null });
+  const [sore, setSore] = useState({ parts: [], level: 5, when: null, whenOther: "" });
 
-  const [selDate, setSelDate] = useState(() => targetDate ? new Date(`${targetDate}T00:00:00`) : new Date());
-  const [showDatePick, setShowDatePick] = useState(false);
+  const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
   const [showSettings, setShowSettings] = useState(false);
 
   // 아코디언 (true = 펼쳐진 상태)
@@ -124,9 +121,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const toggleExerciseType = (type) => {
     setExerciseTypes(prev => {
       if (prev.includes(type)) {
-        const next = prev.filter(t => t !== type);
-        setExerciseTimes(times => { const copy = { ...times }; delete copy[type]; return copy; });
-        return next;
+        return prev.filter(t => t !== type);
       }
       if (prev.length >= 2) return prev; // 최대 2개
       return [...prev, type];
@@ -167,11 +162,11 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     setTimeout(() => setExpanded(e => ({ ...e, exercise: false })), 250);
   };
 
-  // 운동 완료 체크 — 안 했으면 이유 선택, 했으면 종목+시간 모두 선택
+  // 운동 완료 체크 — 안 했으면 이유 선택, 했으면 종목 하나 이상 선택
   const exerciseComplete = exerciseDidIt === "no"
     ? !!exerciseReason
     : exerciseDidIt === "yes"
-      ? (exerciseTypes.length > 0 && exerciseTypes.every(t => exerciseTimes[t]))
+      ? exerciseTypes.length > 0
       : false;
 
   // 무리했는지 완료 체크 — 아니요는 바로 완료, 맞아요는 이유(또는 직접 입력)까지 골라야 완료
@@ -192,8 +187,14 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     exerciseAnswerText = `오늘은 ${exerciseReasonOpt.label}`;
   } else if (exerciseDidIt === "yes" && exerciseComplete) {
     exerciseAnswerIcon = "flex";
-    exerciseAnswerText = `오늘 ${exerciseTypes.map(t => `${t}${eulReul(t)} ${exerciseTimes[t]}`).join(", ")} 했어요`;
+    exerciseAnswerText = `오늘 ${exerciseTypes.join(", ")} 했어요`;
   }
+
+  // 뻐근한 부위 헤드라인 — 부위/강도/시점이 다 채워지면 한 문장으로 요약
+  const soreWhenText = sore.when === "기타" ? sore.whenOther.trim() : sore.when;
+  const soreHeadline = (sore.parts.length > 0 && soreWhenText)
+    ? `${soreWhenText} ${sore.parts.join("·")}${hasBatchim(sore.parts[sore.parts.length - 1]) ? "이" : "가"} ${sore.level}정도로 불편했어요`
+    : null;
 
   // ── 말랑이 기분 ──
   const moodData = DAY_MOODS.find(m => m.v === dayMood);
@@ -206,33 +207,17 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {phase === "form" && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
           <button onClick={goBack} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
-          <button onClick={() => setShowDatePick(v => !v)} style={{ display: "flex", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", fontSize: 16, fontWeight: 800, color: C.ink }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 16, fontWeight: 800, color: C.ink }}>
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
-            <span style={{ fontSize: 11, color: C.sub, transform: showDatePick ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
-          </button>
+          </span>
           <button onClick={() => setShowSettings(true)} style={{ position: "absolute", right: 10, width: 38, height: 38, border: "none", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <DiaryIcon name="gear" size={22} />
           </button>
-
-          {showDatePick && (
-            <div style={{ position: "absolute", top: 52, left: "50%", transform: "translateX(-50%)", background: C.card, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", padding: 8, zIndex: 40, minWidth: 200 }}>
-              {Array.from({ length: 7 }).map((_, i) => {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                const on = d.toDateString() === selDate.toDateString();
-                return (
-                  <button key={i} onClick={() => { setSelDate(d); setShowDatePick(false); }} style={{ width: "100%", textAlign: "left", padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: on ? C.ink : "transparent", color: on ? "#fff" : C.ink, fontSize: 14, fontWeight: on ? 800 : 600 }}>
-                    {d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}{i === 0 && <span style={{ fontSize: 11, color: on ? "rgba(255,255,255,0.7)" : C.sub }}> · 오늘</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
         )}
 
         {/* ── 스크롤 영역 ── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 100px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div className="thin-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "14px 14px 100px", display: "flex", flexDirection: "column", gap: 14 }}>
           {phase === "form" && (
             <>
               {/* ━━━ 1. 오늘의 말랑이 기분 ━━━ */}
@@ -256,9 +241,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                         <button key={m.v} onClick={() => { setDayMood(m.v); setTimeout(() => setExpanded(e => ({ ...e, mood: false })), 300); }}
                           style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "6px 0", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer" }}>
                           <div style={{ width: 54, height: 54, borderRadius: "50%", background: on ? circleBg : C.tileOff, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: on ? `0 4px 14px ${circleBg}99` : "none", transition: "all .15s" }}>
-                            <div style={{ filter: on ? "none" : "grayscale(1) opacity(0.55)", transition: "filter .15s" }}>
-                              <Mallang v={m.v} size={38} />
-                            </div>
+                            <Mallang v={m.v} size={38} />
                           </div>
                           <span style={{ fontSize: 10, color: on ? C.ink : C.sub, fontWeight: 700 }}>{m.label}</span>
                         </button>
@@ -380,29 +363,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                         ))}
                       </div>
                     )}
-                    {/* 각 종목별 시간 */}
-                    {exerciseTypes.map(type => (
-                      <div key={type} style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, marginBottom: 6 }}>{type} — 얼마나 했어요?</div>
-                        <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
-                          {EXERCISE_TIME_LABELS.map(t => {
-                            const on = exerciseTimes[type] === t;
-                            return (
-                              <button key={t} onClick={() => {
-                                setExerciseTimes(s => ({ ...s, [type]: t }));
-                                // 모든 종목 시간 선택 완료 시 자동 접기
-                                const updated = { ...exerciseTimes, [type]: t };
-                                if (exerciseTypes.every(et => updated[et])) {
-                                  setTimeout(() => setExpanded(e => ({ ...e, exercise: false })), 300);
-                                }
-                              }}
-                              style={{ flex: "0 0 auto", padding: "10px 14px", borderRadius: 14, fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
-                                border: "none", background: on ? C.pink : C.tileOff, color: on ? "#fff" : C.sub }}>{t}</button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
                     <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 4, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
                   </>
                 )}
@@ -423,18 +383,38 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                   style={{ width: "100%", marginTop: 12, minHeight: 80, borderRadius: 14, border: `1px solid ${C.line}`, background: "#F9F9F9", padding: 14, fontSize: 14, resize: "none", outline: "none", fontFamily: F, boxSizing: "border-box" }} />
               </Card>
 
-              {/* ━━━ 6. 뻐근한 부위 ━━━ */}
+              {/* ━━━ 6. 뻐근한 부위 (최대 2군데) ━━━ */}
               <Card title="뻐근한 부위">
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
-                  {PARTS.map(p => <Tile key={p} content={p} on={sore.part === p} onClick={() => setSore(s => ({ ...s, part: s.part === p ? null : p }))} />)}
+                  {PARTS.map(p => {
+                    const on = sore.parts.includes(p);
+                    const disabled = !on && sore.parts.length >= 2;
+                    return (
+                      <Tile key={p} content={p} on={on} disabled={disabled} onClick={() => setSore(s => ({
+                        ...s,
+                        parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]),
+                      }))} />
+                    );
+                  })}
                 </div>
-                {sore.part && <>
+                {sore.parts.length > 0 && <>
                   <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
                   <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.pink }} />
                   <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>언제 그러셨어요?</div>
                   <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                     {WHEN_OPTS.map(w => <Chip key={w} label={w} on={sore.when === w} onClick={() => setSore(s => ({ ...s, when: w }))} />)}
+                    <Chip label="기타" on={sore.when === "기타"} onClick={() => setSore(s => ({ ...s, when: "기타" }))} />
                   </div>
+                  {sore.when === "기타" && (
+                    <input value={sore.whenOther} onChange={e => setSore(s => ({ ...s, whenOther: e.target.value }))}
+                      placeholder="예: 계단 오를 때"
+                      style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+                  )}
+                  {soreHeadline && (
+                    <div style={{ marginTop: 14, padding: "12px 14px", background: C.sageSoft, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
+                      "{soreHeadline}"
+                    </div>
+                  )}
                 </>}
               </Card>
             </>

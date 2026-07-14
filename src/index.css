@@ -44,6 +44,21 @@ body.chat-mode-fixed {
   scrollbar-width: none;
 }
 
+.thin-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+}
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
 /* --- Animations --- */
 .fade-in {
   animation: fadeIn 0.4s ease-in-out;

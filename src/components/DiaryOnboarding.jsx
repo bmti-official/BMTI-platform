@@ -195,14 +195,25 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
           </div>
         )}
 
-        {/* ── 말랑이 고르기 (첫 기록) ── */}
+        {/* ── 말랑이 고르기 (첫 기록) — 캐릭터가 채팅하듯 말풍선으로 물어보는 형태 ── */}
         {phase === "pick" && (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 20px 60px", animation: "fadeUp .4s ease-out" }}>
-            <div style={{ textAlign: "center", marginBottom: 36 }}>
-              <h1 style={{ fontSize: 23, fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.4 }}>
-                오늘 기분은 어떤<br />말랑이에 가까워요?
-              </h1>
-              <p style={{ fontSize: 13.5, color: C.sub, margin: "12px 0 0" }}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 24px 60px", animation: "fadeUp .4s ease-out" }}>
+            <div style={{ textAlign: "center", marginBottom: 30 }}>
+              <div style={{ position: "relative", display: "inline-block", maxWidth: "90%" }}>
+                <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "16px 22px",
+                  fontSize: 17, fontWeight: 800, lineHeight: 1.5, letterSpacing: "-0.01em", boxShadow: "0 2px 14px rgba(0,0,0,0.04)" }}>
+                  내 마음에 가까운<br />말랑이를 선택해요 !
+                </div>
+                <div style={{ position: "absolute", left: "50%", bottom: -8, transform: "translateX(-50%) rotate(45deg)",
+                  width: 16, height: 16, background: C.card, borderRight: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }} />
+              </div>
+              <div style={{ marginTop: 24, display: "flex", justifyContent: "center", animation: "pop .5s ease-out" }}>
+                {charImage ? (
+                  <img src={charImage} alt="me" style={{ width: 64, height: 64, objectFit: "contain" }} />
+                ) : (
+                  <div style={{ fontSize: 46 }}>🤖</div>
+                )}
+              </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
               {MOODS.map(m => (
