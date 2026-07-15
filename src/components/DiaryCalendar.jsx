@@ -25,9 +25,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const isM = axisCode.includes("M");
   // Z유형은 담백하게, M유형은 발랄하게 — 유형별로 다르게 물어보고 다르게 반응해준다.
-  const moodQuestionTitle = isM ? "오늘 기분, 어떤 말랑이예요?" : "오늘 마음이랑 닮은 말랑이는 누구야?";
-  const moodQuestionSub = isM ? "슥 골라주면 끝!" : "정답은 없어. 그냥 지금 느낌대로";
-  const moodPickedMessage = isM ? "오케이! 오늘의 말랑이 접수 완료" : "응, 오늘은 그랬구나. 기억해둘게";
+  const moodQuestionTitle = isM ? "오늘 기분, 어떤 말랑이예요?" : "오늘의 기분을 선택하세요";
+  const moodQuestionSub = isM ? "정답은 없어요. 지금 느낌그대로면 돼요" : "기록이 쌓이면 주간 패턴을 찾아드립니다";
+  const moodPickedMessage = isM ? "오늘은 그랬군요. 기억해둘게요" : "기록을 완료했습니다";
   const year = cursor.getFullYear();
   const month = cursor.getMonth(); // 0-indexed
   const monthKey = `${year}-${pad(month + 1)}`;
