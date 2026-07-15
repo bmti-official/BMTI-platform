@@ -153,31 +153,53 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, charIma
 
             {poppedMood === null ? (
               <>
-                <div style={{ display: "flex", gap: 9, alignItems: "flex-end", marginBottom: 24 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
-                    {charImage ? <img src={charImage} alt="me" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 20 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
+                    {charImage ? <img src={charImage} alt="me" style={{ width: "88%", height: "88%", objectFit: "contain" }} /> : "🤖"}
                   </div>
                   <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
                     {moodQuestionTitle}<br />
                     <span style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>{moodQuestionSub}</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-                  {MOODS.map(m => (
-                    <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                      padding: "10px 2px", borderRadius: 18, border: "none", background: "transparent", cursor: "pointer" }}>
-                      <Mallang v={m.v} size={46} />
-                      <span style={{ fontSize: 10, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" }}>{m.label}</span>
-                    </button>
-                  ))}
+
+                {/* 실제 채팅 입력창처럼 보이는 말랑이 선택 바 */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#F5F3EE", border: `1px solid ${C.line}`, borderRadius: 26, padding: "8px 8px 8px 16px" }}>
+                  <span style={{ fontSize: 12, color: C.sub, fontWeight: 700, flexShrink: 0 }}>탭해서 답장</span>
+                  <div style={{ display: "flex", gap: 2, overflowX: "auto", flex: 1, justifyContent: "flex-end" }}>
+                    {MOODS.map(m => (
+                      <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", border: "none", background: "transparent", cursor: "pointer", padding: "4px 3px" }}>
+                        <Mallang v={m.v} size={34} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </>
             ) : (
-              <div style={{ paddingTop: 6 }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><Mallang v={poppedMood} size={80} /></div>
-                <div style={{ display: "flex", gap: 9, alignItems: "flex-end", marginBottom: 26 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
-                    {charImage ? <img src={charImage} alt="me" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
+              <div style={{ paddingTop: 2 }}>
+                {/* 캐릭터의 질문 (대화 흐름 유지) */}
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 14 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
+                    {charImage ? <img src={charImage} alt="me" style={{ width: "88%", height: "88%", objectFit: "contain" }} /> : "🤖"}
+                  </div>
+                  <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
+                    {moodQuestionTitle}<br />
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>{moodQuestionSub}</span>
+                  </div>
+                </div>
+
+                {/* 내가 답장으로 보낸 말랑이 (우측 말풍선) */}
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.ink, borderRadius: "18px 18px 4px 18px", padding: "8px 16px 8px 10px" }}>
+                    <Mallang v={poppedMood} size={34} />
+                    <span style={{ color: "#fff", fontSize: 13.5, fontWeight: 700 }}>{MOODS.find(m => m.v === poppedMood)?.label}</span>
+                  </div>
+                </div>
+
+                {/* 캐릭터의 답장 */}
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 26 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
+                    {charImage ? <img src={charImage} alt="me" style={{ width: "88%", height: "88%", objectFit: "contain" }} /> : "🤖"}
                   </div>
                   <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
                     {moodPickedMessage}

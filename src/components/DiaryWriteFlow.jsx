@@ -50,7 +50,7 @@ const NO_EXERCISE_REASONS = [
 
 // ── 기타 상수 ──
 const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "발목"];
-const WHEN_OPTS = ["오늘 아침 일어날 때", "자고 일어났을 때", "움직일 때", "특정 자세일 때", "하루 종일"];
+const WHEN_OPTS = ["오늘 아침 일어날 때", "움직일 때", "오래 앉아있을 때", "오래 서있을 때", "하루 종일"];
 
 // ── 받침 유무로 이/가 조사 고르는 헬퍼 ──
 function hasBatchim(word) {
@@ -91,7 +91,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 한 줄 일기
   const [oneLine, setOneLine] = useState({ cat: "daily", text: "" });
   // 뻐근한 부위
-  const [sore, setSore] = useState({ parts: [], level: 5, when: null, whenOther: "" });
+  const [sore, setSore] = useState({ parts: [], level: 5, whens: {}, whenOthers: {} });
 
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
   const [showSettings, setShowSettings] = useState(false);
@@ -190,10 +190,14 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     exerciseAnswerText = `오늘 ${exerciseTypes.join(", ")} 했어요`;
   }
 
-  // 뻐근한 부위 헤드라인 — 부위/강도/시점이 다 채워지면 한 문장으로 요약
-  const soreWhenText = sore.when === "기타" ? sore.whenOther.trim() : sore.when;
-  const soreHeadline = (sore.parts.length > 0 && soreWhenText)
-    ? `${soreWhenText} ${sore.parts.join("·")}${hasBatchim(sore.parts[sore.parts.length - 1]) ? "이" : "가"} ${sore.level}정도로 불편했어요`
+  // 뻐근한 부위 헤드라인 — 부위마다 시점이 다를 수 있어 부위별로 문장을 따로 만들어 이어붙인다.
+  const soreClauses = sore.parts.map(p => {
+    const w = sore.whens[p] === "기타" ? (sore.whenOthers[p] || "").trim() : sore.whens[p];
+    if (!w) return null;
+    return `${w} ${p}${hasBatchim(p) ? "이" : "가"} ${sore.level}정도로 불편했`;
+  }).filter(Boolean);
+  const soreHeadline = soreClauses.length > 0
+    ? soreClauses.map((c, i) => i === soreClauses.length - 1 ? `${c}어요` : `${c}고, `).join("")
     : null;
 
   // ── 말랑이 기분 ──
@@ -400,16 +404,24 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 {sore.parts.length > 0 && <>
                   <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
                   <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.pink }} />
-                  <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>언제 그러셨어요?</div>
-                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                    {WHEN_OPTS.map(w => <Chip key={w} label={w} on={sore.when === w} onClick={() => setSore(s => ({ ...s, when: w }))} />)}
-                    <Chip label="기타" on={sore.when === "기타"} onClick={() => setSore(s => ({ ...s, when: "기타" }))} />
-                  </div>
-                  {sore.when === "기타" && (
-                    <input value={sore.whenOther} onChange={e => setSore(s => ({ ...s, whenOther: e.target.value }))}
-                      placeholder="예: 계단 오를 때"
-                      style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
-                  )}
+
+                  {sore.parts.map(p => (
+                    <div key={p}>
+                      <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{p}{hasBatchim(p) ? "은" : "는"} 언제 그러셨어요?</div>
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                        {WHEN_OPTS.map(w => (
+                          <Chip key={w} label={w} on={sore.whens[p] === w} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: w } }))} />
+                        ))}
+                        <Chip label="기타" on={sore.whens[p] === "기타"} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: "기타" } }))} />
+                      </div>
+                      {sore.whens[p] === "기타" && (
+                        <input value={sore.whenOthers[p] || ""} onChange={e => setSore(s => ({ ...s, whenOthers: { ...s.whenOthers, [p]: e.target.value } }))}
+                          placeholder="예: 계단 오를 때"
+                          style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+                      )}
+                    </div>
+                  ))}
+
                   {soreHeadline && (
                     <div style={{ marginTop: 14, padding: "12px 14px", background: C.sageSoft, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
                       "{soreHeadline}"
