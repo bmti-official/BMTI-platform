@@ -3,7 +3,7 @@
 // localStorage에 저장된 현재 스킨을 읽어 SVG 대신 스킨 이미지를 대신 그려준다.
 import { useRef, useState, useEffect } from "react";
 import { MOODS } from "../data";
-import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT } from "../lib/mallangSkins";
+import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT, MALLANG_SIZE_ADJUST, MALLANG_MOOD_FILTER } from "../lib/mallangSkins";
 
 export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
   const [skin, setSkin] = useState(getMallangSkin);
@@ -24,14 +24,19 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
   const skinImages = MALLANG_SKINS[effectiveSkin]?.images;
   if (skinImages) {
     const src = skinImages[v] || skinImages[3];
+    const adjust = MALLANG_SIZE_ADJUST[effectiveSkin];
+    const scale = adjust ? (adjust.moods?.[v] ?? adjust.base ?? 1) : 1;
+    const filter = MALLANG_MOOD_FILTER[v] || "none";
     return (
-      <img
-        key={`${effectiveSkin}-${v}-${tapKey}`}
-        src={src}
-        alt=""
-        className="mallang-squish"
-        style={{ width: size, height: size, objectFit: "contain", display: "block", margin: "0 auto", transformOrigin: "50% 100%" }}
-      />
+      <span style={{ display: "block", width: size, height: size, margin: "0 auto", transform: `scale(${scale})`, transformOrigin: "50% 100%" }}>
+        <img
+          key={`${effectiveSkin}-${v}-${tapKey}`}
+          src={src}
+          alt=""
+          className="mallang-squish"
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", filter, transformOrigin: "50% 100%" }}
+        />
+      </span>
     );
   }
 
