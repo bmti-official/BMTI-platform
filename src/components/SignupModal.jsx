@@ -325,9 +325,9 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
               <div className="bg-[#c0ff00]/10 border border-[#c0ff00]/30 rounded-2xl p-5 mb-6">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-sm text-gray-900 mb-1">⛄️ 'BMTI: 운동일기' 앱 출시 알림 받기</p>
+                    <p className="font-bold text-sm text-gray-900 mb-1">⛄️ 'BMTI: 말랑 다이어리' 앱 출시 알림 받기</p>
                     <p className="text-xs text-gray-500 break-keep leading-relaxed">
-                      올 겨울 출시 예정인 'BMTI: 운동일기' 앱의 알림을 가장 먼저 받아보세요! 사전 등록 혜택도 함께 제공됩니다.
+                      올 겨울 출시 예정인 'BMTI: 말랑 다이어리' 앱의 알림을 가장 먼저 받아보세요! 사전 등록 혜택도 함께 제공됩니다.
                     </p>
                   </div>
                   <button

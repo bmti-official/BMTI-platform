@@ -95,7 +95,9 @@ function App() {
               if (dbUser && !error) {
                 // isPremium은 실제 구독 정보(dbUser)를 그대로 신뢰한다 — 여기서 임의로 true를 강제하면
                 // 구독하지 않은 유저도 프리미엄으로 취급되어 재검사 횟수 제한 등이 무력화된다.
-                const updatedUser = { ...localUser, ...dbUser };
+                // app_notification은 DB 컬럼명(snake_case)과 클라이언트 필드명(appNotification)이
+                // 달라 단순 스프레드로는 안 이어지므로 명시적으로 이어준다.
+                const updatedUser = { ...localUser, ...dbUser, appNotification: dbUser.app_notification ?? localUser.appNotification };
                 setUserProfile(updatedUser);
                 setIsLoggedIn(true);
                 localStorage.setItem('bmti_user', JSON.stringify(updatedUser)); // keep id for next load
@@ -185,6 +187,10 @@ function App() {
             nickname: userData.nickname,
             kakao_gender: userData.kakaoGender,
             kakao_age: userData.kakaoAge,
+            // 신규 가입 때 고른 알림 신청 여부를 바로 반영한다. 기존 회원의 재로그인
+            // (SignupModal의 existingUser 단축 경로)에서는 이 필드가 안 넘어오므로
+            // undefined가 되어 아래 upsert에서 컬럼이 그대로 유지된다(덮어쓰지 않음).
+            ...(userData.appNotification !== undefined ? { app_notification: userData.appNotification } : {}),
             // bmti_type is updated separately when they complete the quiz
           },
           { onConflict: 'kakao_id' }
@@ -209,7 +215,10 @@ function App() {
       // 경우 exercise_frequency/exercise_goals/common_posture 등 예전에 저장해둔 값이 여기 이미
       // 들어있다. userData(가입 폼 입력값)만으로 fullUserData를 만들면 이 필드들이 통째로 빠지므로
       // data를 먼저 깔고 그 위에 방금 입력한 값을 덮어쓴다.
-      const fullUserData = { ...data, ...userData, id: data.id, bmti_type: data.bmti_type, bmti_answers: data.bmti_answers, appNotification: userData.appNotification };
+      // appNotification은 기존 회원의 재로그인 단축 경로(SignupModal의 existingUser)에서는
+      // userData에 아예 없는 필드라(undefined) 그대로 쓰면 매번 꺼지므로, DB에 저장된
+      // app_notification 값을 우선 신뢰한다.
+      const fullUserData = { ...data, ...userData, id: data.id, bmti_type: data.bmti_type, bmti_answers: data.bmti_answers, appNotification: userData.appNotification ?? data.app_notification ?? false };
       setUserProfile(fullUserData);
       setShowSignup(false);
       setIsLoggedIn(true);

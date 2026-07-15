@@ -325,7 +325,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 {userData.appNotification ? '✅' : '🔔'}
               </span>
               <span className="text-xs font-bold text-gray-700 leading-snug">
-                {userData.appNotification ? "'BMTI: 운동일기' 사전 알림 신청 완료" : "'BMTI: 운동일기' 앱 출시 알림 받기"}
+                {userData.appNotification ? "'BMTI: 말랑 다이어리' 사전 알림 신청 완료" : "'BMTI: 말랑 다이어리' 앱 출시 알림 받기"}
               </span>
             </div>
             <button
@@ -336,6 +336,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 localStorage.setItem('bmti_user', JSON.stringify(updatedUser));
                 if (userData.id) {
                   try {
+                    // pre_registrations는 신청 이력 로그일 뿐이라, users.app_notification도 같이
+                    // 켜둬야 새로고침/재로그인 후에도 "신청 완료" 상태가 그대로 유지된다.
+                    await supabase.from('users').update({ app_notification: true }).eq('id', userData.id);
                     await supabase.from('pre_registrations').insert({ user_id: userData.id });
                   } catch (e) {
                     console.error(e);
