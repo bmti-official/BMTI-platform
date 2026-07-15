@@ -72,7 +72,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             className="cursor-pointer flex items-baseline gap-2"
             onClick={() => setView('home')}
           >
-            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI: 말랑 다이어리</span>
+            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
+            <span className="text-[10px] md:text-xs font-serif font-normal text-gray-400 tracking-tight whitespace-nowrap">: 말랑 다이어리</span>
           </div>
 
           {/* Right: Login */}

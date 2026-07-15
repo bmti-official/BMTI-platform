@@ -84,13 +84,20 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
           </button>
           <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>총 {entryCountThisMonth}일 기록했어요</p>
 
-          {/* 말랑이 스킨(외형) 선택 버튼 — 지금 고른 스킨의 표정을 그대로 보여준다 */}
+          {/* 말랑이 스킨(외형) 선택 버튼 — '오늘 평소보다 무리했나요?' 원형 버튼과 같은 스타일로,
+              안에는 지금 스킨 미리보기 대신 '바꾸기' 의미의 교체 아이콘을 넣는다 */}
           <button
             onClick={() => setShowSkinPicker(true)}
             aria-label="말랑이 모양 바꾸기"
-            style={{ position: "absolute", right: 0, top: 2, width: 38, height: 38, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            style={{ position: "absolute", right: 0, top: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
           >
-            <Mallang v={5} size={24} />
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F3F1EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                <path d="M6 12 h17 M23 12 l-4.5-4.5 M23 12 l-4.5 4.5" stroke="#8A5A3B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke="#8A5A3B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>모양 바꾸기</span>
           </button>
         </div>
 
@@ -102,7 +109,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
         </div>
 
         {/* 날짜 그리드 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 22 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 28 }}>
           {cells.map((d, idx) => {
             if (!d) return <div key={idx} />;
             const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;

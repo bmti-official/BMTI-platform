@@ -79,6 +79,8 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
         <ellipse cx="50" cy="58" rx="9" ry="10.5" fill={eye} />
         <path d="M79 30 q3 5 0 8 q-3-3 0-8Z" fill="#BFE0F2" />
         <path d="M21 33 q2.5 4 0 6.5 q-2.5-2.5 0-6.5Z" fill="#BFE0F2" />
+        {/* 살짝 화난 듯한 느낌을 더하는 작은 분노 표시 (하나만) */}
+        <path d="M30 15 l2.5 2.5 M36 15 l-2.5 2.5 M33 11.5 v6" stroke="#E05C5C" strokeWidth="1.8" strokeLinecap="round" />
       </>}
       {v === 2 && <>
         <path className="mallang-eye" style={eyeStyle} d="M28 40 Q34 36 40 40" stroke={eye} strokeWidth="2.6" fill="none" strokeLinecap="round" />

@@ -11,7 +11,7 @@ import {
 const C = {
   bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", card: "#FAF9F6",
 };
-const MOOD_COLOR = { 1: "#B85450", 2: "#C9975A", 3: "#B7B2A9", 4: "#6FA3C9", 5: "#5F8A76" };
+const MOOD_COLOR = { 1: "#B85450", 2: "#F7C6D9", 3: "#B7B2A9", 4: "#BEE3C0", 5: "#5F8A76" };
 
 const FREQ_KEY = { none: "rarely", sometimes: "sometimes", weekly: "weekly", daily: "daily" };
 const GOAL_KEY = { flexibility: "sore", posture: "posture", health: "stamina", stress: "stress" };
@@ -116,8 +116,7 @@ function DiscoveryHero({ discovery: d }) {
   if (!d.found) {
     return (
       <div style={{ background: "#FDF6EC", border: "1px solid #F2E3C0", borderRadius: 22, padding: "24px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 13, color: C.sub, fontWeight: 700, marginBottom: 6 }}>말랑이의 발견</div>
-        <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.6, margin: 0 }}>{d.lines[0]}</p>
+        <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.6, margin: 0, whiteSpace: "pre-line" }}>{d.lines[0]}</p>
         {d.progress && (
           <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, marginTop: 10 }}>
             {d.progress.required}일 중 {d.progress.current}일 기록했어요

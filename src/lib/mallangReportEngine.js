@@ -409,8 +409,8 @@ export function composeDiscovery(result, bmti, empathy = null) {
       headline: null,
       evidence: null,
       lines: [bmti.zm === "Z"
-        ? "이번 달은 패턴을 짚을 만큼 기록이 모이지 않았어요. 며칠 더 있으면 찾아드릴게요."
-        : "이번 달은 조용히 지켜보고 있어요. 며칠 더 있으면 재밌는 걸 찾아올게요."],
+        ? "이번 달은 패턴을 짚을 만큼 기록이 모이지 않았어요.\n며칠 더 있으면 찾아드릴게요."
+        : "이번 달은 조용히 지켜보고 있어요.\n며칠 더 있으면 재밌는 걸 찾아올게요."],
       progress: { current: result.recorded, required: result.required },
     };
   }
