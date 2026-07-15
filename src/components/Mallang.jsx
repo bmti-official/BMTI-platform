@@ -1,15 +1,44 @@
-// 말랑이 — BMTI 하루일기의 무드 마스코트 (SVG, 5단계 표정)
-import { useRef } from "react";
+// 말랑이 — BMTI 하루일기의 무드 마스코트 (기본은 SVG, 5단계 표정)
+// 유저가 캘린더에서 스킨(감자/얼음/호빵 등)을 고르면 어디서든 같은 스킨으로 보이도록,
+// localStorage에 저장된 현재 스킨을 읽어 SVG 대신 스킨 이미지를 대신 그려준다.
+import { useRef, useState, useEffect } from "react";
 import { MOODS } from "../data";
+import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT } from "../lib/mallangSkins";
 
-export function Mallang({ v, size = 44, tapKey = 0 }) {
+export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
+  const [skin, setSkin] = useState(getMallangSkin);
+  useEffect(() => {
+    // skinOverride가 있으면(스킨 고르기 팝업의 미리보기처럼 특정 스킨을 강제로 보여줘야 할 때)
+    // 전역 스킨 변경 이벤트를 구독하지 않는다 — 항상 지정된 스킨만 보여줘야 하므로.
+    if (skinOverride) return;
+    const onSkinChange = () => setSkin(getMallangSkin());
+    window.addEventListener(MALLANG_SKIN_EVENT, onSkinChange);
+    return () => window.removeEventListener(MALLANG_SKIN_EVENT, onSkinChange);
+  }, [skinOverride]);
+  // 캘린더처럼 여러 마리가 동시에 떠 있을 때 전부 같은 박자로 깜박이면 부자연스러워서,
+  // 인스턴스마다 한 번만 랜덤 지연을 뽑아 서로 어긋나게 만든다. (SVG 모드에서만 쓰이지만,
+  // 훅은 분기 이전에 항상 호출돼야 하므로 여기서 미리 계산해둔다.)
+  const blinkDelay = useRef(-(Math.random() * 5).toFixed(2) + "s").current;
+
+  const effectiveSkin = skinOverride || skin;
+  const skinImages = MALLANG_SKINS[effectiveSkin]?.images;
+  if (skinImages) {
+    const src = skinImages[v] || skinImages[3];
+    return (
+      <img
+        key={`${effectiveSkin}-${v}-${tapKey}`}
+        src={src}
+        alt=""
+        className="mallang-squish"
+        style={{ width: size, height: size, objectFit: "contain", display: "block", margin: "0 auto", transformOrigin: "50% 100%" }}
+      />
+    );
+  }
+
   const m = MOODS.find(x => x.v === v) || MOODS[2];
   // 힘들었어요(v=1)는 배경이 짙은 검붉은색이라 기본 잉크색 선화가 거의 안 보여서,
   // 무드별로 밝은 선 색을 따로 지정할 수 있게 함 (없으면 기존 어두운 잉크색 사용).
   const eye = m.line || "#2B2A28";
-  // 캘린더처럼 여러 마리가 동시에 떠 있을 때 전부 같은 박자로 깜박이면 부자연스러워서,
-  // 인스턴스마다 한 번만 랜덤 지연을 뽑아 서로 어긋나게 만든다.
-  const blinkDelay = useRef(-(Math.random() * 5).toFixed(2) + "s").current;
   const eyeStyle = { animationDelay: blinkDelay };
   return (
     // key에 tapKey를 같이 섞어서, 표정(무드)이 바뀔 때뿐 아니라 (기본 동작 그대로 유지)

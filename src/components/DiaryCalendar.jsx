@@ -5,6 +5,7 @@ import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   isDayWritable,
 } from "../lib/diaryHistory";
+import { MALLANG_SKINS, getMallangSkin, setMallangSkin } from "../lib/mallangSkins";
 
 const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
@@ -22,6 +23,8 @@ const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showSkinPicker, setShowSkinPicker] = useState(false);
+  const currentSkin = getMallangSkin();
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const isM = axisCode.includes("M");
   // Z유형은 담백하게, M유형은 발랄하게 — 유형별로 다르게 물어보고 다르게 반응해준다.
@@ -63,7 +66,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
       <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "76px 20px 96px" }}>
 
         {/* 헤더 */}
-        <div style={{ textAlign: "center", marginBottom: 22 }}>
+        <div style={{ position: "relative", textAlign: "center", marginBottom: 22 }}>
           <button
             onClick={() => setShowDatePicker(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: "4px 8px" }}
@@ -72,6 +75,15 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
             <span style={{ fontSize: 12, color: C.sub, transform: "translateY(1px)" }}>▼</span>
           </button>
           <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>총 {entryCountThisMonth}일 기록했어요</p>
+
+          {/* 말랑이 스킨(외형) 선택 버튼 — 지금 고른 스킨의 표정을 그대로 보여준다 */}
+          <button
+            onClick={() => setShowSkinPicker(true)}
+            aria-label="말랑이 모양 바꾸기"
+            style={{ position: "absolute", right: 0, top: 2, width: 38, height: 38, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
+            <Mallang v={5} size={24} />
+          </button>
         </div>
 
         {/* 요일 */}
@@ -82,7 +94,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
         </div>
 
         {/* 날짜 그리드 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 22 }}>
           {cells.map((d, idx) => {
             if (!d) return <div key={idx} />;
             const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
@@ -138,6 +150,33 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
           onCancel={() => setShowDatePicker(false)}
           onConfirm={(y, m) => { setCursor(new Date(y, m, 1)); setShowDatePicker(false); }}
         />
+      )}
+
+      {showSkinPicker && (
+        <div
+          onClick={() => setShowSkinPicker(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 65, background: "rgba(28,26,23,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "24px 24px 0 0", padding: "22px 20px 30px" }}>
+            <h3 style={{ textAlign: "center", fontSize: 16, fontWeight: 800, margin: "0 0 18px", color: C.ink }}>말랑이 모양 바꾸기</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+              {Object.entries(MALLANG_SKINS).map(([key, skinInfo]) => {
+                const on = currentSkin === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => { setMallangSkin(key); setShowSkinPicker(false); }}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 4px", borderRadius: 16,
+                      border: on ? `2px solid ${C.ink}` : "2px solid transparent", background: on ? "#F5F3EE" : "transparent", cursor: "pointer" }}
+                  >
+                    <Mallang v={5} size={44} skinOverride={key} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: on ? C.ink : C.sub, whiteSpace: "nowrap" }}>{skinInfo.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
       {showMoodPopup && (
