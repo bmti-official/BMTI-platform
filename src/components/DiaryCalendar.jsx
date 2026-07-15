@@ -19,9 +19,15 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
 const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null);
 
-export default function DiaryCalendar({ onPickMood, onEditDay }) {
+export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, charImage }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
+  const isM = axisCode.includes("M");
+  // Z유형은 담백하게, M유형은 발랄하게 — 유형별로 다르게 물어보고 다르게 반응해준다.
+  const moodQuestionTitle = isM ? "오늘 기분, 어떤 말랑이예요?" : "오늘 마음이랑 닮은 말랑이는 누구야?";
+  const moodQuestionSub = isM ? "슥 골라주면 끝!" : "정답은 없어. 그냥 지금 느낌대로";
+  const moodPickedMessage = isM ? "오케이! 오늘의 말랑이 접수 완료" : "응, 오늘은 그랬구나. 기억해둘게";
   const year = cursor.getFullYear();
   const month = cursor.getMonth(); // 0-indexed
   const monthKey = `${year}-${pad(month + 1)}`;
@@ -147,8 +153,15 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
 
             {poppedMood === null ? (
               <>
-                <h2 style={{ fontSize: 19, fontWeight: 800, margin: "6px 0 6px", textAlign: "center", letterSpacing: "-0.01em" }}>오늘 기분, 어떤 말랑이에 가까워요?</h2>
-                <p style={{ fontSize: 13, color: C.sub, textAlign: "center", margin: "0 0 26px" }}>지금 마음에 가장 가까운 표정을 골라주세요</p>
+                <div style={{ display: "flex", gap: 9, alignItems: "flex-end", marginBottom: 24 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
+                    {charImage ? <img src={charImage} alt="me" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
+                  </div>
+                  <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
+                    {moodQuestionTitle}<br />
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>{moodQuestionSub}</span>
+                  </div>
+                </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                   {MOODS.map(m => (
                     <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
@@ -160,10 +173,16 @@ export default function DiaryCalendar({ onPickMood, onEditDay }) {
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", paddingTop: 6 }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><Mallang v={poppedMood} size={80} /></div>
-                <h2 style={{ fontSize: 19, fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.01em" }}>오늘도 잘 기록했어요</h2>
-                <p style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.6, margin: "0 0 26px" }}>내친김에 오늘 하루,<br />조금 더 자세히 남겨볼까요?</p>
+              <div style={{ paddingTop: 6 }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><Mallang v={poppedMood} size={80} /></div>
+                <div style={{ display: "flex", gap: 9, alignItems: "flex-end", marginBottom: 26 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
+                    {charImage ? <img src={charImage} alt="me" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
+                  </div>
+                  <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
+                    {moodPickedMessage}
+                  </div>
+                </div>
                 <button onClick={continueToFullForm} style={{ width: "100%", padding: 16, borderRadius: 16, border: "none", background: "#5F8A76", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 10, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}>
                   네, 조금 더 기록할게요
                 </button>

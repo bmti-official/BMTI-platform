@@ -64,7 +64,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
   }
 
   if (hasHistory) {
-    return <DiaryCalendar onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} />;
+    return <DiaryCalendar onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} charImage={charData?.image} />;
   }
 
   return (

@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
-import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } from '../customResultData';
+import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
 
 const getKoreanName = (code) => {
   const map = {
@@ -110,7 +110,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   const printInstructorRef = useRef(null);
   const printEscapeRef = useRef(null);
   const printVibeRef = useRef(null);
-  const printBodyGuideRef = useRef(null);
   const printFooterRef = useRef(null);
 
   const [expandBestMatch, setExpandBestMatch] = useState(false);
@@ -139,9 +138,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
   const vibeKey = (axisCode && axisCode.length >= 4 ? axisCode[0] + axisCode[3] : 'OM') + '_' + getLevel(axisCode ? axisCode[3] : 'M');
   const vibeData = WORST_VIBE_DATA[vibeKey] || WORST_VIBE_DATA['OM_flexible'];
-
-  const bodyGuideText = (axisCode && BODY_GUIDE_DATA[axisCode]) || BODY_GUIDE_DATA['ACDZ'];
-  const bodyGuideParagraphs = bodyGuideText ? bodyGuideText.split('\n\n') : [];
 
   const bestMatchBody = resultData.goodMatch ? resultData.goodMatch.split('\n').slice(2).join(' ') : '';
   const diffTempoBody = resultData.badMatch ? resultData.badMatch.split('\n').slice(2).join(' ') : '';
@@ -178,7 +174,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         printInstructorRef.current,
         printEscapeRef.current,
         printVibeRef.current,
-        printBodyGuideRef.current,
         printFooterRef.current,
       ].filter(Boolean);
 
@@ -634,36 +629,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             </div>
           </div>
 
-          {/* Custom Body Guide Letter Section */}
-          <div className="text-left">
-            <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
-              <span className="text-xl">💌</span> 바디 가이드의 따뜻한 시선
-            </h5>
-            <div className="flex flex-col mt-4 gap-6">
-              {(() => {
-                const guideData = (axisCode && BODY_GUIDE_DATA[axisCode]) || BODY_GUIDE_DATA['ACDZ'];
-                const paragraphs = guideData ? guideData.split('\n\n') : [];
-                
-                return (
-                  <>
-                    {/* First Paragraph (Fact) */}
-                    {paragraphs.length > 0 && (
-                      <p className="text-[15px] md:text-[16px] text-gray-700 leading-relaxed break-keep tracking-normal whitespace-pre-line">
-                        {paragraphs[0]}
-                      </p>
-                    )}
-                    
-                    {/* Second Paragraph (Cheering/Comfort Quote) */}
-                    {paragraphs.length > 1 && (
-                      <p className="text-[15px] md:text-[16px] text-gray-700 leading-relaxed break-keep tracking-normal whitespace-pre-line mt-4">
-                        {paragraphs.slice(1).join('\n\n')}
-                      </p>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>
         </div>
 
       {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) =====
@@ -759,14 +724,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px', whiteSpace: 'pre-line' }}>{vibeData.trait}</p>
             <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>최악의 분위기</p>
             <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{vibeData.worst}</p>
-          </div>
-
-          {/* 바디 가이드 */}
-          <div ref={printBodyGuideRef} style={{ padding: '20px 8px' }}>
-            <p style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', marginBottom: '8px' }}>💌 바디 가이드의 따뜻한 시선</p>
-            {bodyGuideParagraphs.map((para, i) => (
-              <p key={i} style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.75, whiteSpace: 'pre-line', marginBottom: i < bodyGuideParagraphs.length - 1 ? '14px' : 0 }}>{para}</p>
-            ))}
           </div>
 
           {/* Footer */}
