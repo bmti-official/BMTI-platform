@@ -33,7 +33,7 @@ export const MALLANG_SKINS = {
 // 배율 예외가 필요 없다.
 export const MALLANG_SIZE_ADJUST = {
   potato: { base: 1 },
-  ice: { base: 1 },
+  ice: { base: 1.25 },
   bun: { base: 1.25 },
 };
 
@@ -75,6 +75,15 @@ export const MALLANG_MOOD_FILTER = {
   3: "none",
   4: "brightness(1.05) saturate(1.12)",
   5: "brightness(1.12) saturate(1.3) drop-shadow(0 0 5px rgba(255,196,110,0.5))",
+};
+
+// 스킨별로 위 기본 필터를 대신 쓰고 싶을 때만 여기에 예외를 둔다.
+export const MALLANG_MOOD_FILTER_OVERRIDE = {
+  bun: {
+    1: "grayscale(0.4) brightness(0.62) saturate(0.7)", // 힘들었어요 — 더 어둡게
+    2: "grayscale(0.85) brightness(1.08) saturate(0.25)", // 지쳤어요 — 연회색으로
+    4: "brightness(1.16) saturate(1.14)", // 괜찮았어요 — 조금 더 밝게
+  },
 };
 
 const SKIN_KEY = "bmti_mallang_skin";
