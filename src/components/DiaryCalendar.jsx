@@ -19,7 +19,7 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
 const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null);
 
-export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, charImage }) {
+export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
@@ -141,81 +141,55 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, charIma
       )}
 
       {showMoodPopup && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "28px 28px 0 0", padding: "14px 24px 34px", position: "relative", animation: "diaryPopupUp .32s cubic-bezier(.22,.9,.32,1)" }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#E5E1D8", margin: "0 auto 18px" }} />
-            <button
-              onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
-              style={{ position: "absolute", top: 16, right: 18, width: 28, height: 28, border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer" }}
-            >
-              ✕
-            </button>
+        <>
+          {/* 배경은 살짝만 어둡게 — 하단 네비게이션의 캐릭터가 이 말풍선의 주인공이라는 게 보여야 한다 */}
+          <div
+            onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
+            style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(28,26,23,0.15)" }}
+          />
+          {/* 하단 네비게이션의 캐릭터를 기준으로 그 위에 말풍선이 뜬다 */}
+          <div style={{ position: "fixed", left: "50%", bottom: 92, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
+            <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
+              <button
+                onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
+                style={{ position: "absolute", top: 10, right: 12, width: 26, height: 26, border: "none", background: "transparent", color: C.sub, fontSize: 15, cursor: "pointer" }}
+              >
+                ✕
+              </button>
 
-            {poppedMood === null ? (
-              <>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 20 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
-                    {charImage ? <img src={charImage} alt="me" style={{ width: "88%", height: "88%", objectFit: "contain" }} /> : "🤖"}
-                  </div>
-                  <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
-                    {moodQuestionTitle}<br />
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>{moodQuestionSub}</span>
-                  </div>
-                </div>
-
-                {/* 실제 채팅 입력창처럼 보이는 말랑이 선택 바 */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#F5F3EE", border: `1px solid ${C.line}`, borderRadius: 26, padding: "8px 8px 8px 16px" }}>
-                  <span style={{ fontSize: 12, color: C.sub, fontWeight: 700, flexShrink: 0 }}>탭해서 답장</span>
-                  <div style={{ display: "flex", gap: 2, overflowX: "auto", flex: 1, justifyContent: "flex-end" }}>
+              {poppedMood === null ? (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 800, textAlign: "center", margin: "2px 0 4px", lineHeight: 1.4 }}>{moodQuestionTitle}</div>
+                  <div style={{ fontSize: 12.5, color: C.sub, textAlign: "center", fontWeight: 600, marginBottom: 18 }}>{moodQuestionSub}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                     {MOODS.map(m => (
-                      <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", border: "none", background: "transparent", cursor: "pointer", padding: "4px 3px" }}>
-                        <Mallang v={m.v} size={34} />
+                      <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                        padding: "6px 2px", borderRadius: 14, border: "none", background: "transparent", cursor: "pointer" }}>
+                        <Mallang v={m.v} size={40} />
+                        <span style={{ fontSize: 9.5, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" }}>{m.label}</span>
                       </button>
                     ))}
                   </div>
+                </>
+              ) : (
+                <div style={{ textAlign: "center", paddingTop: 2 }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Mallang v={poppedMood} size={58} /></div>
+                  <div style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 18 }}>{moodPickedMessage}</div>
+                  <button onClick={continueToFullForm} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: "#5F8A76", color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}>
+                    네, 조금 더 기록할게요
+                  </button>
+                  <button onClick={quickSaveMood} style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    오늘은 여기까지 할게요
+                  </button>
                 </div>
-              </>
-            ) : (
-              <div style={{ paddingTop: 2 }}>
-                {/* 캐릭터의 질문 (대화 흐름 유지) */}
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 14 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
-                    {charImage ? <img src={charImage} alt="me" style={{ width: "88%", height: "88%", objectFit: "contain" }} /> : "🤖"}
-                  </div>
-                  <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
-                    {moodQuestionTitle}<br />
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>{moodQuestionSub}</span>
-                  </div>
-                </div>
+              )}
 
-                {/* 내가 답장으로 보낸 말랑이 (우측 말풍선) */}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.ink, borderRadius: "18px 18px 4px 18px", padding: "8px 16px 8px 10px" }}>
-                    <Mallang v={poppedMood} size={34} />
-                    <span style={{ color: "#fff", fontSize: 13.5, fontWeight: 700 }}>{MOODS.find(m => m.v === poppedMood)?.label}</span>
-                  </div>
-                </div>
-
-                {/* 캐릭터의 답장 */}
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 26 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
-                    {charImage ? <img src={charImage} alt="me" style={{ width: "88%", height: "88%", objectFit: "contain" }} /> : "🤖"}
-                  </div>
-                  <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", fontSize: 14.5, lineHeight: 1.55, fontWeight: 700, color: C.ink }}>
-                    {moodPickedMessage}
-                  </div>
-                </div>
-                <button onClick={continueToFullForm} style={{ width: "100%", padding: 16, borderRadius: 16, border: "none", background: "#5F8A76", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 10, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}>
-                  네, 조금 더 기록할게요
-                </button>
-                <button onClick={quickSaveMood} style={{ width: "100%", padding: 13, borderRadius: 16, border: "none", background: "transparent", color: C.sub, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                  오늘은 여기까지 할게요
-                </button>
-              </div>
-            )}
+              {/* 말풍선 꼬리 — 하단 네비게이션의 캐릭터를 가리킨다 */}
+              <div style={{ position: "absolute", left: "50%", bottom: -8, transform: "translateX(-50%) rotate(45deg)", width: 16, height: 16, background: "#fff" }} />
+            </div>
           </div>
-          <style>{`@keyframes diaryPopupUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
-        </div>
+          <style>{`@keyframes diaryPopupUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
+        </>
       )}
     </div>
   );
