@@ -23,9 +23,11 @@ export const hasDiaryHistory = () => getDiaryHistory().length > 0;
 export const getEntryForDate = (dateISO) => getDiaryHistory().find(e => e.date === dateISO);
 
 // 같은 날짜에 다시 기록하면 그날 것을 덮어쓴다 (하루 1건).
-export const saveDiaryEntry = (dateISO, mood) => {
+// extra에는 말랑이의 발견(월간 리포트)이 쓰는 sleep/overwork/exercise/soreness/note를 담을 수 있다 —
+// 캘린더의 '오늘은 여기까지 할게요' 같은 간단 기록은 extra 없이 mood만 넘기면 된다.
+export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
   const history = getDiaryHistory().filter(e => e.date !== dateISO);
-  history.push({ date: dateISO, mood });
+  history.push({ date: dateISO, mood, ...extra });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
   // 오늘 기록을 남긴 경우, 네비게이션 하단의 '오늘 아직 안 썼어요' 빨간 점을 끈다.

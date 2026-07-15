@@ -16,7 +16,8 @@ const PlayIcon = ({ className }) => (
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
-import { todayISO, getDiaryHistory } from '../lib/diaryHistory';
+import { todayISO } from '../lib/diaryHistory';
+import MallangDiscoveryReport from './MallangDiscoveryReport';
 
 // 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양
 const ChartIcon = ({ className }) => (
@@ -53,8 +54,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
     return () => clearInterval(id);
   }, []);
 
-  // 말랑이의 발견 — 기분 기록이 쌓인 구간에서 패턴을 찾아보는 기능. 기획이 정해지기 전까지는
-  // 몇 일 기록했는지만 안내하는 임시 팝업으로 대신한다.
+  // 말랑이의 발견 — 기분 기록이 쌓인 달에서 패턴을 찾아 보여주는 월간 리포트.
   const [showDiscovery, setShowDiscovery] = useState(false);
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
@@ -155,19 +155,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         </nav>
       )}
 
-      {/* 말랑이의 발견 — 기획 확정 전까지는 기록 일수만 안내 */}
       {showDiscovery && (
-        <div onClick={() => setShowDiscovery(false)} className="fixed inset-0 z-[70] flex items-center justify-center p-6" style={{ background: 'rgba(28,26,23,0.45)' }}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[340px] bg-white rounded-[24px] px-6 pt-7 pb-6 text-center">
-            <div className="text-base font-extrabold mb-2">말랑이의 발견</div>
-            <p className="text-[13px] text-gray-500 font-semibold leading-relaxed mb-5">
-              {getDiaryHistory().length}/7일 · 기분을 7일 이상 기록하면<br />말랑이의 발견을 만나볼 수 있어요
-            </p>
-            <button onClick={() => setShowDiscovery(false)} className="w-full py-3 rounded-2xl bg-[#1C1A17] text-white text-sm font-extrabold">
-              확인
-            </button>
-          </div>
-        </div>
+        <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} />
       )}
     </>
   );

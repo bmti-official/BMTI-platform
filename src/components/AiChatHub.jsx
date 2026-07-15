@@ -18,15 +18,16 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
   const charName = charData ? CHARACTER_NAMES[charData.id] : undefined;
 
   // 기록 저장 자체 (캘린더 전환 여부는 호출부마다 다르게 처리한다).
-  const saveEntry = (mood) => {
-    saveDiaryEntry(editingDate || todayISO(), mood);
+  // extra: sleep/overwork/exercise/soreness/note — 말랑이의 발견(월간 리포트)이 쓰는 상세 답변.
+  const saveEntry = (mood, extra) => {
+    saveDiaryEntry(editingDate || todayISO(), mood, extra);
     setHasHistory(true);
   };
 
   // DiaryWriteFlow의 onFinish — 저장만 하고, 화면 전환은 3초짜리 완료 팝업이 끝난 뒤
   // DiaryWriteFlow가 부르는 onClose에 맡긴다(여기서 바로 닫아버리면 팝업이 뜰 새도 없이 사라짐).
-  const handleWriteFlowFinish = (mood) => {
-    saveEntry(mood);
+  const handleWriteFlowFinish = (mood, extra) => {
+    saveEntry(mood, extra);
   };
 
   // 온보딩의 onComplete — 온보딩 자체에 완료 화면이 있으니 저장 즉시 캘린더로 전환한다.

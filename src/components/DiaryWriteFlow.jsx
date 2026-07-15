@@ -65,6 +65,18 @@ const CATEGORIES = [
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
 
+// ── 말랑이의 발견(월간 리포트, mallangReportEngine.js)이 기대하는 key로 바꾸는 표 ──
+// 이 화면의 라벨과 엔진의 key가 순서상 1:1로 대응한다.
+const OVEREXERT_LOAD_KEY = { "오래 앉음": "sit", "오래 선 자세": "stand", "많이 걸음": "walk", "무거운 물건 들기": "lift" };
+const EXERCISE_REASON_KEY = { "바빴어요": "busy", "피곤해요": "tired", "몸이 안 좋아요": "sick", "그냥 쉬고 싶었어요": "rest", "깜빡했어요": "forgot" };
+const PART_KEY = { "목": "neck", "어깨": "shoulder", "등": "back", "허리": "waist", "손목": "wrist", "무릎": "knee", "골반": "pelvis", "발목": "ankle" };
+const WHEN_KEY = { "오늘 아침 일어날 때": "morning", "움직일 때": "moving", "오래 앉아있을 때": "sitting", "오래 서있을 때": "standing", "하루 종일": "allday" };
+const EXERCISE_TYPE_KEY = {
+  "헬스·PT": "gym", "요가": "yoga", "필라테스": "pilates", "스트레칭": "stretch", "명상·호흡": "meditation", "수영": "swim",
+  "걷기/산책": "walk", "러닝·조깅": "run", "자전거": "bike", "등산": "hike",
+  "축구": "soccer", "농구": "basketball", "배드민턴": "badminton", "테니스": "tennis", "크로스핏": "crossfit", "댄스": "dance",
+};
+
 // ============================================
 // 메인 컴포넌트
 // ============================================
@@ -112,8 +124,29 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   };
 
   // 기록 저장 → 말랑이 스트레스 해소 팝업 → '다음'을 누르면 캘린더로 복귀
+  // 말랑이의 발견(월간 리포트, mallangReportEngine.js)이 sleep/overwork/exercise/soreness/note를
+  // 읽어야 하는데, 지금까지는 이 화면에서 모은 답변이 mood만 저장되고 나머지는 버려지고 있었다.
+  // 여기서 리포트 엔진이 기대하는 형태로 변환해 onFinish로 같이 넘긴다.
+  const buildEntryExtra = () => {
+    const sleep = SLEEP_OPTS.findIndex(o => o.label === sleepVal);
+    const overwork = overexertVal === "yes"
+      ? { yes: true, loads: [OVEREXERT_LOAD_KEY[overexertPick] || "etc"] }
+      : overexertVal === "no" ? { yes: false, loads: [] } : null;
+    const exercise = exerciseDidIt === "yes"
+      ? { did: true, types: exerciseTypes.map(t => EXERCISE_TYPE_KEY[t] || t).slice(0, 2) }
+      : exerciseDidIt === "no" ? { did: false, reason: EXERCISE_REASON_KEY[exerciseReason] || "forgot" } : null;
+    const soreness = sore.parts.map(p => ({
+      part: PART_KEY[p] || "back",
+      level: sore.level,
+      situation: (sore.whens[p] === "기타" ? "etc" : WHEN_KEY[sore.whens[p]]) || "etc",
+    }));
+    const noteText = oneLine.text.trim();
+    const note = noteText ? { category: CATEGORIES.find(c => c.id === oneLine.cat)?.label, text: noteText } : null;
+    return { sleep: sleep >= 0 ? sleep : null, overwork, exercise, soreness, note };
+  };
+
   const finishFlow = () => {
-    if (onFinish) onFinish(dayMood);
+    if (onFinish) onFinish(dayMood, buildEntryExtra());
     setPhase("celebrate");
   };
 
