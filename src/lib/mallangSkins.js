@@ -33,7 +33,7 @@ export const MALLANG_SKINS = {
 export const MALLANG_SIZE_ADJUST = {
   potato: { base: 1, moods: { 2: 0.74 } },
   ice: { base: 1, moods: {} },
-  bun: { base: 1.25, moods: { 2: 0.6 } }, // 호빵은 전체적으로 더 키우되, 지쳤어요는 이미 꽉 차게 잘려있어 덜 키움
+  bun: { base: 1.25, moods: { 2: 0.81 } }, // 호빵은 전체적으로 더 키우되, 지쳤어요는 이미 꽉 차게 잘려있어 다른 무드(1.25배)와 같은 크기로 보이게 덜 키움
 };
 
 // 힘들었어요(1) → 좋았어요(5)로 갈수록 색감이 살아나도록 스킨 이미지에 씌우는 필터.
