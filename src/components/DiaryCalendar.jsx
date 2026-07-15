@@ -142,10 +142,10 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
       {showMoodPopup && (
         <>
-          {/* 배경은 살짝만 어둡게 — 하단 네비게이션의 캐릭터가 이 말풍선의 주인공이라는 게 보여야 한다 */}
+          {/* 배경은 살짝만 어둡게 — 하단 네비게이션 영역(캐릭터 포함)은 아예 덮지 않아 톤다운되지 않고 그대로 떠 있다 */}
           <div
             onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
-            style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(28,26,23,0.15)" }}
+            style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 90, zIndex: 55, background: "rgba(28,26,23,0.15)" }}
           />
           {/* 하단 네비게이션의 캐릭터를 기준으로 그 위에 말풍선이 뜬다 */}
           <div style={{ position: "fixed", left: "50%", bottom: 92, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
