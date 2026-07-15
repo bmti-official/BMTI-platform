@@ -93,6 +93,14 @@ body.chat-mode-fixed {
   95%, 97% { transform: scaleY(0.1); }
 }
 
+/* 스킨(감자/얼음/호빵) 말랑이는 눈이 사진 안에 그려져 있어 SVG처럼 눈만 따로 움직일 수
+   없다. 대신 눈 위치에 피부색 조각을 얹어뒀다가 같은 타이밍에 잠깐 덮었다 걷어내면
+   기본 말랑이의 깜박임과 비슷하게 눈을 감았다 뜨는 것처럼 보인다. */
+@keyframes mallang-blink-cover {
+  0%, 93%, 100% { transform: scaleY(0); opacity: 0; }
+  95%, 97% { transform: scaleY(1); opacity: 1; }
+}
+
 /* 말랑이가 표정을 지을 때(=몸통 svg가 새로 마운트될 때) 눌렸다가 펴지는 말랑말랑한
    느낌의 바운스. 아래쪽 기준으로 눌렸다가(scaleY 축소) 튕기듯 펴진다(overshoot). */
 .mallang-squish {

@@ -17,7 +17,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
             {charImage ? <img src={charImage} alt="me" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
           </div>
           <div style={{ maxWidth: 210, background: "#fff", border: "1px solid #EDE9E2", borderRadius: "16px 16px 16px 4px", padding: "12px 15px", fontSize: 13.5, lineHeight: 1.55, fontWeight: 700, color: "#1C1A17" }}>
-            말랑이를 꾹 눌러서<br />스트레스를 풀어보세요 👇
+            말랑이를 눌러서<br />스트레스를 풀어보세요
           </div>
         </div>
 

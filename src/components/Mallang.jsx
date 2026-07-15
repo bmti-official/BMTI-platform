@@ -3,7 +3,7 @@
 // localStorage에 저장된 현재 스킨을 읽어 SVG 대신 스킨 이미지를 대신 그려준다.
 import { useRef, useState, useEffect } from "react";
 import { MOODS } from "../data";
-import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT, MALLANG_SIZE_ADJUST, MALLANG_MOOD_FILTER } from "../lib/mallangSkins";
+import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT, MALLANG_SIZE_ADJUST, MALLANG_MOOD_FILTER, MALLANG_EYE_RECT } from "../lib/mallangSkins";
 
 export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
   const [skin, setSkin] = useState(getMallangSkin);
@@ -27,15 +27,34 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
     const adjust = MALLANG_SIZE_ADJUST[effectiveSkin];
     const scale = adjust ? (adjust.moods?.[v] ?? adjust.base ?? 1) : 1;
     const filter = MALLANG_MOOD_FILTER[v] || "none";
+    // 눈 위치가 원본 이미지 캔버스마다 조금씩 달라, 캔버스 비율 그대로인 안쪽 박스를 만들고
+    // 그 위에 % 좌표로 눈 덮개를 얹는다(object-fit:contain으로는 이 좌표가 어긋난다).
+    const eyeMap = MALLANG_EYE_RECT[effectiveSkin];
+    const eye = eyeMap?.[v];
+    const isWide = eye ? eye.cw >= eye.ch : true;
+    const innerW = eye && !isWide ? `${(eye.cw / eye.ch) * 100}%` : "100%";
+    const innerH = eye && isWide ? `${(eye.ch / eye.cw) * 100}%` : "100%";
     return (
-      <span style={{ display: "block", width: size, height: size, margin: "0 auto", transform: `scale(${scale})`, transformOrigin: "50% 100%" }}>
-        <img
-          key={`${effectiveSkin}-${v}-${tapKey}`}
-          src={src}
-          alt=""
-          className="mallang-squish"
-          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", filter, transformOrigin: "50% 100%" }}
-        />
+      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: size, height: size, margin: "0 auto", transform: `scale(${scale})`, transformOrigin: "50% 100%" }}>
+        <span style={{ position: "relative", width: innerW, height: innerH, filter }}>
+          <img
+            key={`${effectiveSkin}-${v}-${tapKey}`}
+            src={src}
+            alt=""
+            className="mallang-squish"
+            style={{ width: "100%", height: "100%", display: "block", transformOrigin: "50% 100%" }}
+          />
+          {eye && (
+            <span
+              style={{
+                position: "absolute", left: `${eye.x * 100}%`, top: `${eye.y * 100}%`,
+                width: `${eye.w * 100}%`, height: `${eye.h * 100}%`,
+                background: eyeMap._color, borderRadius: "45%", transformOrigin: "50% 50%",
+                animation: "mallang-blink-cover 5s ease-in-out infinite", animationDelay: blinkDelay,
+              }}
+            />
+          )}
+        </span>
       </span>
     );
   }

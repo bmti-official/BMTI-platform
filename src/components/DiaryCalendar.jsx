@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Mallang } from "./Mallang";
-import { MOODS } from "../data";
+import MallangStressPopup from "./MallangStressPopup";
+import { MOODS, CHARACTERS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   isDayWritable,
@@ -26,6 +27,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   const [showSkinPicker, setShowSkinPicker] = useState(false);
   const currentSkin = getMallangSkin();
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
+  const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
   const isM = axisCode.includes("M");
   // Z유형은 담백하게, M유형은 발랄하게 — 유형별로 다르게 물어보고 다르게 반응해준다.
   const moodQuestionTitle = isM ? "오늘 기분, 어떤 말랑이예요?" : "오늘의 기분을 선택하세요";
@@ -42,11 +44,17 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   // 오늘 기분 팝업 — 오늘 기록이 없으면 탭에 들어오자마자 자동으로 뜬다.
   const [showMoodPopup, setShowMoodPopup] = useState(() => !getEntryForDate(todayISO()));
   const [poppedMood, setPoppedMood] = useState(null);
+  // "오늘은 여기까지 할게요"로 짧게 끝내도, 조금 더 기록할 때와 마찬가지로
+  // 스트레스 해소 팝업(말랑이 눌러보기)을 한 번 보여준다.
+  const [showStressPopup, setShowStressPopup] = useState(false);
+  const [stressMood, setStressMood] = useState(null);
 
   const quickSaveMood = () => {
     saveDiaryEntry(todayStr, poppedMood);
+    setStressMood(poppedMood);
     setShowMoodPopup(false);
     setPoppedMood(null);
+    setShowStressPopup(true);
   };
   const continueToFullForm = () => {
     setShowMoodPopup(false);
@@ -234,6 +242,10 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
           </div>
           <style>{`@keyframes diaryPopupUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
         </>
+      )}
+
+      {showStressPopup && (
+        <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => setShowStressPopup(false)} />
       )}
     </div>
   );
