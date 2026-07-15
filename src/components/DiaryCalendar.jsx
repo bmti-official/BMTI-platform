@@ -148,8 +148,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
             onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
             style={{
               position: "fixed", inset: 0, zIndex: 55, background: "rgba(28,26,23,0.4)",
-              WebkitMaskImage: "radial-gradient(circle 34px at 50% calc(100% - 58px), transparent 98%, black 100%)",
-              maskImage: "radial-gradient(circle 34px at 50% calc(100% - 58px), transparent 98%, black 100%)",
+              WebkitMaskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
+              maskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
             }}
           />
           {/* 하단 네비게이션의 캐릭터를 기준으로 그 위에 말풍선이 뜬다 (꼬리가 캐릭터와 겹치지 않게 여유를 둔다) */}
