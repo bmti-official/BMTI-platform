@@ -24,7 +24,7 @@ export const MALLANG_SKINS = {
   default: { label: "기본 말랑이", images: null },
   potato: { label: "감자 말랑이", images: { 1: potato1, 2: potato2, 3: potato3, 4: potato4, 5: potato5 } },
   ice: { label: "얼음 말랑이", images: { 1: ice1, 2: ice2, 3: ice3, 4: ice4, 5: ice5 } },
-  bun: { label: "호빵 말랑이", images: { 1: bun1, 2: bun2, 3: bun3, 4: bun4, 5: bun5 } },
+  bun: { label: "호빵 말랑이", images: { 1: bun2, 2: bun1, 3: bun3, 4: bun4, 5: bun5 } }, // 힘들었어요/지쳤어요 캐릭터를 서로 바꿔서 배정
 };
 
 // 스킨별로 전체적인 표시 크기를 보정한다(호빵은 원본이 작게 잡혀있어 더 키움).
