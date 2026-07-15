@@ -142,13 +142,18 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
       {showMoodPopup && (
         <>
-          {/* 배경은 살짝만 어둡게 — 하단 네비게이션 영역(캐릭터 포함)은 아예 덮지 않아 톤다운되지 않고 그대로 떠 있다 */}
+          {/* 배경은 하단 네비 바까지 포함해서 전부 톤다운하되, 캐릭터가 떠 있는 자리만 원형으로
+              뚫어서(mask) 그 캐릭터만 톤다운되지 않고 그대로 보이게 한다. */}
           <div
             onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
-            style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 90, zIndex: 55, background: "rgba(28,26,23,0.15)" }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 55, background: "rgba(28,26,23,0.4)",
+              WebkitMaskImage: "radial-gradient(circle 34px at 50% calc(100% - 58px), transparent 98%, black 100%)",
+              maskImage: "radial-gradient(circle 34px at 50% calc(100% - 58px), transparent 98%, black 100%)",
+            }}
           />
-          {/* 하단 네비게이션의 캐릭터를 기준으로 그 위에 말풍선이 뜬다 */}
-          <div style={{ position: "fixed", left: "50%", bottom: 92, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
+          {/* 하단 네비게이션의 캐릭터를 기준으로 그 위에 말풍선이 뜬다 (꼬리가 캐릭터와 겹치지 않게 여유를 둔다) */}
+          <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
             <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button
                 onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
