@@ -34,7 +34,7 @@ export const MALLANG_SKINS = {
 export const MALLANG_SIZE_ADJUST = {
   potato: { base: 1 },
   ice: { base: 1.25 },
-  bun: { base: 1.25 },
+  bun: { base: 1.35 },
 };
 
 // 무드별 눈 위치(캔버스 대비 비율) — 기본 말랑이처럼 감았다 뜨는 깜빡임 효과를 위해
@@ -82,7 +82,10 @@ export const MALLANG_MOOD_FILTER_OVERRIDE = {
   bun: {
     1: "grayscale(0.4) brightness(0.62) saturate(0.7)", // 힘들었어요 — 더 어둡게
     2: "grayscale(0.85) brightness(1.08) saturate(0.25)", // 지쳤어요 — 연회색으로
-    4: "brightness(1.16) saturate(1.14)", // 괜찮았어요 — 조금 더 밝게
+    // 괜찮았어요/좋았어요는 원본이 흰 배경에 묻히는 크림색이라, 밝기를 더 올리는 대신
+    // 채도/대비를 끌어올려 살구빛 톤이 도드라지게 한다(밝게만 하면 흰 배경에 더 묻힘).
+    4: "saturate(1.65) brightness(0.94) contrast(1.12)",
+    5: "saturate(1.55) brightness(0.98) contrast(1.1) drop-shadow(0 0 5px rgba(255,196,110,0.5))",
   },
 };
 
