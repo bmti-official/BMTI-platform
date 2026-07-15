@@ -16,7 +16,16 @@ const PlayIcon = ({ className }) => (
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
-import { todayISO } from '../lib/diaryHistory';
+import { todayISO, getDiaryHistory } from '../lib/diaryHistory';
+
+// 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양
+const ChartIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <rect x="3" y="10" width="4.5" height="10" rx="2.25" fill="currentColor" />
+    <rect x="9.75" y="4" width="4.5" height="16" rx="2.25" fill="currentColor" />
+    <rect x="16.5" y="8" width="4.5" height="12" rx="2.25" fill="currentColor" />
+  </svg>
+);
 
 const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, bmtiCode }) => {
 
@@ -43,6 +52,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
     }, 1400);
     return () => clearInterval(id);
   }, []);
+
+  // 말랑이의 발견 — 기분 기록이 쌓인 구간에서 패턴을 찾아보는 기능. 기획이 정해지기 전까지는
+  // 몇 일 기록했는지만 안내하는 임시 팝업으로 대신한다.
+  const [showDiscovery, setShowDiscovery] = useState(false);
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -100,13 +113,19 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {currentView !== 'quiz' && (
         <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
           <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
-            <div className="max-w-7xl mx-auto grid grid-cols-3 items-center px-8 md:px-16" style={{ height: 66 }}>
+            <div className="max-w-7xl mx-auto grid grid-cols-4 items-center px-6 md:px-14" style={{ height: 66 }}>
               {/* 말랑 다이어리 */}
               <button onClick={() => setView('aichat')} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
                 <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
                   <Mallang v={diaryMoodTick} size={26} />
                 </div>
                 <span className={`text-[10px] font-bold whitespace-nowrap ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>말랑 다이어리</span>
+              </button>
+
+              {/* 말랑이의 발견 */}
+              <button onClick={() => setShowDiscovery(true)} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+                <ChartIcon className="w-6 h-6 text-gray-300" />
+                <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑이의 발견</span>
               </button>
 
               {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
@@ -134,6 +153,21 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             </button>
           </div>
         </nav>
+      )}
+
+      {/* 말랑이의 발견 — 기획 확정 전까지는 기록 일수만 안내 */}
+      {showDiscovery && (
+        <div onClick={() => setShowDiscovery(false)} className="fixed inset-0 z-[70] flex items-center justify-center p-6" style={{ background: 'rgba(28,26,23,0.45)' }}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[340px] bg-white rounded-[24px] px-6 pt-7 pb-6 text-center">
+            <div className="text-base font-extrabold mb-2">말랑이의 발견</div>
+            <p className="text-[13px] text-gray-500 font-semibold leading-relaxed mb-5">
+              {getDiaryHistory().length}/7일 · 기분을 7일 이상 기록하면<br />말랑이의 발견을 만나볼 수 있어요
+            </p>
+            <button onClick={() => setShowDiscovery(false)} className="w-full py-3 rounded-2xl bg-[#1C1A17] text-white text-sm font-extrabold">
+              확인
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
