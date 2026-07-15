@@ -25,6 +25,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSkinPicker, setShowSkinPicker] = useState(false);
+  const [showDiscovery, setShowDiscovery] = useState(false);
   const currentSkin = getMallangSkin();
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
@@ -83,6 +84,20 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
             <span style={{ fontSize: 12, color: C.sub, transform: "translateY(1px)" }}>▼</span>
           </button>
           <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>총 {entryCountThisMonth}일 기록했어요</p>
+
+          {/* 말랑이의 발견 — 기분 기록이 7일 이상 쌓인 구간을 골라 패턴을 찾아보는 기능 */}
+          <button
+            onClick={() => setShowDiscovery(true)}
+            aria-label="말랑이의 발견"
+            style={{ position: "absolute", left: 0, top: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="10" width="4.5" height="10" rx="2.25" fill="#C9C4B8" />
+              <rect x="9.75" y="4" width="4.5" height="16" rx="2.25" fill="#C9C4B8" />
+              <rect x="16.5" y="8" width="4.5" height="12" rx="2.25" fill="#C9C4B8" />
+            </svg>
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>말랑이의 발견</span>
+          </button>
 
           {/* 말랑이 스킨(외형) 선택 버튼 — 지금 고른 스킨의 표정을 그대로 보여준다 */}
           <button
@@ -246,6 +261,21 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
       {showStressPopup && (
         <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => setShowStressPopup(false)} />
+      )}
+
+      {/* 말랑이의 발견 — 우선 기록 일수만 안내하는 임시 버전. 날짜 범위 선택 UI는 추후 추가 예정 */}
+      {showDiscovery && (
+        <div onClick={() => setShowDiscovery(false)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: "#fff", borderRadius: 24, padding: "26px 22px 22px", textAlign: "center" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>말랑이의 발견</div>
+            <p style={{ fontSize: 13, color: C.sub, fontWeight: 600, lineHeight: 1.5, margin: "0 0 20px" }}>
+              {history.length}/7일 · 기분을 7일 이상 기록하면<br />말랑이의 발견을 만나볼 수 있어요
+            </p>
+            <button onClick={() => setShowDiscovery(false)} style={{ width: "100%", padding: 13, borderRadius: 14, border: "none", background: "#1C1A17", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+              확인
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

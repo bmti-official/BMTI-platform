@@ -205,7 +205,11 @@ function App() {
         }
       }
       
-      const fullUserData = { ...userData, id: data.id, bmti_type: data.bmti_type, bmti_answers: data.bmti_answers, appNotification: userData.appNotification };
+      // data는 upsert 후 select().single()로 받아온 DB의 전체 행 — 기존 회원이 다시 로그인하는
+      // 경우 exercise_frequency/exercise_goals/common_posture 등 예전에 저장해둔 값이 여기 이미
+      // 들어있다. userData(가입 폼 입력값)만으로 fullUserData를 만들면 이 필드들이 통째로 빠지므로
+      // data를 먼저 깔고 그 위에 방금 입력한 값을 덮어쓴다.
+      const fullUserData = { ...data, ...userData, id: data.id, bmti_type: data.bmti_type, bmti_answers: data.bmti_answers, appNotification: userData.appNotification };
       setUserProfile(fullUserData);
       setShowSignup(false);
       setIsLoggedIn(true);
