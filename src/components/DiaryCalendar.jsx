@@ -68,21 +68,21 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
   // 미리보기 팝업에 보여줄 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
   const buildEntrySummary = (entry) => {
-    const lines = [];
-    if (entry.sleep != null) lines.push(SLEEP_LABELS[entry.sleep]);
-    if (entry.overwork?.yes) lines.push("평소보다 무리했어요");
+    const items = [];
+    if (entry.sleep != null) items.push({ icon: "😴", text: SLEEP_LABELS[entry.sleep] });
+    if (entry.overwork?.yes) items.push({ icon: "⚠️", text: "평소보다 무리했어요" });
     if (entry.exercise?.did === true) {
       const types = (entry.exercise.types || []).map(t => KEY_TO_EXERCISE_TYPE_LABEL[t] || t).join(", ");
-      lines.push(`운동: ${types}`);
+      items.push({ icon: "🏃", text: `운동: ${types}` });
     } else if (entry.exercise?.did === false) {
-      lines.push(`운동 안 함: ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}`);
+      items.push({ icon: "🛌", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
     }
     if (entry.soreness?.length) {
       const parts = entry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).join(", ");
-      lines.push(`뻐근함: ${parts}`);
+      items.push({ icon: "💢", text: `뻐근함: ${parts}` });
     }
-    if (entry.note?.text) lines.push(`"${entry.note.text}"`);
-    return lines;
+    if (entry.note?.text) items.push({ icon: "📝", text: entry.note.text });
+    return items;
   };
 
   const firstWeekday = new Date(year, month, 1).getDay();
@@ -277,41 +277,57 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
         <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => setShowStressPopup(false)} />
       )}
 
-      {previewDay && (
-        <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: "#fff", borderRadius: 24, padding: "26px 22px 22px", textAlign: "center" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-              <Mallang v={previewDay.entry.mood} size={56} />
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>
-              {previewDay.dateStr.slice(5, 7)}월 {previewDay.dateStr.slice(8, 10)}일에 기록한 내용이에요
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, textAlign: "left" }}>
-              {buildEntrySummary(previewDay.entry).map((line, i) => (
-                <p key={i} style={{ fontSize: 13, fontWeight: 600, color: C.ink, margin: 0, lineHeight: 1.5 }}>{line}</p>
-              ))}
-              {buildEntrySummary(previewDay.entry).length === 0 && (
-                <p style={{ fontSize: 13, fontWeight: 600, color: C.sub, margin: 0 }}>기분만 짧게 남겨둔 날이에요.</p>
-              )}
-            </div>
-            <div style={{ fontSize: 13, color: C.sub, fontWeight: 700, marginBottom: 14 }}>이 기록을 수정하시겠어요?</div>
-            <div style={{ display: "flex", gap: 8 }}>
+      {previewDay && (() => {
+        const items = buildEntrySummary(previewDay.entry);
+        const moodInfo = MOODS.find(m => m.v === previewDay.entry.mood);
+        return (
+          <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: "#fff", borderRadius: 24, padding: "18px 20px 22px", position: "relative" }}>
               <button
                 onClick={() => setPreviewDay(null)}
-                style={{ flex: 1, padding: 14, borderRadius: 15, border: "none", background: "#EFEDE9", color: "#6B6660", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                aria-label="닫기"
+                style={{ position: "absolute", top: 12, right: 14, border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer", padding: 4 }}
               >
-                괜찮아요
+                ✕
               </button>
+
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, marginBottom: 18 }}>
+                <Mallang v={previewDay.entry.mood} size={60} />
+                <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, marginTop: 10 }}>
+                  {previewDay.dateStr.slice(5, 7)}월 {previewDay.dateStr.slice(8, 10)}일
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{moodInfo?.label}</div>
+              </div>
+
+              {items.length > 0 ? (
+                <div style={{ background: "#FAF9F6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
+                  {items.map((it, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.line}` : "none" }}>
+                      <span style={{ fontSize: 14, lineHeight: 1.4 }}>{it.icon}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ textAlign: "center", fontSize: 13, color: C.sub, fontWeight: 600, marginBottom: 22 }}>기분만 짧게 남겨둔 날이에요.</p>
+              )}
+
               <button
                 onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
-                style={{ flex: 1, padding: 14, borderRadius: 15, border: "none", background: "#1C1A17", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: "#1C1A17", color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6 }}
               >
-                수정할래요
+                이 기록 수정할래요
+              </button>
+              <button
+                onClick={() => setPreviewDay(null)}
+                style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+              >
+                괜찮아요, 그냥 볼게요
               </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
