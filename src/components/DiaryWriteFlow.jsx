@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
@@ -18,6 +18,7 @@ const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
   pink: "#FF6B9D", pinkSoft: "#FFEDF3", sage: "#5F8A76", sageSoft: "#E9F1EC",
   tileOff: "#F3F1EC", tileOffText: "#B7B2A9",
+  ocherSoft: "#F3E7D2", blueGraySoft: "#E3EAF0",
 };
 
 // ── 평소보다 무리한 이유 ──
@@ -68,6 +69,29 @@ const CATEGORIES = [
   { id: "daily", label: "일상", on: "#B8912A", bg: "#FDF6D3", border: "#F2E3A0", ph: "예: 🛍️ 퇴근하고 친구랑 만나서 저녁 먹고 카페 갔다." },
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
+
+// 블럭 켜고 끄기 — 메인 화면에서 직접 길게 눌러 순서를 바꾸고 숨기는 방식(별도 설정 화면 없음).
+// "기분" 블럭은 항상 맨 위 고정, 나머지 5개만 순서 변경·숨기기 대상이다.
+const REORDERABLE_LABEL = {
+  sitting: "오늘 평소보다 무리했나요",
+  sleep: "얼마나 푹 잤나요",
+  exercise: "오늘 운동 했나요",
+  oneLine: "한 줄 일기",
+  sore: "뻐근한 부위",
+};
+
+// 길게 누르면(500ms) onFire를 호출하고, 그 전에 손을 떼면 원래 탭 동작(아코디언 펼치기 등)이
+// 그대로 진행되게 한다. 편집 모드에 들어간 경우에만 onClickCapture로 원래 클릭을 막는다.
+function makeLongPress(onFire) {
+  let timer = null;
+  let fired = false;
+  return {
+    onPointerDown: () => { fired = false; timer = setTimeout(() => { fired = true; onFire(); }, 500); },
+    onPointerUp: () => { if (timer) clearTimeout(timer); },
+    onPointerLeave: () => { if (timer) clearTimeout(timer); },
+    onClickCapture: (e) => { if (fired) { e.preventDefault(); e.stopPropagation(); } },
+  };
+}
 
 // ============================================
 // 메인 컴포넌트
@@ -121,7 +145,57 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   });
 
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
-  const [showSettings, setShowSettings] = useState(false);
+
+  // 블럭 순서·숨김·편집 모드
+  const [blockOrder, setBlockOrder] = useState(["sitting", "sleep", "exercise", "oneLine", "sore"]);
+  const [hiddenBlocks, setHiddenBlocks] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [draggingId, setDraggingId] = useState(null);
+  const blocksContainerRef = useRef(null);
+  const orderRef = useRef(blockOrder);
+  orderRef.current = blockOrder;
+  const dragIdRef = useRef(null);
+
+  const handleDragMove = (e) => {
+    const id = dragIdRef.current;
+    if (!id || !blocksContainerRef.current) return;
+    const y = e.clientY;
+    const slots = Array.from(blocksContainerRef.current.querySelectorAll("[data-block-id]"));
+    const current = orderRef.current;
+    const draggedIdx = current.indexOf(id);
+    for (const slot of slots) {
+      const otherId = slot.getAttribute("data-block-id");
+      if (otherId === id) continue;
+      const rect = slot.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const otherIdx = current.indexOf(otherId);
+      const crossedDown = y > mid && draggedIdx < otherIdx;
+      const crossedUp = y < mid && draggedIdx > otherIdx;
+      if (crossedDown || crossedUp) {
+        const next = [...current];
+        next.splice(draggedIdx, 1);
+        const insertAt = next.indexOf(otherId) + (crossedDown ? 1 : 0);
+        next.splice(insertAt, 0, id);
+        setBlockOrder(next);
+        break;
+      }
+    }
+  };
+  const handleDragEnd = () => {
+    dragIdRef.current = null;
+    setDraggingId(null);
+    window.removeEventListener("pointermove", handleDragMove);
+    window.removeEventListener("pointerup", handleDragEnd);
+  };
+  const handleDragStart = (id) => (e) => {
+    e.preventDefault();
+    dragIdRef.current = id;
+    setDraggingId(id);
+    window.addEventListener("pointermove", handleDragMove);
+    window.addEventListener("pointerup", handleDragEnd);
+  };
+  const toggleHideBlock = (id) => setHiddenBlocks(hs => hs.includes(id) ? hs.filter(x => x !== id) : [...hs, id]);
+  const enterEditMode = () => setEditMode(true);
 
   // 아코디언 (true = 펼쳐진 상태) — 이미 답이 있는 항목은 접어서 보여준다.
   const [expanded, setExpanded] = useState({
@@ -251,6 +325,193 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // ── 말랑이 기분 ──
   const moodData = DAY_MOODS.find(m => m.v === dayMood);
 
+  // 순서 변경·숨기기 대상 5개 블럭의 실제 내용 — 기존 아코디언/카드 내용 그대로,
+  // id로 매핑해서 blockOrder 순서대로 그릴 수 있게 한다.
+  const renderBlockContent = (id) => {
+    if (id === "sitting") {
+      return (
+        <AccordionCard question="오늘 평소보다 무리했나요?" answerText={overexertAnswerText}
+          expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={overexertComplete}>
+          {(overexertVal === null || overexertVal === "no") && (
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
+              <EmojiTile icon="restNo" label="아니요!" on={overexertVal === "no"} onClick={pickOverexertNo} tint={C.ocherSoft} />
+              <EmojiTile icon="flex" label="맞아요!" on={false} onClick={() => setOverexertVal("yes")} tint={C.ocherSoft} />
+            </div>
+          )}
+
+          {overexertVal === "yes" && (
+            <>
+              <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>어떻게 무리했어요?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
+                {OVEREXERT_REASONS.map(r => (
+                  <EmojiTile key={r.label} icon={r.icon} label={r.label} on={overexertPick === r.label} onClick={() => pickOverexertReason(r.label)} tint={C.ocherSoft} />
+                ))}
+                <EmojiTile icon="editPencil" label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} tint={C.ocherSoft} />
+              </div>
+              {overexertPick === "other" && (
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <input value={overexertOther} onChange={e => setOverexertOther(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && confirmOverexertOther()}
+                    placeholder="짧게 적어주세요 (예: 무거운 짐 옮기기)"
+                    style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
+                  <button onClick={confirmOverexertOther} disabled={!overexertOther.trim()}
+                    style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: overexertOther.trim() ? 1 : 0.4 }}>확인</button>
+                </div>
+              )}
+              <button onClick={() => { setOverexertVal(null); setOverexertPick(null); setOverexertOther(""); }} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
+            </>
+          )}
+        </AccordionCard>
+      );
+    }
+    if (id === "sleep") {
+      return (
+        <AccordionCard question="얼마나 푹 잤나요?" answerIcon={sleepOpt?.icon} answerText={sleepVal}
+          expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
+          <div style={{ display: "flex", gap: 6 }}>
+            {SLEEP_OPTS.map(opt => (
+              <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} tint={C.blueGraySoft} />
+            ))}
+          </div>
+        </AccordionCard>
+      );
+    }
+    if (id === "exercise") {
+      return (
+        <AccordionCard question="오늘 운동 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
+          expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
+          {exerciseDidIt === null && (
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
+              <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} tint={C.sageSoft} />
+              <EmojiTile icon="flex" label="했어요!" on={false} onClick={() => setExerciseDidIt("yes")} tint={C.sageSoft} />
+            </div>
+          )}
+
+          {exerciseDidIt === "no" && (
+            <>
+              <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>오늘은 어떤 이유였어요?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
+                {NO_EXERCISE_REASONS.map(r => (
+                  <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} iconSize={36} tint={C.sageSoft} />
+                ))}
+              </div>
+              <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
+            </>
+          )}
+
+          {exerciseDidIt === "yes" && (
+            <>
+              <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 16 }}>제일 많이 한 운동 최대 2가지를 골라주세요</div>
+              {EXERCISE_CATS.map(cat => (
+                <div key={cat.name} style={{ marginBottom: 18 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10 }}>{cat.name}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
+                    {cat.items.map(type => {
+                      const on = exerciseTypes.includes(type);
+                      const disabled = !on && exerciseTypes.length >= 2;
+                      return <Tile key={type} content={type} on={on} onClick={() => toggleExerciseType(type)} disabled={disabled} size={62} tint={C.sageSoft} />;
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* 기타 — 조그만 하이퍼링크 느낌 버튼, 누르면 입력창이 아코디언으로 펼쳐짐 */}
+              <button onClick={() => setShowCustomExercise(v => !v)} style={{ border: "none", background: "transparent", color: C.sage, fontSize: 11.5, fontWeight: 700, textDecoration: "underline", cursor: "pointer", padding: "2px 0", display: "block", marginBottom: showCustomExercise ? 10 : 4 }}>
+                기타 운동 직접 입력 {showCustomExercise ? "▾" : "▸"}
+              </button>
+              {showCustomExercise && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                  <input value={customExercise} onChange={e => setCustomExercise(e.target.value)} placeholder="운동 이름 입력"
+                    onKeyDown={e => e.key === "Enter" && addCustomExercise()}
+                    style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
+                  <button onClick={addCustomExercise} disabled={exerciseTypes.length >= 2}
+                    style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: exerciseTypes.length >= 2 ? 0.4 : 1 }}>추가</button>
+                </div>
+              )}
+
+              {/* 선택된 종목 표시 */}
+              {exerciseTypes.length > 0 && (
+                <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                  {exerciseTypes.map(t => (
+                    <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 14, background: C.pink, color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                      {t} <button onClick={() => toggleExerciseType(t)} style={{ border: "none", background: "transparent", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 4, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
+            </>
+          )}
+        </AccordionCard>
+      );
+    }
+    if (id === "oneLine") {
+      return (
+        <Card title="한 줄 일기">
+          <div style={{ display: "flex", gap: 8 }}>
+            {CATEGORIES.map(c => {
+              const on = oneLine.cat === c.id;
+              return (
+                <button key={c.id} onClick={() => setOneLine(s => ({ ...s, cat: c.id }))} style={{ padding: "8px 14px", borderRadius: 16, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  border: on ? `2px solid ${c.border}` : "2px solid transparent", background: on ? c.bg : "#F2F2F4", color: on ? c.on : C.sub }}>{c.label}</button>
+              );
+            })}
+          </div>
+          <textarea value={oneLine.text} onChange={e => setOneLine(s => ({ ...s, text: e.target.value }))} placeholder={CATEGORIES.find(c => c.id === oneLine.cat)?.ph}
+            style={{ width: "100%", marginTop: 12, minHeight: 80, borderRadius: 14, border: `1px solid ${C.line}`, background: "#F9F9F9", padding: 14, fontSize: 14, resize: "none", outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+        </Card>
+      );
+    }
+    if (id === "sore") {
+      return (
+        <Card title="뻐근한 부위">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
+            {PARTS.map(p => {
+              const on = sore.parts.includes(p);
+              const disabled = !on && sore.parts.length >= 2;
+              return (
+                <Tile key={p} content={p} on={on} disabled={disabled} tint={C.pinkSoft} onClick={() => setSore(s => ({
+                  ...s,
+                  parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]),
+                }))} />
+              );
+            })}
+          </div>
+          {sore.parts.length > 0 && <>
+            <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
+            <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.pink }} />
+
+            {sore.parts.map(p => (
+              <div key={p}>
+                <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{p}{hasBatchim(p) ? "은" : "는"} 언제 그러셨어요?</div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  {WHEN_OPTS.map(w => (
+                    <Chip key={w} label={w} on={sore.whens[p] === w} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: w } }))} />
+                  ))}
+                  <Chip label="기타" on={sore.whens[p] === "기타"} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: "기타" } }))} />
+                </div>
+                {sore.whens[p] === "기타" && (
+                  <input value={sore.whenOthers[p] || ""} onChange={e => setSore(s => ({ ...s, whenOthers: { ...s.whenOthers, [p]: e.target.value } }))}
+                    placeholder="예: 계단 오를 때"
+                    style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+                )}
+              </div>
+            ))}
+
+            {soreHeadline && (
+              <div style={{ marginTop: 14, padding: "12px 14px", background: C.sageSoft, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
+                "{soreHeadline}"
+              </div>
+            )}
+          </>}
+        </Card>
+      );
+    }
+    return null;
+  };
+
+  const visibleOrder = editMode ? blockOrder : blockOrder.filter(id => !hiddenBlocks.includes(id));
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: C.bg, display: "flex", justifyContent: "center", fontFamily: F, color: C.ink }}>
       <div style={{ width: "100%", maxWidth: 420, height: "100%", background: C.bg, position: "relative", display: "flex", flexDirection: "column" }}>
@@ -259,11 +520,18 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {phase === "form" && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
           <button onClick={goBack} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
-          <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 16, fontWeight: 800, color: C.ink }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
           </span>
-          <button onClick={() => setShowSettings(true)} style={{ position: "absolute", right: 10, width: 38, height: 38, border: "none", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <DiaryIcon name="gear" size={22} />
+          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? C.sage : C.sub }}>
+            {editMode ? (
+              <span style={{ fontSize: 13, fontWeight: 800 }}>완료</span>
+            ) : (
+              <>
+                <DiaryIcon name="gear" size={19} />
+                <span style={{ fontSize: 11.5, fontWeight: 700 }}>편집</span>
+              </>
+            )}
           </button>
         </div>
         )}
@@ -272,12 +540,15 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         <div className="thin-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "14px 14px 100px", display: "flex", flexDirection: "column", gap: 14 }}>
           {phase === "form" && (
             <>
-              {/* ━━━ 1. 오늘의 말랑이 기분 ━━━ */}
-              <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
+              {/* ━━━ 오늘의 말랑이 기분 — 항상 맨 위 고정, 순서변경/숨기기 대상 아님 ━━━ */}
+              <div
+                style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}
+                {...(editMode ? {} : makeLongPress(enterEditMode))}
+              >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘의 말랑이 기분은</h2>
                   {dayMood && !expanded.mood && moodData && (
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: moodData.circleBg || moodData.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "30%", background: moodData.circleBg || moodData.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Mallang v={moodData.v} size={34} />
                     </div>
                   )}
@@ -285,15 +556,19 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 {/* 펼쳐진 상태 */}
                 <div style={{ overflow: "hidden", maxHeight: expanded.mood ? 200 : 0, transition: "max-height 0.35s ease", marginTop: expanded.mood ? 8 : 0 }}>
                   <p style={{ fontSize: 12, color: C.sub, margin: "0 0 8px" }}>지금 마음에 가장 가까운 표정을 골라주세요.</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6 }}>
                     {DAY_MOODS.map(m => {
                       const on = dayMood === m.v;
                       const circleBg = m.circleBg || m.fill;
+                      // 고른 표정만 커지고 나머지는 작아져서, 균일한 크기의 원 5개가 늘어선
+                      // 모양이 아니라 "고른 걸 도드라지게" 보여주는 위계가 생기게 한다.
+                      const badgeSize = on ? 62 : 44;
+                      const mallangSize = on ? 44 : 30;
                       return (
                         <button key={m.v} onClick={() => { setDayMood(m.v); setTimeout(() => setExpanded(e => ({ ...e, mood: false })), 300); }}
                           style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "6px 0", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer" }}>
-                          <div style={{ width: 54, height: 54, borderRadius: "50%", background: on ? circleBg : C.tileOff, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: on ? `0 4px 14px ${circleBg}99` : "none", transition: "all .15s" }}>
-                            <Mallang v={m.v} size={38} />
+                          <div style={{ width: badgeSize, height: badgeSize, borderRadius: "30%", background: on ? circleBg : C.tileOff, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: on ? `0 6px 16px ${circleBg}99` : "none", transition: "all .2s cubic-bezier(.34,1.4,.64,1)" }}>
+                            <Mallang v={m.v} size={mallangSize} />
                           </div>
                           <span style={{ fontSize: 10, color: on ? C.ink : C.sub, fontWeight: 700 }}>{m.label}</span>
                         </button>
@@ -309,174 +584,36 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 )}
               </div>
 
-              {/* ━━━ 2. 평소보다 무리했나요 (아코디언) ━━━ */}
-              <AccordionCard question="오늘 평소보다 무리했나요?" answerText={overexertAnswerText}
-                expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={overexertComplete}>
-                {(overexertVal === null || overexertVal === "no") && (
-                  <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
-                    <EmojiTile icon="restNo" label="아니요!" on={overexertVal === "no"} onClick={pickOverexertNo} />
-                    <EmojiTile icon="flex" label="맞아요!" on={false} onClick={() => setOverexertVal("yes")} />
-                  </div>
-                )}
-
-                {overexertVal === "yes" && (
-                  <>
-                    <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>어떻게 무리했어요?</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
-                      {OVEREXERT_REASONS.map(r => (
-                        <EmojiTile key={r.label} icon={r.icon} label={r.label} on={overexertPick === r.label} onClick={() => pickOverexertReason(r.label)} />
-                      ))}
-                      <EmojiTile icon="editPencil" label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} />
-                    </div>
-                    {overexertPick === "other" && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                        <input value={overexertOther} onChange={e => setOverexertOther(e.target.value)}
-                          onKeyDown={e => e.key === "Enter" && confirmOverexertOther()}
-                          placeholder="짧게 적어주세요 (예: 무거운 짐 옮기기)"
-                          style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
-                        <button onClick={confirmOverexertOther} disabled={!overexertOther.trim()}
-                          style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: overexertOther.trim() ? 1 : 0.4 }}>확인</button>
-                      </div>
-                    )}
-                    <button onClick={() => { setOverexertVal(null); setOverexertPick(null); setOverexertOther(""); }} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
-                  </>
-                )}
-              </AccordionCard>
-
-              {/* ━━━ 3. 얼마나 푹 잤나요 (아코디언) ━━━ */}
-              <AccordionCard question="얼마나 푹 잤나요?" answerIcon={sleepOpt?.icon} answerText={sleepVal}
-                expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {SLEEP_OPTS.map(opt => (
-                    <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} />
-                  ))}
-                </div>
-              </AccordionCard>
-
-              {/* ━━━ 4. 운동 (했다/안했다 → 이유 또는 종목) ━━━ */}
-              <AccordionCard question="오늘 운동 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
-                expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
-                {exerciseDidIt === null && (
-                  <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
-                    <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} />
-                    <EmojiTile icon="flex" label="했어요!" on={false} onClick={() => setExerciseDidIt("yes")} />
-                  </div>
-                )}
-
-                {exerciseDidIt === "no" && (
-                  <>
-                    <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>오늘은 어떤 이유였어요?</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
-                      {NO_EXERCISE_REASONS.map(r => (
-                        <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} iconSize={36} />
-                      ))}
-                    </div>
-                    <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
-                  </>
-                )}
-
-                {exerciseDidIt === "yes" && (
-                  <>
-                    <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 16 }}>제일 많이 한 운동 최대 2가지를 골라주세요</div>
-                    {EXERCISE_CATS.map(cat => (
-                      <div key={cat.name} style={{ marginBottom: 18 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10 }}>{cat.name}</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
-                          {cat.items.map(type => {
-                            const on = exerciseTypes.includes(type);
-                            const disabled = !on && exerciseTypes.length >= 2;
-                            return <Tile key={type} content={type} on={on} onClick={() => toggleExerciseType(type)} disabled={disabled} size={62} />;
-                          })}
+              {/* ━━━ 순서 변경·숨기기 가능한 5개 블럭 ━━━ */}
+              <div ref={blocksContainerRef} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {visibleOrder.map(id => {
+                  const hidden = hiddenBlocks.includes(id);
+                  return (
+                    <div
+                      key={id}
+                      data-block-id={id}
+                      style={{ flexShrink: 0, opacity: hidden ? 0.4 : draggingId === id ? 0.55 : 1, transition: "opacity .15s" }}
+                      {...(editMode ? {} : makeLongPress(enterEditMode))}
+                    >
+                      {editMode && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px 8px" }}>
+                          <span onPointerDown={handleDragStart(id)} style={{ touchAction: "none", cursor: "grab", fontSize: 17, color: C.sub, padding: "6px 8px", lineHeight: 1 }}>⠿</span>
+                          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: C.sub }}>{REORDERABLE_LABEL[id]}</span>
+                          <button onClick={() => toggleHideBlock(id)} style={{
+                            width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 800, lineHeight: 1,
+                            background: hidden ? C.sageSoft : C.pinkSoft, color: hidden ? C.sage : C.pink,
+                          }}>
+                            {hidden ? "+" : "−"}
+                          </button>
                         </div>
-                      </div>
-                    ))}
-
-                    {/* 기타 — 조그만 하이퍼링크 느낌 버튼, 누르면 입력창이 아코디언으로 펼쳐짐 */}
-                    <button onClick={() => setShowCustomExercise(v => !v)} style={{ border: "none", background: "transparent", color: C.sage, fontSize: 11.5, fontWeight: 700, textDecoration: "underline", cursor: "pointer", padding: "2px 0", display: "block", marginBottom: showCustomExercise ? 10 : 4 }}>
-                      기타 운동 직접 입력 {showCustomExercise ? "▾" : "▸"}
-                    </button>
-                    {showCustomExercise && (
-                      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                        <input value={customExercise} onChange={e => setCustomExercise(e.target.value)} placeholder="운동 이름 입력"
-                          onKeyDown={e => e.key === "Enter" && addCustomExercise()}
-                          style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
-                        <button onClick={addCustomExercise} disabled={exerciseTypes.length >= 2}
-                          style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: exerciseTypes.length >= 2 ? 0.4 : 1 }}>추가</button>
-                      </div>
-                    )}
-
-                    {/* 선택된 종목 표시 */}
-                    {exerciseTypes.length > 0 && (
-                      <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-                        {exerciseTypes.map(t => (
-                          <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 14, background: C.pink, color: "#fff", fontSize: 12, fontWeight: 700 }}>
-                            {t} <button onClick={() => toggleExerciseType(t)} style={{ border: "none", background: "transparent", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 4, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
-                  </>
-                )}
-              </AccordionCard>
-
-              {/* ━━━ 5. 한 줄 일기 ━━━ */}
-              <Card title="한 줄 일기">
-                <div style={{ display: "flex", gap: 8 }}>
-                  {CATEGORIES.map(c => {
-                    const on = oneLine.cat === c.id;
-                    return (
-                      <button key={c.id} onClick={() => setOneLine(s => ({ ...s, cat: c.id }))} style={{ padding: "8px 14px", borderRadius: 16, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                        border: on ? `2px solid ${c.border}` : "2px solid transparent", background: on ? c.bg : "#F2F2F4", color: on ? c.on : C.sub }}>{c.label}</button>
-                    );
-                  })}
-                </div>
-                <textarea value={oneLine.text} onChange={e => setOneLine(s => ({ ...s, text: e.target.value }))} placeholder={CATEGORIES.find(c => c.id === oneLine.cat)?.ph}
-                  style={{ width: "100%", marginTop: 12, minHeight: 80, borderRadius: 14, border: `1px solid ${C.line}`, background: "#F9F9F9", padding: 14, fontSize: 14, resize: "none", outline: "none", fontFamily: F, boxSizing: "border-box" }} />
-              </Card>
-
-              {/* ━━━ 6. 뻐근한 부위 (최대 2군데) ━━━ */}
-              <Card title="뻐근한 부위">
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
-                  {PARTS.map(p => {
-                    const on = sore.parts.includes(p);
-                    const disabled = !on && sore.parts.length >= 2;
-                    return (
-                      <Tile key={p} content={p} on={on} disabled={disabled} onClick={() => setSore(s => ({
-                        ...s,
-                        parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]),
-                      }))} />
-                    );
-                  })}
-                </div>
-                {sore.parts.length > 0 && <>
-                  <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
-                  <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.pink }} />
-
-                  {sore.parts.map(p => (
-                    <div key={p}>
-                      <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{p}{hasBatchim(p) ? "은" : "는"} 언제 그러셨어요?</div>
-                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                        {WHEN_OPTS.map(w => (
-                          <Chip key={w} label={w} on={sore.whens[p] === w} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: w } }))} />
-                        ))}
-                        <Chip label="기타" on={sore.whens[p] === "기타"} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: "기타" } }))} />
-                      </div>
-                      {sore.whens[p] === "기타" && (
-                        <input value={sore.whenOthers[p] || ""} onChange={e => setSore(s => ({ ...s, whenOthers: { ...s.whenOthers, [p]: e.target.value } }))}
-                          placeholder="예: 계단 오를 때"
-                          style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
                       )}
+                      <div style={{ pointerEvents: editMode ? "none" : "auto" }}>
+                        {renderBlockContent(id)}
+                      </div>
                     </div>
-                  ))}
-
-                  {soreHeadline && (
-                    <div style={{ marginTop: 14, padding: "12px 14px", background: C.sageSoft, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
-                      "{soreHeadline}"
-                    </div>
-                  )}
-                </>}
-              </Card>
+                  );
+                })}
+              </div>
             </>
           )}
 
@@ -492,11 +629,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {/* ── 완료 팝업 — 캐릭터가 말랑이를 눌러보라고 채팅하듯 안내 ── */}
         {phase === "celebrate" && moodData && (
           <MallangStressPopup mood={moodData.v} charImage={charImage} nextLabel="완료" onNext={() => { if (onClose) onClose(); }} />
-        )}
-
-        {/* ── 환경설정(내 블럭 커스텀) ── */}
-        {showSettings && (
-          <BlockSettingsModal onClose={() => setShowSettings(false)} />
         )}
       </div>
     </div>
@@ -570,7 +702,7 @@ function fitTileFontSize(text) {
   return 10;
 }
 
-function Tile({ content, label, on, onClick, disabled, size = 60 }) {
+function Tile({ content, label, on, onClick, disabled, size = 60, tint = C.tileOff }) {
   return (
     <button
       onClick={disabled ? undefined : onClick}
@@ -581,8 +713,8 @@ function Tile({ content, label, on, onClick, disabled, size = 60 }) {
       }}
     >
       <div style={{
-        width: size, height: size, borderRadius: "50%", boxSizing: "border-box",
-        background: on ? C.pink : C.tileOff,
+        width: size, height: size, borderRadius: "32%", boxSizing: "border-box",
+        background: on ? C.pink : tint,
         display: "flex", alignItems: "center", justifyContent: "center", padding: 5,
         boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none",
         transition: "background .15s, box-shadow .15s",
@@ -597,182 +729,20 @@ function Tile({ content, label, on, onClick, disabled, size = 60 }) {
 }
 
 // 원 안에 2D 아이콘을 넣는 타일(시간대·감정·이유 등 실제 아이콘이 있는 항목용).
-function EmojiTile({ icon, label, on, onClick, iconSize = 28 }) {
+// tint: 꺼진 상태의 배지 배경 — 블럭마다 고유한 톤을 줘서 획일적인 회색 원으로 안 보이게 한다.
+function EmojiTile({ icon, label, on, onClick, iconSize = 28, tint = C.tileOff }) {
   return (
     <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, flex: 1 }}>
       <div style={{
-        width: 54, height: 54, borderRadius: "50%", background: on ? C.pink : C.tileOff,
+        width: 54, height: 54, borderRadius: "32%", background: on ? C.pink : tint,
         display: "flex", alignItems: "center", justifyContent: "center",
-        filter: on ? "none" : "grayscale(0.4) opacity(0.85)",
+        filter: on ? "none" : "grayscale(0.25) opacity(0.9)",
         boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none", transition: "all .15s",
       }}>
         <DiaryIcon name={icon} size={iconSize} />
       </div>
       <span style={{ fontSize: 10.5, fontWeight: 700, color: on ? C.ink : C.sub, textAlign: "center", lineHeight: 1.2 }}>{label}</span>
     </button>
-  );
-}
-
-// ============================================
-// 내 블럭 커스텀 (환경설정)
-// ============================================
-
-const DEFAULT_BLOCKS = [
-  { id: "mood", label: "오늘의 말랑이 기분", removable: false },
-  { id: "sitting", label: "오늘 평소보다 무리했나요", removable: true },
-  { id: "sleep", label: "얼마나 푹 잤나요", removable: true },
-  { id: "exercise", label: "오늘 운동 했나요", removable: true },
-  { id: "oneLine", label: "한 줄 일기", removable: true },
-  { id: "sore", label: "뻐근한 부위", removable: true },
-];
-
-// 각 블럭의 실제 색·아이콘을 그대로 보여주는 미리보기.
-function BlockPreview({ id }) {
-  if (id === "mood") {
-    return (
-      <div style={{ display: "flex", gap: 8 }}>
-        {DAY_MOODS.map(m => (
-          <div key={m.v} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: m.circleBg || m.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Mallang v={m.v} size={30} />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (id === "sitting") {
-    return (
-      <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-        {[{ label: "아니요!", icon: "restNo" }, { label: "맞아요!", icon: "flex" }].map(o => (
-          <div key={o.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <DiaryIcon name={o.icon} size={20} />
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, color: C.sub }}>{o.label}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (id === "sleep") {
-    return (
-      <div style={{ display: "flex", gap: 8 }}>
-        {SLEEP_OPTS.map(o => (
-          <div key={o.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <DiaryIcon name={o.icon} size={20} />
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, color: C.sub, textAlign: "center" }}>{o.label}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (id === "exercise") {
-    return (
-      <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-        {[{ label: "안했어요!", icon: "restNo" }, { label: "했어요!", icon: "flex" }].map(o => (
-          <div key={o.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tileOff, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <DiaryIcon name={o.icon} size={20} />
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, color: C.sub }}>{o.label}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (id === "oneLine") {
-    return (
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {CATEGORIES.map(c => (
-          <span key={c.id} style={{ padding: "7px 13px", borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: c.bg, color: c.on, border: `1.5px solid ${c.border}` }}>{c.label}</span>
-        ))}
-      </div>
-    );
-  }
-  if (id === "sore") {
-    return (
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {PARTS.slice(0, 5).map(p => (
-          <span key={p} style={{ padding: "7px 13px", borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: C.pinkSoft, color: C.pink }}>{p}</span>
-        ))}
-      </div>
-    );
-  }
-  return null;
-}
-
-function BlockSettingsModal({ onClose }) {
-  const [tab, setTab] = useState("active"); // active | hidden
-  const [blocks, setBlocks] = useState(DEFAULT_BLOCKS.map(b => ({ ...b, hidden: false })));
-
-  const activeBlocks = blocks.filter(b => !b.hidden);
-  const hiddenBlocks = blocks.filter(b => b.hidden);
-
-  const hideBlock = (id) => {
-    if (window.confirm("숨긴 블럭으로 이동할까요?")) {
-      setBlocks(bs => bs.map(b => b.id === id ? { ...b, hidden: true } : b));
-    }
-  };
-  const showBlock = (id) => setBlocks(bs => bs.map(b => b.id === id ? { ...b, hidden: false } : b));
-
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: C.bg, display: "flex", justifyContent: "center" }}>
-      <div style={{ width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", height: "100%" }}>
-        {/* 헤더 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "14px 14px 8px", position: "relative" }}>
-          <button onClick={onClose} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
-          <h1 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>내 블럭 커스텀</h1>
-        </div>
-
-        {/* 탭 */}
-        <div style={{ display: "flex", padding: "10px 20px 0", gap: 24 }}>
-          {[["active", "사용 중인 블럭"], ["hidden", "숨긴 블럭"]].map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "6px 0 12px", fontSize: 14.5, fontWeight: 800,
-              color: tab === k ? C.sage : C.sub, borderBottom: tab === k ? `2px solid ${C.sage}` : "2px solid transparent" }}>{label}</button>
-          ))}
-        </div>
-
-        {/* 목록 */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {tab === "active" && activeBlocks.map(block => (
-            <BlockCard key={block.id} block={block} onHide={block.removable ? () => hideBlock(block.id) : null} />
-          ))}
-          {tab === "hidden" && (
-            hiddenBlocks.length === 0
-              ? <p style={{ fontSize: 13, color: C.sub, textAlign: "center", marginTop: 20 }}>숨긴 블럭이 없어요.</p>
-              : hiddenBlocks.map(block => (
-                <BlockCard key={block.id} block={block} onShow={() => showBlock(block.id)} />
-              ))
-          )}
-        </div>
-
-        {/* 저장 */}
-        <div style={{ padding: "10px 20px 24px" }}>
-          <button onClick={onClose} style={{ ...primaryBtn, background: C.sage }}>변경 사항 저장</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BlockCard({ block, onHide, onShow }) {
-  return (
-    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "16px 18px 20px" }}>
-      <div style={{ width: 36, height: 4, background: C.line, borderRadius: 4, margin: "0 auto 12px", cursor: "grab" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{ fontSize: 15, fontWeight: 800 }}>{block.label}</span>
-        {onHide && (
-          <button onClick={onHide} style={{ width: 26, height: 26, borderRadius: "50%", border: "none", background: C.pinkSoft, color: C.pink, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>−</button>
-        )}
-        {onShow && (
-          <button onClick={onShow} style={{ width: 26, height: 26, borderRadius: "50%", border: "none", background: C.sageSoft, color: C.sage, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>+</button>
-        )}
-      </div>
-      <BlockPreview id={block.id} />
-    </div>
   );
 }
 
