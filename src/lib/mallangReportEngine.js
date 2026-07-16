@@ -533,7 +533,7 @@ export function buildMonthlyReport(entries, profile, opts) {
       dOver.items[0] ? `평소보다 '${dOver.items[0].label}'이 있던 날이 ${dOver.items[0].count}번이었어요.` : null),
 
     mkSection("movement", "몸을 움직인 날", dMove.days, dMove,
-      dMove.byType[0] ? `이번 달은 '${dMove.byType[0].label}'을(를) 가장 자주 했어요.` : null),
+      dMove.byType[0] ? `${dMove.byType[0].label} ${dMove.byType[0].count}번, 이번 달 가장 많이 몸을 움직인 방법이었어요.` : null),
 
     // 톤 주의: 이곳은 강조하지 않는다. 이유의 분포만 보여준다.
     mkSection("rest", "쉬어간 날", dRest.days, dRest,
