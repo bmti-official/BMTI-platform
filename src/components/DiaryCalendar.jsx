@@ -7,13 +7,14 @@ import {
   isDayWritable, isEntryLocked,
 } from "../lib/diaryHistory";
 import { MALLANG_SKINS, getMallangSkin, setMallangSkin } from "../lib/mallangSkins";
+import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS } from "../lib/diaryEntryLabels";
 
 const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
 };
 const SAT_BLUE = "#2F6FE0";
 const SUN_RED = "#E0554F";
-const PINK = "#FF6B9D";
+const OCHER = "#C9975A";
 const MIN_YEAR = 2026;
 const MIN_MONTH = 7; // 2026년 7월 이전은 선택 불가
 
@@ -48,6 +49,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   // 스트레스 해소 팝업(말랑이 눌러보기)을 한 번 보여준다.
   const [showStressPopup, setShowStressPopup] = useState(false);
   const [stressMood, setStressMood] = useState(null);
+  // 이미 기록된 날의 말랑이를 누르면, 바로 수정 화면으로 보내지 않고 그날 기록을 먼저 보여준다.
+  const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
 
   const quickSaveMood = () => {
     saveDiaryEntry(todayStr, poppedMood);
@@ -61,6 +64,25 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
     const v = poppedMood;
     setPoppedMood(null);
     onPickMood && onPickMood(v);
+  };
+
+  // 미리보기 팝업에 보여줄 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
+  const buildEntrySummary = (entry) => {
+    const lines = [];
+    if (entry.sleep != null) lines.push(SLEEP_LABELS[entry.sleep]);
+    if (entry.overwork?.yes) lines.push("평소보다 무리했어요");
+    if (entry.exercise?.did === true) {
+      const types = (entry.exercise.types || []).map(t => KEY_TO_EXERCISE_TYPE_LABEL[t] || t).join(", ");
+      lines.push(`운동: ${types}`);
+    } else if (entry.exercise?.did === false) {
+      lines.push(`운동 안 함: ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}`);
+    }
+    if (entry.soreness?.length) {
+      const parts = entry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).join(", ");
+      lines.push(`뻐근함: ${parts}`);
+    }
+    if (entry.note?.text) lines.push(`"${entry.note.text}"`);
+    return lines;
   };
 
   const firstWeekday = new Date(year, month, 1).getDay();
@@ -97,7 +119,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
                 <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke="#8A5A3B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>모양 바꾸기</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>말랑 바꾸기</span>
           </button>
         </div>
 
@@ -121,7 +143,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
               <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {entry && !isEntryLocked(dateStr) ? (
                   <button
-                    onClick={() => onEditDay && onEditDay(dateStr, entry.mood)}
+                    onClick={() => setPreviewDay({ dateStr, entry })}
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
                   >
                     <Mallang v={entry.mood} size={36} />
@@ -143,7 +165,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
                     onClick={() => onEditDay && onEditDay(dateStr, null)}
                     style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
                   >
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${PINK}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${OCHER}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
                       {d}
                     </div>
                   </button>
@@ -253,6 +275,42 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
       {showStressPopup && (
         <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => setShowStressPopup(false)} />
+      )}
+
+      {previewDay && (
+        <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: "#fff", borderRadius: 24, padding: "26px 22px 22px", textAlign: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+              <Mallang v={previewDay.entry.mood} size={56} />
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>
+              {previewDay.dateStr.slice(5, 7)}월 {previewDay.dateStr.slice(8, 10)}일에 기록한 내용이에요
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, textAlign: "left" }}>
+              {buildEntrySummary(previewDay.entry).map((line, i) => (
+                <p key={i} style={{ fontSize: 13, fontWeight: 600, color: C.ink, margin: 0, lineHeight: 1.5 }}>{line}</p>
+              ))}
+              {buildEntrySummary(previewDay.entry).length === 0 && (
+                <p style={{ fontSize: 13, fontWeight: 600, color: C.sub, margin: 0 }}>기분만 짧게 남겨둔 날이에요.</p>
+              )}
+            </div>
+            <div style={{ fontSize: 13, color: C.sub, fontWeight: 700, marginBottom: 14 }}>이 기록을 수정하시겠어요?</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => setPreviewDay(null)}
+                style={{ flex: 1, padding: 14, borderRadius: 15, border: "none", background: "#EFEDE9", color: "#6B6660", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+              >
+                괜찮아요
+              </button>
+              <button
+                onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
+                style={{ flex: 1, padding: 14, borderRadius: 15, border: "none", background: "#1C1A17", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+              >
+                수정할래요
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

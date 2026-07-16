@@ -3,6 +3,10 @@ import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
 import { MOODS as DAY_MOODS } from "../data";
+import {
+  SLEEP_LABELS, OVEREXERT_LOAD_KEY, EXERCISE_REASON_KEY, PART_KEY, WHEN_KEY, EXERCISE_TYPE_KEY,
+  LOAD_TO_OVEREXERT_LABEL, REASON_TO_EXERCISE_LABEL, KEY_TO_PART_LABEL, KEY_TO_WHEN_LABEL, KEY_TO_EXERCISE_TYPE_LABEL,
+} from "../lib/diaryEntryLabels";
 
 // ============================================
 // BMTI 하루일기 작성 플로우
@@ -65,55 +69,66 @@ const CATEGORIES = [
   { id: "worry", label: "고민", on: "#8A3FD1", bg: "#F0E6FB", border: "#DAC2F5", ph: "예: 요즘 어깨가 자꾸 뭉치는데 신경 쓰여요 😭" },
 ];
 
-// ── 말랑이의 발견(월간 리포트, mallangReportEngine.js)이 기대하는 key로 바꾸는 표 ──
-// 이 화면의 라벨과 엔진의 key가 순서상 1:1로 대응한다.
-const OVEREXERT_LOAD_KEY = { "오래 앉음": "sit", "오래 선 자세": "stand", "많이 걸음": "walk", "무거운 물건 들기": "lift" };
-const EXERCISE_REASON_KEY = { "바빴어요": "busy", "피곤해요": "tired", "몸이 안 좋아요": "sick", "그냥 쉬고 싶었어요": "rest", "깜빡했어요": "forgot" };
-const PART_KEY = { "목": "neck", "어깨": "shoulder", "등": "back", "허리": "waist", "손목": "wrist", "무릎": "knee", "골반": "pelvis", "발목": "ankle" };
-const WHEN_KEY = { "오늘 아침 일어날 때": "morning", "움직일 때": "moving", "오래 앉아있을 때": "sitting", "오래 서있을 때": "standing", "하루 종일": "allday" };
-const EXERCISE_TYPE_KEY = {
-  "헬스·PT": "gym", "요가": "yoga", "필라테스": "pilates", "스트레칭": "stretch", "명상·호흡": "meditation", "수영": "swim",
-  "걷기/산책": "walk", "러닝·조깅": "run", "자전거": "bike", "등산": "hike",
-  "축구": "soccer", "농구": "basketball", "배드민턴": "badminton", "테니스": "tennis", "크로스핏": "crossfit", "댄스": "dance",
-};
-
 // ============================================
 // 메인 컴포넌트
 // ============================================
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null }) {
+// initialEntry: 캘린더에서 '이전 기록 수정하기'로 들어온 경우, 그날 저장돼있던 전체 기록
+// (mallangReportEngine.js가 쓰는 key 형태 그대로) — 이 화면의 라벨로 되돌려 폼을 미리 채운다.
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
 
   // 평소보다 무리했는지
-  const [overexertVal, setOverexertVal] = useState(null); // null | 'no' | 'yes'
-  const [overexertPick, setOverexertPick] = useState(null); // OVEREXERT_REASONS 중 하나 | 'other' | null
+  const [overexertVal, setOverexertVal] = useState(() => (initialEntry?.overwork ? (initialEntry.overwork.yes ? "yes" : "no") : null));
+  const [overexertPick, setOverexertPick] = useState(() => {
+    const load = initialEntry?.overwork?.loads?.[0];
+    if (!load) return null;
+    return LOAD_TO_OVEREXERT_LABEL[load] || "other";
+  });
   const [overexertOther, setOverexertOther] = useState("");
   // 수면의 질
-  const [sleepVal, setSleepVal] = useState(null);
+  const [sleepVal, setSleepVal] = useState(() => (initialEntry?.sleep != null ? SLEEP_LABELS[initialEntry.sleep] : null));
 
   // 운동
-  const [exerciseDidIt, setExerciseDidIt] = useState(null); // null | 'no' | 'yes'
-  const [exerciseReason, setExerciseReason] = useState(null); // 안 했을 때 이유
-  const [exerciseTypes, setExerciseTypes] = useState([]); // max 2
+  const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
+  const [exerciseReason, setExerciseReason] = useState(() => (
+    initialEntry?.exercise?.did === false ? (REASON_TO_EXERCISE_LABEL[initialEntry.exercise.reason] || null) : null
+  ));
+  const [exerciseTypes, setExerciseTypes] = useState(() => (
+    initialEntry?.exercise?.did === true ? (initialEntry.exercise.types || []).map(t => KEY_TO_EXERCISE_TYPE_LABEL[t] || t).slice(0, 2) : []
+  ));
   const [customExercise, setCustomExercise] = useState("");
   const [showCustomExercise, setShowCustomExercise] = useState(false);
 
   // 한 줄 일기
-  const [oneLine, setOneLine] = useState({ cat: "daily", text: "" });
+  const [oneLine, setOneLine] = useState(() => {
+    if (!initialEntry?.note) return { cat: "daily", text: "" };
+    const cat = CATEGORIES.find(c => c.label === initialEntry.note.category)?.id || "daily";
+    return { cat, text: initialEntry.note.text || "" };
+  });
   // 뻐근한 부위
-  const [sore, setSore] = useState({ parts: [], level: 5, whens: {}, whenOthers: {} });
+  const [sore, setSore] = useState(() => {
+    if (!initialEntry?.soreness?.length) return { parts: [], level: 5, whens: {}, whenOthers: {} };
+    const parts = initialEntry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).slice(0, 2);
+    const whens = {};
+    initialEntry.soreness.forEach(s => {
+      const p = KEY_TO_PART_LABEL[s.part] || s.part;
+      whens[p] = KEY_TO_WHEN_LABEL[s.situation] || "기타";
+    });
+    return { parts, level: initialEntry.soreness[0]?.level ?? 5, whens, whenOthers: {} };
+  });
 
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
   const [showSettings, setShowSettings] = useState(false);
 
-  // 아코디언 (true = 펼쳐진 상태)
+  // 아코디언 (true = 펼쳐진 상태) — 이미 답이 있는 항목은 접어서 보여준다.
   const [expanded, setExpanded] = useState({
-    mood: !initialDayMood, // 초기값이 있으면 접힘
-    sitting: true,
-    sleep: true,
-    exercise: true,
+    mood: !initialDayMood,
+    sitting: !initialEntry?.overwork,
+    sleep: initialEntry?.sleep == null,
+    exercise: !initialEntry?.exercise,
   });
   const toggle = (key) => setExpanded(e => ({ ...e, [key]: !e[key] }));
 

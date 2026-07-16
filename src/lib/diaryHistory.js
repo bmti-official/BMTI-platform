@@ -1,6 +1,21 @@
-// BMTI 하루일기 기록 저장소 — 아직 서버(Supabase)에 저장하는 기능이 없어서,
-// 캘린더에 "이번 달 며칠 기록했는지"와 날짜별 무드를 보여주기 위해 로컬에만 저장한다.
+// BMTI 하루일기 기록 저장소 — localStorage를 빠른 로컬 캐시로 쓰고, 로그인한 유저는
+// Supabase의 diary_entries 테이블에도 같이 저장해 다른 기기에서 로그인해도 같은 기록을 본다.
+import { supabase } from './supabaseClient';
+
 const STORAGE_KEY = 'bmti_diary_history';
+
+// 이 값보다 이전 날짜, 또는 오늘보다 미래인 날짜는 애초에 기록 대상이 아니다
+// (DiaryCalendar의 날짜 선택 범위와 동일하게 맞춘다).
+const MIN_DATE = '2026-07-01';
+
+function getCurrentUserId() {
+  try {
+    const u = JSON.parse(localStorage.getItem('bmti_user') || 'null');
+    return u?.id || null;
+  } catch {
+    return null;
+  }
+}
 
 export const todayISO = () => {
   const d = new Date();
@@ -36,8 +51,47 @@ export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
     window.dispatchEvent(new Event('chat_updated'));
   }
 
+  // 로그인한 유저면 서버에도 같이 저장해서 다른 기기에서도 같은 기록을 보게 한다.
+  // 화면을 막지 않도록 결과를 기다리지 않고(fire-and-forget), 실패해도 로컬 기록은 남아있다.
+  const userId = getCurrentUserId();
+  if (userId) {
+    supabase.from('diary_entries').upsert({
+      user_id: userId,
+      date: dateISO,
+      mood,
+      sleep: extra.sleep ?? null,
+      overwork: extra.overwork ?? null,
+      exercise: extra.exercise ?? null,
+      soreness: extra.soreness ?? null,
+      note: extra.note ?? null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,date' }).then(({ error }) => {
+      if (error) console.error('일기 기록 서버 저장 실패', error);
+    });
+  }
+
   return history;
 };
+
+// 로그인 직후(하루일기 진입 시) 한 번 호출해, 서버에 저장된 기록을 로컬 캐시에 반영한다.
+// 다른 기기에서 기록한 내용을 지금 기기에서도 볼 수 있게 해주는 부분.
+export async function syncDiaryHistoryFromServer() {
+  const userId = getCurrentUserId();
+  if (!userId) return getDiaryHistory();
+  try {
+    const { data, error } = await supabase.from('diary_entries').select('*').eq('user_id', userId);
+    if (error) throw error;
+    const mapped = (data || []).map((row) => ({
+      date: row.date, mood: row.mood, sleep: row.sleep,
+      overwork: row.overwork, exercise: row.exercise, soreness: row.soreness, note: row.note,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+    return mapped;
+  } catch (e) {
+    console.error('일기 기록 서버 동기화 실패', e);
+    return getDiaryHistory();
+  }
+}
 
 // ── 주간/월간 리포트 활성화 조건 ──
 // 주간 리포트: 마지막으로 받은 시점(없으면 처음부터) 이후 컨디션 체크 7회 이상 쌓이면 활성.
@@ -72,12 +126,9 @@ export const getPrevMonthEntryCount = (baseDate = new Date()) => {
 export const canClaimMonthlyReport = () => getPrevMonthEntryCount() >= 10;
 
 // ── 작성/수정 가능 기간 ──
-// 오늘로부터 최근 7일(오늘 포함)까지만 새로 쓰거나 고칠 수 있다.
+// 서비스 시작일(2026-07-01)부터 오늘까지는 언제든 새로 쓰거나 고칠 수 있다. 미래 날짜만 막는다.
 export const isWithinEditableWindow = (dateISO) => {
-  const today = new Date(`${todayISO()}T00:00:00`);
-  const d = new Date(`${dateISO}T00:00:00`);
-  const diffDays = Math.round((today - d) / 86400000);
-  return diffDays >= 0 && diffDays <= 6;
+  return dateISO >= MIN_DATE && dateISO <= todayISO();
 };
 
 // 리포트를 이미 발행받은 기록은, 7일 이내라도 다시 고치면 리포트 내용과 어긋나므로 잠근다.
