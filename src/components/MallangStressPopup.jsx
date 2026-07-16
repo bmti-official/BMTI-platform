@@ -22,7 +22,12 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
         </div>
 
         <button
-          onClick={() => setTapKey(k => k + 1)}
+          onClick={() => {
+            setTapKey(k => k + 1);
+            // 지원하는 기기(주로 안드로이드)에서만 아주 짧게 울리고, 미지원 기기(iOS 등)에서는
+            // 조용히 무시된다 — 누르는 손맛을 살짝 더해주는 용도.
+            if (navigator.vibrate) navigator.vibrate(15);
+          }}
           aria-label="말랑이 누르기"
           style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block", margin: "0 auto" }}
         >
