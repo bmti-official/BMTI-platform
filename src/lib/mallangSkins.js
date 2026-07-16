@@ -33,8 +33,7 @@ export const MALLANG_SKINS = {
 // 배율 예외가 필요 없다.
 export const MALLANG_SIZE_ADJUST = {
   potato: { base: 1 },
-  // 힘들었어요(1)는 그림 자체가 어둡고 거친 질감이라 다른 무드보다 작아 보여서 조금 더 키움
-  ice: { base: 1.25, moods: { 1: 1.42 } },
+  ice: { base: 1.25 },
   bun: { base: 1.35 },
 };
 
