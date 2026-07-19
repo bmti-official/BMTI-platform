@@ -53,8 +53,8 @@ export default function MallangClass({ onClose }) {
   const left = CAP - TAKEN;
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "18px 18px 60px" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 30, background: C.bg, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 18px 96px" }}>
 
         {/* 헤더 */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>

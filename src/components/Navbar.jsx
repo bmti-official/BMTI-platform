@@ -130,7 +130,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
             <div className="max-w-7xl mx-auto grid grid-cols-5 items-center px-4 md:px-10" style={{ height: 66 }}>
               {/* 말랑 다이어리 */}
-              <button onClick={() => setView('aichat')} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+              <button onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
                 <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
                   <Mallang v={diaryMoodTick} size={26} />
                 </div>
@@ -138,7 +138,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               </button>
 
               {/* 말랑이의 발견 */}
-              <button onClick={() => setShowDiscovery(true)} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+              <button onClick={() => { setShowMallangClass(false); setShowDiscovery(true); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
                 <ChartIcon className="w-6 h-6 text-gray-300" />
                 <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑이의 발견</span>
               </button>
@@ -146,14 +146,14 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
               <div />
 
-              {/* 말랑 클래스 */}
-              <button onClick={() => setShowMallangClass(true)} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+              {/* 말랑 클래스 — 캐릭터와 라이브 사이 중앙에 오도록 */}
+              <button onClick={() => { setShowDiscovery(false); setShowMallangClass(true); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
                 <GroupIcon className="w-6 h-6 text-gray-300" />
                 <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑 클래스</span>
               </button>
 
               {/* 라이브 */}
-              <button onClick={() => setView('bodycheck')} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
+              <button onClick={() => { setView('bodycheck'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
                 <PlayIcon className={`w-7 h-7 ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-300'}`} />
                 <span className={`text-[10px] font-bold ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-400'}`}>라이브</span>
               </button>
@@ -161,7 +161,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
             {/* 캐릭터 — 바 위로 떠 있는 홈 버튼, 배경원 없이 누끼 캐릭터만 */}
             <button
-              onClick={() => setView('home')}
+              onClick={() => { setView('home'); setShowDiscovery(false); setShowMallangClass(false); }}
               aria-label="홈으로"
               className="absolute left-1/2 -translate-x-1/2 -top-5 z-30 active:scale-95 transition-transform"
             >
