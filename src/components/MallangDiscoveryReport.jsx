@@ -307,9 +307,19 @@ function SectionBody({ id, data }) {
 
 // ── 기분 달력: 꺾은선 그래프 대신 날짜마다 기분을 그린다 ──
 function MoodCalendar({ data }) {
+  const [showLegend, setShowLegend] = useState(false);
   const cells = [...Array(data.firstWeekday).fill(null), ...data.cells];
   return (
     <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 2 }}>
+        <button
+          onClick={() => setShowLegend(true)}
+          aria-label="색상이 뜻하는 기분 보기"
+          style={{ width: 22, height: 22, borderRadius: "50%", border: "1.3px solid #DCD8CF", background: "transparent", color: "#B7B2A9", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+        >
+          ?
+        </button>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 4 }}>
         {WEEKDAYS.map((w) => (
           <div key={w} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#C9C4B8" }}>{w}</div>
@@ -324,6 +334,29 @@ function MoodCalendar({ data }) {
           </div>
         ))}
       </div>
+
+      {showLegend && (
+        <div onClick={() => setShowLegend(false)} style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 300, background: "#fff", borderRadius: 22, padding: "22px 22px 20px", position: "relative" }}>
+            <button
+              onClick={() => setShowLegend(false)}
+              aria-label="닫기"
+              style={{ position: "absolute", top: 12, right: 14, border: "none", background: "transparent", color: "#9B9489", fontSize: 15, cursor: "pointer", padding: 4 }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#1C1A17", marginBottom: 16 }}>색깔이 뜻하는 기분</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+              {[1, 2, 3, 4, 5].map((v) => (
+                <div key={v} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: MOOD_COLOR[v], flexShrink: 0 }} />
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1C1A17" }}>{MOOD[v]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

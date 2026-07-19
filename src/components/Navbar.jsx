@@ -20,12 +20,24 @@ import { todayISO } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
 import MallangClass from './MallangClass';
 
-// 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양
-const ChartIcon = ({ className }) => (
+// 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양.
+// 활성 상태(말랑이의 발견을 보고 있을 때)엔 막대 3개가 분홍/초록/회색을 돌아가며
+// 하나씩 번갈아 보여주도록 애니메이션한다 — 비활성 땐 기존처럼 단색 그대로.
+const CHART_BAR_COLORS = ["#FF6B9D", "#5F8A76", "#B7B2A9"];
+const ChartIcon = ({ className, active }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none">
-    <rect x="3" y="10" width="4.5" height="10" rx="2.25" fill="currentColor" />
-    <rect x="9.75" y="4" width="4.5" height="16" rx="2.25" fill="currentColor" />
-    <rect x="16.5" y="8" width="4.5" height="12" rx="2.25" fill="currentColor" />
+    {active && (
+      <style>{`
+        @keyframes chartBarCycle {
+          0%, 32% { fill: ${CHART_BAR_COLORS[0]}; }
+          33%, 65% { fill: ${CHART_BAR_COLORS[1]}; }
+          66%, 100% { fill: ${CHART_BAR_COLORS[2]}; }
+        }
+      `}</style>
+    )}
+    <rect x="3" y="10" width="4.5" height="10" rx="2.25" fill="currentColor" style={active ? { animation: "chartBarCycle 2.4s linear infinite", animationDelay: "0s" } : undefined} />
+    <rect x="9.75" y="4" width="4.5" height="16" rx="2.25" fill="currentColor" style={active ? { animation: "chartBarCycle 2.4s linear infinite", animationDelay: "-0.8s" } : undefined} />
+    <rect x="16.5" y="8" width="4.5" height="12" rx="2.25" fill="currentColor" style={active ? { animation: "chartBarCycle 2.4s linear infinite", animationDelay: "-1.6s" } : undefined} />
   </svg>
 );
 
@@ -139,8 +151,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
               {/* 말랑이의 발견 */}
               <button onClick={() => { setShowMallangClass(false); setShowDiscovery(true); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
-                <ChartIcon className="w-6 h-6 text-gray-300" />
-                <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑이의 발견</span>
+                <ChartIcon className="w-6 h-6 text-gray-300" active={showDiscovery} />
+                <span className={`text-[10px] font-bold whitespace-nowrap ${showDiscovery ? 'text-black' : 'text-gray-400'}`}>말랑이의 발견</span>
               </button>
 
               {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
