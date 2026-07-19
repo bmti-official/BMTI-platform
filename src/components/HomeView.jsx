@@ -251,17 +251,19 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* M/Z 유형 이미지 — 화면 꽉 차게, 데스크톱은 좌우로 모바일은 위아래로.
-          두 이미지의 원본 비율이 서로 달라 비율을 통일(정사각형)하고 object-cover로 채운다.
+      {/* M/Z 유형 이미지 — 화면 꽉 차게, 화면 크기 상관없이 항상 위아래로만 배치.
+          M은 원본 비율이 정사각형에 가까워 꽉 채워도 잘리는 캐릭터가 없지만,
+          Z는 원본이 더 옆으로 넓어서 정사각형으로 꽉 채우면(object-cover) 좌우
+          캐릭터가 잘리므로 object-contain으로 축소해 전체가 다 보이게 한다.
           위아래 끝은 흰 배경으로 자연스럽게 번지도록 그라데이션을 얹는다. */}
-      <div className="w-full mb-24 flex flex-col md:flex-row">
-        <div className="relative w-full md:w-1/2 aspect-square overflow-hidden">
+      <div className="w-full mb-24 flex flex-col">
+        <div className="relative w-full aspect-square overflow-hidden">
           <img src={mTypeImage} alt="M 유형" className="absolute inset-0 w-full h-full object-cover" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
         </div>
-        <div className="relative w-full md:w-1/2 aspect-square overflow-hidden">
-          <img src={zTypeImage} alt="Z 유형" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="relative w-full aspect-square overflow-hidden">
+          <img src={zTypeImage} alt="Z 유형" className="absolute inset-0 w-full h-full object-contain" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
         </div>
