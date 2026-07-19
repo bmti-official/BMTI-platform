@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
+import DiaryHelpPopup from "./DiaryHelpPopup";
 import { MOODS, CHARACTERS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
@@ -22,10 +23,11 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
 const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null);
 
-export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
+export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSkinPicker, setShowSkinPicker] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const currentSkin = getMallangSkin();
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
@@ -97,6 +99,15 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
         {/* 헤더 */}
         <div style={{ position: "relative", textAlign: "center", marginBottom: 22 }}>
+          {/* 도움말 — 처음 로그인했을 때 보여줬던 소개 대화를 팝업으로 다시 볼 수 있다 */}
+          <button
+            onClick={() => setShowHelp(true)}
+            aria-label="말랑 다이어리 도움말"
+            style={{ position: "absolute", left: 0, top: 0, width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: "transparent", color: C.sub, fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            ?
+          </button>
+
           <button
             onClick={() => setShowDatePicker(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: "4px 8px" }}
@@ -187,6 +198,10 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
           onCancel={() => setShowDatePicker(false)}
           onConfirm={(y, m) => { setCursor(new Date(y, m, 1)); setShowDatePicker(false); }}
         />
+      )}
+
+      {showHelp && (
+        <DiaryHelpPopup onClose={() => setShowHelp(false)} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
       )}
 
       {showSkinPicker && (
