@@ -5,14 +5,19 @@ import { Mallang } from "./Mallang";
 // 말랑 클래스 — 같은 BMTI 유형·같은 부위가 뻐근한 사람들끼리 모이는
 // 4주 온라인 그룹 클래스 목록 화면. 상단 탭(모집 중/준비 중/내 클래스) +
 // 대표 반 배너 + 필터 칩 + 반 카드 목록 구조.
-// 색감·톤은 사이트의 다른 "말랑" 계열 화면과 통일(세이지 그린 중심).
+//
+// 색상 통일 규칙(말랑 클래스 전용 팔레트) — 이 페이지 안에서만 쓴다.
+//   버튼(탭 선택 표시·필터 칩·찜하기)     → 골든 팜(GOLDEN_PALM)
+//   박스/카드(배너, 반 카드 미리보기)      → 바나나 옐로우(BANANA)
+//   강조 요소(유형·일정 태그, 인원수,
+//            게이지, 배지, 점 표시 등)     → 딥 퍼플(DEEP_PURPLE)
 // ============================================
 
 const C = {
-  bg: "#FFFFFF", card: "#F8F9F7", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
-  sage: "#5F8A76", sageSoft: "#E9F1EC", mute: "#C9C4B8",
-  pink: "#FF6B9D", pinkSoft: "#FFEDF3",
-  gold: "#C9975A", goldSoft: "#F3E7D2", goldInk: "#8A6A2E",
+  bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", mute: "#C9C4B8",
+  goldenPalm: "#9C7C3D",
+  banana: "#FCE788", bananaLine: "#E8CE5E",
+  deepPurple: "#4B2E83", deepPurpleSoft: "#E4DBF3",
 };
 const PRESS = "active:scale-95 transition-transform";
 const KO_NUM = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"];
@@ -32,7 +37,7 @@ const TABS = [
 ];
 
 const CHIPS = [
-  { id: "my", label: "내 유형", recommend: true },
+  { id: "my", label: "내 유형" },
   { id: "neck", label: "목 · 어깨" },
   { id: "waist", label: "허리 · 골반" },
   { id: "weekday", label: "평일반" },
@@ -80,7 +85,7 @@ export default function MallangClass({ onClose, bmtiCode }) {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
           <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>말랑 클래스</div>
-          <span style={{ display: "flex", alignItems: "center", gap: 6, background: C.sageSoft, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 800, color: C.sage, whiteSpace: "nowrap" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, background: C.deepPurpleSoft, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 800, color: C.deepPurple, whiteSpace: "nowrap" }}>
             내 유형 {myType}
           </span>
         </div>
@@ -94,7 +99,7 @@ export default function MallangClass({ onClose, bmtiCode }) {
               style={{ background: "none", border: "none", fontFamily: "inherit", fontSize: 15.5, fontWeight: 700, color: tab === t.id ? C.ink : C.mute, padding: "13px 0", cursor: "pointer", position: "relative" }}
             >
               {t.label}
-              {tab === t.id && <span style={{ position: "absolute", left: 0, right: 0, bottom: -1, height: 3, background: C.sage, borderRadius: 3 }} />}
+              {tab === t.id && <span style={{ position: "absolute", left: 0, right: 0, bottom: -1, height: 3, background: C.goldenPalm, borderRadius: 3 }} />}
             </button>
           ))}
         </div>
@@ -119,8 +124,8 @@ export default function MallangClass({ onClose, bmtiCode }) {
                 style={{
                   whiteSpace: "nowrap", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, padding: "10px 16px", borderRadius: 999,
                   border: on ? "1.5px solid transparent" : `1.5px solid ${C.line}`, cursor: "pointer", flexShrink: 0,
-                  background: on ? (c.recommend ? C.gold : C.sage) : "#fff",
-                  color: on ? "#fff" : (c.recommend ? C.goldInk : C.sub),
+                  background: on ? C.goldenPalm : "#fff",
+                  color: on ? "#fff" : C.sub,
                 }}
               >
                 {c.label}
@@ -149,22 +154,22 @@ export default function MallangClass({ onClose, bmtiCode }) {
   );
 }
 
-const dotOn = { width: 20, height: 7, borderRadius: 99, background: "#5F8A76" };
-const dotOff = { width: 7, height: 7, borderRadius: "50%", background: "#E9F1EC" };
+const dotOn = { width: 20, height: 7, borderRadius: 99, background: "#4B2E83" };
+const dotOff = { width: 7, height: 7, borderRadius: "50%", background: "#E4DBF3" };
 
 function Banner({ room }) {
   const left = room.cap - room.taken;
   return (
-    <div style={{ borderRadius: 20, padding: 24, position: "relative", overflow: "hidden", minHeight: 176, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(135deg, #EFF6F1, #E1EEE5)" }}>
-      <span style={{ fontSize: 12.5, fontWeight: 800, color: C.sage, background: "#fff", alignSelf: "flex-start", padding: "5px 11px", borderRadius: 999, marginBottom: 12 }}>내 유형에 딱 맞아요</span>
-      <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#2C3B32", lineHeight: 1.3 }}>{room.part} 4주 클래스</h2>
-      <p style={{ fontSize: 13.5, color: "#4E6459", marginTop: 8, fontWeight: 600, maxWidth: "62%" }}>나와 같은 곳이 뻐근한 스무 명이 모여요</p>
+    <div style={{ borderRadius: 20, padding: 24, position: "relative", overflow: "hidden", minHeight: 176, display: "flex", flexDirection: "column", justifyContent: "center", background: `linear-gradient(135deg, #FFFAE0, ${C.banana})` }}>
+      <span style={{ fontSize: 12.5, fontWeight: 800, color: C.deepPurple, background: "#fff", alignSelf: "flex-start", padding: "5px 11px", borderRadius: 999, marginBottom: 12 }}>내 유형에 딱 맞아요</span>
+      <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: C.ink, lineHeight: 1.3 }}>{room.part} 4주 클래스</h2>
+      <p style={{ fontSize: 13.5, color: C.sub, marginTop: 8, fontWeight: 600, maxWidth: "62%" }}>나와 같은 곳이 뻐근한 스무 명이 모여요</p>
       <div style={{ display: "inline-flex", alignItems: "baseline", gap: 3, marginTop: 14 }}>
-        <b style={{ fontSize: 26, fontWeight: 800, color: C.sage }}>{room.taken}</b>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#7C9686" }}>/ {room.cap}명 모였어요</span>
+        <b style={{ fontSize: 26, fontWeight: 800, color: C.deepPurple }}>{room.taken}</b>
+        <span style={{ fontSize: 14, fontWeight: 700, color: C.sub }}>/ {room.cap}명 모였어요</span>
       </div>
       {left > 0 && left <= 3 && (
-        <span style={{ position: "absolute", top: 14, right: 14, fontSize: 11, fontWeight: 800, color: "#fff", background: C.pink, padding: "4px 10px", borderRadius: 8 }}>마감 임박</span>
+        <span style={{ position: "absolute", top: 14, right: 14, fontSize: 11, fontWeight: 800, color: "#fff", background: C.deepPurple, padding: "4px 10px", borderRadius: 8 }}>마감 임박</span>
       )}
       <div style={{ position: "absolute", right: -8, bottom: -10 }}><Mallang v={5} size={132} /></div>
     </div>
@@ -180,21 +185,20 @@ function Crowd({ taken, cap }) {
       {Array.from({ length: show }).map((_, i) => (
         i < shown
           ? <Mallang key={i} v={moods[i]} size={30} />
-          : <div key={i} style={{ width: 30, height: 30, borderRadius: "50%", border: `2px dashed ${C.line}`, margin: "2px 0" }} />
+          : <div key={i} style={{ width: 30, height: 30, borderRadius: "50%", border: `2px dashed ${C.bananaLine}`, margin: "2px 0" }} />
       ))}
-      {taken > show && <span style={{ alignSelf: "center", fontSize: 12.5, fontWeight: 800, color: C.sage, marginLeft: 4 }}>+{taken - show}</span>}
+      {taken > show && <span style={{ alignSelf: "center", fontSize: 12.5, fontWeight: 800, color: C.deepPurple, marginLeft: 4 }}>+{taken - show}</span>}
     </div>
   );
 }
 
 function Gauge({ taken, cap, status }) {
   const left = cap - taken;
-  const almost = status === "open" && left <= 3 && left > 0;
   const pct = Math.round((taken / cap) * 100);
   if (status !== "open") {
     return (
       <div style={{ marginTop: 14 }}>
-        <div style={{ height: 8, background: C.line, borderRadius: 999 }} />
+        <div style={{ height: 8, background: "#F5E9B8", borderRadius: 999 }} />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 12.5, fontWeight: 600, color: C.mute }}>
           <span>곧 열려요</span><span>다음 달 예정</span>
         </div>
@@ -203,11 +207,11 @@ function Gauge({ taken, cap, status }) {
   }
   return (
     <div style={{ marginTop: 14 }}>
-      <div style={{ height: 8, background: C.line, borderRadius: 999, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: almost ? C.pink : C.sage, transition: "width .3s" }} />
+      <div style={{ height: 8, background: "#F5E9B8", borderRadius: 999, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: C.deepPurple, transition: "width .3s" }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 12.5, fontWeight: 600, color: C.sub }}>
-        <span><b style={{ color: almost ? C.pink : C.sage }}>{taken}</b> / {cap}명</span>
+        <span><b style={{ color: C.deepPurple }}>{taken}</b> / {cap}명</span>
         <span>{KO_NUM[left]} 자리 남음</span>
       </div>
     </div>
@@ -216,14 +220,14 @@ function Gauge({ taken, cap, status }) {
 
 function Badge({ status, almost }) {
   if (status !== "open") return <span style={{ ...badgePill, background: C.mute }}>준비 중</span>;
-  if (almost) return <span style={{ ...badgePill, background: C.pink }}>마감 임박</span>;
-  return <span style={{ ...badgePill, background: C.sage }}>모집 중</span>;
+  if (almost) return <span style={{ ...badgePill, background: C.deepPurple }}>마감 임박</span>;
+  return <span style={{ ...badgePill, background: C.deepPurple }}>모집 중</span>;
 }
 const badgePill = { position: "absolute", top: 14, right: 14, fontSize: 11, fontWeight: 800, color: "#fff", padding: "4px 10px", borderRadius: 8 };
 
 function HeartIcon({ filled }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 24 24" fill={filled ? C.sage : "none"} stroke={filled ? C.sage : C.mute} strokeWidth="2">
+    <svg width="23" height="23" viewBox="0 0 24 24" fill={filled ? "#9C7C3D" : "none"} stroke={filled ? "#9C7C3D" : "#C9C4B8"} strokeWidth="2">
       <path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.3 4 2.5.8-1.2 2-2.5 4-2.5 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z" strokeLinejoin="round" />
     </svg>
   );
@@ -234,7 +238,7 @@ function RoomCard({ room, liked, onToggleLike }) {
   const almost = room.status === "open" && left <= 3 && left > 0;
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ position: "relative", background: C.card, borderRadius: 18, padding: "24px 16px 20px" }}>
+      <div style={{ position: "relative", background: C.banana, borderRadius: 18, padding: "24px 16px 20px" }}>
         <Badge status={room.status} almost={almost} />
         <Crowd taken={room.taken} cap={room.cap} />
         <Gauge taken={room.taken} cap={room.cap} status={room.status} />
@@ -242,12 +246,12 @@ function RoomCard({ room, liked, onToggleLike }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 14, gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 17, fontWeight: 800 }}>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: C.sage, background: C.sageSoft, padding: "3px 9px", borderRadius: 7 }}>{room.type}</span>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: C.deepPurple, background: C.deepPurpleSoft, padding: "3px 9px", borderRadius: 7 }}>{room.type}</span>
             <span style={room.status !== "open" ? { color: C.mute } : undefined}>{room.part}</span>
           </div>
           <div style={{ fontSize: 13.5, color: room.status !== "open" ? C.mute : C.sub, marginTop: 4 }}>{room.desc}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.goldInk, background: C.goldSoft, borderRadius: 999, padding: "7px 13px" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.deepPurple, background: C.deepPurpleSoft, borderRadius: 999, padding: "7px 13px" }}>
               {room.status === "open" ? room.when : "다음 달"}
             </span>
             <span style={{ fontSize: 12.5, fontWeight: 800, color: C.ink }}>5만 원 · 8회</span>
