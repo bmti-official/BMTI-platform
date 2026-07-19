@@ -280,7 +280,7 @@ function SectionCard({ section: s }) {
   );
 }
 
-function ProgressBar({ current, required, color = "#C9975A" }) {
+function ProgressBar({ current, required, color = "#5F8A76" }) {
   const pct = Math.min(100, Math.round((current / required) * 100));
   return (
     <div style={{ height: 6, borderRadius: 3, background: "#EDE9E2", overflow: "hidden" }}>

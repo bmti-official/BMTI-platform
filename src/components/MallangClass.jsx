@@ -9,10 +9,12 @@ import { Mallang } from "./Mallang";
 
 const C = {
   page: "#F7F5F1", bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
-  sage: "#5F8A76", sageSoft: "#E9F1EC", pink: "#FF6B9D", pinkSoft: "#FFEDF3",
-  ocherSoft: "#F3E7D2", mute: "#C9C4B8",
+  sage: "#5F8A76", sageSoft: "#E9F1EC", sageBorder: "#D8E9E0",
+  mute: "#C9C4B8",
 };
 const CARD_SHADOW = "0 1px 2px rgba(28,26,23,0.03), 0 8px 20px rgba(28,26,23,0.05)";
+const SAGE_SHADOW = "0 4px 14px rgba(95,138,118,0.25)";
+const PRESS = "active:scale-95 transition-transform";
 
 const KO_NUM = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열"];
 
@@ -56,7 +58,7 @@ export default function MallangClass({ onClose }) {
 
         {/* 헤더 */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <button onClick={onClose} aria-label="닫기" style={{ border: "none", background: "transparent", fontSize: 22, color: C.ink, cursor: "pointer", padding: 4, lineHeight: 1 }}>‹</button>
+          <button onClick={onClose} aria-label="닫기" className={PRESS} style={{ border: "none", background: "transparent", fontSize: 22, color: C.ink, cursor: "pointer", padding: 4, lineHeight: 1 }}>‹</button>
           <div style={{ fontSize: 15, fontWeight: 800 }}>말랑 클래스</div>
           <div style={{ width: 26 }} />
         </div>
@@ -72,24 +74,27 @@ export default function MallangClass({ onClose }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: C.sub, letterSpacing: "0.02em", marginBottom: 10 }}>지금 모이는 중</div>
 
         {/* 모집 중 슬롯 */}
-        <div style={{ background: C.bg, border: `1px solid #F3DEE7`, borderRadius: 20, padding: "20px 20px 18px", boxShadow: CARD_SHADOW, marginBottom: 12 }}>
+        <div style={{ background: C.bg, border: `1px solid ${C.sageBorder}`, borderRadius: 20, padding: "20px 20px 18px", boxShadow: CARD_SHADOW, marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{ fontSize: 19, fontWeight: 800 }}>목 · 어깨</div>
-              <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700, color: C.pink, background: C.pinkSoft, padding: "4px 10px", borderRadius: 999, marginTop: 6 }}>OM 유형</span>
+              <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700, color: C.sage, background: C.sageSoft, padding: "4px 10px", borderRadius: 999, marginTop: 6 }}>OM 유형</span>
             </div>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: C.pink, paddingTop: 5 }}>모집 중</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, paddingTop: 5 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.sage }} />
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: C.sage }}>모집 중</span>
+            </div>
           </div>
 
           {/* 모집 진행바 */}
           <div style={{ margin: "16px 0 4px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 7 }}>
-              <div style={{ fontSize: 13, color: C.sub }}><b style={{ fontSize: 18, color: C.pink }}>{TAKEN}</b><span style={{ color: C.mute }}>/{CAP}</span> 모였어요</div>
-              <div style={{ fontSize: 12, color: C.pink, fontWeight: 700 }}>{KO_NUM[left]} 자리 남음</div>
+              <div style={{ fontSize: 13, color: C.sub }}><b style={{ fontSize: 18, color: C.sage }}>{TAKEN}</b><span style={{ color: C.mute }}>/{CAP}</span> 모였어요</div>
+              <div style={{ fontSize: 12, color: C.sage, fontWeight: 700 }}>{KO_NUM[left]} 자리 남음</div>
             </div>
             <div style={{ height: 10, background: C.line, borderRadius: 999, display: "flex", gap: 2, padding: 2 }}>
               {Array.from({ length: CAP }).map((_, i) => (
-                <div key={i} style={{ flex: 1, borderRadius: 2, background: i < TAKEN ? C.pink : C.line }} />
+                <div key={i} style={{ flex: 1, borderRadius: 2, background: i < TAKEN ? C.sage : C.line, transition: "background .2s" }} />
               ))}
             </div>
             <p style={{ fontSize: 11, color: C.mute, marginTop: 8 }}>스무 명이 다 모이면 <b style={{ color: C.sub }}>다섯 명씩 말랑방 네 개</b>로 나뉘어요</p>
@@ -101,16 +106,17 @@ export default function MallangClass({ onClose }) {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, borderTop: `1px solid ${C.line}`, paddingTop: 16, marginTop: 14 }}>
             <div style={{ fontSize: 13, color: C.sub }}><b style={{ fontSize: 17, color: C.ink, fontWeight: 800 }}>5만 원</b><span style={{ fontSize: 11, color: C.mute, marginLeft: 4 }}>8회·인당</span></div>
-            <button style={{ background: C.ink, color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "11px 22px", borderRadius: 999, border: "none", cursor: "pointer" }}>신청하기</button>
+            <button className={PRESS} style={{ background: C.sage, color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "11px 22px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: SAGE_SHADOW }}>신청하기</button>
           </div>
 
           <button
             onClick={() => setDetailOpen(v => !v)}
             aria-expanded={detailOpen}
-            style={{ width: "100%", marginTop: 12, background: "transparent", border: `1.5px solid ${C.line}`, color: C.sub, fontSize: 12.5, fontWeight: 700, padding: 11, borderRadius: 999, cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: 6 }}
+            className={PRESS}
+            style={{ width: "100%", marginTop: 12, background: detailOpen ? C.sageSoft : "transparent", border: `1.5px solid ${detailOpen ? C.sageBorder : C.line}`, color: detailOpen ? C.sage : C.sub, fontSize: 12.5, fontWeight: 700, padding: 11, borderRadius: 999, cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: 6, transition: "background .2s, border-color .2s, color .2s" }}
           >
             말랑 클래스가 뭔지 자세히 보기
-            <span style={{ transition: "transform .2s", transform: detailOpen ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+            <span style={{ transition: "transform .25s cubic-bezier(.22,.9,.32,1)", transform: detailOpen ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
           </button>
         </div>
 
@@ -123,7 +129,7 @@ export default function MallangClass({ onClose }) {
         </p>
 
         {/* 상세 패널 */}
-        <div style={{ overflow: "hidden", maxHeight: detailOpen ? 6000 : 0, transition: "max-height .4s ease" }}>
+        <div style={{ overflow: "hidden", maxHeight: detailOpen ? 6000 : 0, transition: "max-height .45s cubic-bezier(.22,.9,.32,1)" }}>
           <div style={{ paddingTop: 8 }}>
 
             <Block eyebrow="이 반이 뭐예요">
@@ -139,7 +145,7 @@ export default function MallangClass({ onClose }) {
               <div style={{ display: "flex", gap: 8, margin: "16px 0 4px", flexWrap: "wrap" }}>
                 {PARTIES.map(p => (
                   <div key={p.label} style={{ flex: "1 1 130px", background: C.page, border: `1px solid ${C.line}`, borderRadius: 14, padding: 12 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: C.pink, marginBottom: 8 }}>{p.label}</div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: C.sage, marginBottom: 8 }}>{p.label}</div>
                     <div style={{ display: "flex", gap: 3 }}>
                       {p.moods.map((m, i) => <Mallang key={i} v={m} size={18} />)}
                     </div>
@@ -161,7 +167,7 @@ export default function MallangClass({ onClose }) {
               <div style={{ marginTop: 6 }}>
                 {WEEKS.map(w => (
                   <div key={w.n} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 14, padding: "12px 0" }}>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: C.pink }}>{w.n}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: C.sage }}>{w.n}</div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700 }}>{w.title}</div>
                       <div style={{ fontSize: 13, color: C.sub, marginTop: 2 }}>{w.body}</div>
@@ -176,9 +182,9 @@ export default function MallangClass({ onClose }) {
               <P><b>강사만 참가자를 봐요.</b> 참가자끼리는 서로 보이지 않아요. 부담 갖지 마세요.</P>
               <div style={{ display: "inline-flex", background: C.page, border: `1px solid ${C.line}`, borderRadius: 999, padding: 3, margin: "14px 0 12px" }}>
                 {[["me", "내가 보는 화면"], ["coach", "강사가 보는 화면"]].map(([k, label]) => (
-                  <button key={k} onClick={() => setScreenTab(k)} style={{
+                  <button key={k} onClick={() => setScreenTab(k)} className={PRESS} style={{
                     fontSize: 12, fontWeight: 700, border: "none", padding: "8px 14px", borderRadius: 999, cursor: "pointer",
-                    background: screenTab === k ? C.ink : "transparent", color: screenTab === k ? "#fff" : C.sub,
+                    background: screenTab === k ? C.sage : "transparent", color: screenTab === k ? "#fff" : C.sub, transition: "background .2s, color .2s",
                   }}>{label}</button>
                 ))}
               </div>
@@ -196,15 +202,20 @@ export default function MallangClass({ onClose }) {
             <Block eyebrow="궁금한 것">
               <div>
                 {FAQS.map((f, i) => (
-                  <details key={i} style={{ borderTop: i === 0 ? "none" : `1px solid ${C.line}` }}>
+                  <details key={i} className="mc-faq" style={{ borderTop: i === 0 ? "none" : `1px solid ${C.line}` }}>
                     <summary style={{ fontSize: 14, fontWeight: 700, padding: "15px 0", cursor: "pointer", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
                       {f.q}
-                      <span style={{ color: C.pink, fontSize: 18, fontWeight: 400 }}>+</span>
+                      <span className="mc-faq-plus" style={{ display: "inline-block", color: C.sage, fontSize: 18, fontWeight: 400, transition: "transform .2s" }}>+</span>
                     </summary>
-                    <p style={{ fontSize: 13, color: C.sub, padding: "0 0 16px", lineHeight: 1.7, margin: 0 }}>{f.a}</p>
+                    <p className="mc-faq-a" style={{ fontSize: 13, color: C.sub, padding: "0 0 16px", lineHeight: 1.7, margin: 0 }}>{f.a}</p>
                   </details>
                 ))}
               </div>
+              <style>{`
+                .mc-faq[open] > summary .mc-faq-plus { transform: rotate(45deg); }
+                .mc-faq[open] > .mc-faq-a { animation: mcFaqIn .22s ease; }
+                @keyframes mcFaqIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+              `}</style>
             </Block>
 
           </div>
@@ -214,7 +225,7 @@ export default function MallangClass({ onClose }) {
         <div style={{ padding: "40px 0 20px", textAlign: "center", borderTop: `1px solid ${C.line}`, marginTop: 8 }}>
           <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>같이 모여요</div>
           <p style={{ fontSize: 13, color: C.sub, marginBottom: 16 }}>{KO_NUM[left]} 자리 남았어요</p>
-          <button style={{ background: C.ink, color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "12px 26px", borderRadius: 999, border: "none", cursor: "pointer" }}>신청하기</button>
+          <button className={PRESS} style={{ background: C.sage, color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "12px 26px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: SAGE_SHADOW }}>신청하기</button>
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 18, padding: "12px 14px", background: "#FFFFFF", border: `1px solid ${C.line}`, borderRadius: 14 }}>
@@ -250,17 +261,17 @@ function SoonSlot({ part, type, when }) {
 function ScreenMock({ tab }) {
   if (tab === "me") {
     return (
-      <div style={{ background: "#2E2838", borderRadius: 14, padding: 12 }}>
-        <div style={{ background: "#4A4159", borderRadius: 8, height: 90, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#B9AFC7" }}>강사</div>
+      <div style={{ background: "#1F2E27", borderRadius: 14, padding: 12 }}>
+        <div style={{ background: "#324840", borderRadius: 8, height: 90, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#9FBBAC" }}>강사</div>
         <p style={{ fontSize: 12.5, color: C.sub, marginTop: 10, lineHeight: 1.6 }}>학생이 보는 화면엔 <b style={{ color: C.ink }}>강사님 뷰만</b> 있어요. 다른 분들은 보이지 않아요.</p>
       </div>
     );
   }
   return (
-    <div style={{ background: "#2E2838", borderRadius: 14, padding: 12 }}>
+    <div style={{ background: "#1F2E27", borderRadius: 14, padding: 12 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} style={{ background: "#443C52", borderRadius: 6, height: 34, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div key={i} style={{ background: "#2C4038", borderRadius: 6, height: 34, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Mallang v={(i % 5) + 1} size={16} />
           </div>
         ))}
@@ -273,7 +284,7 @@ function ScreenMock({ tab }) {
 function Block({ eyebrow, children }) {
   return (
     <div style={{ padding: "26px 0", borderTop: `1px solid ${C.line}` }}>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.pink, letterSpacing: "0.03em", marginBottom: 8 }}>{eyebrow}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.sage, letterSpacing: "0.03em", marginBottom: 8 }}>{eyebrow}</div>
       {children}
     </div>
   );
