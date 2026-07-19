@@ -193,7 +193,13 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       )}
 
       {showMallangClass && (
-        <MallangClass onClose={() => setShowMallangClass(false)} bmtiCode={bmtiCode} />
+        <MallangClass
+          onClose={() => setShowMallangClass(false)}
+          bmtiCode={bmtiCode}
+          charImage={charData?.image}
+          isLoggedIn={isLoggedIn}
+          onRequireLogin={() => setIsLoggedIn(true)}
+        />
       )}
     </>
   );
