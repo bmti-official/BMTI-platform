@@ -149,8 +149,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                 <span className={`text-[10px] font-bold whitespace-nowrap ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>말랑 다이어리</span>
               </button>
 
-              {/* 말랑이의 발견 */}
-              <button onClick={() => { setShowMallangClass(false); setShowDiscovery(true); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+              {/* 말랑이의 발견 — 독립된 페이지로 취급: 밑에 깔린 화면은 항상 홈으로 고정해둔다 */}
+              <button onClick={() => { setShowMallangClass(false); setShowDiscovery(true); setView('home'); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
                 <ChartIcon className="w-6 h-6 text-gray-300" active={showDiscovery} />
                 <span className={`text-[10px] font-bold whitespace-nowrap ${showDiscovery ? 'text-black' : 'text-gray-400'}`}>말랑이의 발견</span>
               </button>
@@ -158,8 +158,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
               <div />
 
-              {/* 말랑 클래스 — 캐릭터와 라이브 사이 중앙에 오도록 */}
-              <button onClick={() => { setShowDiscovery(false); setShowMallangClass(true); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
+              {/* 말랑 클래스 — 캐릭터와 라이브 사이 중앙에 오도록. 독립된 페이지로 취급: 밑에 깔린 화면은 항상 홈으로 고정해둔다 */}
+              <button onClick={() => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
                 <GroupIcon className="w-6 h-6 text-gray-300" />
                 <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑 클래스</span>
               </button>

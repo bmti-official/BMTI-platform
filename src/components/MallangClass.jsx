@@ -1,16 +1,15 @@
-import { useState } from "react";
-import { Mallang } from "./Mallang";
+import { useState, useRef } from "react";
+import { CHARACTERS } from "../data";
 
 // ============================================
 // 말랑 클래스 — 같은 BMTI 유형·같은 부위가 뻐근한 사람들끼리 모이는
-// 4주 온라인 그룹 클래스 목록 화면. 상단 탭(모집 중/준비 중/내 클래스) +
-// 대표 반 배너 + 필터 칩 + 반 카드 목록 구조.
+// 4주 온라인 그룹 클래스 목록 화면.
 //
 // 색상 규칙(말랑 클래스 전용 팔레트, 라이브 탭과 톤 맞춤) — 이 페이지 안에서만 쓴다.
-//   버튼 중 중요한 것(탭 선택 표시, '내 유형' 필터)   → 골든 팜(GOLDEN_PALM)
-//   버튼 중 안 중요한 것(부위·평일/주말 필터)         → 연한 옐로우(YELLOW)
-//   박스/카드(배너, 반 카드 미리보기)                 → 연한 옐로우(YELLOW, 그라데이션 없음)
-//   강조 요소(유형·일정 태그, 인원수, 게이지, 배지)     → 딥 퍼플(DEEP_PURPLE)
+//   버튼 중 중요한 것('내 유형' 필터)         → 골든 팜(GOLDEN_PALM)
+//   버튼 중 안 중요한 것(부위·평일/주말 필터)   → 연한 옐로우(YELLOW)
+//   박스/카드(소개 카루셀, 반 카드 미리보기)    → 연한 옐로우(YELLOW, 그라데이션 없음)
+//   강조 요소(유형·일정 태그, 인원수, 게이지, 배지) → 딥 퍼플(DEEP_PURPLE)
 // ============================================
 
 const C = {
@@ -22,18 +21,26 @@ const C = {
 const PRESS = "active:scale-95 transition-transform";
 const KO_NUM = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"];
 
-// 실제 예약 데이터가 아직 없어 데모 값을 쓴다.
+// 실제 예약 데이터가 아직 없어 데모 값을 쓴다. typeBreakdown은 이 반에 실제로 모인
+// 사람들의 BMTI 유형 구성(합계 = taken) — 한 가지 유형만 있는 게 아니라는 걸 보여준다.
 const ROOMS = [
-  { id: "neck_weekday", part: "목 · 어깨", type: "OM", when: "월·목 20:00", desc: "평일반 · 월·목 20:00 · 50분 8회", taken: 14, cap: 20, status: "open", mine: true },
-  { id: "neck_weekend", part: "목 · 어깨", type: "OM", when: "토·일 10:00", desc: "주말반 · 토·일 10:00 · 50분 8회", taken: 8, cap: 20, status: "open" },
-  { id: "neck_am", part: "목 · 어깨", type: "AM", when: "다음 달", desc: "움직이면서 푸는 반", taken: 0, cap: 20, status: "soon" },
-  { id: "waist_om", part: "허리 · 골반", type: "OM", when: "다음 달", desc: "오래 앉거나 서 있는 분", taken: 0, cap: 20, status: "soon" },
-];
-
-const TABS = [
-  { id: "open", label: "모집 중" },
-  { id: "soon", label: "준비 중" },
-  { id: "mine", label: "내 클래스" },
+  {
+    id: "neck_weekday", part: "목 · 어깨", type: "OM", when: "월·목 20:00", desc: "평일반 · 월·목 20:00 · 50분 8회",
+    taken: 14, cap: 20, status: "open",
+    typeBreakdown: [
+      { type: "ACDZ", count: 4 }, { type: "OCQM", count: 3 }, { type: "OLQM", count: 3 },
+      { type: "ALDM", count: 2 }, { type: "ACQZ", count: 2 },
+    ],
+  },
+  {
+    id: "neck_weekend", part: "목 · 어깨", type: "OM", when: "토·일 10:00", desc: "주말반 · 토·일 10:00 · 50분 8회",
+    taken: 8, cap: 20, status: "open",
+    typeBreakdown: [
+      { type: "OCDZ", count: 3 }, { type: "OLQZ", count: 2 }, { type: "ACDM", count: 2 }, { type: "ALQM", count: 1 },
+    ],
+  },
+  { id: "neck_am", part: "목 · 어깨", type: "AM", when: "다음 달", desc: "움직이면서 푸는 반", taken: 0, cap: 20, status: "soon", typeBreakdown: [] },
+  { id: "waist_om", part: "허리 · 골반", type: "OM", when: "다음 달", desc: "오래 앉거나 서 있는 분", taken: 0, cap: 20, status: "soon", typeBreakdown: [] },
 ];
 
 // 중요도가 낮은(단순 분류용) 필터 칩 id 목록 — 활성 시 골든 팜 대신 연한 옐로우를 쓴다.
@@ -47,15 +54,20 @@ const CHIPS = [
   { id: "weekend", label: "주말반" },
 ];
 
-export default function MallangClass({ onClose, bmtiCode, charImage, isLoggedIn, onRequireLogin }) {
-  const [tab, setTab] = useState("open");
+const CATEGORY_SLIDES = [
+  { key: "together", title: "같은 사람들끼리 모여요", desc: "같은 BMTI 유형과 뻐근한 부위가 겹치는 사람끼리 20명이 모이는 4주 온라인 클래스예요.", visual: "characters" },
+  { key: "room", title: "말랑방", desc: "20명이 다 모이면 5명씩 말랑방 네 개로 나뉘어요. 수업이 없는 날에도 서로 오늘 어땠는지 가볍게 나눌 수 있어요.", visual: "rooms" },
+  { key: "face", title: "얼굴 모드", desc: "강사만 참가자를 보고, 참가자끼리는 서로 화면이 보이지 않아요. 부담 없이 참여하셔도 돼요.", visual: "face" },
+  { key: "prep", title: "준비물", desc: "매트 한 장과 몸을 움직일 작은 공간이면 충분해요.", visual: "mat" },
+];
+
+export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLogin }) {
   const [filter, setFilter] = useState("neck");
   const [showHelp, setShowHelp] = useState(false);
 
   const myType = bmtiCode ? bmtiCode.split("-")[0] : "측정 전";
 
-  const rooms = ROOMS.filter(r => (tab === "mine" ? r.mine : r.status === tab)).filter(r => {
-    if (tab === "mine") return true;
+  const rooms = ROOMS.filter(r => {
     if (filter === "my") return r.type === "OM";
     if (filter === "neck") return r.part === "목 · 어깨";
     if (filter === "waist") return r.part === "허리 · 골반";
@@ -64,29 +76,26 @@ export default function MallangClass({ onClose, bmtiCode, charImage, isLoggedIn,
     return true;
   });
 
-  const bannerRoom = ROOMS.find(r => r.status === "open" && r.type === "OM") || ROOMS[0];
-
-  const sectionCopy = {
-    open: { title: "지금 모으는 중", sub: "스무 명이 다 모이면 다섯 명씩 말랑방 네 개로 나뉘어요" },
-    soon: { title: "곧 열리는 반", sub: "다음 달 시작 예정이에요. 열리면 알려드릴게요" },
-    mine: { title: "내가 신청한 반", sub: "신청한 반은 여기서 다시 볼 수 있어요" },
-  }[tab];
-
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 30, background: C.bg, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 0 96px" }}>
 
-        {/* 앱바 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 10px" }}>
-          <button
-            onClick={() => setShowHelp(true)}
-            aria-label="말랑 클래스가 뭔지 보기"
-            className={PRESS}
-            style={{ width: 30, height: 30, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: "transparent", color: C.sub, fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            ?
-          </button>
-          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>말랑 클래스</div>
+        {/* 앱바 — 이전(홈으로) / 도움말 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 10px", position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button onClick={onClose} aria-label="이전" className={PRESS} style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 19, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              ‹
+            </button>
+            <button
+              onClick={() => setShowHelp(true)}
+              aria-label="말랑 클래스가 뭔지 보기"
+              className={PRESS}
+              style={{ width: 28, height: 28, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: "transparent", color: C.sub, fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              ?
+            </button>
+          </div>
+          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>말랑 클래스</div>
           <div style={{ width: 30 }} />
         </div>
 
@@ -105,63 +114,21 @@ export default function MallangClass({ onClose, bmtiCode, charImage, isLoggedIn,
           </span>
         </div>
 
-        {/* 상단 탭 */}
-        <div style={{ display: "flex", gap: 24, padding: "10px 20px 0", borderBottom: `1px solid ${C.line}` }}>
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={{ background: "none", border: "none", fontFamily: "inherit", fontSize: 15.5, fontWeight: 700, color: tab === t.id ? C.ink : C.mute, padding: "13px 0", cursor: "pointer", position: "relative" }}
-            >
-              {t.label}
-              {tab === t.id && <span style={{ position: "absolute", left: 0, right: 0, bottom: -1, height: 3, background: C.goldenPalm, borderRadius: 3 }} />}
-            </button>
-          ))}
+        {/* 소개 카루셀 — 좌우로 넘겨보는 4가지 카테고리 */}
+        <div style={{ padding: "18px 20px 0" }}>
+          <CategoryCarousel />
         </div>
 
-        {/* 배너 = 대표 반 */}
-        <div style={{ padding: "16px 20px 0" }}>
-          <Banner room={bannerRoom} />
-        </div>
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", padding: "14px 0 4px" }}>
-          <i style={dotOn} /><i style={dotOff} /><i style={dotOff} />
-        </div>
+        {/* 필터 칩 — 골드 톤 가로 스크롤 */}
+        <FilterChips filter={filter} setFilter={setFilter} />
 
-        {/* 필터 칩 — 가로 스크롤 없이 필요하면 다음 줄로 줄바꿈 */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 9, padding: "14px 20px 6px" }}>
-          {CHIPS.map(c => {
-            const on = filter === c.id;
-            const minor = MINOR_CHIP_IDS.includes(c.id);
-            const activeBg = minor ? C.yellow : C.goldenPalm;
-            const activeText = minor ? "#8A6A2E" : "#fff";
-            const activeBorder = minor ? C.yellowLine : "transparent";
-            return (
-              <button
-                key={c.id}
-                onClick={() => setFilter(c.id)}
-                className={PRESS}
-                style={{
-                  whiteSpace: "nowrap", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, padding: "10px 16px", borderRadius: 999,
-                  border: `1.5px solid ${on ? activeBorder : C.line}`, cursor: "pointer",
-                  background: on ? activeBg : "#fff",
-                  color: on ? activeText : C.sub,
-                }}
-              >
-                {c.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 섹션 + 반 목록 */}
-        <div style={{ padding: "22px 20px 0" }}>
-          <h3 style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 4 }}>{sectionCopy.title}</h3>
-          <p style={{ fontSize: 13, color: C.sub, marginBottom: 16, fontWeight: 500 }}>{sectionCopy.sub}</p>
+        {/* 반 목록 */}
+        <div style={{ padding: "18px 20px 0" }}>
+          <h3 style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 4 }}>지금 모으는 반</h3>
+          <p style={{ fontSize: 13, color: C.sub, marginBottom: 16, fontWeight: 500 }}>스무 명이 다 모이면 다섯 명씩 말랑방 네 개로 나뉘어요</p>
 
           {rooms.length === 0 ? (
-            <p style={{ fontSize: 13, color: C.mute, textAlign: "center", padding: "30px 0" }}>
-              {tab === "mine" ? "아직 신청한 반이 없어요." : "조건에 맞는 반이 아직 없어요."}
-            </p>
+            <p style={{ fontSize: 13, color: C.mute, textAlign: "center", padding: "30px 0" }}>조건에 맞는 반이 아직 없어요.</p>
           ) : (
             rooms.map(r => <RoomCard key={r.id} room={r} />)
           )}
@@ -173,40 +140,175 @@ export default function MallangClass({ onClose, bmtiCode, charImage, isLoggedIn,
   );
 }
 
-const dotOn = { width: 20, height: 7, borderRadius: 99, background: "#4B2E83" };
-const dotOff = { width: 7, height: 7, borderRadius: "50%", background: "#E4DBF3" };
+// ── 소개 카루셀 ──
+function CategoryCarousel() {
+  const trackRef = useRef(null);
+  const [active, setActive] = useState(0);
 
-function Banner({ room }) {
-  const left = room.cap - room.taken;
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setActive(Math.round(el.scrollLeft / el.clientWidth));
+  };
+  const goTo = (i) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
+
   return (
-    <div style={{ borderRadius: 20, padding: 24, position: "relative", overflow: "hidden", minHeight: 176, display: "flex", flexDirection: "column", justifyContent: "center", background: C.yellow, border: `1px solid ${C.yellowLine}` }}>
-      <span style={{ fontSize: 12.5, fontWeight: 800, color: C.deepPurple, background: "#fff", alignSelf: "flex-start", padding: "5px 11px", borderRadius: 999, marginBottom: 12 }}>내 유형에 딱 맞아요</span>
-      <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: C.ink, lineHeight: 1.3 }}>{room.part} 4주 클래스</h2>
-      <p style={{ fontSize: 13.5, color: C.sub, marginTop: 8, fontWeight: 600, maxWidth: "62%" }}>나와 같은 곳이 뻐근한 스무 명이 모여요</p>
-      <div style={{ display: "inline-flex", alignItems: "baseline", gap: 3, marginTop: 14 }}>
-        <b style={{ fontSize: 26, fontWeight: 800, color: C.deepPurple }}>{room.taken}</b>
-        <span style={{ fontSize: 14, fontWeight: 700, color: C.sub }}>/ {room.cap}명 모였어요</span>
+    <div>
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        className="mc-hide-scrollbar"
+        style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+      >
+        {CATEGORY_SLIDES.map((s) => (
+          <div key={s.key} style={{ flex: "0 0 100%", scrollSnapAlign: "start", padding: "0 2px" }}>
+            <CategorySlideCard slide={s} />
+          </div>
+        ))}
       </div>
-      {left > 0 && left <= 3 && (
-        <span style={{ position: "absolute", top: 14, right: 14, fontSize: 11, fontWeight: 800, color: "#fff", background: C.deepPurple, padding: "4px 10px", borderRadius: 8 }}>마감 임박</span>
-      )}
-      <div style={{ position: "absolute", right: -8, bottom: -10 }}><Mallang v={5} size={132} /></div>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", padding: "10px 0 0" }}>
+        {CATEGORY_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            aria-label={`${i + 1}번째 소개`}
+            style={{ width: active === i ? 20 : 7, height: 7, borderRadius: 99, border: "none", padding: 0, background: active === i ? C.deepPurple : C.deepPurpleSoft, cursor: "pointer", transition: "width .2s, background .2s" }}
+          />
+        ))}
+      </div>
+      <style>{`.mc-hide-scrollbar::-webkit-scrollbar{display:none}.mc-hide-scrollbar{scrollbar-width:none}`}</style>
     </div>
   );
 }
 
-function Crowd({ taken, cap }) {
-  const show = Math.min(cap, 10);
-  const shown = Math.min(taken, show);
-  const moods = [4, 5, 3, 4, 5, 3, 4, 5, 3, 4];
+function CategorySlideCard({ slide }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 5, justifyContent: "center", flexWrap: "wrap", minHeight: 44 }}>
-      {Array.from({ length: show }).map((_, i) => (
-        i < shown
-          ? <Mallang key={i} v={moods[i]} size={30} />
-          : <div key={i} style={{ width: 30, height: 30, borderRadius: "50%", border: `2px dashed ${C.yellowLine}`, margin: "2px 0" }} />
-      ))}
-      {taken > show && <span style={{ alignSelf: "center", fontSize: 12.5, fontWeight: 800, color: C.deepPurple, marginLeft: 4 }}>+{taken - show}</span>}
+    <div style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 20, padding: "24px 20px", minHeight: 188, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12 }}>
+      <SlideVisual kind={slide.visual} />
+      <div>
+        <div style={{ fontSize: 14.5, fontWeight: 800 }}>{slide.title}</div>
+        <p style={{ fontSize: 11.5, color: C.sub, marginTop: 4, lineHeight: 1.55, maxWidth: 250 }}>{slide.desc}</p>
+      </div>
+    </div>
+  );
+}
+
+const SAMPLE_TYPES = ["ACDZ", "OLQM", "ACQM", "OCDZ", "ALQZ"];
+
+function SlideVisual({ kind }) {
+  if (kind === "characters") {
+    return (
+      <div style={{ display: "flex" }}>
+        {SAMPLE_TYPES.map((id, i) => {
+          const c = CHARACTERS.find(x => x.id === id);
+          return (
+            <div key={id} style={{ width: 50, height: 50, borderRadius: "50%", background: "#fff", border: `2px solid ${C.yellow}`, marginLeft: i === 0 ? 0 : -14, boxShadow: "0 2px 6px rgba(28,26,23,0.1)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: SAMPLE_TYPES.length - i, flexShrink: 0 }}>
+              {c && <img src={c.image} alt="" style={{ width: "80%", height: "80%", objectFit: "contain" }} />}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  if (kind === "rooms") {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6 }}>
+        {[0, 1, 2, 3].map(n => (
+          <div key={n} style={{ width: 32, height: 32, borderRadius: 9, background: C.deepPurpleSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5, fontWeight: 800, color: C.deepPurple }}>5</div>
+        ))}
+      </div>
+    );
+  }
+  if (kind === "face") {
+    return (
+      <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.deepPurpleSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke={C.deepPurple} strokeWidth="1.8" />
+          <circle cx="12" cy="12" r="3" stroke={C.deepPurple} strokeWidth="1.8" />
+          <line x1="3" y1="21" x2="21" y2="3" stroke={C.deepPurple} strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      </div>
+    );
+  }
+  // mat
+  return (
+    <div style={{ width: 60, height: 60, borderRadius: 16, background: C.deepPurpleSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="7" width="20" height="10" rx="3" stroke={C.deepPurple} strokeWidth="1.8" />
+        <line x1="9" y1="7" x2="9" y2="17" stroke={C.deepPurple} strokeWidth="1.8" />
+      </svg>
+    </div>
+  );
+}
+
+// ── 필터 칩: 골드 톤 가로 스크롤(가장자리 페이드 + 진행바) ──
+function FilterChips({ filter, setFilter }) {
+  const trackRef = useRef(null);
+  const [pct, setPct] = useState(0);
+
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setPct(max > 0 ? el.scrollLeft / max : 0);
+  };
+
+  return (
+    <div style={{ position: "relative", padding: "16px 0 0" }}>
+      <div ref={trackRef} onScroll={onScroll} className="mc-hide-scrollbar" style={{ display: "flex", gap: 9, overflowX: "auto", padding: "0 20px" }}>
+        {CHIPS.map(c => {
+          const on = filter === c.id;
+          const minor = MINOR_CHIP_IDS.includes(c.id);
+          const activeBg = minor ? C.yellow : C.goldenPalm;
+          const activeText = minor ? "#8A6A2E" : "#fff";
+          const activeBorder = minor ? C.yellowLine : "transparent";
+          return (
+            <button
+              key={c.id}
+              onClick={() => setFilter(c.id)}
+              className={PRESS}
+              style={{
+                whiteSpace: "nowrap", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, padding: "10px 16px", borderRadius: 999, flexShrink: 0,
+                border: `1.5px solid ${on ? activeBorder : C.line}`, cursor: "pointer",
+                background: on ? activeBg : "#fff",
+                color: on ? activeText : C.sub,
+              }}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ position: "absolute", left: 0, top: 16, bottom: 0, width: 22, background: "linear-gradient(90deg, #fff, rgba(255,255,255,0))", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 16, bottom: 0, width: 22, background: "linear-gradient(270deg, #fff, rgba(255,255,255,0))", pointerEvents: "none" }} />
+      <div style={{ margin: "8px 20px 0", height: 3, background: "#F1E6CF", borderRadius: 99, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: "30%", borderRadius: 99, background: `linear-gradient(90deg, #B8965A, ${C.goldenPalm})`, transform: `translateX(${pct * 233}%)`, transition: "transform .08s linear" }} />
+      </div>
+    </div>
+  );
+}
+
+function Crowd({ breakdown }) {
+  if (!breakdown || breakdown.length === 0) {
+    return <p style={{ fontSize: 12.5, color: C.mute, textAlign: "center", padding: "16px 0" }}>아직 신청자가 없어요. 첫 번째로 신청해보세요!</p>;
+  }
+  return (
+    <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", padding: "4px 0" }}>
+      {breakdown.map(b => {
+        const char = CHARACTERS.find(c => c.id === b.type);
+        return (
+          <div key={b.type} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff", border: `1px solid ${C.yellowLine}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              {char ? <img src={char.image} alt={b.type} style={{ width: "82%", height: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 10 }}>{b.type}</span>}
+            </div>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: C.deepPurple }}>{b.count}명</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -248,7 +350,7 @@ function RoomCard({ room }) {
     <div style={{ marginBottom: 22 }}>
       <div style={{ position: "relative", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 18, padding: "24px 16px 20px" }}>
         <Badge status={room.status} />
-        <Crowd taken={room.taken} cap={room.cap} />
+        <Crowd breakdown={room.typeBreakdown} />
         <Gauge taken={room.taken} cap={room.cap} status={room.status} />
       </div>
       <div style={{ marginTop: 14 }}>
@@ -268,24 +370,18 @@ function RoomCard({ room }) {
   );
 }
 
-// ── '?' 도움말 팝업 — 말랑 클래스가 뭔지 짧게 설명 ──
+// ── '?' 도움말 팝업 — 말랑 클래스가 뭔지 짧게 다시 보기 ──
 function HelpPopup({ onClose }) {
-  const items = [
-    { t: "같은 사람들끼리 모여요", d: "같은 BMTI 유형과 뻐근한 부위가 겹치는 사람끼리 20명이 모이는 4주 온라인 클래스예요." },
-    { t: "말랑방", d: "20명이 다 모이면 5명씩 말랑방 네 개로 나뉘어요. 수업이 없는 날에도 서로 오늘 어땠는지 가볍게 나눌 수 있어요." },
-    { t: "얼굴 모드", d: "강사만 참가자를 보고, 참가자끼리는 서로 화면이 보이지 않아요. 부담 없이 참여하셔도 돼요." },
-    { t: "준비물", d: "매트 한 장과 몸을 움직일 작은 공간이면 충분해요." },
-  ];
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, maxHeight: "80vh", overflowY: "auto", background: "#fff", borderRadius: 22, padding: "24px 22px 20px", position: "relative" }}>
         <button onClick={onClose} aria-label="닫기" style={{ position: "absolute", top: 12, right: 14, border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer", padding: 4 }}>✕</button>
         <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 16 }}>말랑 클래스가 뭔가요?</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {items.map((it, i) => (
-            <div key={i} style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "14px 16px" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 5 }}>{it.t}</div>
-              <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.6 }}>{it.d}</div>
+          {CATEGORY_SLIDES.map((it) => (
+            <div key={it.key} style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 5 }}>{it.title}</div>
+              <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.6 }}>{it.desc}</div>
             </div>
           ))}
         </div>
