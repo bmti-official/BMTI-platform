@@ -18,6 +18,7 @@ import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
 import { todayISO } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
+import MallangClass from './MallangClass';
 
 // 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양
 const ChartIcon = ({ className }) => (
@@ -25,6 +26,16 @@ const ChartIcon = ({ className }) => (
     <rect x="3" y="10" width="4.5" height="10" rx="2.25" fill="currentColor" />
     <rect x="9.75" y="4" width="4.5" height="16" rx="2.25" fill="currentColor" />
     <rect x="16.5" y="8" width="4.5" height="12" rx="2.25" fill="currentColor" />
+  </svg>
+);
+
+// 하단 네비 '말랑 클래스' 아이콘 — 함께 모인 사람들 모양
+const GroupIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <circle cx="8.5" cy="8" r="3.2" fill="currentColor" />
+    <circle cx="16.5" cy="9" r="2.6" fill="currentColor" opacity="0.55" />
+    <path d="M2.8 20c0-3.3 2.6-5.7 5.7-5.7s5.7 2.4 5.7 5.7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M14.6 20c0-2.5 1.7-4.4 3.9-4.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.55" />
   </svg>
 );
 
@@ -56,6 +67,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   // 말랑이의 발견 — 기분 기록이 쌓인 달에서 패턴을 찾아 보여주는 월간 리포트.
   const [showDiscovery, setShowDiscovery] = useState(false);
+
+  // 말랑 클래스 — 같은 유형·같은 부위끼리 모이는 소그룹 온라인 클래스 소개/예약.
+  const [showMallangClass, setShowMallangClass] = useState(false);
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -114,7 +128,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {currentView !== 'quiz' && (
         <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
           <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
-            <div className="max-w-7xl mx-auto grid grid-cols-4 items-center px-6 md:px-14" style={{ height: 66 }}>
+            <div className="max-w-7xl mx-auto grid grid-cols-5 items-center px-4 md:px-10" style={{ height: 66 }}>
               {/* 말랑 다이어리 */}
               <button onClick={() => setView('aichat')} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
                 <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
@@ -131,6 +145,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
               {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
               <div />
+
+              {/* 말랑 클래스 */}
+              <button onClick={() => setShowMallangClass(true)} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+                <GroupIcon className="w-6 h-6 text-gray-300" />
+                <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑 클래스</span>
+              </button>
 
               {/* 라이브 */}
               <button onClick={() => setView('bodycheck')} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
@@ -158,6 +178,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
       {showDiscovery && (
         <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} />
+      )}
+
+      {showMallangClass && (
+        <MallangClass onClose={() => setShowMallangClass(false)} />
       )}
     </>
   );
