@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Mallang } from './Mallang';
 
 // ─────────────────────────────────────────────
@@ -7,7 +7,20 @@ import { Mallang } from './Mallang';
 // 한 페이지 세로 스크롤 / 상단 고정 예약 버튼 / 메뉴 없음
 // 순서: 히어로 → 공감 → 차별점(일기연동) → 무엇을 → 코치 → 프로그램 → FAQ → 예약
 // * 법적 안전: "진단·치료·솔루션·교정" 언어 배제. 면책 고지 명시.
+//
+// 색상 통일 규칙(라이브 탭 전용 팔레트) — 이 페이지 안에서만 쓴다.
+//   버튼(실제 액션 CTA)  → GOLD
+//   박스/카드            → YELLOW (옅은 노랑, 테두리는 YELLOW_LINE)
+//   강조하고 싶은 요소     → PURPLE (아이콘·포인트 텍스트·태그는 PURPLE_SOFT/PURPLE_DEEP)
+// 카카오 로그인 버튼(#FEE500)은 앱 전역 브랜드 버튼이라 예외로 그대로 둔다.
 // ─────────────────────────────────────────────
+
+const GOLD = '#C9975A';
+const YELLOW = '#FDF6DC';
+const YELLOW_LINE = '#F0E4B8';
+const PURPLE = '#8B7BD8';
+const PURPLE_DEEP = '#6B5BB5';
+const PURPLE_SOFT = '#EDE8F9';
 
 const BodyCheckView = ({ isLoggedIn, onRequireLogin }) => {
   const [showDetail, setShowDetail] = useState(false);
@@ -41,7 +54,7 @@ function Hero({ isLoggedIn, onRequireLogin, onShowDetail }) {
         <span className="relative inline-block">
           나에게 운동을
           <svg viewBox="0 0 200 12" preserveAspectRatio="none" className="absolute left-0 -bottom-0.5 w-full h-2.5">
-            <path d="M2,8 Q60,2 100,7 T198,5" stroke="#FF6B9D" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+            <path d="M2,8 Q60,2 100,7 T198,5" stroke={PURPLE} strokeWidth="3.5" fill="none" strokeLinecap="round" />
           </svg>
         </span><br />맞추다
       </h1>
@@ -60,11 +73,11 @@ function Hero({ isLoggedIn, onRequireLogin, onShowDetail }) {
             </p>
           </div>
         ) : (
-          <button className="px-7 py-4 rounded-[15px] bg-[#1C1A17] text-white text-[15.5px] font-extrabold border-none cursor-pointer hover:scale-[1.03] transition-transform">
+          <button style={{ background: GOLD }} className="px-7 py-4 rounded-[15px] text-white text-[15.5px] font-extrabold border-none cursor-pointer hover:scale-[1.03] transition-transform shadow-sm">
             예약하기
           </button>
         )}
-        <button onClick={onShowDetail} className="px-5.5 py-4 rounded-[15px] border border-[#EAE6DF] bg-transparent text-[#1C1A17] text-[15.5px] font-bold cursor-pointer hover:bg-white/60 transition-colors">
+        <button onClick={onShowDetail} style={{ borderColor: '#D9CEF2', color: PURPLE_DEEP }} className="px-5.5 py-4 rounded-[15px] border bg-transparent text-[15.5px] font-bold cursor-pointer hover:bg-[#F5F2FC] transition-colors">
           어떤 클래스인지 보기
         </button>
       </div>
@@ -81,15 +94,15 @@ function ForYou() {
     '물어볼 곳이 없어, 유튜브만 뒤져본 분',
   ];
   return (
-    <Section className="bg-[#E9F1EC] py-14">
-      <Eyebrow color="sage">이런 분을 위해</Eyebrow>
+    <Section style={{ background: YELLOW }} className="py-14">
+      <Eyebrow>이런 분을 위해</Eyebrow>
       <h2 className="text-[clamp(24px,5.5vw,30px)] font-extrabold leading-[1.35] tracking-tight mt-3.5">
         혹시,<br />이런 적 있으세요?
       </h2>
       <div className="mt-7 flex flex-col gap-3">
         {items.map((t, i) => (
           <div key={i} className="flex gap-3 items-start bg-white/70 px-[18px] py-4 rounded-2xl">
-            <span className="text-[#5F8A76] font-extrabold text-sm shrink-0 mt-px">✓</span>
+            <span style={{ color: PURPLE_DEEP }} className="font-extrabold text-sm shrink-0 mt-px">✓</span>
             <span className="text-[15.5px] leading-relaxed font-medium">{t}</span>
           </div>
         ))}
@@ -117,7 +130,7 @@ function Signature() {
 
       {/* 시그니처: 일기 카드가 코치에게 전달되는 장면 */}
       <div className="mt-8 relative">
-        <div className="bg-white border border-[#EAE6DF] rounded-[20px] p-[18px] pb-4 shadow-[0_2px_16px_rgba(0,0,0,0.04)] -rotate-[1.2deg]">
+        <div style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="border rounded-[20px] p-[18px] pb-4 shadow-[0_2px_16px_rgba(0,0,0,0.04)] -rotate-[1.2deg]">
           <div className="text-[11.5px] text-[#8A8378] font-bold mb-2.5">지난주 기록</div>
           <div className="flex gap-1.5 mb-3">
             {[3, 2, 4, 2, 1, 5, 4].map((v, i) => (
@@ -135,12 +148,12 @@ function Signature() {
         </div>
 
         <div className="flex justify-center py-3.5">
-          <div className="text-xl text-[#FF6B9D]">↓</div>
+          <div style={{ color: PURPLE_DEEP }} className="text-xl">↓</div>
         </div>
 
         <div className="bg-[#1C1A17] rounded-[20px] p-5 text-white">
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-[34px] h-[34px] rounded-full bg-[#FFEDF3] flex items-center justify-center text-base">🩺</div>
+            <div style={{ background: PURPLE_SOFT }} className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-base">🩺</div>
             <div className="text-[12.5px] text-white/60 font-semibold">BMTI 가이드가 먼저 건네는 말</div>
           </div>
           <p className="text-[15.5px] leading-7 font-medium">
@@ -158,7 +171,7 @@ function Signature() {
 
 function RecordTag({ children }) {
   return (
-    <span className="text-[11.5px] font-bold bg-[#FFEDF3] text-[#C4517A] px-2.5 py-1 rounded-xl">
+    <span style={{ background: PURPLE_SOFT, color: PURPLE_DEEP }} className="text-[11.5px] font-bold px-2.5 py-1 rounded-xl">
       {children}
     </span>
   );
@@ -173,8 +186,8 @@ function WhatWeDo() {
     { icon: '🌿', t: '나에게 맞는 루틴 만들어가기', d: 'BMTI 성향에 맞춰, 지속할 수 있는 방식으로.' },
   ];
   return (
-    <Section className="bg-[#E9F1EC] py-14">
-      <Eyebrow color="sage">무엇을 하나요</Eyebrow>
+    <Section style={{ background: YELLOW }} className="py-14">
+      <Eyebrow>무엇을 하나요</Eyebrow>
       <h2 className="text-[clamp(24px,5.5vw,30px)] font-extrabold leading-[1.35] tracking-tight mt-3.5">
         함께 움직이면서<br />찾아가요
       </h2>
@@ -187,7 +200,7 @@ function WhatWeDo() {
           </div>
         ))}
       </div>
-      <div className="mt-5 px-4 py-3.5 bg-white/70 rounded-[14px] border border-dashed border-[#EAE6DF] text-[12.5px] leading-relaxed text-[#8A8378]">
+      <div style={{ borderColor: YELLOW_LINE }} className="mt-5 px-4 py-3.5 bg-white/70 rounded-[14px] border border-dashed text-[12.5px] leading-relaxed text-[#8A8378]">
         ※ 진단·치료가 아닙니다. 통증이나 질환이 있으시면 병원에서 먼저 진료받아주세요.
       </div>
     </Section>
@@ -207,7 +220,7 @@ function Coach() {
         안전하고 정확한 움직임을 함께 찾아드려요.
       </p>
 
-      <div className="mt-7 bg-[#E9F1EC] rounded-[18px] px-[18px] py-4 text-[13.5px] leading-relaxed text-[#3F5F4E] font-semibold">
+      <div style={{ background: YELLOW }} className="mt-7 rounded-[18px] px-[18px] py-4 text-[13.5px] leading-relaxed text-[#1C1A17] font-semibold">
         🚨 본 서비스는 운동·습관 코칭이며,<br />
         진단·치료·물리치료 행위가 아닙니다.
       </div>
@@ -240,8 +253,8 @@ function Programs({ isLoggedIn, onRequireLogin }) {
     },
   ];
   return (
-    <Section className="bg-[#E9F1EC] py-14">
-      <Eyebrow color="sage">프로그램</Eyebrow>
+    <Section style={{ background: YELLOW }} className="py-14">
+      <Eyebrow>프로그램</Eyebrow>
       <h2 className="text-[clamp(24px,5.5vw,30px)] font-extrabold leading-[1.35] tracking-tight mt-3.5">
         시간을 골라보세요
       </h2>
@@ -251,10 +264,9 @@ function Programs({ isLoggedIn, onRequireLogin }) {
           <button
             key={i}
             onClick={() => setPick(i)}
-            className={`flex-1 py-[11px] rounded-[14px] cursor-pointer text-[13.5px] font-extrabold transition-all ${
-              pick === i
-                ? 'bg-[#1C1A17] text-white border-2 border-[#1C1A17]'
-                : 'bg-white text-[#8A8378] border border-[#EAE6DF] hover:border-[#1C1A17]/30'
+            style={pick === i ? { background: GOLD, borderColor: GOLD } : { borderColor: YELLOW_LINE }}
+            className={`flex-1 py-[11px] rounded-[14px] cursor-pointer text-[13.5px] font-extrabold transition-all border-2 ${
+              pick === i ? 'text-white' : 'bg-white text-[#8A8378] hover:border-[#C9975A]/50'
             }`}
           >
             {p.n} {p.min}
@@ -263,7 +275,7 @@ function Programs({ isLoggedIn, onRequireLogin }) {
       </div>
 
       <div className="bg-white rounded-[20px] p-5 mt-3.5">
-        <span className="inline-block text-[11.5px] font-extrabold text-[#FF6B9D] bg-[#FFEDF3] px-2.5 py-1 rounded-xl mb-3">
+        <span style={{ background: PURPLE_SOFT, color: PURPLE_DEEP }} className="inline-block text-[11.5px] font-extrabold px-2.5 py-1 rounded-xl mb-3">
           {progs[pick].tag}
         </span>
         <div className="text-[22px] font-extrabold mb-1">{progs[pick].n} · {progs[pick].min}</div>
@@ -271,7 +283,7 @@ function Programs({ isLoggedIn, onRequireLogin }) {
         <div className="flex flex-col gap-2.5">
           {progs[pick].pts.map((pt, i) => (
             <div key={i} className="flex gap-2.5 text-[14.5px] leading-relaxed">
-              <span className="text-[#5F8A76] font-extrabold">·</span>
+              <span style={{ color: PURPLE }} className="font-extrabold">·</span>
               <span>{pt}</span>
             </div>
           ))}
@@ -287,18 +299,18 @@ function Programs({ isLoggedIn, onRequireLogin }) {
             </p>
           </div>
         ) : (
-          <button className="w-full mt-5 px-7 py-4 rounded-[15px] bg-[#1C1A17] text-white text-[15.5px] font-extrabold border-none cursor-pointer hover:scale-[1.02] transition-transform">
+          <button style={{ background: GOLD }} className="w-full mt-5 px-7 py-4 rounded-[15px] text-white text-[15.5px] font-extrabold border-none cursor-pointer hover:scale-[1.02] transition-transform">
             이 클래스 예약하기
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-[18px] px-[18px] py-4 mt-3 flex justify-between items-center">
+      <div style={{ background: PURPLE_SOFT }} className="rounded-[18px] px-[18px] py-4 mt-3 flex justify-between items-center">
         <div>
           <div className="text-[14.5px] font-extrabold">4회 패키지</div>
           <div className="text-[12.5px] text-[#8A8378] mt-0.5">핵심 점검 30분 × 4회 · 함께 이어가요</div>
         </div>
-        <span className="text-[12.5px] font-extrabold text-[#FF6B9D]">할인 →</span>
+        <span style={{ color: PURPLE_DEEP }} className="text-[12.5px] font-extrabold">할인 →</span>
       </div>
     </Section>
   );
@@ -322,13 +334,13 @@ function Faq() {
       </h2>
       <div className="mt-7 flex flex-col gap-2">
         {qs.map((item, i) => (
-          <div key={i} className="bg-white border border-[#EAE6DF] rounded-2xl overflow-hidden">
+          <div key={i} style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="border rounded-2xl overflow-hidden">
             <button
               onClick={() => setOpen(open === i ? null : i)}
               className="w-full flex justify-between items-center gap-3 px-[18px] py-[17px] bg-transparent border-none cursor-pointer text-left text-[14.5px] font-bold text-[#1C1A17]"
             >
               {item.q}
-              <span className={`text-[#8A8378] text-[15px] shrink-0 transition-transform duration-200 ${open === i ? 'rotate-45' : ''}`}>+</span>
+              <span style={{ color: PURPLE }} className={`text-[15px] shrink-0 transition-transform duration-200 ${open === i ? 'rotate-45' : ''}`}>+</span>
             </button>
             {open === i && (
               <div className="px-[18px] pb-[18px] text-sm leading-7 text-[#8A8378] animate-fade-in">
@@ -365,7 +377,7 @@ function FinalCta({ isLoggedIn, onRequireLogin }) {
             </p>
           </div>
         ) : (
-          <button className="w-full py-[17px] rounded-[15px] bg-[#FF6B9D] text-white text-base font-extrabold border-none cursor-pointer hover:brightness-110 transition">
+          <button style={{ background: GOLD }} className="w-full py-[17px] rounded-[15px] text-white text-base font-extrabold border-none cursor-pointer hover:brightness-110 transition">
             예약하기
           </button>
         )}
@@ -383,7 +395,7 @@ function LiveFooter() {
   return (
     <div className="py-5 px-5 pb-24 text-center">
       <div className="text-[13px] font-extrabold mb-2">
-        BMTI <span className="text-[#FF6B9D]">라이브</span>
+        BMTI <span style={{ color: PURPLE_DEEP }}>라이브</span>
       </div>
       <p className="text-[11px] text-[#8A8378] leading-7 m-0">
         본 서비스는 의료행위(진단·치료)가 아닌 일반적인 운동·습관 코칭입니다.<br />
@@ -468,10 +480,9 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
             <button
               key={key}
               onClick={() => setPick(i)}
-              className={`flex-1 py-[11px] rounded-[14px] cursor-pointer text-[12.5px] font-extrabold transition-all ${
-                pick === i
-                  ? 'bg-[#1C1A17] text-white border-2 border-[#1C1A17]'
-                  : 'bg-[#FBFAF8] text-[#8A8378] border border-[#EAE6DF] hover:border-[#1C1A17]/30'
+              style={pick === i ? { background: GOLD, borderColor: GOLD } : { borderColor: YELLOW_LINE }}
+              className={`flex-1 py-[11px] rounded-[14px] cursor-pointer text-[12.5px] font-extrabold transition-all border-2 ${
+                pick === i ? 'text-white' : 'bg-white text-[#8A8378] hover:border-[#C9975A]/50'
               }`}
             >
               {TIMELINES[key].tab}
@@ -487,16 +498,16 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
           {timeline.blocks.map((b, i) => (
             <div key={i} className="flex gap-4">
               <div className="flex flex-col items-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B9D] mt-1.5 shrink-0" />
+                <div style={{ background: PURPLE }} className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" />
                 {i < timeline.blocks.length - 1 && <div className="w-[1.5px] flex-1 bg-[#EAE6DF] my-1" />}
               </div>
               <div className={i < timeline.blocks.length - 1 ? 'pb-7' : 'pb-0'}>
-                <div className="text-[12px] font-extrabold text-[#FF6B9D] mb-1">{b.time}</div>
+                <div style={{ color: PURPLE_DEEP }} className="text-[12px] font-extrabold mb-1">{b.time}</div>
                 <div className="text-[15.5px] font-extrabold mb-2">{b.t}</div>
                 {b.type === 'note' ? (
                   <div className="text-[13.5px] text-[#8A8378] leading-relaxed">{b.quote}</div>
                 ) : (
-                  <div className="bg-[#FBFAF8] border border-[#EAE6DF] rounded-[14px] px-4 py-3 text-[13.5px] leading-relaxed text-[#5B5650] whitespace-pre-line">
+                  <div style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="border rounded-[14px] px-4 py-3 text-[13.5px] leading-relaxed text-[#5B5650] whitespace-pre-line">
                     {b.quote}
                   </div>
                 )}
@@ -507,8 +518,8 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
       </Section>
 
       {/* ② 코치의 실제 대화 예시 */}
-      <Section className="bg-[#E9F1EC] py-14">
-        <Eyebrow color="sage">전문성</Eyebrow>
+      <Section style={{ background: YELLOW }} className="py-14">
+        <Eyebrow>전문성</Eyebrow>
         <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-3.5">
           코치는 이렇게<br />이야기해요
         </h2>
@@ -528,36 +539,36 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
           이런 건<br />하지 않아요
         </h2>
         <div className="mt-6 flex flex-col gap-2.5">
-          <div className="flex gap-2.5 items-start bg-[#FBFAF8] border border-[#EAE6DF] px-[18px] py-4 rounded-2xl">
-            <span className="text-[#E0554F] font-extrabold text-sm shrink-0 mt-px">✗</span>
+          <div style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="flex gap-2.5 items-start border px-[18px] py-4 rounded-2xl">
+            <span style={{ color: PURPLE_DEEP }} className="font-extrabold text-sm shrink-0 mt-px">✗</span>
             <span className="text-[14.5px] leading-relaxed font-medium">무리한 운동을 강요하지 않아요</span>
           </div>
-          <div className="flex gap-2.5 items-start bg-[#FBFAF8] border border-[#EAE6DF] px-[18px] py-4 rounded-2xl">
-            <span className="text-[#E0554F] font-extrabold text-sm shrink-0 mt-px">✗</span>
+          <div style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="flex gap-2.5 items-start border px-[18px] py-4 rounded-2xl">
+            <span style={{ color: PURPLE_DEEP }} className="font-extrabold text-sm shrink-0 mt-px">✗</span>
             <span className="text-[14.5px] leading-relaxed font-medium">
               의료적인 진단이나 치료를 하지 않아요 <span className="text-[#8A8378] font-normal">(안전하고 올바른 움직임을 제안합니다)</span>
             </span>
           </div>
-          <div className="flex gap-2.5 items-start bg-[#FBFAF8] border border-[#EAE6DF] px-[18px] py-4 rounded-2xl">
-            <span className="text-[#E0554F] font-extrabold text-sm shrink-0 mt-px">✗</span>
+          <div style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="flex gap-2.5 items-start border px-[18px] py-4 rounded-2xl">
+            <span style={{ color: PURPLE_DEEP }} className="font-extrabold text-sm shrink-0 mt-px">✗</span>
             <span className="text-[14.5px] leading-relaxed font-medium">모두에게 똑같은 정해진 프로그램을 시키지 않아요</span>
           </div>
         </div>
         <p className="text-[15px] leading-7 mt-6 font-bold text-center">
-          <span className="text-[#FF6B9D]">→</span> 나에게 맞는 방식을, 내 속도로
+          <span style={{ color: PURPLE_DEEP }}>→</span> 나에게 맞는 방식을, 내 속도로
         </p>
       </Section>
 
       {/* ④ 준비물 */}
-      <Section className="bg-[#E9F1EC] py-14">
-        <Eyebrow color="sage">준비물</Eyebrow>
+      <Section style={{ background: YELLOW }} className="py-14">
+        <Eyebrow>준비물</Eyebrow>
         <h2 className="text-[clamp(21px,5vw,26px)] font-extrabold leading-[1.4] tracking-tight mt-3.5">
           이것만 있으면<br />돼요
         </h2>
         <div className="mt-6 flex flex-col gap-2.5">
           {['매트 한 장', '몸을 움직일 작은 공간', '가장 편한 옷 차림'].map((t, i) => (
             <div key={i} className="flex gap-2.5 items-center bg-white px-[18px] py-4 rounded-2xl">
-              <span className="text-[#5F8A76] font-extrabold">·</span>
+              <span style={{ color: PURPLE }} className="font-extrabold">·</span>
               <span className="text-[14.5px] font-semibold">{t}</span>
             </div>
           ))}
@@ -572,13 +583,13 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
         </h2>
         <div className="mt-7 flex flex-col gap-2">
           {DETAIL_FAQS.map((item, i) => (
-            <div key={i} className="bg-white border border-[#EAE6DF] rounded-2xl overflow-hidden">
+            <div key={i} style={{ background: YELLOW, borderColor: YELLOW_LINE }} className="border rounded-2xl overflow-hidden">
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 className="w-full flex justify-between items-center gap-3 px-[18px] py-[17px] bg-transparent border-none cursor-pointer text-left text-[14.5px] font-bold text-[#1C1A17]"
               >
                 {item.q}
-                <span className={`text-[#8A8378] text-[15px] shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>+</span>
+                <span style={{ color: PURPLE }} className={`text-[15px] shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>+</span>
               </button>
               {openFaq === i && (
                 <div className="px-[18px] pb-[18px] text-sm leading-7 text-[#8A8378] animate-fade-in">
@@ -599,7 +610,7 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
               카카오로 3초 예약
             </button>
           ) : (
-            <button className="w-full py-[17px] rounded-[15px] bg-[#FF6B9D] text-white text-base font-extrabold border-none cursor-pointer hover:brightness-110 transition">
+            <button style={{ background: GOLD }} className="w-full py-[17px] rounded-[15px] text-white text-base font-extrabold border-none cursor-pointer hover:brightness-110 transition">
               예약하기
             </button>
           )}
@@ -613,21 +624,18 @@ function ClassDetail({ isLoggedIn, onRequireLogin, onBack }) {
 }
 
 // ── 공통 컴포넌트 ──
-function Section({ children, className = '' }) {
+function Section({ children, className = '', style }) {
   return (
-    <div className={className}>
+    <div className={className} style={style}>
       <div className="max-w-[480px] mx-auto px-[22px]">{children}</div>
     </div>
   );
 }
 
-function Eyebrow({ children, color }) {
-  const isSage = color === 'sage';
-  const textColor = isSage ? 'text-[#5F8A76]' : 'text-[#FF6B9D]';
-  const barColor = isSage ? 'bg-[#5F8A76]' : 'bg-[#FF6B9D]';
+function Eyebrow({ children }) {
   return (
-    <div className={`inline-flex items-center gap-[7px] text-xs font-extrabold tracking-wide ${textColor}`}>
-      <span className={`w-4 h-[1.5px] ${barColor} inline-block`} />
+    <div style={{ color: PURPLE_DEEP }} className="inline-flex items-center gap-[7px] text-xs font-extrabold tracking-wide">
+      <span style={{ background: PURPLE }} className="w-4 h-[1.5px] inline-block" />
       {children}
     </div>
   );
