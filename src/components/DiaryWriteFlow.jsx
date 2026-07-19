@@ -208,9 +208,25 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
   const F = "'Pretendard', -apple-system, sans-serif";
 
+  // 나가기 전 저장 여부 확인 — 처음 화면을 열었을 때의 답변 상태를 스냅샷으로 남겨두고,
+  // 뒤로가기를 누른 시점에 지금 답변과 비교해서 실제로 바뀐 게 있을 때만 경고를 띄운다.
+  const snapshotAnswers = () => JSON.stringify({
+    dayMood, overexertVal, overexertPick, overexertOther, sleepVal,
+    exerciseDidIt, exerciseReason, exerciseTypes, oneLine, sore,
+  });
+  const initialSnapshotRef = useRef(null);
+  if (initialSnapshotRef.current === null) initialSnapshotRef.current = snapshotAnswers();
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
+
   const goBack = () => {
-    if (phase === "form" && onClose) onClose();
+    if (phase !== "form") return;
+    if (snapshotAnswers() !== initialSnapshotRef.current) {
+      setShowLeaveWarning(true);
+      return;
+    }
+    if (onClose) onClose();
   };
+  const discardAndLeave = () => { setShowLeaveWarning(false); if (onClose) onClose(); };
 
   // 기록 저장 → 말랑이 스트레스 해소 팝업 → '다음'을 누르면 캘린더로 복귀
   // 말랑이의 발견(월간 리포트, mallangReportEngine.js)이 sleep/overwork/exercise/soreness/note를
@@ -629,6 +645,22 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {/* ── 완료 팝업 — 캐릭터가 말랑이를 눌러보라고 채팅하듯 안내 ── */}
         {phase === "celebrate" && moodData && (
           <MallangStressPopup mood={moodData.v} charImage={charImage} nextLabel="완료" onNext={() => { if (onClose) onClose(); }} />
+        )}
+
+        {/* ── 나가기 전 확인 — 저장 안 한 답변이 있을 때만 뜬다 ── */}
+        {showLeaveWarning && (
+          <div onClick={() => setShowLeaveWarning(false)} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "#fff", borderRadius: 22, padding: "26px 22px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, lineHeight: 1.5 }}>지금 나가면 작성하던<br />내용이 사라져요</div>
+              <p style={{ fontSize: 13, color: C.sub, fontWeight: 600, margin: "8px 0 20px" }}>그래도 나가시겠어요?</p>
+              <button onClick={() => setShowLeaveWarning(false)} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.sage, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8 }}>
+                계속 쓸게요
+              </button>
+              <button onClick={discardAndLeave} style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                나갈래요
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
