@@ -193,7 +193,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       )}
 
       {showMallangClass && (
-        <MallangClass onClose={() => setShowMallangClass(false)} />
+        <MallangClass onClose={() => setShowMallangClass(false)} bmtiCode={bmtiCode} />
       )}
     </>
   );
