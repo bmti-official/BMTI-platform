@@ -1,67 +1,10 @@
 /* eslint-disable */
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef } from 'react';
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import { supabase } from '../lib/supabaseClient';
 import { BMTI_INFO } from './ResultView';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
-
-// 줄바꿈 대신, 컨테이너 폭에 안 맞으면 폰트 크기를 줄여 한 줄에 맞추는 컴포넌트.
-// 모바일에서 <br/>로 끊어둔 줄이 폭을 넘어가 엉뚱한 지점에서 또 줄바꿈되던 문제를 해결하기 위해 씀.
-function AutoFitLines({ lines, mobileSize = 16, desktopSize = 28, className = '', lineClassName = '' }) {
-  const containerRef = useRef(null);
-  const [fontSize, setFontSize] = useState(desktopSize);
-
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const measure = () => {
-      const containerWidth = container.clientWidth;
-      if (!containerWidth) return;
-
-      const isDesktop = window.innerWidth >= 768;
-      const baseSize = isDesktop ? desktopSize : mobileSize;
-      const computed = window.getComputedStyle(container);
-
-      const probe = document.createElement('div');
-      probe.style.position = 'absolute';
-      probe.style.visibility = 'hidden';
-      probe.style.whiteSpace = 'nowrap';
-      probe.style.left = '-9999px';
-      probe.style.fontSize = `${baseSize}px`;
-      probe.style.fontFamily = computed.fontFamily;
-      probe.style.fontWeight = computed.fontWeight;
-      probe.style.fontStyle = computed.fontStyle;
-      probe.style.letterSpacing = computed.letterSpacing;
-      document.body.appendChild(probe);
-
-      let minRatio = 1;
-      lines.forEach(line => {
-        probe.textContent = line;
-        const ratio = containerWidth / probe.scrollWidth;
-        if (ratio < minRatio) minRatio = ratio;
-      });
-      document.body.removeChild(probe);
-
-      setFontSize(Math.min(baseSize, baseSize * minRatio));
-    };
-
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [lines, mobileSize, desktopSize]);
-
-  return (
-    <div ref={containerRef} className={className}>
-      {lines.map((line, i) => (
-        <div key={i} className={lineClassName} style={{ whiteSpace: 'nowrap', fontSize: `${fontSize}px` }}>
-          {line}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
@@ -307,25 +250,6 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       )}
 
       {/* Removed Cards Section */}
-
-      {/* Quote Section */}
-      <section className="max-w-4xl mx-auto px-6 text-center mb-8 relative">
-        <div className="relative px-8 py-4 max-w-2xl mx-auto">
-          <span className="absolute top-0 left-0 md:-left-4 text-6xl md:text-8xl text-gray-200 font-serif leading-none select-none">"</span>
-          <AutoFitLines
-            lines={[
-              '지금까지 잘 안 됐던 건 의지 탓이 아니에요.',
-              '남들 방식에 나를 맞추려 했을 뿐이죠.',
-              '성격이 다 다르듯, 내 몸에 맞는 방식은 따로 있어요.',
-            ]}
-            mobileSize={16}
-            desktopSize={30}
-            className="font-serif italic text-gray-800 tracking-tight font-medium relative z-10"
-            lineClassName="leading-relaxed"
-          />
-          <span className="absolute -bottom-4 right-0 md:-right-4 text-6xl md:text-8xl text-gray-200 font-serif leading-none select-none">"</span>
-        </div>
-      </section>
     </div>
   );
 };
