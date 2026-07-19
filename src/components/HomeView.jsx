@@ -5,6 +5,8 @@ import { canRetakeTest } from '../lib/bmtiSystem';
 import { supabase } from '../lib/supabaseClient';
 import { BMTI_INFO } from './ResultView';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
+import mTypeImage from '../assets/M 유형.png';
+import zTypeImage from '../assets/Z 유형.jpg';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
@@ -239,7 +241,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       </section>
 
       {isLoggedIn && bmtiCode && (
-        <div className="text-center mb-24">
+        <div className="text-center mb-8">
           <button
             onClick={handleRetakeQuiz}
             className="text-gray-400 hover:text-gray-600 text-xs md:text-sm font-medium underline underline-offset-4 transition-colors"
@@ -248,6 +250,12 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           </button>
         </div>
       )}
+
+      {/* M/Z 유형 이미지 — 데스크톱은 좌우로, 모바일은 위아래로 나란히 */}
+      <div className="max-w-3xl mx-auto px-6 mb-24 flex flex-col md:flex-row items-center justify-center gap-6">
+        <img src={mTypeImage} alt="M 유형" className="w-full max-w-xs md:max-w-sm rounded-2xl border border-gray-100 shadow-sm object-contain" />
+        <img src={zTypeImage} alt="Z 유형" className="w-full max-w-xs md:max-w-sm rounded-2xl border border-gray-100 shadow-sm object-contain" />
+      </div>
 
       {/* Removed Cards Section */}
     </div>
