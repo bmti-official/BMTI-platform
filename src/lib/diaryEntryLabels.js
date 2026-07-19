@@ -3,6 +3,7 @@
 // 저장·미리보기·수정 폼 복원이 서로 어긋나지 않는다.
 
 export const SLEEP_LABELS = ["밤을 새웠어요", "뒤척였어요", "그냥 그랬어요", "푹 잤어요"]; // index = engine sleep(0~3)
+export const SLEEP_ICON = ["allNighter", "toss", "mehMoon", "sleepWell"]; // index = engine sleep(0~3), DiaryIcons.jsx의 이름과 매칭
 
 export const OVEREXERT_LOAD_KEY = { "오래 앉음": "sit", "오래 선 자세": "stand", "많이 걸음": "walk", "무거운 물건 들기": "lift" };
 export const EXERCISE_REASON_KEY = { "바빴어요": "busy", "피곤해요": "tired", "몸이 안 좋아요": "sick", "그냥 쉬고 싶었어요": "rest", "깜빡했어요": "forgot" };

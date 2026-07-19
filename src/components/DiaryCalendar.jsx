@@ -1,20 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
+import { DiaryIcon } from "./DiaryIcons";
 import { MOODS, CHARACTERS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   isDayWritable, isEntryLocked,
 } from "../lib/diaryHistory";
 import { MALLANG_SKINS, getMallangSkin, setMallangSkin } from "../lib/mallangSkins";
-import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS } from "../lib/diaryEntryLabels";
+import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON } from "../lib/diaryEntryLabels";
 
 const C = {
-  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
+  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", sage: "#5F8A76",
 };
 const SAT_BLUE = "#2F6FE0";
 const SUN_RED = "#E0554F";
-const OCHER = "#C9975A";
 const MIN_YEAR = 2026;
 const MIN_MONTH = 7; // 2026년 7월 이전은 선택 불가
 
@@ -69,19 +69,19 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
   // 미리보기 팝업에 보여줄 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
   const buildEntrySummary = (entry) => {
     const items = [];
-    if (entry.sleep != null) items.push({ icon: "😴", text: SLEEP_LABELS[entry.sleep] });
-    if (entry.overwork?.yes) items.push({ icon: "⚠️", text: "평소보다 무리했어요" });
+    if (entry.sleep != null) items.push({ icon: SLEEP_ICON[entry.sleep], text: SLEEP_LABELS[entry.sleep] });
+    if (entry.overwork?.yes) items.push({ icon: "warn", text: "평소보다 무리했어요" });
     if (entry.exercise?.did === true) {
       const types = (entry.exercise.types || []).map(t => KEY_TO_EXERCISE_TYPE_LABEL[t] || t).join(", ");
-      items.push({ icon: "🏃", text: `운동: ${types}` });
+      items.push({ icon: "walk", text: `운동: ${types}` });
     } else if (entry.exercise?.did === false) {
-      items.push({ icon: "🛌", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
+      items.push({ icon: "sofa", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
     }
     if (entry.soreness?.length) {
       const parts = entry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).join(", ");
-      items.push({ icon: "💢", text: `뻐근함: ${parts}` });
+      items.push({ icon: "bandage", text: `뻐근함: ${parts}` });
     }
-    if (entry.note?.text) items.push({ icon: "📝", text: entry.note.text });
+    if (entry.note?.text) items.push({ icon: "editPencil", text: entry.note.text });
     return items;
   };
 
@@ -115,8 +115,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
           >
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F3F1EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                <path d="M6 12 h17 M23 12 l-4.5-4.5 M23 12 l-4.5 4.5" stroke="#8A5A3B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke="#8A5A3B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6 12 h17 M23 12 l-4.5-4.5 M23 12 l-4.5 4.5" stroke={C.sage} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke={C.sage} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>말랑 바꾸기</span>
@@ -165,7 +165,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
                     onClick={() => onEditDay && onEditDay(dateStr, null)}
                     style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
                   >
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${OCHER}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${C.sage}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
                       {d}
                     </div>
                   </button>
@@ -302,8 +302,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
               {items.length > 0 ? (
                 <div style={{ background: "#FAF9F6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
                   {items.map((it, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.line}` : "none" }}>
-                      <span style={{ fontSize: 14, lineHeight: 1.4 }}>{it.icon}</span>
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.line}` : "none" }}>
+                      <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={22} /></div>
                       <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
                     </div>
                   ))}
@@ -314,7 +314,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode }) {
 
               <button
                 onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
-                style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: "#1C1A17", color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6 }}
+                style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.sage, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}
               >
                 이 기록 수정할래요
               </button>

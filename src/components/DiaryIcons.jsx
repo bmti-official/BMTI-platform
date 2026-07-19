@@ -201,6 +201,17 @@ function IconForgot({ size = 28 }) {
   );
 }
 
+function IconWarn({ size = 28 }) {
+  // 평소보다 무리했어요 — 경고 삼각형
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M16 4.5 L29 26.5 H3 Z" fill="#F2D06B" stroke="#C9A227" strokeWidth="1.8" strokeLinejoin="round" />
+      <rect x="14.6" y="13" width="2.8" height="7.4" rx="1.4" fill="#8A6A1E" />
+      <circle cx="16" cy="23" r="1.6" fill="#8A6A1E" />
+    </svg>
+  );
+}
+
 function IconGear({ size = 20, color = "#5F8A76" }) {
   // 사용자가 준 레퍼런스(8개 톱니 + 큰 가운데 구멍)와 같은 실루엣, 색만 사이트 톤으로.
   return (
@@ -223,7 +234,7 @@ const ICONS = {
   restNo: IconRestNo, flex: IconFlex,
   clock: IconClock, yawn: IconYawn, bandage: IconBandage, blanket: IconBlanket, forgot: IconForgot,
   standing: IconStanding, heavyLift: IconHeavyLift, editPencil: IconEditPencil,
-  gear: IconGear,
+  gear: IconGear, warn: IconWarn,
 };
 
 export function DiaryIcon({ name, size = 28 }) {

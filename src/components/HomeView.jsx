@@ -252,11 +252,11 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             {(isLoggedIn && !hasLoggedToday) && (
               <button
                 onClick={() => setView('aichat')}
-                className="w-full bg-[#FFEDF3] hover:bg-[#FCE3EC] rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors"
+                className="w-full bg-[#E9F1EC] hover:bg-[#DDEBE3] rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors"
               >
                 <div>
                   <p className="font-black text-gray-900 mb-1">오늘 기록, 아직이에요</p>
-                  <p className="text-sm text-pink-400 font-medium">10초면 충분해요</p>
+                  <p className="text-sm text-[#5F8A76] font-medium">10초면 충분해요</p>
                 </div>
                 <span className="text-2xl text-gray-300">›</span>
               </button>

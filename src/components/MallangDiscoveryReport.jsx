@@ -9,13 +9,81 @@ import {
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
 
 const C = {
-  page: "#F7F5F1", bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", card: "#FFFFFF",
+  page: "#FFFFFF", bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", card: "#FFFFFF",
 };
 const MOOD_COLOR = { 1: "#B85450", 2: "#F7C6D9", 3: "#B7B2A9", 4: "#BEE3C0", 5: "#5F8A76" };
 const CARD_SHADOW = "0 1px 2px rgba(28,26,23,0.03), 0 8px 20px rgba(28,26,23,0.05)";
+
+// 섹션 제목 옆 아이콘 — 기기마다 다르게 보이는 유니코드 이모지 대신, 사이트의 다른 하단
+// 네비 아이콘(Navbar.jsx)과 같은 currentColor 라인 아이콘으로 통일한다.
+const IconCalendar = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M3.5 9.5h17" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M8 3v3.4M16 3v3.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSmile = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="9" cy="10.6" r="1.15" fill="currentColor" />
+    <circle cx="15" cy="10.6" r="1.15" fill="currentColor" />
+    <path d="M8.6 14.4c1 1.2 5.8 1.2 6.8 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" fill="none" />
+  </svg>
+);
+const IconMap = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 21s-6.5-5.6-6.5-10.8a6.5 6.5 0 1 1 13 0C18.5 15.4 12 21 12 21Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <circle cx="12" cy="10" r="2.3" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
+const IconTimer = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="13" r="8" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M12 8.6V13l3 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" fill="none" />
+    <path d="M9.5 2.5h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconBattery = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="2.5" y="7.5" width="16" height="9" rx="2.2" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M20.5 10.5v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <rect x="5" y="10" width="6.5" height="4" rx="1" fill="currentColor" />
+  </svg>
+);
+const IconRun = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="14.6" cy="4.3" r="1.9" fill="currentColor" />
+    <path d="M9 21l2-5.4 2.3-2 .7-4-3.4 1.2-1.7 3.2M13.3 9.6l2 2.4 3.7 1M8 12.6l4-1.4 2.6-3.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </svg>
+);
+const IconMoon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M20 14.2A8.5 8.5 0 1 1 9.8 4a6.8 6.8 0 0 0 10.2 10.2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+  </svg>
+);
+const IconZzz = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M4 6h7l-7 8h7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M14 15h5.5l-5.5 5.5h5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.75" />
+  </svg>
+);
+const IconNotepad = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="4.5" y="3.5" width="15" height="17" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M8 8.5h8M8 12.5h8M8 16.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+const IconInfo = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="12" cy="8.3" r="1.15" fill="currentColor" />
+    <path d="M12 11.3v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
 const SECTION_ICON = {
-  mood_calendar: "📅", mood_distribution: "🙂", sore_map: "🗺️", sore_moments: "⏱️",
-  overwork: "🔋", movement: "🏃", rest: "🌙", sleep: "😴", notes: "📝",
+  mood_calendar: IconCalendar, mood_distribution: IconSmile, sore_map: IconMap, sore_moments: IconTimer,
+  overwork: IconBattery, movement: IconRun, rest: IconMoon, sleep: IconZzz, notes: IconNotepad,
 };
 
 const FREQ_KEY = { none: "rarely", sometimes: "sometimes", weekly: "weekly", daily: "daily" };
@@ -130,7 +198,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 22, padding: "12px 14px", background: "#FFFFFF", border: `1px solid ${C.line}`, borderRadius: 14 }}>
-          <span style={{ fontSize: 13 }}>ℹ️</span>
+          <span style={{ display: "flex", color: C.sub, marginTop: 1 }}><IconInfo size={14} /></span>
           <p style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.6, margin: 0 }}>{report.disclaimer}</p>
         </div>
       </div>
@@ -141,17 +209,17 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 function DiscoveryHero({ discovery: d }) {
   if (!d.found) {
     return (
-      <div style={{ background: "linear-gradient(180deg, #FBF8F3 0%, #F5F1E9 100%)", border: "1px solid #EEE6D6", borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
+      <div style={{ background: "linear-gradient(180deg, #F4F9F6 0%, #E9F1EC 100%)", border: "1px solid #D9E9E0", borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
           <Mallang v={3} size={44} />
         </div>
-        <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.65, margin: 0, color: "#6B6252", whiteSpace: "pre-line" }}>{d.lines[0]}</p>
+        <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.65, margin: 0, color: "#4E6459", whiteSpace: "pre-line" }}>{d.lines[0]}</p>
         {d.progress && (
           <>
             <div style={{ maxWidth: 160, margin: "16px auto 6px" }}>
-              <ProgressBar current={d.progress.current} required={d.progress.required} color="#D9C79A" />
+              <ProgressBar current={d.progress.current} required={d.progress.required} color="#8FB9A2" />
             </div>
-            <p style={{ fontSize: 12, color: "#A69A82", fontWeight: 700, margin: 0 }}>
+            <p style={{ fontSize: 12, color: "#7C9686", fontWeight: 700, margin: 0 }}>
               {d.progress.required}일 중 {d.progress.current}일 기록했어요
             </p>
           </>
@@ -176,10 +244,11 @@ function DiscoveryHero({ discovery: d }) {
 }
 
 function SectionCard({ section: s }) {
+  const Icon = SECTION_ICON[s.id];
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "16px 18px 20px", boxShadow: CARD_SHADOW }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
-        <span style={{ fontSize: 15, opacity: s.unlocked ? 1 : 0.45 }}>{SECTION_ICON[s.id] || "•"}</span>
+        <span style={{ display: "flex", color: s.unlocked ? C.ink : "#B7B2A9" }}>{Icon && <Icon size={16} />}</span>
         <span style={{ fontSize: 14.5, fontWeight: 800, color: s.unlocked ? C.ink : "#B7B2A9" }}>{s.title}</span>
         {!s.unlocked && <span style={{ marginLeft: "auto", fontSize: 11 }}>🔒</span>}
       </div>
