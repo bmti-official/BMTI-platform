@@ -5,11 +5,13 @@ import { Mallang } from "./Mallang";
 // "말랑이를 눌러서 스트레스를 풀어보세요"라고 말을 걸고, 가운데 큼직하게 뜬
 // 말랑이를 누르면 눌렸다 펴지는 인터랙션이 재생된다.
 //
-// 연타 메커니즘: 짧은 간격(RAPID_MS 이내)으로 계속 누르면 힘들었어요→...→좋았어요로
-// 한 단계씩 표정이 올라간다. 좋았어요(5)에 다다른 뒤에도 계속 연타하면, 지금 고른
-// 말랑이 스킨(기본/감자/얼음/호빵)의 아기 버전이 양옆에 나타나 다같이 웃는다.
+// 연타 메커니즘: 짧은 간격(RAPID_MS 이내)으로 계속 누르면 콤보가 쌓이고, 콤보가
+// TAPS_PER_LEVEL번 쌓일 때마다 힘들었어요→...→좋았어요로 한 단계씩 표정이 올라간다.
+// 좋았어요(5)에 다다른 뒤에도 같은 박자로 계속 연타하면, 지금 고른 말랑이 스킨
+// (기본/감자/얼음/호빵)의 아기 버전이 양옆에 나타나 다같이 웃는다.
 // 천천히 누르면(간격이 넓으면) 콤보가 끊겨서 단계가 오르지 않는다.
 const RAPID_MS = 700;
+const TAPS_PER_LEVEL = 3; // 한 단계 올리는 데 필요한 연속 연타 횟수
 const BABY_COUNT = 4;
 
 export default function MallangStressPopup({ mood, charImage, onNext, nextLabel = "다음" }) {
@@ -18,6 +20,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
   const [showBabies, setShowBabies] = useState(false);
   const [babyTapKey, setBabyTapKey] = useState(0);
   const lastTapAt = useRef(0);
+  const comboRef = useRef(0);
 
   const handleTap = () => {
     const now = Date.now();
@@ -27,7 +30,14 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
     setTapKey(k => k + 1);
     if (navigator.vibrate) navigator.vibrate(15);
 
-    if (!isRapid) return; // 느긋하게 누르면 그냥 통통 튀기만 하고 단계는 그대로
+    if (!isRapid) {
+      comboRef.current = 0; // 느긋하게 누르면 콤보가 끊겨서 그냥 통통 튀기만 한다
+      return;
+    }
+
+    comboRef.current += 1;
+    if (comboRef.current < TAPS_PER_LEVEL) return;
+    comboRef.current = 0;
 
     if (level < 5) {
       setLevel(l => Math.min(5, l + 1));
