@@ -149,12 +149,10 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
 
   const axisCode = bmtiCode ? String(bmtiCode).split('-')[0] : '';
   const charInfo = axisCode ? CHARACTERS.find(c => c.id === axisCode) : null;
-  // 유형 톤 — Z=파랑, M=핑크, 그 외(미검사)=라임(사이트 기본 포인트 컬러)
-  const typeAccent = axisCode.includes('Z')
-    ? { ring: 'ring-blue-200', badgeBg: 'bg-blue-50', badgeBorder: 'border-blue-200', badgeText: 'text-blue-700', wash: 'from-blue-50' }
-    : axisCode.includes('M')
+  // 유형 톤(색상 통일) — Z=연보라, M=연분홍, 그 외(미검사)=연보라(기본)
+  const typeAccent = axisCode.includes('M')
     ? { ring: 'ring-pink-200', badgeBg: 'bg-pink-50', badgeBorder: 'border-pink-200', badgeText: 'text-pink-700', wash: 'from-pink-50' }
-    : { ring: 'ring-[#c0ff00]/40', badgeBg: 'bg-[#c0ff00]/10', badgeBorder: 'border-[#9BB31B]/30', badgeText: 'text-[#6b7d1f]', wash: 'from-[#c0ff00]/10' };
+    : { ring: 'ring-purple-200', badgeBg: 'bg-purple-50', badgeBorder: 'border-purple-200', badgeText: 'text-purple-700', wash: 'from-purple-50' };
 
   const [bmtiHistory, setBmtiHistory] = useState([]);
 
@@ -285,7 +283,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         {!bmtiCode && !isEditing && (
           <button
             onClick={() => setView('home')}
-            className="mt-5 w-full bg-black text-[#c0ff00] font-bold py-3 rounded-2xl hover:bg-gray-900 transition-colors shadow-sm text-sm"
+            className="mt-5 w-full bg-[#C9975A] text-white font-bold py-3 rounded-2xl hover:brightness-105 transition-all shadow-sm text-sm"
           >
             🧬 BMTI 검사하기
           </button>
@@ -395,7 +393,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                     key={id}
                     onClick={() => setUserData({ ...userData, exercise_frequency: id })}
                     className={`text-xs py-1.5 px-2 rounded-lg border font-bold transition-colors text-center ${
-                      userData.exercise_frequency === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      userData.exercise_frequency === id ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                     }`}
                   >
                     {label}
@@ -415,7 +413,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                       onClick={() => toggleExerciseGoal(id)}
                       disabled={disabled}
                       className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
-                        on ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                        on ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                       } ${disabled ? 'opacity-40' : ''}`}
                     >
                       {label}
@@ -432,7 +430,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                     key={id}
                     onClick={() => setPosturePick(id)}
                     className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors flex flex-col items-start gap-0.5 ${
-                      posturePick === id ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      posturePick === id ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                     }`}
                   >
                     <span>{label}</span>
@@ -521,9 +519,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             return (
               <div
                 key={idx}
-                className={`min-w-[140px] md:min-w-[160px] bg-white border p-4 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm snap-start ${item.isCurrent ? 'border-[#c0ff00]' : 'border-gray-200'}`}
+                className={`min-w-[140px] md:min-w-[160px] bg-white border p-4 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm snap-start ${item.isCurrent ? 'border-[#C9975A]' : 'border-gray-200'}`}
               >
-                {item.isCurrent && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#c0ff00]"></div>}
+                {item.isCurrent && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#C9975A]"></div>}
                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
                   {codeStr && getCharImage(codeStr) ? (
                     <img src={getCharImage(codeStr)} alt={shortCode} className="w-full h-full object-contain scale-110" />
@@ -543,7 +541,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
 
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">말랑 클래스 히스토리</h3>
-        <button onClick={() => setView('mallangroom')} className="bg-black text-white font-medium py-1.5 px-4 rounded-full hover:bg-gray-800 transition-colors text-xs shadow-sm whitespace-nowrap">
+        <button onClick={() => setView('mallangroom')} className="bg-[#C9975A] text-white font-medium py-1.5 px-4 rounded-full hover:brightness-105 transition-all text-xs shadow-sm whitespace-nowrap">
           둘러보기
         </button>
       </div>

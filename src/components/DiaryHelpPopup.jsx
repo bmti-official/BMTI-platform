@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mallang } from "./Mallang";
+import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
 // ─────────────────────────────────────────────
 // 말랑 다이어리 '?' 도움말 팝업 — 처음 로그인 후 온보딩에서 보여주던
@@ -57,6 +58,8 @@ export default function DiaryHelpPopup({ onClose, isLoggedIn, onRequireLogin }) 
     if (onRequireLogin) onRequireLogin();
   };
 
+  const t = getTypeAccent();
+
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 360, maxHeight: "82vh", background: "#fff", borderRadius: 24, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -66,7 +69,7 @@ export default function DiaryHelpPopup({ onClose, isLoggedIn, onRequireLogin }) 
         {/* 진행 점 */}
         <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "20px 0 4px", flexShrink: 0 }}>
           {STEPS.map((_, n) => (
-            <div key={n} style={{ width: n === i ? 18 : 6, height: 6, borderRadius: 6, transition: "all .3s", background: n <= i ? C.ink : C.line }} />
+            <div key={n} style={{ width: n === i ? 18 : 6, height: 6, borderRadius: 6, transition: "all .3s", background: n <= i ? t.accent : C.line }} />
           ))}
         </div>
 
@@ -89,8 +92,8 @@ export default function DiaryHelpPopup({ onClose, isLoggedIn, onRequireLogin }) 
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-                <div style={{ width: 30, height: 30, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
-                <div style={{ maxWidth: "85%", background: "#FAF9F6", border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px", padding: "13px 15px", fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-line" }}>
+                <div style={{ width: 30, height: 30, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
+                <div style={{ maxWidth: "85%", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: "18px 18px 18px 4px", padding: "13px 15px", fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-line" }}>
                   {step.bot}
                 </div>
               </div>
@@ -109,7 +112,7 @@ export default function DiaryHelpPopup({ onClose, isLoggedIn, onRequireLogin }) 
               <p style={{ fontSize: 10.5, color: C.sub, marginTop: 9 }}>🔕 광고 안 보냄 · 결과만 저장</p>
             </div>
           ) : (
-            <button onClick={isLast ? onClose : next} style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: C.ink, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>
+            <button onClick={isLast ? onClose : next} style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>
               {isLast ? "확인" : "다음"}
             </button>
           )}
@@ -122,5 +125,5 @@ export default function DiaryHelpPopup({ onClose, isLoggedIn, onRequireLogin }) 
 }
 
 function Mark({ children }) {
-  return <span style={{ background: C.lime, padding: "0 4px", borderRadius: 3, boxDecorationBreak: "clone" }}>{children}</span>;
+  return <span style={{ background: getTypeAccent().accentSoft, padding: "0 4px", borderRadius: 3, boxDecorationBreak: "clone" }}>{children}</span>;
 }

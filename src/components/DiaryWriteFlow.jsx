@@ -7,6 +7,7 @@ import {
   SLEEP_LABELS, OVEREXERT_LOAD_KEY, EXERCISE_REASON_KEY, PART_KEY, WHEN_KEY, EXERCISE_TYPE_KEY,
   LOAD_TO_OVEREXERT_LABEL, REASON_TO_EXERCISE_LABEL, KEY_TO_PART_LABEL, KEY_TO_WHEN_LABEL, KEY_TO_EXERCISE_TYPE_LABEL,
 } from "../lib/diaryEntryLabels";
+import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
 // ============================================
 // BMTI 하루일기 작성 플로우
@@ -14,11 +15,12 @@ import {
 // ============================================
 
 // 색감·톤은 사이트 전체(BMTI 하루일기 온보딩·캘린더, BMTI 라이브)와 통일한다.
+// 색상 통일: 핵심 버튼 골드 / 박스·타일 연옐로우 / 선택·강조는 유형별(M 연분홍·Z 연보라).
+// 기분(말랑이) 색은 데이터라 그대로 둔다.
 const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
-  pink: "#FF6B9D", pinkSoft: "#FFEDF3", sage: "#5F8A76", sageSoft: "#E9F1EC",
+  gold: GOLD, yellow: YELLOW, yellowLine: YELLOW_LINE,
   tileOff: "#F3F1EC", tileOffText: "#B7B2A9",
-  ocherSoft: "#F3E7D2", blueGraySoft: "#E3EAF0",
 };
 
 // ── 평소보다 무리한 이유 ──
@@ -207,6 +209,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const toggle = (key) => setExpanded(e => ({ ...e, [key]: !e[key] }));
 
   const F = "'Pretendard', -apple-system, sans-serif";
+  const t = getTypeAccent();
 
   // 나가기 전 저장 여부 확인 — 처음 화면을 열었을 때의 답변 상태를 스냅샷으로 남겨두고,
   // 뒤로가기를 누른 시점에 지금 답변과 비교해서 실제로 바뀐 게 있을 때만 경고를 띄운다.
@@ -350,8 +353,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           expanded={expanded.sitting} onToggle={() => toggle("sitting")} done={overexertComplete}>
           {(overexertVal === null || overexertVal === "no") && (
             <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
-              <EmojiTile icon="restNo" label="아니요!" on={overexertVal === "no"} onClick={pickOverexertNo} tint={C.ocherSoft} />
-              <EmojiTile icon="flex" label="맞아요!" on={false} onClick={() => setOverexertVal("yes")} tint={C.ocherSoft} />
+              <EmojiTile icon="restNo" label="아니요!" on={overexertVal === "no"} onClick={pickOverexertNo} tint={C.yellow} />
+              <EmojiTile icon="flex" label="맞아요!" on={false} onClick={() => setOverexertVal("yes")} tint={C.yellow} />
             </div>
           )}
 
@@ -360,9 +363,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>어떻게 무리했어요?</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
                 {OVEREXERT_REASONS.map(r => (
-                  <EmojiTile key={r.label} icon={r.icon} label={r.label} on={overexertPick === r.label} onClick={() => pickOverexertReason(r.label)} tint={C.ocherSoft} />
+                  <EmojiTile key={r.label} icon={r.icon} label={r.label} on={overexertPick === r.label} onClick={() => pickOverexertReason(r.label)} tint={C.yellow} />
                 ))}
-                <EmojiTile icon="editPencil" label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} tint={C.ocherSoft} />
+                <EmojiTile icon="editPencil" label="기타(직접 입력)" on={overexertPick === "other"} onClick={() => pickOverexertReason("other")} tint={C.yellow} />
               </div>
               {overexertPick === "other" && (
                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -371,7 +374,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     placeholder="짧게 적어주세요 (예: 무거운 짐 옮기기)"
                     style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
                   <button onClick={confirmOverexertOther} disabled={!overexertOther.trim()}
-                    style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: overexertOther.trim() ? 1 : 0.4 }}>확인</button>
+                    style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: overexertOther.trim() ? 1 : 0.4 }}>확인</button>
                 </div>
               )}
               <button onClick={() => { setOverexertVal(null); setOverexertPick(null); setOverexertOther(""); }} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
@@ -386,7 +389,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
           <div style={{ display: "flex", gap: 6 }}>
             {SLEEP_OPTS.map(opt => (
-              <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} tint={C.blueGraySoft} />
+              <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} tint={C.yellow} />
             ))}
           </div>
         </AccordionCard>
@@ -398,8 +401,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
           {exerciseDidIt === null && (
             <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
-              <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} tint={C.sageSoft} />
-              <EmojiTile icon="flex" label="했어요!" on={false} onClick={() => setExerciseDidIt("yes")} tint={C.sageSoft} />
+              <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} tint={C.yellow} />
+              <EmojiTile icon="flex" label="했어요!" on={false} onClick={() => setExerciseDidIt("yes")} tint={C.yellow} />
             </div>
           )}
 
@@ -408,7 +411,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 10 }}>오늘은 어떤 이유였어요?</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: 14, justifyItems: "center" }}>
                 {NO_EXERCISE_REASONS.map(r => (
-                  <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} iconSize={36} tint={C.sageSoft} />
+                  <EmojiTile key={r.label} icon={r.icon} label={r.label} on={exerciseReason === r.label} onClick={() => pickExerciseReason(r.label)} iconSize={36} tint={C.yellow} />
                 ))}
               </div>
               <button onClick={() => setExerciseDidIt(null)} style={{ marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>‹ 다시 고르기</button>
@@ -425,14 +428,14 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     {cat.items.map(type => {
                       const on = exerciseTypes.includes(type);
                       const disabled = !on && exerciseTypes.length >= 2;
-                      return <Tile key={type} content={type} on={on} onClick={() => toggleExerciseType(type)} disabled={disabled} size={62} tint={C.sageSoft} />;
+                      return <Tile key={type} content={type} on={on} onClick={() => toggleExerciseType(type)} disabled={disabled} size={62} tint={C.yellow} />;
                     })}
                   </div>
                 </div>
               ))}
 
               {/* 기타 — 조그만 하이퍼링크 느낌 버튼, 누르면 입력창이 아코디언으로 펼쳐짐 */}
-              <button onClick={() => setShowCustomExercise(v => !v)} style={{ border: "none", background: "transparent", color: C.sage, fontSize: 11.5, fontWeight: 700, textDecoration: "underline", cursor: "pointer", padding: "2px 0", display: "block", marginBottom: showCustomExercise ? 10 : 4 }}>
+              <button onClick={() => setShowCustomExercise(v => !v)} style={{ border: "none", background: "transparent", color: t.accentDeep, fontSize: 11.5, fontWeight: 700, textDecoration: "underline", cursor: "pointer", padding: "2px 0", display: "block", marginBottom: showCustomExercise ? 10 : 4 }}>
                 기타 운동 직접 입력 {showCustomExercise ? "▾" : "▸"}
               </button>
               {showCustomExercise && (
@@ -441,16 +444,16 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     onKeyDown={e => e.key === "Enter" && addCustomExercise()}
                     style={{ flex: 1, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F }} />
                   <button onClick={addCustomExercise} disabled={exerciseTypes.length >= 2}
-                    style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.ink, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: exerciseTypes.length >= 2 ? 0.4 : 1 }}>추가</button>
+                    style={{ padding: "10px 16px", borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: exerciseTypes.length >= 2 ? 0.4 : 1 }}>추가</button>
                 </div>
               )}
 
               {/* 선택된 종목 표시 */}
               {exerciseTypes.length > 0 && (
                 <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-                  {exerciseTypes.map(t => (
-                    <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 14, background: C.pink, color: "#fff", fontSize: 12, fontWeight: 700 }}>
-                      {t} <button onClick={() => toggleExerciseType(t)} style={{ border: "none", background: "transparent", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+                  {exerciseTypes.map(et => (
+                    <span key={et} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 14, background: t.accent, color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                      {et} <button onClick={() => toggleExerciseType(et)} style={{ border: "none", background: "transparent", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
                     </span>
                   ))}
                 </div>
@@ -486,7 +489,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               const on = sore.parts.includes(p);
               const disabled = !on && sore.parts.length >= 2;
               return (
-                <Tile key={p} content={p} on={on} disabled={disabled} tint={C.pinkSoft} onClick={() => setSore(s => ({
+                <Tile key={p} content={p} on={on} disabled={disabled} tint={C.yellow} onClick={() => setSore(s => ({
                   ...s,
                   parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]),
                 }))} />
@@ -495,7 +498,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           </div>
           {sore.parts.length > 0 && <>
             <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
-            <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: C.pink }} />
+            <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: t.accent }} />
 
             {sore.parts.map(p => (
               <div key={p}>
@@ -515,7 +518,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             ))}
 
             {soreHeadline && (
-              <div style={{ marginTop: 14, padding: "12px 14px", background: C.sageSoft, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
+              <div style={{ marginTop: 14, padding: "12px 14px", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
                 "{soreHeadline}"
               </div>
             )}
@@ -539,7 +542,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
           </span>
-          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? C.sage : C.sub }}>
+          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? t.accentDeep : C.sub }}>
             {editMode ? (
               <span style={{ fontSize: 13, fontWeight: 800 }}>완료</span>
             ) : (
@@ -617,7 +620,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                           <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: C.sub }}>{REORDERABLE_LABEL[id]}</span>
                           <button onClick={() => toggleHideBlock(id)} style={{
                             width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 800, lineHeight: 1,
-                            background: hidden ? C.sageSoft : C.pinkSoft, color: hidden ? C.sage : C.pink,
+                            background: hidden ? C.tileOff : t.accentSoft, color: hidden ? C.sub : t.accentDeep,
                           }}>
                             {hidden ? "+" : "−"}
                           </button>
@@ -638,7 +641,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {/* ── 하단 고정 CTA 버튼 ── */}
         {phase === "form" && (
           <div style={{ flexShrink: 0, padding: "10px 14px 20px", background: `linear-gradient(transparent, ${C.bg} 20%)`, borderTop: `1px solid ${C.line}` }}>
-            <button onClick={finishFlow} style={{ ...primaryBtn, background: C.sage, color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>이대로 기록하기</button>
+            <button onClick={finishFlow} style={{ ...primaryBtn, background: C.gold, color: "#fff", opacity: dayMood ? 1 : 0.5 }} disabled={!dayMood}>이대로 기록하기</button>
           </div>
         )}
 
@@ -653,7 +656,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "#fff", borderRadius: 22, padding: "26px 22px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, lineHeight: 1.5 }}>지금 나가면 작성하던<br />내용이 사라져요</div>
               <p style={{ fontSize: 13, color: C.sub, fontWeight: 600, margin: "8px 0 20px" }}>그래도 나가시겠어요?</p>
-              <button onClick={() => setShowLeaveWarning(false)} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.sage, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8 }}>
+              <button onClick={() => setShowLeaveWarning(false)} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8 }}>
                 계속 쓸게요
               </button>
               <button onClick={discardAndLeave} style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
@@ -676,7 +679,7 @@ function AccordionTitle({ question, answerIcon, answerText, muted }) {
   return (
     <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 15, fontWeight: 800, color: muted ? C.tileOffText : C.ink, lineHeight: 1.4, flex: 1, paddingRight: 12 }}>
       {answerIcon && (
-        <span style={{ width: 24, height: 24, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <span style={{ width: 24, height: 24, borderRadius: "50%", background: getTypeAccent().accentSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <DiaryIcon name={answerIcon} size={16} />
         </span>
       )}
@@ -693,7 +696,7 @@ function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, d
     <div style={{ position: "relative", background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.02)", overflow: "hidden", flexShrink: 0 }}>
       <button onClick={onToggle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
         <AccordionTitle question={question} answerIcon={answerIcon} answerText={answerText} />
-        <span style={{ fontSize: 12, color: done ? C.sage : C.sub, fontWeight: 700, flexShrink: 0, transition: "transform .2s", transform: expanded ? "rotate(180deg)" : "rotate(0)" }}>
+        <span style={{ fontSize: 12, color: done ? getTypeAccent().accentDeep : C.sub, fontWeight: 700, flexShrink: 0, transition: "transform .2s", transform: expanded ? "rotate(180deg)" : "rotate(0)" }}>
           {done && !expanded ? "✓" : "▾"}
         </span>
       </button>
@@ -718,7 +721,7 @@ function Card({ title, children }) {
 function Chip({ label, on, onClick, disabled }) {
   return (
     <button onClick={disabled ? undefined : onClick} style={{ flex: "0 0 auto", padding: "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
-      border: "none", background: on ? C.pink : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}>
+      border: "none", background: on ? getTypeAccent().accent : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}>
       {label}
     </button>
   );
@@ -735,6 +738,7 @@ function fitTileFontSize(text) {
 }
 
 function Tile({ content, label, on, onClick, disabled, size = 60, tint = C.tileOff }) {
+  const t = getTypeAccent();
   return (
     <button
       onClick={disabled ? undefined : onClick}
@@ -746,9 +750,9 @@ function Tile({ content, label, on, onClick, disabled, size = 60, tint = C.tileO
     >
       <div style={{
         width: size, height: size, borderRadius: "32%", boxSizing: "border-box",
-        background: on ? C.pink : tint,
+        background: on ? t.accent : tint,
         display: "flex", alignItems: "center", justifyContent: "center", padding: 5,
-        boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none",
+        boxShadow: on ? "0 4px 14px rgba(0,0,0,0.12)" : "none",
         transition: "background .15s, box-shadow .15s",
       }}>
         <span style={{ fontSize: fitTileFontSize(content), fontWeight: 800, color: on ? "#fff" : C.sub, textAlign: "center", lineHeight: 1.15, wordBreak: "keep-all" }}>
@@ -763,13 +767,14 @@ function Tile({ content, label, on, onClick, disabled, size = 60, tint = C.tileO
 // 원 안에 2D 아이콘을 넣는 타일(시간대·감정·이유 등 실제 아이콘이 있는 항목용).
 // tint: 꺼진 상태의 배지 배경 — 블럭마다 고유한 톤을 줘서 획일적인 회색 원으로 안 보이게 한다.
 function EmojiTile({ icon, label, on, onClick, iconSize = 28, tint = C.tileOff }) {
+  const t = getTypeAccent();
   return (
     <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, flex: 1 }}>
       <div style={{
-        width: 54, height: 54, borderRadius: "32%", background: on ? C.pink : tint,
+        width: 54, height: 54, borderRadius: "32%", background: on ? t.accent : tint,
         display: "flex", alignItems: "center", justifyContent: "center",
         filter: on ? "none" : "grayscale(0.25) opacity(0.9)",
-        boxShadow: on ? "0 4px 14px rgba(255,107,157,0.35)" : "none", transition: "all .15s",
+        boxShadow: on ? "0 4px 14px rgba(0,0,0,0.12)" : "none", transition: "all .15s",
       }}>
         <DiaryIcon name={icon} size={iconSize} />
       </div>

@@ -4,6 +4,7 @@ import { getDiaryHistory } from "../lib/diaryHistory";
 import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
+import { getTypeAccent, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -207,19 +208,20 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 }
 
 function DiscoveryHero({ discovery: d }) {
+  const t = getTypeAccent();
   if (!d.found) {
     return (
-      <div style={{ background: "linear-gradient(180deg, #F4F9F6 0%, #E9F1EC 100%)", border: "1px solid #D9E9E0", borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
+      <div style={{ background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
           <Mallang v={3} size={44} />
         </div>
-        <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.65, margin: 0, color: "#4E6459", whiteSpace: "pre-line" }}>{d.lines[0]}</p>
+        <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.65, margin: 0, color: C.ink, whiteSpace: "pre-line" }}>{d.lines[0]}</p>
         {d.progress && (
           <>
             <div style={{ maxWidth: 160, margin: "16px auto 6px" }}>
-              <ProgressBar current={d.progress.current} required={d.progress.required} color="#8FB9A2" />
+              <ProgressBar current={d.progress.current} required={d.progress.required} color={t.accent} />
             </div>
-            <p style={{ fontSize: 12, color: "#7C9686", fontWeight: 700, margin: 0 }}>
+            <p style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: 0 }}>
               {d.progress.required}일 중 {d.progress.current}일 기록했어요
             </p>
           </>
@@ -228,12 +230,12 @@ function DiscoveryHero({ discovery: d }) {
     );
   }
   return (
-    <div style={{ background: "linear-gradient(155deg, #FFF8EC 0%, #FFF0DA 100%)", border: "1px solid #F5DCB0", borderRadius: 22, padding: "22px 20px", boxShadow: CARD_SHADOW }}>
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#966B1F", fontWeight: 800, marginBottom: 12, background: "rgba(255,255,255,0.6)", padding: "4px 10px", borderRadius: 999 }}>
+    <div style={{ background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "22px 20px", boxShadow: CARD_SHADOW }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: t.accentDeep, fontWeight: 800, marginBottom: 12, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>
         ✨ 이번 달의 발견
       </div>
       <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.48, margin: "0 0 6px" }}>{d.headline}</p>
-      {d.evidence && <p style={{ fontSize: 12, color: "#A6863F", fontWeight: 700, margin: "0 0 16px" }}>근거 · {d.evidence}</p>}
+      {d.evidence && <p style={{ fontSize: 12, color: t.accentDeep, fontWeight: 700, margin: "0 0 16px" }}>근거 · {d.evidence}</p>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "rgba(255,255,255,0.55)", borderRadius: 14, padding: "14px 16px" }}>
         {d.lines.map((line, i) => (
           <p key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.6, margin: 0, color: C.ink }}>{line}</p>
@@ -280,11 +282,12 @@ function SectionCard({ section: s }) {
   );
 }
 
-function ProgressBar({ current, required, color = "#5F8A76" }) {
+function ProgressBar({ current, required, color }) {
+  const fill = color || getTypeAccent().accent;
   const pct = Math.min(100, Math.round((current / required) * 100));
   return (
     <div style={{ height: 6, borderRadius: 3, background: "#EDE9E2", overflow: "hidden" }}>
-      <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 3, transition: "width .3s ease" }} />
+      <div style={{ height: "100%", width: `${pct}%`, background: fill, borderRadius: 3, transition: "width .3s ease" }} />
     </div>
   );
 }
@@ -400,7 +403,7 @@ function SoreMap({ data }) {
           if (!pos) return null;
           const r = 3.5 + 6.5 * (p.count / (data.maxCount || 1));
           return (
-            <circle key={p.part} cx={pos.x} cy={pos.y} r={r} fill="#FF6B9D" opacity={0.7}>
+            <circle key={p.part} cx={pos.x} cy={pos.y} r={r} fill={getTypeAccent().accent} opacity={0.7}>
               <title>{p.label} {p.count}번</title>
             </circle>
           );
@@ -432,7 +435,7 @@ function OverworkBody({ data }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {data.items.map((it) => (
-        <BarRow key={it.load} label={it.label} count={it.count} max={max} color="#C9975A" />
+        <BarRow key={it.load} label={it.label} count={it.count} max={max} color={getTypeAccent().accent} />
       ))}
     </div>
   );
@@ -443,7 +446,7 @@ function MovementBody({ data }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {data.byType.map((it) => (
-        <BarRow key={it.type} label={it.label} count={it.count} max={max} color="#5F8A76" />
+        <BarRow key={it.type} label={it.label} count={it.count} max={max} color={getTypeAccent().accent} />
       ))}
     </div>
   );
@@ -468,7 +471,7 @@ function SleepBody({ data }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {data.items.map((it) => (
-        <BarRow key={it.level} label={it.label} count={it.count} max={max} color="#6FA3C9" />
+        <BarRow key={it.level} label={it.label} count={it.count} max={max} color={getTypeAccent().accent} />
       ))}
     </div>
   );

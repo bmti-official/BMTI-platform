@@ -10,9 +10,13 @@ import {
 } from "../lib/diaryHistory";
 import { MALLANG_SKINS, getMallangSkin, setMallangSkin } from "../lib/mallangSkins";
 import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON } from "../lib/diaryEntryLabels";
+import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
+// 색상 통일: 핵심 버튼 골드 / 박스 연옐로우 / 강조 요소는 유형별(M 연분홍·Z 연보라).
+// 단, 기분(말랑이)·요일 색 등 '데이터 색'은 의미가 있어 그대로 둔다.
 const C = {
-  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", sage: "#5F8A76",
+  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
+  gold: GOLD, yellow: YELLOW, yellowLine: YELLOW_LINE,
 };
 const SAT_BLUE = "#2F6FE0";
 const SUN_RED = "#E0554F";
@@ -29,6 +33,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [showSkinPicker, setShowSkinPicker] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const currentSkin = getMallangSkin();
+  const t = getTypeAccent(bmtiCode);
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
   const isM = axisCode.includes("M");
@@ -126,8 +131,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           >
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F3F1EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                <path d="M6 12 h17 M23 12 l-4.5-4.5 M23 12 l-4.5 4.5" stroke={C.sage} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke={C.sage} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6 12 h17 M23 12 l-4.5-4.5 M23 12 l-4.5 4.5" stroke={t.accentDeep} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke={t.accentDeep} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>말랑 바꾸기</span>
@@ -176,7 +181,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                     onClick={() => onEditDay && onEditDay(dateStr, null)}
                     style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
                   >
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${C.sage}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${t.accent}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
                       {d}
                     </div>
                   </button>
@@ -219,7 +224,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                     key={key}
                     onClick={() => { setMallangSkin(key); setShowSkinPicker(false); }}
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 4px", borderRadius: 16,
-                      border: on ? `2px solid ${C.ink}` : "2px solid transparent", background: on ? "#F5F3EE" : "transparent", cursor: "pointer" }}
+                      border: on ? `2px solid ${t.accent}` : "2px solid transparent", background: on ? t.accentSoft : "transparent", cursor: "pointer" }}
                   >
                     <Mallang v={5} size={44} skinOverride={key} />
                     <span style={{ fontSize: 11, fontWeight: 700, color: on ? C.ink : C.sub, whiteSpace: "nowrap" }}>{skinInfo.label}</span>
@@ -271,7 +276,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <div style={{ textAlign: "center", paddingTop: 2 }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Mallang v={poppedMood} size={58} /></div>
                   <div style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 18 }}>{moodPickedMessage}</div>
-                  <button onClick={continueToFullForm} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: "#5F8A76", color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}>
+                  <button onClick={continueToFullForm} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
                     네, 조금 더 기록할게요
                   </button>
                   <button onClick={quickSaveMood} style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
@@ -315,9 +320,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               </div>
 
               {items.length > 0 ? (
-                <div style={{ background: "#FAF9F6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
+                <div style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
                   {items.map((it, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.line}` : "none" }}>
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
                       <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={22} /></div>
                       <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
                     </div>
@@ -329,7 +334,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
               <button
                 onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
-                style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.sage, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 14px rgba(95,138,118,0.25)" }}
+                style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}
               >
                 이 기록 수정할래요
               </button>
@@ -375,7 +380,7 @@ function DatePickerModal({ year, month, onCancel, onConfirm }) {
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
           <button onClick={onCancel} style={{ flex: 1, padding: 15, borderRadius: 16, border: "none", background: "#EFEDE9", color: "#6B6660", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
-          <button onClick={() => onConfirm(selYear, selMonth - 1)} style={{ flex: 1, padding: 15, borderRadius: 16, border: "none", background: "#5F8A76", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>확인</button>
+          <button onClick={() => onConfirm(selYear, selMonth - 1)} style={{ flex: 1, padding: 15, borderRadius: 16, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>확인</button>
         </div>
       </div>
     </div>

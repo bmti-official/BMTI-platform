@@ -3,6 +3,7 @@ import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { MOODS } from "../data";
 import { supabase } from "../lib/supabaseClient";
+import { getTypeAccent, GOLD } from "../lib/typeAccent";
 
 // ─────────────────────────────────────────────
 // BMTI 하루일기 — 첫 방문자용 온보딩 대화
@@ -12,7 +13,6 @@ import { supabase } from "../lib/supabaseClient";
 
 const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
-  pink: "#FF6B9D", pinkSoft: "#FFEDF3", lime: "#DFF56B", sage: "#5F8A76", sageSoft: "#E9F1EC",
   tileOff: "#F3F1EC",
 };
 
@@ -40,6 +40,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
   const [i, setI] = useState(0);
   const [mood, setMood] = useState(null);
   const [phase, setPhase] = useState("talk"); // talk | pick | react | save
+  const t = getTypeAccent(bmtiCode);
 
   // 첫 진입 마지막에 딱 한 번만 물어보는 운동 정보 팝업
   const [showExerciseInfo, setShowExerciseInfo] = useState(false);
@@ -84,7 +85,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
     {
       id: "intro",
       title: isLoggedIn ? (
-        <><span style={{ color: C.pink }}>{nickname}</span> 님,<br />이제 당신의 <Mark>성향을 알았어요.</Mark></>
+        <><span style={{ color: t.accentDeep }}>{nickname}</span> 님,<br />이제 당신의 <Mark>성향을 알았어요.</Mark></>
       ) : (
         <>당신의 성향 알려줘요.</>
       ),
@@ -148,7 +149,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
           <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "96px 0 0" }}>
             {STEPS.map((_, n) => (
               <div key={n} style={{ width: n === i ? 18 : 6, height: 6, borderRadius: 6, transition: "all .3s",
-                background: n <= i ? C.ink : C.line }} />
+                background: n <= i ? t.accent : C.line }} />
             ))}
           </div>
         )}
@@ -261,7 +262,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
             </div>
 
             <button onClick={() => setShowExerciseInfo(true)} style={{ width: "100%", marginTop: 26, padding: 17, borderRadius: 15, border: "none",
-              background: C.ink, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
+              background: GOLD, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
               캘린더에서 계속 기록하기
             </button>
           </div>
@@ -304,7 +305,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
               <button
                 onClick={submitExerciseInfo}
                 disabled={!freq || !posture || (posture === "other" && !postureCustom.trim()) || goals.length === 0 || savingInfo}
-                style={{ width: "100%", marginTop: 8, padding: 16, borderRadius: 15, border: "none", background: C.sage, color: "#fff",
+                style={{ width: "100%", marginTop: 8, padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff",
                   fontSize: 15, fontWeight: 800, cursor: "pointer", opacity: (!freq || !posture || (posture === "other" && !postureCustom.trim()) || goals.length === 0) ? 0.4 : 1 }}
               >
                 {savingInfo ? "저장하는 중..." : "저장하고 계속하기"}
@@ -330,7 +331,7 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
                 </p>
               </div>
             ) : (
-              <button onClick={next} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: C.ink, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
+              <button onClick={next} style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15.5, fontWeight: 800, cursor: "pointer" }}>
                 {i < STEPS.length - 1 ? "다음" : "그럼 시작해볼까요"}
               </button>
             )}
@@ -348,13 +349,13 @@ export default function DiaryOnboarding({ nickname, bmtiCode, charImage, charNam
 
 // 형광펜 강조
 function Mark({ children }) {
-  return <span style={{ background: C.lime, padding: "0 4px", borderRadius: 3, boxDecorationBreak: "clone" }}>{children}</span>;
+  return <span style={{ background: getTypeAccent().accentSoft, padding: "0 4px", borderRadius: 3, boxDecorationBreak: "clone" }}>{children}</span>;
 }
 
 // AI 동반자 아바타 — 로그인/설문 전에는 유형을 몰라 기본 아이콘으로 대체
 function Companion({ image }) {
   return (
-    <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
+    <div style={{ width: 34, height: 34, borderRadius: "50%", background: getTypeAccent().accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
       {image ? <img src={image} alt="AI" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
     </div>
   );
@@ -374,7 +375,7 @@ function PillOption({ label, sub, on, onClick, disabled }) {
     <button
       onClick={disabled ? undefined : onClick}
       style={{ padding: sub ? "8px 15px" : "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
-        border: "none", background: on ? C.pink : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s",
+        border: "none", background: on ? getTypeAccent().accent : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s",
         display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}
     >
       <span>{label}</span>

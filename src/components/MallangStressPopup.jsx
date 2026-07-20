@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Mallang } from "./Mallang";
+import { getTypeAccent, GOLD } from "../lib/typeAccent";
 
 // 말랑이를 고르거나 하루 기록을 마쳤을 때 뜨는 팝업 — 캐릭터가 채팅하듯
 // "말랑이를 눌러서 스트레스를 풀어보세요"라고 말을 걸고, 가운데 큼직하게 뜬
@@ -15,6 +16,7 @@ const TAPS_PER_LEVEL = 3; // 한 단계 올리는 데 필요한 연속 연타 �
 const BABY_COUNT = 4;
 
 export default function MallangStressPopup({ mood, charImage, onNext, nextLabel = "다음" }) {
+  const t = getTypeAccent();
   const [tapKey, setTapKey] = useState(0);
   const [level, setLevel] = useState(mood);
   const [showBabies, setShowBabies] = useState(false);
@@ -54,7 +56,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
       <div style={{ width: "100%", maxWidth: 380, background: "#fff", borderRadius: 28, padding: "26px 24px 24px", textAlign: "center", animation: "mallangPopIn .32s cubic-bezier(.22,.9,.32,1)" }}>
         {/* 캐릭터가 말풍선으로 안내 */}
         <div style={{ display: "flex", gap: 9, alignItems: "flex-end", justifyContent: "center", marginBottom: 24, textAlign: "left" }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#FFEDF3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
+          <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
             {charImage ? <img src={charImage} alt="me" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
           </div>
           <div style={{ maxWidth: 230, background: "#fff", border: "1px solid #EDE9E2", borderRadius: "16px 16px 16px 4px", padding: "12px 15px", fontSize: 13.5, lineHeight: 1.55, fontWeight: 700, color: "#1C1A17", whiteSpace: "pre-line" }}>
@@ -83,7 +85,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
 
         <button
           onClick={onNext}
-          style={{ marginTop: 26, width: "100%", padding: 15, borderRadius: 15, border: "none", background: "#1C1A17", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
+          style={{ marginTop: 26, width: "100%", padding: 15, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
         >
           {nextLabel}
         </button>

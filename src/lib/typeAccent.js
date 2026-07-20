@@ -6,7 +6,13 @@ export const YELLOW = "#FDF6DC";
 export const YELLOW_LINE = "#F0E4B8";
 
 export function getTypeAccent(bmtiCode) {
-  const axis = bmtiCode ? String(bmtiCode).split("-")[0] : "";
+  let code = bmtiCode;
+  // 인자가 없으면 저장된 코드를 읽어 쓴다 — 컴포넌트마다 bmtiCode를 넘기지 않아도
+  // 어디서든 같은 유형별 강조색을 얻을 수 있게 한다.
+  if (!code && typeof localStorage !== "undefined") {
+    try { code = localStorage.getItem("bmti_code"); } catch { /* noop */ }
+  }
+  const axis = code ? String(code).split("-")[0] : "";
   const isM = axis.includes("M");
   return isM
     ? { key: "M", accent: "#E86A9E", accentSoft: "#FCE7EF", accentDeep: "#C4517A" }   // 연분홍
