@@ -206,9 +206,10 @@ function SlideVisual({ kind, t }) {
       <div style={{ display: "flex" }}>
         {SAMPLE_TYPES.map((id, i) => {
           const c = CHARACTERS.find(x => x.id === id);
+          const full = ["OCDZ", "OCQM", "OLQM"].includes(id);
           return (
-            <div key={id} style={{ width: 50, height: 50, borderRadius: "50%", background: "#fff", border: `2px solid ${C.yellow}`, marginLeft: i === 0 ? 0 : -14, boxShadow: "0 2px 6px rgba(28,26,23,0.1)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: SAMPLE_TYPES.length - i, flexShrink: 0 }}>
-              {c && <img src={c.image} alt="" style={{ width: "80%", height: "80%", objectFit: "contain" }} />}
+            <div key={id} style={{ width: 50, height: 50, borderRadius: "50%", background: "#fff", border: `2px solid ${C.yellow}`, marginLeft: i === 0 ? 0 : -14, boxShadow: "0 2px 6px rgba(28,26,23,0.1)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", zIndex: SAMPLE_TYPES.length - i, flexShrink: 0 }}>
+              {c && <img src={c.image} alt="" className={full ? "scale-100" : "scale-125"} style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
             </div>
           );
         })}
@@ -301,12 +302,17 @@ function Crowd({ breakdown, t }) {
     <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", padding: "4px 0" }}>
       {breakdown.map(b => {
         const char = CHARACTERS.find(c => c.id === b.type);
+        // 원본이 작게 잡힌 캐릭터만 키우고, 이미 원을 꽉 채우는 친구들은 그대로 둔다.
+        const full = ["OCDZ", "OCQM", "OLQM"].includes(b.type);
         return (
-          <div key={b.type} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff", border: `1px solid ${C.yellowLine}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              {char ? <img src={char.image} alt={b.type} style={{ width: "82%", height: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 10 }}>{b.type}</span>}
+          <div key={b.type} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#fff", border: `1px solid ${C.yellowLine}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              {char
+                ? <img src={char.image} alt={b.type} className={full ? "scale-100" : "scale-125"} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                : <span style={{ fontSize: 10 }}>{b.type}</span>}
             </div>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep }}>{b.count}명</span>
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.04em", color: C.sub }}>{b.type}</span>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, marginTop: -2 }}>{b.count}명</span>
           </div>
         );
       })}

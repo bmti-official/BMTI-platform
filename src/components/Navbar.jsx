@@ -102,10 +102,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {/* 상단 바: 로고 + 로그인/마이페이지 */}
       <nav id="main-nav" className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 px-4 md:px-6 py-3 md:py-3.5">
-          {/* Left: 로고 */}
+          {/* Left: 로고 — 발견·클래스 오버레이가 떠 있어도 눌러서 메인으로 나갈 수 있게 함께 닫는다 */}
           <div
             className="cursor-pointer flex items-baseline gap-2"
-            onClick={() => setView('home')}
+            onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('home'); }}
           >
             <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
             <span className="text-[10px] md:text-xs font-serif font-normal text-gray-400 tracking-tight whitespace-nowrap">말랑 다이어리</span>
@@ -122,7 +122,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                   </span>
                 )}
                 <button
-                  onClick={() => setView('mypage')}
+                  onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('mypage'); }}
                   className={`text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
                     currentView === 'mypage' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
@@ -150,8 +150,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
           <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
             <div className="max-w-7xl mx-auto grid grid-cols-5 items-center px-4 md:px-10" style={{ height: 66 }}>
-              {/* 말랑 다이어리 */}
-              <button onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
+              {/* 말랑 다이어리 — 바깥 탭을 살짝 안으로 모은다(ml) */}
+              <button onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-start ml-3 md:ml-5 active:scale-95 transition-transform">
                 <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
                   <Mallang v={diaryMoodTick} size={26} />
                 </div>
@@ -173,8 +173,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                 <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑 클래스</span>
               </button>
 
-              {/* 말랑방 */}
-              <button onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
+              {/* 말랑방 — 바깥 탭을 살짝 안으로 모은다(mr) */}
+              <button onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-end mr-3 md:mr-5 active:scale-95 transition-transform">
                 <ChatIcon className={`w-7 h-7 ${currentView === 'mallangroom' ? 'text-black' : 'text-gray-300'}`} />
                 <span className={`text-[10px] font-bold ${currentView === 'mallangroom' ? 'text-black' : 'text-gray-400'}`}>말랑방</span>
               </button>
