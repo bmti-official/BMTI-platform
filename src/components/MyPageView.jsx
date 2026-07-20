@@ -542,9 +542,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       </div>
 
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
-        <h3 className="font-bold text-lg text-gray-900">BMTI 라이브 히스토리</h3>
-        <button onClick={() => setView('bodycheck')} className="bg-black text-white font-medium py-1.5 px-4 rounded-full hover:bg-gray-800 transition-colors text-xs shadow-sm whitespace-nowrap">
-          신청하기
+        <h3 className="font-bold text-lg text-gray-900">말랑 클래스 히스토리</h3>
+        <button onClick={() => setView('mallangroom')} className="bg-black text-white font-medium py-1.5 px-4 rounded-full hover:bg-gray-800 transition-colors text-xs shadow-sm whitespace-nowrap">
+          둘러보기
         </button>
       </div>
       {/* 무브먼트 라이브 히스토리 리스트 (가로 스크롤) */}

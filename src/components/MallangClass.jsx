@@ -1,22 +1,22 @@
 import { useState, useRef } from "react";
 import { CHARACTERS } from "../data";
+import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
 // ============================================
 // 말랑 클래스 — 같은 BMTI 유형·같은 부위가 뻐근한 사람들끼리 모이는
 // 4주 온라인 그룹 클래스 목록 화면.
 //
-// 색상 규칙(말랑 클래스 전용 팔레트, 라이브 탭과 톤 맞춤) — 이 페이지 안에서만 쓴다.
-//   버튼 중 중요한 것('내 유형' 필터)         → 골든 팜(GOLDEN_PALM)
-//   버튼 중 안 중요한 것(부위·평일/주말 필터)   → 연한 옐로우(YELLOW)
-//   박스/카드(소개 카루셀, 반 카드 미리보기)    → 연한 옐로우(YELLOW, 그라데이션 없음)
-//   강조 요소(유형·일정 태그, 인원수, 게이지, 배지) → 딥 퍼플(DEEP_PURPLE)
+// 전체 색상 통일 규칙:
+//   기본 배경 화이트 / 기본 문구 검정
+//   핵심 버튼('내 유형' 필터, 탭 밑줄)     → 골드(#C9975A)
+//   안 중요한 버튼(부위·평일/주말 필터)      → 연한 옐로우
+//   박스/카드(소개 카루셀, 반 카드)          → 연한 옐로우(#FDF6DC)
+//   강조 요소(태그·배지·게이지·인원수·점)    → 유형별(M 연분홍 / Z 연보라)
 // ============================================
 
 const C = {
   bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", mute: "#C9C4B8",
-  goldenPalm: "#9C7C3D",
-  yellow: "#FDF6DC", yellowLine: "#F0E4B8",
-  deepPurple: "#4B2E83", deepPurpleSoft: "#E4DBF3",
+  yellow: YELLOW, yellowLine: YELLOW_LINE,
 };
 const PRESS = "active:scale-95 transition-transform";
 const KO_NUM = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"];
@@ -43,7 +43,7 @@ const ROOMS = [
   { id: "waist_om", part: "허리 · 골반", type: "OM", when: "다음 달", desc: "오래 앉거나 서 있는 분", taken: 0, cap: 20, status: "soon", typeBreakdown: [] },
 ];
 
-// 중요도가 낮은(단순 분류용) 필터 칩 id 목록 — 활성 시 골든 팜 대신 연한 옐로우를 쓴다.
+// 중요도가 낮은(단순 분류용) 필터 칩 id 목록 — 활성 시 골드 대신 연한 옐로우를 쓴다.
 const MINOR_CHIP_IDS = ["neck", "waist", "weekday", "weekend"];
 
 const CHIPS = [
@@ -64,6 +64,7 @@ const CATEGORY_SLIDES = [
 export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLogin }) {
   const [filter, setFilter] = useState("neck");
   const [showHelp, setShowHelp] = useState(false);
+  const t = getTypeAccent(bmtiCode);
 
   const myType = bmtiCode ? bmtiCode.split("-")[0] : "측정 전";
 
@@ -109,14 +110,14 @@ export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLo
               카카오로 3초 로그인
             </button>
           )}
-          <span style={{ display: "flex", alignItems: "center", gap: 6, background: C.deepPurpleSoft, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 800, color: C.deepPurple, whiteSpace: "nowrap" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, background: t.accentSoft, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 800, color: t.accentDeep, whiteSpace: "nowrap" }}>
             내 유형 {myType}
           </span>
         </div>
 
         {/* 소개 카루셀 — 좌우로 넘겨보는 4가지 카테고리 */}
         <div style={{ padding: "18px 20px 0" }}>
-          <CategoryCarousel />
+          <CategoryCarousel t={t} />
         </div>
 
         {/* 필터 칩 — 골드 톤 가로 스크롤 */}
@@ -130,7 +131,7 @@ export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLo
           {rooms.length === 0 ? (
             <p style={{ fontSize: 13, color: C.mute, textAlign: "center", padding: "30px 0" }}>조건에 맞는 반이 아직 없어요.</p>
           ) : (
-            rooms.map(r => <RoomCard key={r.id} room={r} />)
+            rooms.map(r => <RoomCard key={r.id} room={r} t={t} />)
           )}
         </div>
       </div>
@@ -141,7 +142,7 @@ export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLo
 }
 
 // ── 소개 카루셀 ──
-function CategoryCarousel() {
+function CategoryCarousel({ t }) {
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 
@@ -166,7 +167,7 @@ function CategoryCarousel() {
       >
         {CATEGORY_SLIDES.map((s) => (
           <div key={s.key} style={{ flex: "0 0 100%", scrollSnapAlign: "start", padding: "0 2px" }}>
-            <CategorySlideCard slide={s} />
+            <CategorySlideCard slide={s} t={t} />
           </div>
         ))}
       </div>
@@ -176,7 +177,7 @@ function CategoryCarousel() {
             key={i}
             onClick={() => goTo(i)}
             aria-label={`${i + 1}번째 소개`}
-            style={{ width: active === i ? 20 : 7, height: 7, borderRadius: 99, border: "none", padding: 0, background: active === i ? C.deepPurple : C.deepPurpleSoft, cursor: "pointer", transition: "width .2s, background .2s" }}
+            style={{ width: active === i ? 20 : 7, height: 7, borderRadius: 99, border: "none", padding: 0, background: active === i ? t.accent : t.accentSoft, cursor: "pointer", transition: "width .2s, background .2s" }}
           />
         ))}
       </div>
@@ -185,10 +186,10 @@ function CategoryCarousel() {
   );
 }
 
-function CategorySlideCard({ slide }) {
+function CategorySlideCard({ slide, t }) {
   return (
     <div style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 20, padding: "24px 20px", minHeight: 188, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12 }}>
-      <SlideVisual kind={slide.visual} />
+      <SlideVisual kind={slide.visual} t={t} />
       <div>
         <div style={{ fontSize: 14.5, fontWeight: 800 }}>{slide.title}</div>
         <p style={{ fontSize: 11.5, color: C.sub, marginTop: 4, lineHeight: 1.55, maxWidth: 250 }}>{slide.desc}</p>
@@ -199,7 +200,7 @@ function CategorySlideCard({ slide }) {
 
 const SAMPLE_TYPES = ["ACDZ", "OLQM", "ACQM", "OCDZ", "ALQZ"];
 
-function SlideVisual({ kind }) {
+function SlideVisual({ kind, t }) {
   if (kind === "characters") {
     return (
       <div style={{ display: "flex" }}>
@@ -218,28 +219,28 @@ function SlideVisual({ kind }) {
     return (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6 }}>
         {[0, 1, 2, 3].map(n => (
-          <div key={n} style={{ width: 32, height: 32, borderRadius: 9, background: C.deepPurpleSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5, fontWeight: 800, color: C.deepPurple }}>5</div>
+          <div key={n} style={{ width: 32, height: 32, borderRadius: 9, background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5, fontWeight: 800, color: t.accentDeep }}>5</div>
         ))}
       </div>
     );
   }
   if (kind === "face") {
     return (
-      <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.deepPurpleSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 60, height: 60, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke={C.deepPurple} strokeWidth="1.8" />
-          <circle cx="12" cy="12" r="3" stroke={C.deepPurple} strokeWidth="1.8" />
-          <line x1="3" y1="21" x2="21" y2="3" stroke={C.deepPurple} strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke={t.accentDeep} strokeWidth="1.8" />
+          <circle cx="12" cy="12" r="3" stroke={t.accentDeep} strokeWidth="1.8" />
+          <line x1="3" y1="21" x2="21" y2="3" stroke={t.accentDeep} strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </div>
     );
   }
   // mat
   return (
-    <div style={{ width: 60, height: 60, borderRadius: 16, background: C.deepPurpleSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ width: 60, height: 60, borderRadius: 16, background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-        <rect x="2" y="7" width="20" height="10" rx="3" stroke={C.deepPurple} strokeWidth="1.8" />
-        <line x1="9" y1="7" x2="9" y2="17" stroke={C.deepPurple} strokeWidth="1.8" />
+        <rect x="2" y="7" width="20" height="10" rx="3" stroke={t.accentDeep} strokeWidth="1.8" />
+        <line x1="9" y1="7" x2="9" y2="17" stroke={t.accentDeep} strokeWidth="1.8" />
       </svg>
     </div>
   );
@@ -263,7 +264,7 @@ function FilterChips({ filter, setFilter }) {
         {CHIPS.map(c => {
           const on = filter === c.id;
           const minor = MINOR_CHIP_IDS.includes(c.id);
-          const activeBg = minor ? C.yellow : C.goldenPalm;
+          const activeBg = minor ? C.yellow : GOLD;
           const activeText = minor ? "#8A6A2E" : "#fff";
           const activeBorder = minor ? C.yellowLine : "transparent";
           return (
@@ -286,13 +287,13 @@ function FilterChips({ filter, setFilter }) {
       <div style={{ position: "absolute", left: 0, top: 16, bottom: 0, width: 22, background: "linear-gradient(90deg, #fff, rgba(255,255,255,0))", pointerEvents: "none" }} />
       <div style={{ position: "absolute", right: 0, top: 16, bottom: 0, width: 22, background: "linear-gradient(270deg, #fff, rgba(255,255,255,0))", pointerEvents: "none" }} />
       <div style={{ margin: "8px 20px 0", height: 3, background: "#F1E6CF", borderRadius: 99, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: "30%", borderRadius: 99, background: `linear-gradient(90deg, #B8965A, ${C.goldenPalm})`, transform: `translateX(${pct * 233}%)`, transition: "transform .08s linear" }} />
+        <div style={{ height: "100%", width: "30%", borderRadius: 99, background: `linear-gradient(90deg, #DDBB80, ${GOLD})`, transform: `translateX(${pct * 233}%)`, transition: "transform .08s linear" }} />
       </div>
     </div>
   );
 }
 
-function Crowd({ breakdown }) {
+function Crowd({ breakdown, t }) {
   if (!breakdown || breakdown.length === 0) {
     return <p style={{ fontSize: 12.5, color: C.mute, textAlign: "center", padding: "16px 0" }}>아직 신청자가 없어요. 첫 번째로 신청해보세요!</p>;
   }
@@ -305,7 +306,7 @@ function Crowd({ breakdown }) {
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff", border: `1px solid ${C.yellowLine}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
               {char ? <img src={char.image} alt={b.type} style={{ width: "82%", height: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 10 }}>{b.type}</span>}
             </div>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: C.deepPurple }}>{b.count}명</span>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep }}>{b.count}명</span>
           </div>
         );
       })}
@@ -313,7 +314,7 @@ function Crowd({ breakdown }) {
   );
 }
 
-function Gauge({ taken, cap, status }) {
+function Gauge({ taken, cap, status, t }) {
   const left = cap - taken;
   const pct = Math.round((taken / cap) * 100);
   if (status !== "open") {
@@ -329,38 +330,38 @@ function Gauge({ taken, cap, status }) {
   return (
     <div style={{ marginTop: 14 }}>
       <div style={{ height: 8, background: "#F1EACB", borderRadius: 999, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: C.deepPurple, transition: "width .3s" }} />
+        <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: t.accent, transition: "width .3s" }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 12.5, fontWeight: 600, color: C.sub }}>
-        <span><b style={{ color: C.deepPurple }}>{taken}</b> / {cap}명</span>
+        <span><b style={{ color: t.accentDeep }}>{taken}</b> / {cap}명</span>
         <span>{KO_NUM[left]} 자리 남음</span>
       </div>
     </div>
   );
 }
 
-function Badge({ status }) {
+function Badge({ status, t }) {
   if (status !== "open") return <span style={{ ...badgePill, background: C.mute }}>준비 중</span>;
-  return <span style={{ ...badgePill, background: C.deepPurple }}>모집 중</span>;
+  return <span style={{ ...badgePill, background: t.accent }}>모집 중</span>;
 }
 const badgePill = { position: "absolute", top: 14, right: 14, fontSize: 11, fontWeight: 800, color: "#fff", padding: "4px 10px", borderRadius: 8 };
 
-function RoomCard({ room }) {
+function RoomCard({ room, t }) {
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ position: "relative", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 18, padding: "24px 16px 20px" }}>
-        <Badge status={room.status} />
-        <Crowd breakdown={room.typeBreakdown} />
-        <Gauge taken={room.taken} cap={room.cap} status={room.status} />
+        <Badge status={room.status} t={t} />
+        <Crowd breakdown={room.typeBreakdown} t={t} />
+        <Gauge taken={room.taken} cap={room.cap} status={room.status} t={t} />
       </div>
       <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 17, fontWeight: 800 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: C.deepPurple, background: C.deepPurpleSoft, padding: "3px 9px", borderRadius: 7 }}>{room.type}</span>
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, padding: "3px 9px", borderRadius: 7 }}>{room.type}</span>
           <span style={room.status !== "open" ? { color: C.mute } : undefined}>{room.part}</span>
         </div>
         <div style={{ fontSize: 13.5, color: room.status !== "open" ? C.mute : C.sub, marginTop: 4 }}>{room.desc}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: C.deepPurple, background: C.deepPurpleSoft, borderRadius: 999, padding: "7px 13px" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: t.accentDeep, background: t.accentSoft, borderRadius: 999, padding: "7px 13px" }}>
             {room.status === "open" ? room.when : "다음 달"}
           </span>
           <span style={{ fontSize: 12.5, fontWeight: 800, color: C.ink }}>5만 원 · 8회</span>

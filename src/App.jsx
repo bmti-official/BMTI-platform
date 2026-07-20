@@ -7,7 +7,7 @@ import ResultView from './components/ResultView';
 import Footer from './components/Footer';
 import TicketView from './components/TicketView';
 import SignupModal from './components/SignupModal';
-import BodyCheckView from './components/BodyCheckView';
+import MallangRoom from './components/MallangRoom';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
@@ -294,11 +294,8 @@ function App() {
             onRequireLogin={() => setShowSignup(true)}
           />
         )}
-        {currentView === 'bodycheck' && (
-          <BodyCheckView
-            isLoggedIn={isLoggedIn}
-            onRequireLogin={() => setShowSignup(true)}
-          />
+        {currentView === 'mallangroom' && (
+          <MallangRoom bmtiCode={bmtiCode} />
         )}
         {currentView === 'aichat' && (
           <AiChatHub

@@ -5,11 +5,13 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   </svg>
 );
 
-// 하단 네비 우측 — 재생 버튼(라이브)
-const PlayIcon = ({ className }) => (
+// 하단 네비 우측 — 말랑방(채팅) 아이콘
+const ChatIcon = ({ className }) => (
   <svg viewBox="0 0 32 32" className={className} fill="none">
-    <rect x="3" y="7" width="26" height="18" rx="6" fill="currentColor" />
-    <path d="M13.5 12.2v7.6a1 1 0 0 0 1.53.85l6.2-3.8a1 1 0 0 0 0-1.7l-6.2-3.8a1 1 0 0 0-1.53.85Z" fill="white" />
+    <path d="M6 5h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H13l-6 5v-5H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z" fill="currentColor" />
+    <circle cx="11.5" cy="13.5" r="1.7" fill="white" />
+    <circle cx="16" cy="13.5" r="1.7" fill="white" />
+    <circle cx="20.5" cy="13.5" r="1.7" fill="white" />
   </svg>
 );
 
@@ -83,6 +85,13 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   // 말랑 클래스 — 같은 유형·같은 부위끼리 모이는 소그룹 온라인 클래스 소개/예약.
   const [showMallangClass, setShowMallangClass] = useState(false);
 
+  // 말랑방 화면의 '반 둘러보기' 버튼이 보내는 이벤트 → 말랑 클래스 오버레이를 연다.
+  useEffect(() => {
+    const openClass = () => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); };
+    window.addEventListener('open_mallang_class', openClass);
+    return () => window.removeEventListener('open_mallang_class', openClass);
+  }, [setView]);
+
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const defaultAiImage = '⭐️';
@@ -99,7 +108,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             onClick={() => setView('home')}
           >
             <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
-            <span className="text-[10px] md:text-xs font-serif font-normal text-gray-400 tracking-tight whitespace-nowrap">: 말랑 다이어리</span>
+            <span className="text-[10px] md:text-xs font-serif font-normal text-gray-400 tracking-tight whitespace-nowrap">말랑 다이어리</span>
           </div>
 
           {/* Right: Login */}
@@ -164,10 +173,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
                 <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑 클래스</span>
               </button>
 
-              {/* 라이브 */}
-              <button onClick={() => { setView('bodycheck'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
-                <PlayIcon className={`w-7 h-7 ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-300'}`} />
-                <span className={`text-[10px] font-bold ${currentView === 'bodycheck' ? 'text-black' : 'text-gray-400'}`}>라이브</span>
+              {/* 말랑방 */}
+              <button onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
+                <ChatIcon className={`w-7 h-7 ${currentView === 'mallangroom' ? 'text-black' : 'text-gray-300'}`} />
+                <span className={`text-[10px] font-bold ${currentView === 'mallangroom' ? 'text-black' : 'text-gray-400'}`}>말랑방</span>
               </button>
             </div>
 
