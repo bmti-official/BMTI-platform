@@ -1,21 +1,23 @@
 /* eslint-disable */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import { supabase } from '../lib/supabaseClient';
 import { BMTI_INFO } from './ResultView';
 import { BMTI_RESULTS } from '../bmti_results';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
-import { getTypeAccent, YELLOW, YELLOW_LINE } from '../lib/typeAccent';
+import { getTypeAccent } from '../lib/typeAccent';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.jpg';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
-  const sliderRef = useRef(null);
-  const isDraggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
+  const trackRef = useRef(null);
+  const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
+  const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
+  const draggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartOffsetRef = useRef(0);
   const dragDistRef = useRef(0);
 
   const handleRetakeQuiz = async () => {
@@ -49,45 +51,51 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   };
 
 
-  // Mouse events
-  const handleMouseDown = (e) => {
-    isDraggingRef.current = true;
+  // 캐릭터 캐러셀 — 평소엔 자동으로 좌우로 흐르고, 눌러서 드래그하면 손짓 그대로 좌우로 움직인다.
+  // (CSS 마퀴 애니메이션 대신 JS로 직접 transform을 제어해 드래그 조작이 가능하게 한다.)
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.style.animation = 'none';
+    const measure = () => { halfRef.current = el.scrollWidth / 2; };
+    measure();
+    window.addEventListener('resize', measure);
+    let raf, last = performance.now();
+    const tick = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const half = halfRef.current || 1;
+      if (!draggingRef.current) {
+        offsetRef.current -= (half / 40) * dt; // 기존 40초에 한 벌 흐르던 속도 유지
+      }
+      // 목록을 두 벌 이어 붙였으므로, 한 벌 폭만큼 지나면 되돌려 무한 루프처럼 보이게 한다.
+      if (offsetRef.current <= -half) offsetRef.current += half;
+      if (offsetRef.current > 0) offsetRef.current -= half;
+      el.style.transform = `translateX(${offsetRef.current}px)`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', measure); };
+  }, []);
+
+  const handlePointerDown = (e) => {
+    draggingRef.current = true;
     dragDistRef.current = 0;
-    startXRef.current = e.pageX;
-    scrollLeftRef.current = sliderRef.current.scrollLeft;
-    sliderRef.current.style.cursor = 'grabbing';
+    dragStartXRef.current = e.clientX;
+    dragStartOffsetRef.current = offsetRef.current;
+    if (trackRef.current) trackRef.current.style.cursor = 'grabbing';
   };
 
-  const handleMouseMove = (e) => {
-    if (!isDraggingRef.current) return;
-    e.preventDefault();
-    const dx = e.pageX - startXRef.current;
+  const handlePointerMove = (e) => {
+    if (!draggingRef.current) return;
+    const dx = e.clientX - dragStartXRef.current;
     dragDistRef.current = Math.abs(dx);
-    sliderRef.current.scrollLeft = scrollLeftRef.current - dx;
+    offsetRef.current = dragStartOffsetRef.current + dx;
   };
 
-  const handleMouseEnd = () => {
-    isDraggingRef.current = false;
-    if (sliderRef.current) sliderRef.current.style.cursor = 'grab';
-  };
-
-  // Touch events
-  const handleTouchStart = (e) => {
-    isDraggingRef.current = true;
-    dragDistRef.current = 0;
-    startXRef.current = e.touches[0].pageX;
-    scrollLeftRef.current = sliderRef.current.scrollLeft;
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDraggingRef.current) return;
-    const dx = e.touches[0].pageX - startXRef.current;
-    dragDistRef.current = Math.abs(dx);
-    sliderRef.current.scrollLeft = scrollLeftRef.current - dx;
-  };
-
-  const handleTouchEnd = () => {
-    isDraggingRef.current = false;
+  const handlePointerEnd = () => {
+    draggingRef.current = false;
+    if (trackRef.current) trackRef.current.style.cursor = 'grab';
   };
 
   const handleCharClick = (char) => {
@@ -165,7 +173,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         ) : (
           <div className="w-full max-w-md flex flex-col gap-4">
             {/* 내 BMTI 파트너 미리보기 */}
-            <div className="rounded-[2rem] p-6 md:p-8 border" style={{ background: YELLOW, borderColor: YELLOW_LINE }}>
+            <div className="rounded-[2rem] p-6 md:p-8 border" style={{ background: '#F7F7F6', borderColor: '#EDEDEB' }}>
               <p className="text-xs md:text-sm font-bold text-gray-400 mb-4">내 BMTI 파트너</p>
               <div className="flex items-center gap-4 mb-5">
                 <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
@@ -197,7 +205,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
               ) : (
                 <button
                   onClick={() => setView('result')}
-                  className="w-full bg-black text-white text-[min(3.5vw,15px)] md:text-lg font-bold py-4 rounded-2xl hover:bg-gray-900 transition-colors"
+                  className="w-full text-white text-[min(3.5vw,15px)] md:text-lg font-bold py-4 rounded-2xl hover:brightness-105 transition-all"
+                  style={{ background: '#C9975A' }}
                 >
                   내 결과 자세히 보기
                 </button>
@@ -212,7 +221,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
                 style={{ background: t.accentSoft }}
               >
                 <div>
-                  <p className="font-black mb-1" style={{ color: t.accentDeep }}>오늘 기록, 아직이에요</p>
+                  <p className="font-black mb-1 text-gray-900">오늘 기록, 아직이에요</p>
                   <p className="text-sm font-medium" style={{ color: t.accent }}>10초면 충분해요</p>
                 </div>
                 <span className="text-2xl" style={{ color: t.accent }}>›</span>
@@ -230,14 +239,13 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
 
         {/* Scrollable Content */}
         <div
-          ref={sliderRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseEnd}
-          onMouseLeave={handleMouseEnd}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          ref={trackRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerLeave={handlePointerEnd}
+          onPointerCancel={handlePointerEnd}
+          style={{ touchAction: 'pan-y' }}
           className="marquee-content flex gap-6 md:gap-8 px-4 select-none cursor-grab"
         >
           {[...CHARACTERS, ...CHARACTERS].map((char, idx) => (
