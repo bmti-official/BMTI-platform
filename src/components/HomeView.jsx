@@ -5,6 +5,7 @@ import { canRetakeTest } from '../lib/bmtiSystem';
 import { supabase } from '../lib/supabaseClient';
 import { BMTI_INFO } from './ResultView';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
+import { getTypeAccent, YELLOW, YELLOW_LINE } from '../lib/typeAccent';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.jpg';
 
@@ -97,6 +98,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const charInfo = BMTI_INFO[axisCode];
+  const t = getTypeAccent(bmtiCode);
   const hasLoggedToday = !!getEntryForDate(todayISO());
 
   return (
@@ -161,7 +163,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         ) : (
           <div className="w-full max-w-md flex flex-col gap-4">
             {/* 내 BMTI 파트너 미리보기 */}
-            <div className="bg-[#F7F6F3] rounded-[2rem] p-6 md:p-8">
+            <div className="rounded-[2rem] p-6 md:p-8 border" style={{ background: YELLOW, borderColor: YELLOW_LINE }}>
               <p className="text-xs md:text-sm font-bold text-gray-400 mb-4">내 BMTI 파트너</p>
               <div className="flex items-center gap-4 mb-5">
                 <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
@@ -204,13 +206,14 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             {(isLoggedIn && !hasLoggedToday) && (
               <button
                 onClick={() => setView('aichat')}
-                className="w-full bg-[#E9F1EC] hover:bg-[#DDEBE3] rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors"
+                className="w-full rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors hover:brightness-95"
+                style={{ background: t.accentSoft }}
               >
                 <div>
-                  <p className="font-black text-gray-900 mb-1">오늘 기록, 아직이에요</p>
-                  <p className="text-sm text-[#5F8A76] font-medium">10초면 충분해요</p>
+                  <p className="font-black mb-1" style={{ color: t.accentDeep }}>오늘 기록, 아직이에요</p>
+                  <p className="text-sm font-medium" style={{ color: t.accent }}>10초면 충분해요</p>
                 </div>
-                <span className="text-2xl text-gray-300">›</span>
+                <span className="text-2xl" style={{ color: t.accent }}>›</span>
               </button>
             )}
           </div>
