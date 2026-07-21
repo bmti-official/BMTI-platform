@@ -4,6 +4,7 @@ import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import { supabase } from '../lib/supabaseClient';
 import { BMTI_INFO } from './ResultView';
+import { BMTI_RESULTS } from '../bmti_results';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { getTypeAccent, YELLOW, YELLOW_LINE } from '../lib/typeAccent';
 import mTypeImage from '../assets/M 유형.png';
@@ -111,16 +112,17 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         >
           <div className="flex flex-col items-center animate-[fadeIn_0.3s_ease-out] px-6 max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className={`w-72 h-72 md:w-96 md:h-96 rounded-full ${activeChar.color} flex items-center justify-center overflow-hidden shadow-2xl border-2 border-white/30`}>
-              <img src={activeChar.originalImage || activeChar.image} alt={activeChar.id} className={`w-full h-full object-contain drop-shadow-2xl ${['OCDZ', 'OCQM', 'OLQM'].includes(activeChar.id) ? 'scale-100' : 'scale-125'} ${activeChar.imgClass || ''}`} />
+              <img src={activeChar.image} alt={activeChar.id} className={`w-full h-full object-contain drop-shadow-2xl ${activeChar.id === 'OLQM' ? 'scale-90' : ['OCDZ', 'OCQM'].includes(activeChar.id) ? 'scale-100' : 'scale-125'}`} />
             </div>
-            <div className="mt-7 px-7 py-2.5 bg-white/20 backdrop-blur-lg rounded-full border border-white/30 text-white font-bold text-2xl md:text-3xl tracking-widest shadow-xl">
-              {activeChar.id}
+            {/* 결과지 문구 반영: 코드(제목) → 별명 → 캐치프레이즈 */}
+            <div className="mt-7 px-7 py-2.5 bg-white/20 backdrop-blur-lg rounded-full border border-white/30 text-white font-bold text-xl md:text-2xl tracking-wide shadow-xl">
+              {BMTI_RESULTS[activeChar.id]?.title || activeChar.id}
             </div>
-            {BMTI_INFO[activeChar.id] && (
-              <>
-                <div className="mt-4 text-white font-bold text-base md:text-lg text-center">{BMTI_INFO[activeChar.id].kr}</div>
-                <p className="mt-2 text-white/80 text-sm md:text-base text-center leading-relaxed whitespace-pre-line">{BMTI_INFO[activeChar.id].catchphrase}</p>
-              </>
+            {BMTI_RESULTS[activeChar.id]?.nickname && (
+              <div className="mt-4 text-white font-bold text-base md:text-lg text-center">{BMTI_RESULTS[activeChar.id].nickname.replace('\n', ' ')}</div>
+            )}
+            {BMTI_INFO[activeChar.id]?.catchphrase && (
+              <p className="mt-2 text-white/80 text-sm md:text-base text-center leading-relaxed whitespace-pre-line">{BMTI_INFO[activeChar.id].catchphrase}</p>
             )}
             <div className="mt-6 text-white/50 text-xs">화면을 누르면 닫혀요</div>
           </div>
