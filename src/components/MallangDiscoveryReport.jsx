@@ -136,6 +136,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
+  const [showExample, setShowExample] = useState(false);
 
   const monthKey = `${year}-${String(month).padStart(2, "0")}`;
   const entries = getDiaryHistory().filter((e) => e.date.startsWith(monthKey));
@@ -192,7 +193,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
-        <DiscoveryHero discovery={report.discovery} />
+        <DiscoveryHero discovery={report.discovery} onShowExample={() => setShowExample(true)} />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 14 }}>
           {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
@@ -203,15 +204,74 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           <p style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.6, margin: 0 }}>{report.disclaimer}</p>
         </div>
       </div>
+
+      {showExample && <DiscoveryExamplePopup onClose={() => setShowExample(false)} />}
     </div>
   );
 }
 
-function DiscoveryHero({ discovery: d }) {
+// ── '이런 방식으로 발견을 찾아요' 미리보기 팝업 (실제 예시) ──
+function DiscoveryExamplePopup({ onClose }) {
+  const t = getTypeAccent();
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, maxHeight: "84vh", overflowY: "auto", background: "#fff", borderRadius: 22, padding: "22px 20px 20px", position: "relative" }}>
+        <button onClick={onClose} aria-label="닫기" style={{ position: "absolute", top: 12, right: 14, border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer", padding: 4 }}>✕</button>
+        <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>발견은 이렇게 찾아요</div>
+        <p style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.6, margin: "0 0 16px" }}>
+          매일 남긴 기록에서 반복되는 패턴을 찾아 한 가지 발견으로 보여드려요. 아래는 예시예요.
+        </p>
+
+        {/* 1) 기록이 쌓이면 */}
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, marginBottom: 8 }}>① 이렇게 기록이 쌓이면</div>
+        <div style={{ background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
+          {[
+            { d: "7/3", s: "목이 뻐근했어요 · 오래 앉아있을 때" },
+            { d: "7/9", s: "목이 뻐근했어요 · 오래 앉아있을 때" },
+            { d: "7/15", s: "목이 뻐근했어요 · 움직일 때" },
+            { d: "7/21", s: "목이 뻐근했어요 · 오래 앉아있을 때" },
+          ].map((r, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "5px 0", fontSize: 12.5 }}>
+              <span style={{ color: C.sub, fontWeight: 700, minWidth: 30 }}>{r.d}</span>
+              <span style={{ color: C.ink }}>{r.s}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: "center", color: t.accent, fontSize: 18, marginBottom: 6 }}>↓</div>
+
+        {/* 2) 이런 발견을 찾아드려요 */}
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, marginBottom: 8 }}>② 이런 발견을 찾아드려요</div>
+        <div style={{ background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 16, padding: "16px 16px 14px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: t.accentDeep, fontWeight: 800, marginBottom: 10, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>✨ 이번 달의 발견</div>
+          <p style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.5, margin: "0 0 6px" }}>목이 뻐근했던 4번 중 3번이 ‘오래 앉아있을 때’였어요.</p>
+          <p style={{ fontSize: 11.5, color: t.accentDeep, fontWeight: 700, margin: "0 0 12px" }}>근거 · 4번 중 3번</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, background: "rgba(255,255,255,0.6)", borderRadius: 12, padding: "12px 14px" }}>
+            <p style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.55, margin: 0 }}>같은 자세를 오래 유지하면 그 부위가 계속 긴장한다고 알려져 있어요.</p>
+            <p style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.55, margin: 0 }}>한 시간에 한 번쯤 앉은 자세를 바꿔보면 어떨까요.</p>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 11, color: C.mute, lineHeight: 1.6, marginTop: 14 }}>
+          위 내용은 예시예요. 회원님이 남긴 실제 기록에서 발견을 찾아드려요.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ExampleQButton({ onClick, t }) {
+  return (
+    <button onClick={onClick} aria-label="발견 예시 미리보기" style={{ position: "absolute", top: 12, right: 12, width: 26, height: 26, borderRadius: "50%", border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: t.accentDeep, fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>?</button>
+  );
+}
+
+function DiscoveryHero({ discovery: d, onShowExample }) {
   const t = getTypeAccent();
   if (!d.found) {
     return (
-      <div style={{ background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
+      <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
+        <ExampleQButton onClick={onShowExample} t={t} />
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
           <Mallang v={3} size={44} />
         </div>
@@ -230,7 +290,8 @@ function DiscoveryHero({ discovery: d }) {
     );
   }
   return (
-    <div style={{ background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "22px 20px", boxShadow: CARD_SHADOW }}>
+    <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "22px 20px", boxShadow: CARD_SHADOW }}>
+      <ExampleQButton onClick={onShowExample} t={t} />
       <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: t.accentDeep, fontWeight: 800, marginBottom: 12, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>
         ✨ 이번 달의 발견
       </div>

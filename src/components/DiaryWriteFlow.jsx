@@ -82,19 +82,6 @@ const REORDERABLE_LABEL = {
   sore: "뻐근한 부위",
 };
 
-// 길게 누르면(500ms) onFire를 호출하고, 그 전에 손을 떼면 원래 탭 동작(아코디언 펼치기 등)이
-// 그대로 진행되게 한다. 편집 모드에 들어간 경우에만 onClickCapture로 원래 클릭을 막는다.
-function makeLongPress(onFire) {
-  let timer = null;
-  let fired = false;
-  return {
-    onPointerDown: () => { fired = false; timer = setTimeout(() => { fired = true; onFire(); }, 500); },
-    onPointerUp: () => { if (timer) clearTimeout(timer); },
-    onPointerLeave: () => { if (timer) clearTimeout(timer); },
-    onClickCapture: (e) => { if (fired) { e.preventDefault(); e.stopPropagation(); } },
-  };
-}
-
 // ============================================
 // 메인 컴포넌트
 // ============================================
@@ -197,7 +184,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     window.addEventListener("pointerup", handleDragEnd);
   };
   const toggleHideBlock = (id) => setHiddenBlocks(hs => hs.includes(id) ? hs.filter(x => x !== id) : [...hs, id]);
-  const enterEditMode = () => setEditMode(true);
 
   // 아코디언 (true = 펼쳐진 상태) — 이미 답이 있는 항목은 접어서 보여준다.
   const [expanded, setExpanded] = useState({
@@ -537,12 +523,15 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
         {/* ── 헤더 ── */}
         {phase === "form" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
-          <button onClick={goBack} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
-            {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
-          </span>
-          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? t.accentDeep : C.sub }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "10px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
+          <button onClick={goBack} style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: C.sub, letterSpacing: "-0.01em" }}>말랑 다이어리</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
+              {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
+            </span>
+          </div>
+          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? t.accentDeep : C.sub }}>
             {editMode ? (
               <span style={{ fontSize: 13, fontWeight: 800 }}>완료</span>
             ) : (
@@ -562,7 +551,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               {/* ━━━ 오늘의 말랑이 기분 — 항상 맨 위 고정, 순서변경/숨기기 대상 아님 ━━━ */}
               <div
                 style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}
-                {...(editMode ? {} : makeLongPress(enterEditMode))}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘의 말랑이 기분은</h2>
@@ -612,7 +600,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                       key={id}
                       data-block-id={id}
                       style={{ flexShrink: 0, opacity: hidden ? 0.4 : draggingId === id ? 0.55 : 1, transition: "opacity .15s" }}
-                      {...(editMode ? {} : makeLongPress(enterEditMode))}
                     >
                       {editMode && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px 8px" }}>
