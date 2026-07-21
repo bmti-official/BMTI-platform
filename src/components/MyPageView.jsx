@@ -541,7 +541,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
 
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">말랑 클래스 히스토리</h3>
-        <button onClick={() => setView('mallangroom')} className="bg-[#C9975A] text-white font-medium py-1.5 px-4 rounded-full hover:brightness-105 transition-all text-xs shadow-sm whitespace-nowrap">
+        <button onClick={() => window.dispatchEvent(new Event('open_mallang_class'))} className="bg-[#C9975A] text-white font-medium py-1.5 px-4 rounded-full hover:brightness-105 transition-all text-xs shadow-sm whitespace-nowrap">
           둘러보기
         </button>
       </div>
