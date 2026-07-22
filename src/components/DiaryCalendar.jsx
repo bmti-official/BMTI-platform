@@ -113,6 +113,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
             ?
           </button>
 
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.sub, letterSpacing: "-0.01em", marginBottom: 6 }}>말랑 다이어리</div>
+
           <button
             onClick={() => setShowDatePicker(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: "4px 8px" }}

@@ -523,15 +523,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
         {/* ── 헤더 ── */}
         {phase === "form" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "10px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
-          <button onClick={goBack} style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: C.sub, letterSpacing: "-0.01em" }}>말랑 다이어리</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
-              {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
-            </span>
-          </div>
-          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? t.accentDeep : C.sub }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
+          <button onClick={goBack} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
+            {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
+          </span>
+          <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? t.accentDeep : C.sub }}>
             {editMode ? (
               <span style={{ fontSize: 13, fontWeight: 800 }}>완료</span>
             ) : (
