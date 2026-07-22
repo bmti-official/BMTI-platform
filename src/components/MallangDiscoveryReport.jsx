@@ -195,7 +195,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 
         <DiscoveryHero discovery={report.discovery} onShowExample={() => setShowExample(true)} />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
           {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
         </div>
 
@@ -295,11 +295,11 @@ function DiscoveryHero({ discovery: d, onShowExample }) {
       <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: t.accentDeep, fontWeight: 800, marginBottom: 12, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>
         ✨ 이번 달의 발견
       </div>
-      <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.48, margin: "0 0 6px" }}>{d.headline}</p>
-      {d.evidence && <p style={{ fontSize: 12, color: t.accentDeep, fontWeight: 700, margin: "0 0 16px" }}>근거 · {d.evidence}</p>}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "rgba(255,255,255,0.55)", borderRadius: 14, padding: "14px 16px" }}>
+      <p style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{d.headline}</p>
+      {d.evidence && <p style={{ fontSize: 12.5, color: t.accentDeep, fontWeight: 800, margin: "0 0 16px" }}>근거 · {d.evidence}</p>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 9, background: "rgba(255,255,255,0.7)", borderRadius: 14, padding: "15px 16px" }}>
         {d.lines.map((line, i) => (
-          <p key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.6, margin: 0, color: C.ink }}>{line}</p>
+          <p key={i} style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.6, margin: 0, color: C.ink }}>{line}</p>
         ))}
       </div>
     </div>
@@ -308,32 +308,35 @@ function DiscoveryHero({ discovery: d, onShowExample }) {
 
 function SectionCard({ section: s }) {
   const Icon = SECTION_ICON[s.id];
+  const t = getTypeAccent();
   return (
-    <div style={{ background: C.card, borderRadius: 20, padding: "16px 18px 20px", boxShadow: CARD_SHADOW }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
-        <span style={{ display: "flex", color: s.unlocked ? C.ink : "#B7B2A9" }}>{Icon && <Icon size={16} />}</span>
-        <span style={{ fontSize: 14.5, fontWeight: 800, color: s.unlocked ? C.ink : "#B7B2A9" }}>{s.title}</span>
-        {!s.unlocked && <span style={{ marginLeft: "auto", fontSize: 11 }}>🔒</span>}
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 22px", boxShadow: CARD_SHADOW, border: `1px solid ${s.unlocked ? "#F1EEE8" : "#F3F1EC"}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: s.unlocked ? t.accentSoft : "#F3F1EC", color: s.unlocked ? t.accentDeep : "#C0BBB1" }}>
+          {Icon && <Icon size={18} />}
+        </span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: s.unlocked ? C.ink : "#B7B2A9" }}>{s.title}</span>
+        {!s.unlocked && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
       {!s.unlocked ? (
         <div>
-          <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, margin: "0 0 10px" }}>{s.lockedMessage}</p>
+          <p style={{ fontSize: 13, color: C.sub, fontWeight: 700, margin: "0 0 12px" }}>{s.lockedMessage}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ flex: 1 }}>
               <ProgressBar current={s.progress.current} required={s.progress.required} />
             </div>
-            <span style={{ fontSize: 11.5, color: "#B7B2A9", fontWeight: 700, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 12, color: t.accentDeep, fontWeight: 800, whiteSpace: "nowrap" }}>
               {s.progress.current}/{s.progress.required}
             </span>
           </div>
         </div>
       ) : (
         <>
-          {s.summary && <p style={{ fontSize: 13, fontWeight: 700, color: "#5A5448", margin: "0 0 14px" }}>{s.summary}</p>}
+          {s.summary && <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>}
           {s.alert && (
-            <div style={{ display: "flex", gap: 8, background: "#FDEEEE", border: "1px solid #F3CFCF", borderRadius: 12, padding: "10px 12px", marginBottom: 14 }}>
-              <span style={{ fontSize: 12 }}>💬</span>
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#A24B4B", margin: 0, lineHeight: 1.5 }}>{s.alert.message}</p>
+            <div style={{ display: "flex", gap: 8, background: "#FDEEEE", border: "1px solid #F3CFCF", borderRadius: 12, padding: "11px 13px", marginBottom: 16 }}>
+              <span style={{ fontSize: 13 }}>💬</span>
+              <p style={{ fontSize: 12.5, fontWeight: 700, color: "#A24B4B", margin: 0, lineHeight: 1.55 }}>{s.alert.message}</p>
             </div>
           )}
           <SectionBody id={s.id} data={s.data} />
@@ -347,8 +350,8 @@ function ProgressBar({ current, required, color }) {
   const fill = color || getTypeAccent().accent;
   const pct = Math.min(100, Math.round((current / required) * 100));
   return (
-    <div style={{ height: 6, borderRadius: 3, background: "#EDE9E2", overflow: "hidden" }}>
-      <div style={{ height: "100%", width: `${pct}%`, background: fill, borderRadius: 3, transition: "width .3s ease" }} />
+    <div style={{ height: 9, borderRadius: 999, background: "#EDE9E2", overflow: "hidden" }}>
+      <div style={{ height: "100%", width: `${pct}%`, background: fill, borderRadius: 999, transition: "width .3s ease" }} />
     </div>
   );
 }
@@ -375,26 +378,27 @@ function MoodCalendar({ data }) {
   const cells = [...Array(data.firstWeekday).fill(null), ...data.cells];
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 2 }}>
-        <button
-          onClick={() => setShowLegend(true)}
-          aria-label="색상이 뜻하는 기분 보기"
-          style={{ width: 22, height: 22, borderRadius: "50%", border: "1.3px solid #DCD8CF", background: "transparent", color: "#B7B2A9", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
-        >
-          ?
-        </button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 4 }}>
-        {WEEKDAYS.map((w) => (
-          <div key={w} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#C9C4B8" }}>{w}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
+        {WEEKDAYS.map((w, i) => (
+          <div key={w} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: i === 0 ? "#E0999A" : i === 6 ? "#8FA9D8" : "#B4AEA2" }}>{w}</div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
         {cells.map((c, i) => (
           <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {c && (c.mood
-              ? <div style={{ width: "76%", height: "76%", borderRadius: "50%", background: MOOD_COLOR[c.mood] }} title={MOOD[c.mood]} />
-              : <span style={{ fontSize: 10, color: "#D8D3C8" }}>{c.day}</span>)}
+              ? <div style={{ width: "82%", height: "82%", borderRadius: "50%", background: MOOD_COLOR[c.mood], boxShadow: "inset 0 -2px 4px rgba(0,0,0,0.06)" }} title={MOOD[c.mood]} />
+              : <span style={{ fontSize: 11, color: "#D8D3C8", fontWeight: 600 }}>{c.day}</span>)}
+          </div>
+        ))}
+      </div>
+
+      {/* 색상 안내(인라인 미니 범례) */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", justifyContent: "center", marginTop: 14, paddingTop: 12, borderTop: "1px dashed #EDE9E2" }}>
+        {[1, 2, 3, 4, 5].map((v) => (
+          <div key={v} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 11, height: 11, borderRadius: "50%", background: MOOD_COLOR[v], flexShrink: 0 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: C.sub }}>{MOOD[v]}</span>
           </div>
         ))}
       </div>
@@ -427,18 +431,23 @@ function MoodCalendar({ data }) {
 
 // ── 이번 달 말랑이들: 막대+% 대신 마스코트 크기로 빈도를 표현한다 ──
 function MoodDistribution({ data }) {
+  const t = getTypeAccent();
   const maxRatio = Math.max(...data.items.map((i) => i.ratio), 0.0001);
+  const topCount = Math.max(...data.items.map((i) => i.count), 0);
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6 }}>
-      {data.items.map((it) => (
-        <div key={it.mood} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flex: 1 }}>
-          <div style={{ height: 52, display: "flex", alignItems: "flex-end" }}>
-            {it.count > 0 && <Mallang v={it.mood} size={Math.max(20, Math.round(52 * (it.ratio / maxRatio)))} />}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6, background: "#FBFAF6", borderRadius: 14, padding: "16px 10px 12px" }}>
+      {data.items.map((it) => {
+        const isTop = it.count > 0 && it.count === topCount;
+        return (
+          <div key={it.mood} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1 }}>
+            <div style={{ height: 58, display: "flex", alignItems: "flex-end" }}>
+              {it.count > 0 && <Mallang v={it.mood} size={Math.max(24, Math.round(58 * (it.ratio / maxRatio)))} />}
+            </div>
+            <span style={{ fontSize: 10, color: "#9B9489", fontWeight: 700, textAlign: "center", lineHeight: 1.3 }}>{it.label}</span>
+            <span style={{ fontSize: 13, color: isTop ? t.accentDeep : C.ink, fontWeight: 800 }}>{it.count}번</span>
           </div>
-          <span style={{ fontSize: 9.5, color: "#B7B2A9", fontWeight: 700, textAlign: "center", lineHeight: 1.3 }}>{it.label}</span>
-          <span style={{ fontSize: 10.5, color: C.ink, fontWeight: 800 }}>{it.count}번</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -471,8 +480,8 @@ function SoreMap({ data }) {
         })}
       </svg>
       {top && (
-        <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, margin: 0 }}>
-          점이 클수록 자주 뻐근했던 부위예요 · 가장 많이 짚은 곳은 <b style={{ color: C.ink }}>{top.label}</b>
+        <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
+          점이 클수록 자주 뻐근했던 부위예요<br />가장 많이 짚은 곳은 <b style={{ color: getTypeAccent().accentDeep, fontWeight: 800 }}>{top.label}</b>
         </p>
       )}
     </div>
@@ -480,11 +489,12 @@ function SoreMap({ data }) {
 }
 
 function SoreMoments({ data }) {
+  const t = getTypeAccent();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {data.items.map((it) => (
-        <span key={it.situation} style={{ fontSize: 12, fontWeight: 700, background: "#F3F1EC", color: C.ink, borderRadius: 999, padding: "6px 12px" }}>
-          {it.label} · {it.count}번
+        <span key={it.situation} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+          {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
         </span>
       ))}
     </div>
@@ -516,9 +526,9 @@ function MovementBody({ data }) {
 // 톤 주의: 쉬어간 이유는 절대 강조하지 않는다 — 색·굵기 모두 차분하게, 랭킹처럼 안 보이게.
 function RestBody({ data }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {data.items.map((it) => (
-        <div key={it.reason} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8A8577", fontWeight: 600 }}>
+        <div key={it.reason} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#7C776C", fontWeight: 600 }}>
           <span>{it.label}</span>
           <span>{it.count}번</span>
         </div>
@@ -539,12 +549,13 @@ function SleepBody({ data }) {
 }
 
 function NotesBody({ data }) {
+  const t = getTypeAccent();
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {data.items.map((it, i) => (
-        <div key={i} style={{ borderLeft: "3px solid #EDE9E2", paddingLeft: 12 }}>
-          <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 700, marginBottom: 3 }}>{it.date} · {it.category}</div>
-          <div style={{ fontSize: 13, color: C.ink, fontWeight: 600, lineHeight: 1.5 }}>{it.text}</div>
+        <div key={i} style={{ background: "#FBFAF6", borderRadius: 12, borderLeft: `3px solid ${t.accent}`, padding: "11px 13px" }}>
+          <div style={{ fontSize: 11, color: C.sub, fontWeight: 700, marginBottom: 4 }}>{it.date} · {it.category}</div>
+          <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, lineHeight: 1.55 }}>{it.text}</div>
         </div>
       ))}
     </div>
@@ -552,13 +563,14 @@ function NotesBody({ data }) {
 }
 
 function BarRow({ label, count, max, color }) {
+  const accentDeep = getTypeAccent().accentDeep;
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-        <span>{label}</span><span style={{ color: C.sub }}>{count}번</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+        <span>{label}</span><span style={{ color: accentDeep, fontWeight: 800 }}>{count}번</span>
       </div>
-      <div style={{ height: 7, borderRadius: 4, background: "#EDE9E2", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${Math.max(6, Math.round((count / max) * 100))}%`, background: color, borderRadius: 4 }} />
+      <div style={{ height: 10, borderRadius: 999, background: "#EFEBE3", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${Math.max(8, Math.round((count / max) * 100))}%`, background: color, borderRadius: 999, transition: "width .3s ease" }} />
       </div>
     </div>
   );
