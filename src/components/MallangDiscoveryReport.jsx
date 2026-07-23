@@ -226,10 +226,10 @@ function DiscoveryExamplePopup({ onClose }) {
         <div style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, marginBottom: 8 }}>① 이렇게 기록이 쌓이면</div>
         <div style={{ background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
           {[
-            { d: "7/3", s: "목이 뻐근했어요 · 오래 앉아있을 때" },
-            { d: "7/9", s: "목이 뻐근했어요 · 오래 앉아있을 때" },
-            { d: "7/15", s: "목이 뻐근했어요 · 움직일 때" },
-            { d: "7/21", s: "목이 뻐근했어요 · 오래 앉아있을 때" },
+            { d: "7/3", s: "목이 불편했어요 · 오래 앉아있을 때" },
+            { d: "7/9", s: "목이 불편했어요 · 오래 앉아있을 때" },
+            { d: "7/15", s: "목이 불편했어요 · 움직일 때" },
+            { d: "7/21", s: "목이 불편했어요 · 오래 앉아있을 때" },
           ].map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "5px 0", fontSize: 12.5 }}>
               <span style={{ color: C.sub, fontWeight: 700, minWidth: 30 }}>{r.d}</span>
@@ -244,7 +244,7 @@ function DiscoveryExamplePopup({ onClose }) {
         <div style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, marginBottom: 8 }}>② 이런 발견을 찾아드려요</div>
         <div style={{ background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 16, padding: "16px 16px 14px" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: t.accentDeep, fontWeight: 800, marginBottom: 10, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>✨ 이번 달의 발견</div>
-          <p style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.5, margin: "0 0 6px" }}>목이 뻐근했던 4번 중 3번이 ‘오래 앉아있을 때’였어요.</p>
+          <p style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.5, margin: "0 0 6px" }}>목이 불편했던 4번 중 3번이 ‘오래 앉아있을 때’였어요.</p>
           <p style={{ fontSize: 11.5, color: t.accentDeep, fontWeight: 700, margin: "0 0 12px" }}>근거 · 4번 중 3번</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, background: "rgba(255,255,255,0.6)", borderRadius: 12, padding: "12px 14px" }}>
             <p style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.55, margin: 0 }}>같은 자세를 오래 유지하면 그 부위가 계속 긴장한다고 알려져 있어요.</p>
@@ -327,8 +327,8 @@ function DiscoveryHero({ report, onShowExample }) {
 
   const tiles = [];
   if (topMood) tiles.push({ visual: <Mallang v={dist.top} size={30} />, big: MOOD[dist.top], small: `가장 많았던 기분 · ${topMood.count}번` });
-  if (sore && sore.parts[0]) tiles.push({ visual: <TileBadge t={t}><IconMap size={17} /></TileBadge>, big: sore.parts[0].label, small: `자주 뻐근했어요 · ${sore.parts[0].count}번` });
-  if (moments && moments.items[0]) tiles.push({ visual: <TileBadge t={t}><IconTimer size={17} /></TileBadge>, big: moments.items[0].label, small: `뻐근했던 순간 · ${moments.items[0].count}번` });
+  if (sore && sore.parts[0]) tiles.push({ visual: <TileBadge t={t}><IconMap size={17} /></TileBadge>, big: sore.parts[0].label, small: `자주 불편했어요 · ${sore.parts[0].count}번` });
+  if (moments && moments.items[0]) tiles.push({ visual: <TileBadge t={t}><IconTimer size={17} /></TileBadge>, big: moments.items[0].label, small: `불편했던 순간 · ${moments.items[0].count}번` });
   if (move && move.days) tiles.push({ visual: <TileBadge t={t}><IconRun size={17} /></TileBadge>, big: `${move.days}일`, small: `몸을 움직인 날${move.byType[0] ? ` · ${move.byType[0].label}` : ""}` });
   if (over && over.days) tiles.push({ visual: <TileBadge t={t}><IconBattery size={17} /></TileBadge>, big: `${over.days}일`, small: `평소보다 무리한 날` });
   if (sleep && sleep.items[0]?.count) tiles.push({ visual: <TileBadge t={t}><IconZzz size={17} /></TileBadge>, big: sleep.items[0].label, small: `가장 많던 수면 · ${sleep.items[0].count}번` });
@@ -529,9 +529,11 @@ function MoodDistribution({ data }) {
 
 // ── 뻐근 지도: 가로 막대 대신 몸 실루엣 위에 빈도만큼 큰 점을 찍는다 ──
 const BODY_POS = {
-  neck: { x: 50, y: 17 }, shoulder: { x: 31, y: 25 }, back: { x: 50, y: 40 },
-  waist: { x: 50, y: 55 }, wrist: { x: 21, y: 58 }, pelvis: { x: 50, y: 66 },
+  head: { x: 50, y: 8 }, neck: { x: 50, y: 17 }, shoulder: { x: 31, y: 25 },
+  elbow: { x: 22, y: 47 }, wrist: { x: 21, y: 60 }, back: { x: 50, y: 38 },
+  abdomen: { x: 50, y: 50 }, waist: { x: 50, y: 58 }, pelvis: { x: 50, y: 67 },
   knee: { x: 43, y: 82 }, ankle: { x: 43, y: 97 },
+  // etc(기타)는 몸 위치가 없어 지도에 점으로 표시하지 않는다.
 };
 function SoreMap({ data }) {
   const top = [...data.parts].sort((a, b) => b.count - a.count)[0];
@@ -556,7 +558,7 @@ function SoreMap({ data }) {
       </svg>
       {top && (
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
-          점이 클수록 자주 뻐근했던 부위예요<br />가장 많이 짚은 곳은 <b style={{ color: getTypeAccent().accentDeep, fontWeight: 800 }}>{top.label}</b>
+          점이 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: getTypeAccent().accentDeep, fontWeight: 800 }}>{top.label}</b>
         </p>
       )}
     </div>

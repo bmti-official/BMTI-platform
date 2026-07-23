@@ -20,7 +20,7 @@
 
 export const MOOD = { 1: "힘들었어요", 2: "지쳤어요", 3: "그냥저냥", 4: "괜찮았어요", 5: "좋았어요" };
 export const SLEEP = { 0: "밤을 새웠어요", 1: "뒤척였어요", 2: "그냥 그랬어요", 3: "푹 잤어요" };
-export const PARTS = { neck: "목", shoulder: "어깨", back: "등", waist: "허리", wrist: "손목", knee: "무릎", pelvis: "골반", ankle: "발목" };
+export const PARTS = { head: "머리", neck: "목", shoulder: "어깨", elbow: "팔꿈치", wrist: "손목", back: "등", abdomen: "복부", waist: "허리", pelvis: "골반", knee: "무릎", ankle: "발목", etc: "기타" };
 export const SITUATIONS = { morning: "아침에 일어날 때", moving: "움직일 때", sitting: "오래 앉아있을 때", standing: "오래 서있을 때", allday: "하루 종일", etc: "기타" };
 export const LOADS = { sit: "오래 앉음", stand: "오래 선 자세", walk: "많이 걸음", lift: "무거운 물건 들기", etc: "기타" };
 export const REASONS = { busy: "바빴어요", tired: "피곤해요", sick: "몸이 안 좋아요", rest: "그냥 쉬고 싶었어요", forgot: "깜빡했어요" };
@@ -290,7 +290,7 @@ function detectC2(days) {
   const c = SITUATION_COPY[best.key] || SITUATION_COPY.etc;
   return {
     id: "C2", actionable: 1, strength: best.n * best.ratio,
-    fact: `${PARTS[best.part]}가 뻐근했던 ${best.total}번 중 ${best.n}번이 '${SITUATIONS[best.key]}'였어요.`,
+    fact: `${PARTS[best.part]}가 불편했던 ${best.total}번 중 ${best.n}번이 '${SITUATIONS[best.key]}'였어요.`,
     evidence: `${best.total}번 중 ${best.n}번`,
     info: c.info,
     sense: `${PARTS[best.part]}가 그 비슷한 순간마다 신호를 보내왔어요.`,
@@ -318,7 +318,7 @@ function detectA1(days) {
   if (!best) return null;
   return {
     id: "A1", actionable: 1, strength: best.n * best.ratio,
-    fact: `평소보다 ${LOADS[best.load]}이 있던 날 ${best.total}번 중 ${best.n}번, ${PARTS[best.key]}가 뻐근했어요.`,
+    fact: `평소보다 ${LOADS[best.load]}이 있던 날 ${best.total}번 중 ${best.n}번, ${PARTS[best.key]}가 불편했어요.`,
     evidence: `${best.total}번 중 ${best.n}번`,
     info: `일반적으로 ${LOADS[best.load]}이 이어지면 ${PARTS[best.key]} 주변이 먼저 지친다고 알려져 있어요.`,
     sense: `${LOADS[best.load]}이 길어질 때, 몸이 먼저 알아차리는 것 같아요.`,
@@ -519,10 +519,10 @@ export function buildMonthlyReport(entries, profile, opts) {
     mkSection("mood_distribution", "이번 달 말랑이들", days.length, dDist,
       dDist.top ? `이번 달은 '${MOOD[dDist.top]}'한 날이 가장 많았어요.` : null),
 
-    mkSection("sore_map", "뻐근 지도", soreCount, dSore,
+    mkSection("sore_map", "불편한 곳 지도", soreCount, dSore,
       dSore.parts[0] ? `${dSore.parts[0].label}를 ${dSore.parts[0].count}번 짚어주셨어요. 평균 ${dSore.parts[0].avgLevel.toFixed(1)}이었어요.` : null),
 
-    mkSection("sore_moments", "뻐근하던 시간", soreCount, dMoments,
+    mkSection("sore_moments", "불편했던 순간", soreCount, dMoments,
       dMoments.items[0] ? `가장 자주 짚어주신 순간은 '${dMoments.items[0].label}'이었어요.` : null,
       dMoments.alldayCount >= CONFIG.CHRONIC_ALLDAY
         ? { type: "chronic", message: "'하루 종일' 불편했던 날이 여러 번이었어요. 계속된다면 전문가와 상담해보시길 권해요." }

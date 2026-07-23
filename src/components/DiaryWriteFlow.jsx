@@ -62,7 +62,8 @@ const NO_EXERCISE_REASONS = [
 ];
 
 // ── 기타 상수 ──
-const PARTS = ["목", "어깨", "등", "허리", "손목", "무릎", "골반", "발목"];
+// 인체 위 → 아래 순서로 나열 (기타는 항상 마지막)
+const PARTS = ["머리", "목", "어깨", "팔꿈치", "손목", "등", "복부", "허리", "골반", "무릎", "발목", "기타"];
 const WHEN_OPTS = ["오늘 아침 일어날 때", "움직일 때", "오래 앉아있을 때", "오래 서있을 때", "하루 종일"];
 
 // ── 받침 유무로 이/가 조사 고르는 헬퍼 ──
@@ -86,7 +87,7 @@ const REORDERABLE_LABEL = {
   exercise: "오늘 운동 했나요",
   tags: "오늘의 태그",
   oneLine: "한 줄 일기",
-  sore: "뻐근한 부위",
+  sore: "불편한 부위",
 };
 
 // ============================================
@@ -503,7 +504,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     }
     if (id === "sore") {
       return (
-        <Card title="뻐근한 부위">
+        <Card title="불편한 부위">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
             {PARTS.map(p => {
               const on = sore.parts.includes(p);

@@ -7,7 +7,7 @@ export const SLEEP_ICON = ["allNighter", "toss", "mehMoon", "sleepWell"]; // ind
 
 export const OVEREXERT_LOAD_KEY = { "오래 앉음": "sit", "오래 선 자세": "stand", "많이 걸음": "walk", "무거운 물건 들기": "lift" };
 export const EXERCISE_REASON_KEY = { "바빴어요": "busy", "피곤해요": "tired", "몸이 안 좋아요": "sick", "그냥 쉬고 싶었어요": "rest", "깜빡했어요": "forgot" };
-export const PART_KEY = { "목": "neck", "어깨": "shoulder", "등": "back", "허리": "waist", "손목": "wrist", "무릎": "knee", "골반": "pelvis", "발목": "ankle" };
+export const PART_KEY = { "머리": "head", "목": "neck", "어깨": "shoulder", "팔꿈치": "elbow", "손목": "wrist", "등": "back", "복부": "abdomen", "허리": "waist", "골반": "pelvis", "무릎": "knee", "발목": "ankle", "기타": "etc" };
 export const WHEN_KEY = { "오늘 아침 일어날 때": "morning", "움직일 때": "moving", "오래 앉아있을 때": "sitting", "오래 서있을 때": "standing", "하루 종일": "allday" };
 export const EXERCISE_TYPE_KEY = {
   "헬스·PT": "gym", "요가": "yoga", "필라테스": "pilates", "스트레칭": "stretch", "명상·호흡": "meditation", "수영": "swim",

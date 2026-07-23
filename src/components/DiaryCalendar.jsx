@@ -86,7 +86,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
     }
     if (entry.soreness?.length) {
       const parts = entry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).join(", ");
-      items.push({ icon: "bandage", text: `뻐근함: ${parts}` });
+      items.push({ icon: "bandage", text: `불편함: ${parts}` });
     }
     if (entry.note?.text) items.push({ icon: "editPencil", text: entry.note.text });
     return items;
