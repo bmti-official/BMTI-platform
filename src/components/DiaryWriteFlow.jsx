@@ -39,6 +39,12 @@ const SLEEP_OPTS = [
   { label: "푹 잤어요", icon: "sleepWell" },
 ];
 
+// 잠든 시간대 — 정밀 시간 대신 원탭 칩(취침 리듬/다음날 발견용, 선택 사항)
+const SLEEP_TIME_OPTS = ["~11시", "12시", "1시", "2시 이후"];
+
+// 오늘의 태그 — 한 날에 같이 찍힌 기록으로 '함께 온 기록' 발견을 만드는 원탭 칩(여러 개 선택, 선택 사항)
+const TODAY_TAGS = ["카페인", "군것질/야식", "술", "야근/바쁨", "스트레스", "외출", "집콕", "생리", "과식", "물 많이"];
+
 // ── 운동 카테고리 (개인 집중형에 스트레칭 포함) ──
 const EXERCISE_CATS = [
   { name: "개인 집중형 (실내)", items: ["헬스·PT", "요가", "필라테스", "스트레칭", "명상·호흡", "수영"] },
@@ -78,6 +84,7 @@ const REORDERABLE_LABEL = {
   sitting: "오늘 평소보다 무리했나요",
   sleep: "얼마나 푹 잤나요",
   exercise: "오늘 운동 했나요",
+  tags: "오늘의 태그",
   oneLine: "한 줄 일기",
   sore: "뻐근한 부위",
 };
@@ -101,8 +108,13 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     return LOAD_TO_OVEREXERT_LABEL[load] || "other";
   });
   const [overexertOther, setOverexertOther] = useState("");
-  // 수면의 질
+  // 수면의 질 + 잠든 시간대
   const [sleepVal, setSleepVal] = useState(() => (initialEntry?.sleep != null ? SLEEP_LABELS[initialEntry.sleep] : null));
+  const [sleepTime, setSleepTime] = useState(() => initialEntry?.sleepTime ?? null);
+
+  // 오늘의 태그(여러 개)
+  const [tags, setTags] = useState(() => (Array.isArray(initialEntry?.tags) ? initialEntry.tags : []));
+  const toggleTag = (tag) => setTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
 
   // 운동
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
@@ -136,7 +148,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
 
   // 블럭 순서·숨김·편집 모드
-  const [blockOrder, setBlockOrder] = useState(["sitting", "sleep", "exercise", "oneLine", "sore"]);
+  const [blockOrder, setBlockOrder] = useState(["sitting", "sleep", "exercise", "tags", "oneLine", "sore"]);
   const [hiddenBlocks, setHiddenBlocks] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
@@ -191,6 +203,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     sitting: !initialEntry?.overwork,
     sleep: initialEntry?.sleep == null,
     exercise: !initialEntry?.exercise,
+    tags: !(Array.isArray(initialEntry?.tags) && initialEntry.tags.length),
   });
   const toggle = (key) => setExpanded(e => ({ ...e, [key]: !e[key] }));
 
@@ -236,7 +249,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     }));
     const noteText = oneLine.text.trim();
     const note = noteText ? { category: CATEGORIES.find(c => c.id === oneLine.cat)?.label, text: noteText } : null;
-    return { sleep: sleep >= 0 ? sleep : null, overwork, exercise, soreness, note };
+    // 새 신호(선택 사항): 오늘의 태그·잠든 시간대 — '함께 온 기록', 취침 리듬 발견의 재료로 그대로 저장해 쌓는다.
+    return { sleep: sleep >= 0 ? sleep : null, sleepTime, overwork, exercise, soreness, note, tags };
   };
 
   const finishFlow = () => {
@@ -376,6 +390,26 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           <div style={{ display: "flex", gap: 6 }}>
             {SLEEP_OPTS.map(opt => (
               <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} tint={C.yellow} />
+            ))}
+          </div>
+          {/* 잠든 시간대(선택) — 취침 리듬/다음날 발견의 재료 */}
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.sub, margin: "16px 0 8px" }}>몇 시쯤 잤어요? <span style={{ color: C.tileOffText, fontWeight: 600 }}>(선택)</span></div>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {SLEEP_TIME_OPTS.map(o => (
+              <Chip key={o} label={o} on={sleepTime === o} onClick={() => setSleepTime(sleepTime === o ? null : o)} />
+            ))}
+          </div>
+        </AccordionCard>
+      );
+    }
+    if (id === "tags") {
+      return (
+        <AccordionCard question="오늘의 태그" answerText={tags.length ? `${tags.length}개 선택` : null}
+          expanded={expanded.tags} onToggle={() => toggle("tags")} done={tags.length > 0}>
+          <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "0 0 10px" }}>오늘 있었던 일을 가볍게 눌러두면, 나중에 뭐랑 자주 겹치는지 찾아드려요.</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {TODAY_TAGS.map(tag => (
+              <Chip key={tag} label={tag} on={tags.includes(tag)} onClick={() => toggleTag(tag)} />
             ))}
           </div>
         </AccordionCard>

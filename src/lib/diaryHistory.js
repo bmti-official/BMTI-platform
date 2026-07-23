@@ -81,10 +81,18 @@ export async function syncDiaryHistoryFromServer() {
   try {
     const { data, error } = await supabase.from('diary_entries').select('*').eq('user_id', userId);
     if (error) throw error;
-    const mapped = (data || []).map((row) => ({
-      date: row.date, mood: row.mood, sleep: row.sleep,
-      overwork: row.overwork, exercise: row.exercise, soreness: row.soreness, note: row.note,
-    }));
+    // 서버에 아직 컬럼이 없는 새 신호(tags·sleepTime)는 로컬에 저장된 값을 날짜 기준으로
+    // 이어붙여, 다른 기기 동기화가 이 기기의 선택 태그·잠든 시간대를 지우지 않게 한다.
+    const localByDate = Object.fromEntries(getDiaryHistory().map((e) => [e.date, e]));
+    const mapped = (data || []).map((row) => {
+      const local = localByDate[row.date] || {};
+      return {
+        date: row.date, mood: row.mood, sleep: row.sleep,
+        overwork: row.overwork, exercise: row.exercise, soreness: row.soreness, note: row.note,
+        sleepTime: row.sleep_time ?? local.sleepTime ?? null,
+        tags: row.tags ?? local.tags ?? [],
+      };
+    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
     return mapped;
   } catch (e) {
