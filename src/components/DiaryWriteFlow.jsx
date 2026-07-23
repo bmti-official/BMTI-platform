@@ -134,16 +134,17 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     const cat = CATEGORIES.find(c => c.label === initialEntry.note.category)?.id || "daily";
     return { cat, text: initialEntry.note.text || "" };
   });
-  // 뻐근한 부위
+  // 불편한 부위
   const [sore, setSore] = useState(() => {
-    if (!initialEntry?.soreness?.length) return { parts: [], level: 5, whens: {}, whenOthers: {} };
+    if (!initialEntry?.soreness?.length) return { parts: [], level: 5, whens: {}, whenOthers: {}, partOther: "" };
     const parts = initialEntry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).slice(0, 2);
     const whens = {};
     initialEntry.soreness.forEach(s => {
       const p = KEY_TO_PART_LABEL[s.part] || s.part;
       whens[p] = KEY_TO_WHEN_LABEL[s.situation] || "기타";
     });
-    return { parts, level: initialEntry.soreness[0]?.level ?? 5, whens, whenOthers: {} };
+    const etc = initialEntry.soreness.find(s => s.part === "etc");
+    return { parts, level: initialEntry.soreness[0]?.level ?? 5, whens, whenOthers: {}, partOther: etc?.partOther || "" };
   });
 
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
@@ -245,6 +246,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       : exerciseDidIt === "no" ? { did: false, reason: EXERCISE_REASON_KEY[exerciseReason] || "forgot" } : null;
     const soreness = sore.parts.map(p => ({
       part: PART_KEY[p] || "back",
+      ...(p === "기타" && sore.partOther.trim() ? { partOther: sore.partOther.trim() } : {}),
       level: sore.level,
       situation: (sore.whens[p] === "기타" ? "etc" : WHEN_KEY[sore.whens[p]]) || "etc",
     }));
@@ -332,11 +334,15 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     exerciseAnswerText = `오늘 ${exerciseTypes.join(", ")} 했어요`;
   }
 
-  // 뻐근한 부위 헤드라인 — 부위마다 시점이 다를 수 있어 부위별로 문장을 따로 만들어 이어붙인다.
+  // 불편한 부위의 표시 이름 — '기타'는 직접 입력한 부위명으로 보여준다.
+  const partDisplay = (p) => (p === "기타" ? (sore.partOther.trim() || "기타") : p);
+
+  // 불편한 부위 헤드라인 — 부위마다 시점이 다를 수 있어 부위별로 문장을 따로 만들어 이어붙인다.
   const soreClauses = sore.parts.map(p => {
     const w = sore.whens[p] === "기타" ? (sore.whenOthers[p] || "").trim() : sore.whens[p];
     if (!w) return null;
-    return `${w} ${p}${hasBatchim(p) ? "이" : "가"} ${sore.level}정도로 불편했`;
+    const pd = partDisplay(p);
+    return `${w} ${pd}${hasBatchim(pd) ? "이" : "가"} ${sore.level}정도로 불편했`;
   }).filter(Boolean);
   const soreHeadline = soreClauses.length > 0
     ? soreClauses.map((c, i) => i === soreClauses.length - 1 ? `${c}어요` : `${c}고, `).join("")
@@ -517,13 +523,19 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               );
             })}
           </div>
+          {/* 기타 선택 시 부위 직접 입력 */}
+          {sore.parts.includes("기타") && (
+            <input value={sore.partOther} onChange={e => setSore(s => ({ ...s, partOther: e.target.value.slice(0, 20) }))}
+              placeholder="어디가 불편했나요? 예: 손가락, 종아리"
+              style={{ width: "100%", marginTop: 14, padding: "11px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+          )}
           {sore.parts.length > 0 && <>
             <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
             <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: t.accent }} />
 
             {sore.parts.map(p => (
               <div key={p}>
-                <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{p}{hasBatchim(p) ? "은" : "는"} 언제 그러셨어요?</div>
+                <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{partDisplay(p)}{hasBatchim(partDisplay(p)) ? "은" : "는"} 언제 그러셨어요?</div>
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                   {WHEN_OPTS.map(w => (
                     <Chip key={w} label={w} on={sore.whens[p] === w} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: w } }))} />

@@ -85,7 +85,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
       items.push({ icon: "sofa", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
     }
     if (entry.soreness?.length) {
-      const parts = entry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).join(", ");
+      const parts = entry.soreness.map(s => (s.part === "etc" && s.partOther ? s.partOther : (KEY_TO_PART_LABEL[s.part] || s.part))).join(", ");
       items.push({ icon: "bandage", text: `불편함: ${parts}` });
     }
     if (entry.note?.text) items.push({ icon: "editPencil", text: entry.note.text });

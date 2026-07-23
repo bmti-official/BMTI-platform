@@ -135,6 +135,16 @@ export const DISCLAIMER =
  * 4. 유틸
  * ──────────────────────────────────────────────────────── */
 
+// 받침 유무에 따라 조사를 붙인다 (목이/허리가). 한글이 아니면 받침 없음으로 본다.
+const hasBatchim = (word) => {
+  const ch = (word || "").trim().slice(-1);
+  const code = ch.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return false;
+  return (code - 0xac00) % 28 !== 0;
+};
+const iga = (word) => `${word}${hasBatchim(word) ? "이" : "가"}`;
+const eulreul = (word) => `${word}${hasBatchim(word) ? "을" : "를"}`;
+
 const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
 const count = (arr) => arr.reduce((m, k) => ((m[k] = (m[k] || 0) + 1), m), {});
 const sortDesc = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
@@ -290,7 +300,7 @@ function detectC2(days) {
   const c = SITUATION_COPY[best.key] || SITUATION_COPY.etc;
   return {
     id: "C2", actionable: 1, strength: best.n * best.ratio,
-    fact: `${PARTS[best.part]}가 불편했던 ${best.total}번 중 ${best.n}번이 '${SITUATIONS[best.key]}'였어요.`,
+    fact: `${iga(PARTS[best.part])} 불편했던 ${best.total}번 중 ${best.n}번이 '${SITUATIONS[best.key]}'였어요.`,
     evidence: `${best.total}번 중 ${best.n}번`,
     info: c.info,
     sense: `${PARTS[best.part]}가 그 비슷한 순간마다 신호를 보내왔어요.`,
@@ -318,7 +328,7 @@ function detectA1(days) {
   if (!best) return null;
   return {
     id: "A1", actionable: 1, strength: best.n * best.ratio,
-    fact: `평소보다 ${LOADS[best.load]}이 있던 날 ${best.total}번 중 ${best.n}번, ${PARTS[best.key]}가 불편했어요.`,
+    fact: `평소보다 ${LOADS[best.load]}이 있던 날 ${best.total}번 중 ${best.n}번, ${iga(PARTS[best.key])} 불편했어요.`,
     evidence: `${best.total}번 중 ${best.n}번`,
     info: `일반적으로 ${LOADS[best.load]}이 이어지면 ${PARTS[best.key]} 주변이 먼저 지친다고 알려져 있어요.`,
     sense: `${LOADS[best.load]}이 길어질 때, 몸이 먼저 알아차리는 것 같아요.`,
@@ -390,7 +400,58 @@ export function findDiscovery(days, recentIds = []) {
     ((recentIds.includes(a.id) ? 1 : 0) - (recentIds.includes(b.id) ? 1 : 0)) ||
     (b.strength - a.strength)
   );
-  return { found: true, discovery: use[0], others: use.slice(1).map((c) => c.id), recorded: days.length };
+  return { found: true, discovery: use[0], all: use, others: use.slice(1).map((c) => c.id), recorded: days.length };
+}
+
+/* ────────────────────────────────────────────────────────────
+ * 7-b. 입력 없이 얻는 발견 (freeSignals)
+ *   기록 자체(기분·무리 여부·날짜 연속성)만으로 계산 — 추가 입력 불필요.
+ *   · rebound(회복력): 힘들었던 날(기분≤2) 다음날, 하루 만에 기분이 오른 비율
+ *   · streak(연속·공백): 무리한 날이 며칠 연속됐는지 + 그 직후 기분이 꺾였는지
+ * ──────────────────────────────────────────────────────── */
+const DAY_MS = 86400000;
+// 날짜 문자열에 n일을 더한다. toISOString()은 UTC로 변환하며 하루가 밀릴 수 있어(한국시간 기준)
+// 로컬 날짜 요소로만 계산한다.
+const shiftISO = (iso, n) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+};
+
+export function computeFreeSignals(days) {
+  const byDate = Object.fromEntries(days.map((d) => [d.date, d]));
+
+  // 회복력 — 힘들었던 다음날 하루 만에 반등한 비율
+  let low = 0, rebound = 0;
+  for (const d of days) {
+    if (typeof d.mood !== "number" || d.mood > 2) continue;
+    const next = byDate[shiftISO(d.date, 1)];
+    if (!next || typeof next.mood !== "number") continue;
+    low++;
+    if (next.mood > d.mood) rebound++;
+  }
+
+  // 연속·공백 — 날짜가 이어진 무리한 날의 최장 연속 길이
+  const sorted = [...days].sort((a, b) => a.date.localeCompare(b.date));
+  let longest = 0, cur = 0, prevDate = null, longestEnd = null;
+  for (const d of sorted) {
+    const consec = prevDate && new Date(d.date + "T00:00:00") - new Date(prevDate + "T00:00:00") === DAY_MS;
+    if (d.overwork?.yes) {
+      cur = consec ? cur + 1 : 1;
+      if (cur > longest) { longest = cur; longestEnd = d.date; }
+    } else {
+      cur = 0;
+    }
+    prevDate = d.date;
+  }
+  // 최장 연속 무리 바로 다음날 기분이 꺾였는지
+  const after = longestEnd ? byDate[shiftISO(longestEnd, 1)] : null;
+  const crashAfter = !!(after && typeof after.mood === "number" && after.mood <= 2);
+
+  return {
+    rebound: { low, rebound, ratio: low ? rebound / low : 0 },
+    streak: { longest, crashAfter },
+  };
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -499,6 +560,11 @@ export function buildMonthlyReport(entries, profile, opts) {
 
   const discRaw = findDiscovery(days, recentDiscoveryIds);
   const discovery = composeDiscovery(discRaw, bmti, empathy);
+  // 대표 발견 외에 추가로 보여줄 발견들 (발견 더보기). 공감 문구는 대표에만 붙이고 여기선 생략.
+  const discoveries = discRaw.found
+    ? discRaw.all.slice(0, 3).map((raw) => composeDiscovery({ found: true, discovery: raw }, bmti))
+    : [];
+  const freeSignals = computeFreeSignals(days);
 
   // 섹션별 집계
   const dCal = secMoodCalendar(days, year, month);
@@ -520,7 +586,7 @@ export function buildMonthlyReport(entries, profile, opts) {
       dDist.top ? `이번 달은 '${MOOD[dDist.top]}'한 날이 가장 많았어요.` : null),
 
     mkSection("sore_map", "불편한 곳 지도", soreCount, dSore,
-      dSore.parts[0] ? `${dSore.parts[0].label}를 ${dSore.parts[0].count}번 짚어주셨어요. 평균 ${dSore.parts[0].avgLevel.toFixed(1)}이었어요.` : null),
+      dSore.parts[0] ? `${eulreul(dSore.parts[0].label)} ${dSore.parts[0].count}번 짚어주셨어요. 평균 ${dSore.parts[0].avgLevel.toFixed(1)}이었어요.` : null),
 
     mkSection("sore_moments", "불편했던 순간", soreCount, dMoments,
       dMoments.items[0] ? `가장 자주 짚어주신 순간은 '${dMoments.items[0].label}'이었어요.` : null,
@@ -550,6 +616,8 @@ export function buildMonthlyReport(entries, profile, opts) {
     period: { year, month, daysInMonth: daysInMonth(year, month) },
     meta: { recordedDays: days.length, bmti },
     discovery,
+    discoveries,
+    freeSignals,
     sections,
     disclaimer: DISCLAIMER,
   };

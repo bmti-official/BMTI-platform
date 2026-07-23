@@ -137,6 +137,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
   const [showExample, setShowExample] = useState(false);
+  const [tab, setTab] = useState("discovery"); // "records" | "discovery"
 
   const monthKey = `${year}-${String(month).padStart(2, "0")}`;
   const entries = getDiaryHistory().filter((e) => e.date.startsWith(monthKey));
@@ -165,14 +166,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 18px 96px" }}>
-        {/* 헤더 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <button onClick={onClose} aria-label="닫기" style={{ border: "none", background: "transparent", fontSize: 22, color: C.ink, cursor: "pointer", padding: 4, lineHeight: 1 }}>‹</button>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>말랑이의 발견</div>
-          <div style={{ width: 26 }} />
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "14px 0 2px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "2px 0 2px" }}>
           <button
             onClick={() => changeMonth(-1)}
             disabled={!canGoPrev}
@@ -189,15 +183,41 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             ›
           </button>
         </div>
-        <p style={{ textAlign: "center", fontSize: 12.5, color: C.sub, fontWeight: 700, margin: "0 0 22px" }}>
+        <p style={{ textAlign: "center", fontSize: 12.5, color: C.sub, fontWeight: 700, margin: "0 0 16px" }}>
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
-        <DiscoveryHero report={report} onShowExample={() => setShowExample(true)} />
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
-          {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
+        {/* 카테고리 탭 — 이번달 기록(근거 데이터) / 이번달 발견(패턴) */}
+        <div style={{ display: "flex", background: "#F3F1EC", borderRadius: 999, padding: 4, marginBottom: 18 }}>
+          {[["records", "이번달 기록"], ["discovery", "이번달 발견"]].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                flex: 1, border: "none", cursor: "pointer", borderRadius: 999, padding: "9px 0",
+                fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
+                background: tab === key ? "#fff" : "transparent",
+                color: tab === key ? C.ink : C.sub,
+                boxShadow: tab === key ? "0 1px 3px rgba(28,26,23,0.12)" : "none",
+                transition: "color .2s, background .2s",
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+
+        {tab === "records" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
+          </div>
+        ) : (
+          <div>
+            <DiscoveryHero report={report} onShowExample={() => setShowExample(true)} />
+            {report.discovery.found && <MoreDiscoveries discoveries={report.discoveries} />}
+            {report.discovery.found && <FreeSignals signals={report.freeSignals} />}
+          </div>
+        )}
 
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 22, padding: "12px 14px", background: "#FFFFFF", border: `1px solid ${C.line}`, borderRadius: 14 }}>
           <span style={{ display: "flex", color: C.sub, marginTop: 1 }}><IconInfo size={14} /></span>
@@ -377,6 +397,92 @@ function DiscoveryHero({ report, onShowExample }) {
           <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.55, margin: 0, color: "#3F3A31" }}>{suggestion}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── 발견 더보기: 대표 발견 외에 눈에 띈 다른 패턴들을 담백하게 나열 ──
+function MoreDiscoveries({ discoveries }) {
+  const t = getTypeAccent();
+  const more = (discoveries || []).slice(1); // [0]은 대표 발견(위 히어로)과 동일
+  if (!more.length) return null;
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ display: "flex", color: t.accentDeep }}><IconMap size={15} /></span>
+        이런 발견도 있었어요
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {more.map((d, i) => (
+          <div key={d.id || i} style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "14px 16px", boxShadow: CARD_SHADOW }}>
+            <p style={{ fontSize: 14.5, fontWeight: 800, lineHeight: 1.5, margin: "0 0 8px", color: C.ink, wordBreak: "keep-all" }}>{d.headline}</p>
+            {d.evidence && (
+              <span style={{ display: "inline-block", fontSize: 11, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "3px 9px", borderRadius: 999 }}>근거 · {d.evidence}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 입력 없이 찾은 신호: 회복력 / 연속·공백 (추가 입력 없이 기록만으로 계산) ──
+function FreeSignals({ signals }) {
+  const t = getTypeAccent();
+  const reb = signals?.rebound;
+  const stk = signals?.streak;
+  const cards = [];
+
+  if (reb && reb.low >= 3) {
+    const pct = Math.round(reb.ratio * 100);
+    cards.push(
+      <div key="reb" style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "15px 16px", boxShadow: CARD_SHADOW }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, padding: "3px 9px", borderRadius: 999, marginBottom: 10 }}>💪 회복력</div>
+        <p style={{ fontSize: 14.5, fontWeight: 800, lineHeight: 1.5, margin: "0 0 12px", color: C.ink, wordBreak: "keep-all" }}>
+          힘들었던 다음날, {reb.low}번 중 <span style={{ color: t.accentDeep }}>{reb.rebound}번</span>은 하루 만에 나아졌어요.
+        </p>
+        <div style={{ height: 10, borderRadius: 999, background: "#EFEBE3", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${Math.max(8, pct)}%`, background: t.accent, borderRadius: 999 }} />
+        </div>
+        <div style={{ fontSize: 11, color: C.sub, fontWeight: 700, marginTop: 6 }}>다음날 회복 {pct}%</div>
+      </div>
+    );
+  }
+
+  if (stk && stk.longest >= 2) {
+    cards.push(
+      <div key="stk" style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "15px 16px", boxShadow: CARD_SHADOW }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, padding: "3px 9px", borderRadius: 999, marginBottom: 10 }}>🔥 연속·공백</div>
+        <p style={{ fontSize: 14.5, fontWeight: 800, lineHeight: 1.5, margin: "0 0 12px", color: C.ink, wordBreak: "keep-all" }}>
+          이번 달 가장 길게 무리한 건 <span style={{ color: t.accentDeep }}>{stk.longest}일 연속</span>이었어요.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          {Array.from({ length: stk.longest }).map((_, i) => (
+            <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: t.accent }} />
+              {i < stk.longest - 1 && <span style={{ width: 10, height: 2, background: t.accentSoft, borderRadius: 2 }} />}
+            </span>
+          ))}
+          {stk.crashAfter && (
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 10, height: 2, background: t.accentSoft, borderRadius: 2 }} />
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: MOOD_COLOR[1] }} title="다음날 기분이 꺾였어요" />
+            </span>
+          )}
+        </div>
+        {stk.crashAfter && (
+          <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 8 }}>그리고 그 다음날 기분이 꺾였어요. 무리한 뒤엔 하루쯤 쉬어가도 좋아요.</div>
+        )}
+      </div>
+    );
+  }
+
+  if (!cards.length) return null;
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, margin: "0 0 4px" }}>입력 없이 찾은 신호</div>
+      <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 10px" }}>따로 적지 않아도 기록만으로 보이는 흐름이에요</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{cards}</div>
     </div>
   );
 }
