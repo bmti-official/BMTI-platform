@@ -193,7 +193,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
-        <DiscoveryHero discovery={report.discovery} onShowExample={() => setShowExample(true)} />
+        <DiscoveryHero report={report} onShowExample={() => setShowExample(true)} />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
           {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
@@ -266,8 +266,31 @@ function ExampleQButton({ onClick, t }) {
   );
 }
 
-function DiscoveryHero({ discovery: d, onShowExample }) {
+// 발견 조각 타일에 쓰는 작은 아이콘 배지
+function TileBadge({ children, t }) {
+  return (
+    <span style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}>
+      {children}
+    </span>
+  );
+}
+
+function FindingTile({ visual, big, small, t }) {
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, padding: "13px 13px 12px", boxShadow: "0 1px 3px rgba(28,26,23,0.05)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        {visual}
+        <div style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink, lineHeight: 1.2, wordBreak: "keep-all" }}>{big}</div>
+      </div>
+      <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginTop: 8, lineHeight: 1.4 }}>{small}</div>
+    </div>
+  );
+}
+
+function DiscoveryHero({ report, onShowExample }) {
+  const d = report.discovery;
   const t = getTypeAccent();
+
   if (!d.found) {
     return (
       <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "26px 22px", textAlign: "center" }}>
@@ -289,19 +312,71 @@ function DiscoveryHero({ discovery: d, onShowExample }) {
       </div>
     );
   }
+
+  // 여러 섹션에서 유의미한 값을 모아 '발견 조각'으로 시각화한다.
+  const secData = (id) => { const s = report.sections.find((x) => x.id === id); return s && s.unlocked ? s.data : null; };
+  const dist = secData("mood_distribution");
+  const sore = secData("sore_map");
+  const moments = secData("sore_moments");
+  const move = secData("movement");
+  const rest = secData("rest");
+  const sleep = secData("sleep");
+  const over = secData("overwork");
+
+  const topMood = dist && dist.top ? dist.items.find((i) => i.mood === dist.top) : null;
+
+  const tiles = [];
+  if (topMood) tiles.push({ visual: <Mallang v={dist.top} size={30} />, big: MOOD[dist.top], small: `가장 많았던 기분 · ${topMood.count}번` });
+  if (sore && sore.parts[0]) tiles.push({ visual: <TileBadge t={t}><IconMap size={17} /></TileBadge>, big: sore.parts[0].label, small: `자주 뻐근했어요 · ${sore.parts[0].count}번` });
+  if (moments && moments.items[0]) tiles.push({ visual: <TileBadge t={t}><IconTimer size={17} /></TileBadge>, big: moments.items[0].label, small: `뻐근했던 순간 · ${moments.items[0].count}번` });
+  if (move && move.days) tiles.push({ visual: <TileBadge t={t}><IconRun size={17} /></TileBadge>, big: `${move.days}일`, small: `몸을 움직인 날${move.byType[0] ? ` · ${move.byType[0].label}` : ""}` });
+  if (over && over.days) tiles.push({ visual: <TileBadge t={t}><IconBattery size={17} /></TileBadge>, big: `${over.days}일`, small: `평소보다 무리한 날` });
+  if (sleep && sleep.items[0]?.count) tiles.push({ visual: <TileBadge t={t}><IconZzz size={17} /></TileBadge>, big: sleep.items[0].label, small: `가장 많던 수면 · ${sleep.items[0].count}번` });
+  if (rest && rest.days) tiles.push({ visual: <TileBadge t={t}><IconMoon size={17} /></TileBadge>, big: `${rest.days}일`, small: `쉬어간 날` });
+  const shownTiles = tiles.slice(0, 4);
+
+  const suggestion = d.lines[d.lines.length - 1];
+  const moodTotal = dist ? dist.items.reduce((n, i) => n + i.count, 0) : 0;
+
   return (
-    <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "22px 20px", boxShadow: CARD_SHADOW }}>
+    <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "20px 18px 20px", boxShadow: CARD_SHADOW }}>
       <ExampleQButton onClick={onShowExample} t={t} />
       <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: t.accentDeep, fontWeight: 800, marginBottom: 12, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>
         ✨ 이번 달의 발견
       </div>
-      <p style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{d.headline}</p>
-      {d.evidence && <p style={{ fontSize: 12.5, color: t.accentDeep, fontWeight: 800, margin: "0 0 16px" }}>근거 · {d.evidence}</p>}
-      <div style={{ display: "flex", flexDirection: "column", gap: 9, background: "rgba(255,255,255,0.7)", borderRadius: 14, padding: "15px 16px" }}>
-        {d.lines.map((line, i) => (
-          <p key={i} style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.6, margin: 0, color: C.ink }}>{line}</p>
-        ))}
-      </div>
+
+      {/* 핵심 발견 한 줄 + 근거 pill */}
+      <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{d.headline}</p>
+      {d.evidence && (
+        <span style={{ display: "inline-block", fontSize: 11.5, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "4px 10px", borderRadius: 999, marginBottom: 16 }}>근거 · {d.evidence}</span>
+      )}
+
+      {/* 이번 달 기분 흐름 — 색 스펙트럼 바(그래프) */}
+      {moodTotal > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: "#fff" }}>
+            {dist.items.map((it) => it.count > 0 && (
+              <div key={it.mood} style={{ flex: it.count, background: MOOD_COLOR[it.mood] }} title={`${it.label} ${it.count}번`} />
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginTop: 6 }}>이번 달 기분 흐름 · 총 {moodTotal}번 기록</div>
+        </div>
+      )}
+
+      {/* 발견 조각 타일 (2열 그리드) */}
+      {shownTiles.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {shownTiles.map((tile, i) => <FindingTile key={i} {...tile} t={t} />)}
+        </div>
+      )}
+
+      {/* 한 줄 팁 */}
+      {suggestion && (
+        <div style={{ display: "flex", gap: 7, alignItems: "flex-start", marginTop: 14, background: "rgba(255,255,255,0.7)", borderRadius: 12, padding: "11px 13px" }}>
+          <span style={{ fontSize: 13 }}>💡</span>
+          <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.55, margin: 0, color: "#3F3A31" }}>{suggestion}</p>
+        </div>
+      )}
     </div>
   );
 }
