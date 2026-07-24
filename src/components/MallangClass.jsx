@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { CHARACTERS } from "../data";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
+import ComingSoon from "./ComingSoon";
 
 // ============================================
 // 말랑 클래스 — 같은 BMTI 유형끼리 모이는 4주 온라인 그룹 클래스 목록 화면.
@@ -85,7 +86,7 @@ function loadDetail() {
   return DEFAULT_DETAIL;
 }
 
-export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLogin, isAdmin }) {
+export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLogin, isAdmin, userProfile }) {
   const [filter, setFilter] = useState("neck");
   const [showRefund, setShowRefund] = useState(false);
   const t = getTypeAccent(bmtiCode);
@@ -104,14 +105,22 @@ export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLo
     <div style={{ position: "fixed", inset: 0, zIndex: 30, background: C.bg, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 0 96px" }}>
 
-        {/* 앱바 — 이전 / 제목 / 햄버거(환불 FAQ) */}
+        {/* 앱바 — 이전 / 제목 / 햄버거(환불 FAQ, 관리자만) */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 10px", position: "relative" }}>
           <button onClick={onClose} aria-label="이전" className={PRESS} style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
           <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>말랑 클래스</div>
-          <button onClick={() => setShowRefund(true)} aria-label="환불 FAQ 열기" className={PRESS} style={{ width: 34, height: 34, borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: C.ink }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-          </button>
+          {isAdmin ? (
+            <button onClick={() => setShowRefund(true)} aria-label="환불 FAQ 열기" className={PRESS} style={{ width: 34, height: 34, borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: C.ink }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+          ) : <div style={{ width: 34 }} />}
         </div>
+
+        {/* 관리자를 제외한 이용자에게는 '준비 중' 화면을 보여준다. */}
+        {!isAdmin ? (
+          <ComingSoon kind="class" bmtiCode={bmtiCode} userProfile={userProfile} />
+        ) : (
+        <>
 
         {/* 내 캐릭터(또는 로그인 유도) + 내 유형 */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "6px 20px 4px" }}>
@@ -152,6 +161,8 @@ export default function MallangClass({ onClose, bmtiCode, charImage, onRequireLo
             ))
           )}
         </div>
+        </>
+        )}
       </div>
 
       {showRefund && <RefundDrawer onClose={() => setShowRefund(false)} t={t} />}

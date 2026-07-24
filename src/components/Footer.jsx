@@ -44,9 +44,9 @@ const Footer = () => {
         <div className="max-w-6xl mx-auto mt-6 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-100 text-[10px] md:text-xs text-gray-500 leading-relaxed text-center animate-fade-in-up">
           <p>대표자: 이응준 | 사업자등록번호: 877-04-03614</p>
           <p>통신판매업 신고번호: 2026-서울강남-01689</p>
-          <p>영업소 소재지: 서울특별시 강남구 (수정 예정)</p>
+          <p>영업소 소재지: 서울특별시 강남구 압구정로2길 46, 214-S117호(신사동)</p>
           <p>고객센터: 카카오톡 채널 <a href="http://pf.kakao.com/_xasxgZX/chat" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">[@자기점검 50분]</a> (가장 빠른 답변이 가능합니다)</p>
-          <p>전화번호: 070-XXXX-XXXX (수정 예정) (통화량이 많아 연결이 어려울 수 있습니다. 카카오톡을 이용해 주세요.)</p>
+          <p>전화번호: 070-8027-8648 (통화량이 많아 연결이 어려울 수 있습니다. 카카오톡을 이용해 주세요.)</p>
           <p>이메일: ???@gmail.com (수정 예정)</p>
           <p>호스팅 제공자: GitHub, Inc.</p>
         </div>

@@ -82,6 +82,13 @@ const IconInfo = ({ size = 14 }) => (
     <path d="M12 11.3v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
   </svg>
 );
+const IconTarget = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="12" cy="12" r="4.6" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" />
+  </svg>
+);
 const SECTION_ICON = {
   mood_calendar: IconCalendar, mood_distribution: IconSmile, sore_map: IconMap, sore_moments: IconTimer,
   overwork: IconBattery, movement: IconRun, rest: IconMoon, sleep: IconZzz, notes: IconNotepad,
@@ -212,8 +219,11 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
           </div>
         ) : (
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DiscoveryHero report={report} onShowExample={() => setShowExample(true)} />
+            {report.discovery.found && <MoodFlowCard report={report} />}
+            {report.discovery.found && <SummaryTilesCard report={report} />}
+            {report.discovery.found && <ProfileLinkCard report={report} profile={profile} />}
             {report.discovery.found && <MoreDiscoveries discoveries={report.discoveries} />}
             {report.discovery.found && <FreeSignals signals={report.freeSignals} />}
           </div>
@@ -307,6 +317,47 @@ function FindingTile({ visual, big, small, t }) {
   );
 }
 
+// 잠금 해제된 섹션의 데이터만 꺼내온다.
+const sectionData = (report, id) => { const s = report.sections.find((x) => x.id === id); return s && s.unlocked ? s.data : null; };
+
+// 이번 달 기록에서 뽑은 '조각'들 — 여러 카드가 공유한다.
+function buildTiles(report, t) {
+  const dist = sectionData(report, "mood_distribution");
+  const sore = sectionData(report, "sore_map");
+  const moments = sectionData(report, "sore_moments");
+  const move = sectionData(report, "movement");
+  const rest = sectionData(report, "rest");
+  const sleep = sectionData(report, "sleep");
+  const over = sectionData(report, "overwork");
+  const topMood = dist && dist.top ? dist.items.find((i) => i.mood === dist.top) : null;
+
+  const tiles = [];
+  if (topMood) tiles.push({ visual: <Mallang v={dist.top} size={30} />, big: MOOD[dist.top], small: `가장 많았던 기분 · ${topMood.count}번` });
+  if (sore && sore.parts[0]) tiles.push({ visual: <TileBadge t={t}><IconMap size={17} /></TileBadge>, big: sore.parts[0].label, small: `자주 불편했어요 · ${sore.parts[0].count}번` });
+  if (moments && moments.items[0]) tiles.push({ visual: <TileBadge t={t}><IconTimer size={17} /></TileBadge>, big: moments.items[0].label, small: `불편했던 순간 · ${moments.items[0].count}번` });
+  if (move && move.days) tiles.push({ visual: <TileBadge t={t}><IconRun size={17} /></TileBadge>, big: `${move.days}일`, small: `몸을 움직인 날${move.byType[0] ? ` · ${move.byType[0].label}` : ""}` });
+  if (over && over.days) tiles.push({ visual: <TileBadge t={t}><IconBattery size={17} /></TileBadge>, big: `${over.days}일`, small: `평소보다 무리한 날` });
+  if (sleep && sleep.items[0]?.count) tiles.push({ visual: <TileBadge t={t}><IconZzz size={17} /></TileBadge>, big: sleep.items[0].label, small: `가장 많던 수면 · ${sleep.items[0].count}번` });
+  if (rest && rest.days) tiles.push({ visual: <TileBadge t={t}><IconMoon size={17} /></TileBadge>, big: `${rest.days}일`, small: `쉬어간 날` });
+  return tiles;
+}
+
+// 흰 카드 + 아이콘 헤더 + 한 줄 설명(hint)을 공유하는 래퍼.
+function InfoCard({ icon, title, hint, children }) {
+  const t = getTypeAccent();
+  return (
+    <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: hint ? 6 : 14 }}>
+        <span style={{ width: 30, height: 30, borderRadius: 9, background: t.accentSoft, color: t.accentDeep, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</span>
+        <span style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: "-0.01em" }}>{title}</span>
+      </div>
+      {hint && <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 13px", lineHeight: 1.5 }}>{hint}</p>}
+      {children}
+    </div>
+  );
+}
+
+// ── 대표 발견(이번 달의 발견) — 가장 중요한 한 가지 + 쉬운 설명 + 팁 ──
 function DiscoveryHero({ report, onShowExample }) {
   const d = report.discovery;
   const t = getTypeAccent();
@@ -333,30 +384,8 @@ function DiscoveryHero({ report, onShowExample }) {
     );
   }
 
-  // 여러 섹션에서 유의미한 값을 모아 '발견 조각'으로 시각화한다.
-  const secData = (id) => { const s = report.sections.find((x) => x.id === id); return s && s.unlocked ? s.data : null; };
-  const dist = secData("mood_distribution");
-  const sore = secData("sore_map");
-  const moments = secData("sore_moments");
-  const move = secData("movement");
-  const rest = secData("rest");
-  const sleep = secData("sleep");
-  const over = secData("overwork");
-
-  const topMood = dist && dist.top ? dist.items.find((i) => i.mood === dist.top) : null;
-
-  const tiles = [];
-  if (topMood) tiles.push({ visual: <Mallang v={dist.top} size={30} />, big: MOOD[dist.top], small: `가장 많았던 기분 · ${topMood.count}번` });
-  if (sore && sore.parts[0]) tiles.push({ visual: <TileBadge t={t}><IconMap size={17} /></TileBadge>, big: sore.parts[0].label, small: `자주 불편했어요 · ${sore.parts[0].count}번` });
-  if (moments && moments.items[0]) tiles.push({ visual: <TileBadge t={t}><IconTimer size={17} /></TileBadge>, big: moments.items[0].label, small: `불편했던 순간 · ${moments.items[0].count}번` });
-  if (move && move.days) tiles.push({ visual: <TileBadge t={t}><IconRun size={17} /></TileBadge>, big: `${move.days}일`, small: `몸을 움직인 날${move.byType[0] ? ` · ${move.byType[0].label}` : ""}` });
-  if (over && over.days) tiles.push({ visual: <TileBadge t={t}><IconBattery size={17} /></TileBadge>, big: `${over.days}일`, small: `평소보다 무리한 날` });
-  if (sleep && sleep.items[0]?.count) tiles.push({ visual: <TileBadge t={t}><IconZzz size={17} /></TileBadge>, big: sleep.items[0].label, small: `가장 많던 수면 · ${sleep.items[0].count}번` });
-  if (rest && rest.days) tiles.push({ visual: <TileBadge t={t}><IconMoon size={17} /></TileBadge>, big: `${rest.days}일`, small: `쉬어간 날` });
-  const shownTiles = tiles.slice(0, 4);
-
   const suggestion = d.lines[d.lines.length - 1];
-  const moodTotal = dist ? dist.items.reduce((n, i) => n + i.count, 0) : 0;
+  const explain = d.lines.slice(0, -1); // 마지막(제안/팁)을 뺀 설명 문장들
 
   return (
     <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "20px 18px 20px", boxShadow: CARD_SHADOW }}>
@@ -368,36 +397,110 @@ function DiscoveryHero({ report, onShowExample }) {
       {/* 핵심 발견 한 줄 + 근거 pill */}
       <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{d.headline}</p>
       {d.evidence && (
-        <span style={{ display: "inline-block", fontSize: 11.5, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "4px 10px", borderRadius: 999, marginBottom: 16 }}>근거 · {d.evidence}</span>
+        <span style={{ display: "inline-block", fontSize: 11.5, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "4px 10px", borderRadius: 999 }}>근거 · {d.evidence}</span>
       )}
 
-      {/* 이번 달 기분 흐름 — 색 스펙트럼 바(그래프) */}
-      {moodTotal > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: "#fff" }}>
-            {dist.items.map((it) => it.count > 0 && (
-              <div key={it.mood} style={{ flex: it.count, background: MOOD_COLOR[it.mood] }} title={`${it.label} ${it.count}번`} />
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginTop: 6 }}>이번 달 기분 흐름 · 총 {moodTotal}번 기록</div>
-        </div>
-      )}
-
-      {/* 발견 조각 타일 (2열 그리드) */}
-      {shownTiles.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {shownTiles.map((tile, i) => <FindingTile key={i} {...tile} t={t} />)}
+      {/* 이게 무슨 뜻이에요? — 쉬운 설명 */}
+      {explain.length > 0 && (
+        <div style={{ marginTop: 14, background: "rgba(255,255,255,0.72)", borderRadius: 14, padding: "13px 14px" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, marginBottom: 6 }}>이게 무슨 뜻이에요?</div>
+          {explain.map((line, i) => (
+            <p key={i} style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, margin: i ? "5px 0 0" : 0, color: "#3F3A31" }}>{line}</p>
+          ))}
         </div>
       )}
 
       {/* 한 줄 팁 */}
       {suggestion && (
-        <div style={{ display: "flex", gap: 7, alignItems: "flex-start", marginTop: 14, background: "rgba(255,255,255,0.7)", borderRadius: 12, padding: "11px 13px" }}>
-          <span style={{ fontSize: 13 }}>💡</span>
-          <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.55, margin: 0, color: "#3F3A31" }}>{suggestion}</p>
+        <div style={{ display: "flex", gap: 7, alignItems: "flex-start", marginTop: 10, background: "#fff", borderRadius: 12, padding: "12px 13px" }}>
+          <span style={{ fontSize: 14 }}>💡</span>
+          <p style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.55, margin: 0, color: t.accentDeep }}>{suggestion}</p>
         </div>
       )}
     </div>
+  );
+}
+
+// ── 이번 달 기분 흐름 — 색 스펙트럼 바 + 범례 ──
+function MoodFlowCard({ report }) {
+  const dist = sectionData(report, "mood_distribution");
+  const total = dist ? dist.items.reduce((n, i) => n + i.count, 0) : 0;
+  if (!total) return null;
+  return (
+    <InfoCard icon={<IconSmile size={17} />} title="이번 달 기분 흐름" hint="색이 길수록 그만큼 많았던 기분이에요.">
+      <div style={{ display: "flex", height: 16, borderRadius: 999, overflow: "hidden", background: "#F3F1EC" }}>
+        {dist.items.map((it) => it.count > 0 && (
+          <div key={it.mood} style={{ flex: it.count, background: MOOD_COLOR[it.mood] }} title={`${it.label} ${it.count}번`} />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", justifyContent: "center", marginTop: 14 }}>
+        {[1, 2, 3, 4, 5].map((v) => (
+          <div key={v} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 11, height: 11, borderRadius: "50%", background: MOOD_COLOR[v], flexShrink: 0 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: C.sub }}>{MOOD[v]}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, marginTop: 12, textAlign: "center" }}>이번 달 총 {total}번의 기분을 기록했어요</div>
+    </InfoCard>
+  );
+}
+
+// ── 이번 달 한눈에 — 발견 조각 타일 ──
+function SummaryTilesCard({ report }) {
+  const t = getTypeAccent();
+  const tiles = buildTiles(report, t).slice(0, 4);
+  if (!tiles.length) return null;
+  return (
+    <InfoCard icon={<IconNotepad size={17} />} title="이번 달 한눈에" hint="이번 달 기록에서 뽑은 조각들이에요.">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {tiles.map((tile, i) => <FindingTile key={i} {...tile} t={t} />)}
+      </div>
+    </InfoCard>
+  );
+}
+
+// ── 내 프로필과 이어보기 — 온보딩(운동 빈도·목적·자주 하는 자세)을 이번 달 기록과 연결 ──
+const FREQ_LABEL = { rarely: "거의 안 함", sometimes: "가끔", weekly: "주 1회 정도", daily: "거의 매일" };
+const POSTURE_LABEL = { sitting: "오래 앉아 있기", standing: "오래 서 있기", moving: "계속 움직이기", mixed: "앉고 서고 섞임" };
+const GOAL_LABEL = { sore: "불편함 줄이기", posture: "자세 바로잡기", stamina: "체력 기르기", stress: "스트레스 풀기" };
+
+function ProfileLinkCard({ report, profile }) {
+  const t = getTypeAccent();
+  const moveDays = sectionData(report, "movement")?.days || 0;
+  const overDays = sectionData(report, "overwork")?.days || 0;
+  const topSore = sectionData(report, "sore_map")?.parts?.[0] || null;
+  const dist = sectionData(report, "mood_distribution");
+  const goodDays = dist ? dist.items.filter((i) => i.mood >= 4).reduce((n, i) => n + i.count, 0) : 0;
+
+  const batchim = (w) => { const c = (w || "").slice(-1).charCodeAt(0); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0; };
+  const goalText = {
+    sore: topSore ? `자주 불편했던 곳은 '${topSore.label}'${batchim(topSore.label) ? "이었" : "였"}어요.` : "이번 달엔 불편한 곳을 크게 짚지 않으셨어요.",
+    posture: overDays ? `평소보다 무리한 날이 ${overDays}번이었어요.` : "평소보다 무리한 날은 많지 않았어요.",
+    stamina: `이번 달 ${moveDays}일 몸을 움직이셨어요.`,
+    stress: `기분이 좋았던 날이 ${goodDays}일이었어요.`,
+  };
+
+  const rows = [];
+  (profile.goals || []).forEach((g) => { if (GOAL_LABEL[g]) rows.push({ tag: GOAL_LABEL[g], sub: "내 목표", text: goalText[g] }); });
+  if (profile.freq && FREQ_LABEL[profile.freq]) rows.push({ tag: FREQ_LABEL[profile.freq], sub: "운동 빈도", text: `이번 달엔 ${moveDays}일 몸을 움직이셨네요.` });
+  if (profile.dailyPosture && POSTURE_LABEL[profile.dailyPosture]) rows.push({ tag: POSTURE_LABEL[profile.dailyPosture], sub: "자주 하는 자세", text: overDays ? `이 자세를 기준으로 '무리한 날'을 ${overDays}번 찾았어요.` : "이 자세를 기준으로 무리한 날을 살펴봤어요." });
+  if (!rows.length) return null;
+
+  return (
+    <InfoCard icon={<IconTarget size={17} />} title="내 프로필과 이어보기" hint="처음 알려주신 운동 습관과 이번 달 기록을 연결했어요.">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 11, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 12, padding: "12px 13px" }}>
+            <span style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, minWidth: 62 }}>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.sub }}>{r.sub}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, padding: "4px 8px", borderRadius: 999, lineHeight: 1.2, textAlign: "center", wordBreak: "keep-all" }}>{r.tag}</span>
+            </span>
+            <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.55, margin: 0, color: "#3F3A31", alignSelf: "center" }}>{r.text}</p>
+          </div>
+        ))}
+      </div>
+    </InfoCard>
   );
 }
 
@@ -407,7 +510,7 @@ function MoreDiscoveries({ discoveries }) {
   const more = (discoveries || []).slice(1); // [0]은 대표 발견(위 히어로)과 동일
   if (!more.length) return null;
   return (
-    <div style={{ marginTop: 18 }}>
+    <div>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ display: "flex", color: t.accentDeep }}><IconMap size={15} /></span>
         이런 발견도 있었어요
@@ -479,7 +582,7 @@ function FreeSignals({ signals }) {
 
   if (!cards.length) return null;
   return (
-    <div style={{ marginTop: 20 }}>
+    <div>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, margin: "0 0 4px" }}>입력 없이 찾은 신호</div>
       <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 10px" }}>따로 적지 않아도 기록만으로 보이는 흐름이에요</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{cards}</div>

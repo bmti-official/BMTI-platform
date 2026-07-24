@@ -295,7 +295,7 @@ function App() {
           />
         )}
         {currentView === 'mallangroom' && (
-          <MallangRoom bmtiCode={bmtiCode} />
+          <MallangRoom bmtiCode={bmtiCode} isAdmin={userProfile?.nickname === 'BMTI'} userProfile={userProfile} />
         )}
         {currentView === 'aichat' && (
           <AiChatHub

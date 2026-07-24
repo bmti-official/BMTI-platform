@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { Mallang } from './Mallang';
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from '../lib/typeAccent';
+import ComingSoon from './ComingSoon';
 
 // ─────────────────────────────────────────────
 // 말랑방 — 같은 반(말랑 클래스)에 든 다섯 명이 수업이 없는 날에도
@@ -18,8 +19,17 @@ const SAMPLE = [
   { mood: 3, name: '포근 폼롤러', text: '오 저도 오늘 해봐야겠다', me: false },
 ];
 
-const MallangRoom = ({ bmtiCode }) => {
+const MallangRoom = ({ bmtiCode, isAdmin, userProfile }) => {
   const t = getTypeAccent(bmtiCode);
+
+  // 관리자를 제외한 이용자에게는 '준비 중' 화면을 보여준다.
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-white text-[#1C1A17] pt-24 pb-28">
+        <ComingSoon kind="room" bmtiCode={bmtiCode} userProfile={userProfile} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-[#1C1A17] pt-24 pb-28">

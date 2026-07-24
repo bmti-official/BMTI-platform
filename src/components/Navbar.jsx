@@ -209,6 +209,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           isLoggedIn={isLoggedIn}
           onRequireLogin={() => setIsLoggedIn(true)}
           isAdmin={userProfile?.nickname === 'BMTI'}
+          userProfile={userProfile}
         />
       )}
     </>
