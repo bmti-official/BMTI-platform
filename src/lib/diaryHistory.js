@@ -81,6 +81,27 @@ export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
   return history;
 };
 
+// 날씨를 날짜별로 기존 기록에 붙인다. 이미 날씨가 있는 날은 건드리지 않는다.
+// 로컬 캐시를 갱신하고, 로그인 상태면 서버에도 weather만 반영한다(fire-and-forget).
+export const mergeWeatherIntoHistory = (dateWeatherMap) => {
+  const history = getDiaryHistory();
+  const changedDates = [];
+  const updated = history.map((e) => {
+    if (!e.weather && dateWeatherMap[e.date]) { changedDates.push(e.date); return { ...e, weather: dateWeatherMap[e.date] }; }
+    return e;
+  });
+  if (!changedDates.length) return updated;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  const userId = getCurrentUserId();
+  if (userId) {
+    for (const date of changedDates) {
+      supabase.from('diary_entries').update({ weather: dateWeatherMap[date] }).eq('user_id', userId).eq('date', date)
+        .then(({ error }) => { if (error) console.error('날씨 서버 저장 실패', error); });
+    }
+  }
+  return updated;
+};
+
 // 로그인 직후(하루일기 진입 시) 한 번 호출해, 서버에 저장된 기록을 로컬 캐시에 반영한다.
 // 다른 기기에서 기록한 내용을 지금 기기에서도 볼 수 있게 해주는 부분.
 export async function syncDiaryHistoryFromServer() {
@@ -100,6 +121,7 @@ export async function syncDiaryHistoryFromServer() {
         sleepTime: row.sleep_time ?? local.sleepTime ?? null,
         tags: row.tags ?? local.tags ?? [],
         created_at: row.created_at ?? local.created_at ?? null,
+        weather: row.weather ?? local.weather ?? null,
       };
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));

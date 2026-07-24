@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Mallang } from "./Mallang";
-import { getDiaryHistory } from "../lib/diaryHistory";
+import { getDiaryHistory, mergeWeatherIntoHistory } from "../lib/diaryHistory";
+import { getSavedGeo, requestGeo, fetchWeatherRange } from "../lib/weather";
 import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
-import { getTypeAccent, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
+import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -89,6 +90,12 @@ const IconTarget = ({ size = 16 }) => (
     <circle cx="12" cy="12" r="1.4" fill="currentColor" />
   </svg>
 );
+const IconCloud = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M7 18h10a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 6.5 9 3.99 3.99 0 0 0 7 18Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <path d="M9 21l-1 1.5M13 21l-1 1.5M17 21l-1 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
 const IconLink = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <path d="M9 12h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -151,6 +158,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
   const [showExample, setShowExample] = useState(false);
   const [tab, setTab] = useState("records"); // "records" | "discovery"
+  const [, forceWeatherRefresh] = useState(0); // 날씨를 붙인 뒤 리포트를 다시 읽게 하는 트리거
 
   const monthKey = `${year}-${String(month).padStart(2, "0")}`;
   const entries = getDiaryHistory().filter((e) => e.date.startsWith(monthKey));
@@ -232,6 +240,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             {report.discovery.found && <BedtimeCard report={report} />}
             {report.discovery.found && <SummaryTilesCard report={report} />}
             {report.discovery.found && <FreeSignals signals={report.freeSignals} />}
+            {report.discovery.found && <LoggedTimeCard report={report} />}
+            {report.discovery.found && <NoteEffortCard report={report} />}
+            {report.discovery.found && <WeatherCard report={report} entries={entries} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />}
             {report.discovery.found && <MoodFlowCard report={report} />}
             {report.discovery.found && <ProfileLinkCard report={report} profile={profile} />}
           </div>
@@ -555,6 +566,110 @@ function BedtimeCard({ report }) {
           <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E7E2D8", flexShrink: 0 }} />다음날 기록 없음
         </span>
       </div>
+    </InfoCard>
+  );
+}
+
+// ── 기록 남긴 시간대 — created_at 기준, 하루를 주로 언제 남기는지 ──
+function LoggedTimeCard({ report }) {
+  const t = getTypeAccent();
+  const lt = report.loggedTime;
+  if (!lt) return null;
+  const max = Math.max(...lt.buckets.map((b) => b.count), 1);
+  return (
+    <InfoCard icon={<IconTimer size={17} />} title="기록 남긴 시간대" hint="하루를 주로 언제 남기는지 보이는 흐름이에요.">
+      <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", margin: "0 0 14px", lineHeight: 1.5 }}>
+        주로 <span style={{ color: t.accentDeep, fontWeight: 800 }}>{lt.top}</span>에 하루를 남겨요.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {lt.buckets.map((b) => (
+          <BarRow key={b.label} label={b.label} count={b.count} max={max} color={t.accent} />
+        ))}
+      </div>
+      {lt.lateLower && (
+        <p style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "12px 0 0", lineHeight: 1.5 }}>늦게 남긴 날일수록 기분이 조금 낮은 편이었어요.</p>
+      )}
+    </InfoCard>
+  );
+}
+
+// ── 기록에 담긴 정성 — 한 줄 일기 길이(평가가 아니라 다독임) ──
+function NoteEffortCard({ report }) {
+  const t = getTypeAccent();
+  const ne = report.noteEffort;
+  if (!ne) return null;
+  return (
+    <InfoCard icon={<IconNotepad size={17} />} title="기록에 담긴 정성" hint="평가가 아니라, 남긴 마음을 헤아려요.">
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ flex: 1, background: "#FBFAF6", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 19, fontWeight: 800, color: t.accentDeep }}>{ne.count}줄</div>
+          <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 700, marginTop: 3 }}>이번 달 남긴 일기</div>
+        </div>
+        <div style={{ flex: 1, background: "#FBFAF6", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 19, fontWeight: 800, color: t.accentDeep }}>{ne.avgLen}자</div>
+          <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 700, marginTop: 3 }}>평균 길이</div>
+        </div>
+      </div>
+      <p style={{ fontSize: 13, fontWeight: 600, color: "#3F3A31", margin: 0, lineHeight: 1.55 }}>
+        {ne.ampLink ? "길게 적은 날엔, 하고 싶은 이야기가 많았나 봐요." : "짧아도 꾸준히 마음을 남겨주셨어요."}
+      </p>
+    </InfoCard>
+  );
+}
+
+// ── 날씨와 겹쳐보기 — 위치 1회 허용 → Open-Meteo로 날짜별 날씨 첨부 ──
+function WeatherCard({ report, entries, onWeatherUpdated }) {
+  const t = getTypeAccent();
+  const w = report.weather;
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const enable = async () => {
+    setLoading(true); setErr(null);
+    try {
+      const geo = getSavedGeo() || (await requestGeo());
+      const dates = entries.map((e) => e.date).sort();
+      if (!dates.length) throw new Error("no-dates");
+      const map = await fetchWeatherRange(geo.lat, geo.lon, dates[0], dates[dates.length - 1]);
+      mergeWeatherIntoHistory(map);
+      if (onWeatherUpdated) onWeatherUpdated();
+    } catch (e) {
+      setErr(e && e.code === 1 ? "위치 권한을 허용해 주세요." : "날씨를 가져오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    setLoading(false);
+  };
+
+  if (w) {
+    return (
+      <InfoCard icon={<IconCloud size={17} />} title="날씨와 겹쳐보기" hint="비·습도·기온과 불편함을 함께 봤어요.">
+        <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 12px", lineHeight: 1.5, wordBreak: "keep-all" }}>
+          {w.rainMoreSore ? "🌧️ 비 오는 날, 유독 불편했어요." : "날씨에 따른 불편함 차이는 크지 않았어요."}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {[
+            { e: "🌧️", label: "비 온 날 불편", n: w.rainSore },
+            { e: "☀️", label: "맑은 날 불편", n: w.clearSore },
+            { e: "💧", label: "습한 날 불편", n: w.humidSore },
+          ].map((it) => (
+            <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 13px", display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+              {it.e} {it.label}<b style={{ fontWeight: 800 }}>{it.n}번</b>
+            </span>
+          ))}
+        </div>
+      </InfoCard>
+    );
+  }
+
+  return (
+    <InfoCard icon={<IconCloud size={17} />} title="날씨와 겹쳐보기" hint="위치를 한 번만 허용하면 비·습도와 불편함을 함께 볼 수 있어요.">
+      <button onClick={enable} disabled={loading}
+        style={{ width: "100%", padding: "13px 0", borderRadius: 13, border: "none", background: loading ? "#E7E2D8" : GOLD, color: loading ? "#B7B2A9" : "#fff", fontSize: 14, fontWeight: 800, cursor: loading ? "default" : "pointer", fontFamily: "inherit" }}>
+        {loading ? "날씨 불러오는 중…" : "📍 위치 한 번만 허용하기"}
+      </button>
+      {err && <p style={{ fontSize: 12, color: "#B85450", fontWeight: 700, margin: "10px 0 0", textAlign: "center" }}>{err}</p>}
+      <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, margin: "10px 0 0", lineHeight: 1.5, textAlign: "center" }}>
+        위치는 날씨 조회에만 쓰고, 대략 좌표만 기기에 보관해요.
+      </p>
     </InfoCard>
   );
 }

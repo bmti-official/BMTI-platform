@@ -641,6 +641,64 @@ export function secBedtime(days) {
   return { items: items.slice(-14), buckets: BEDTIME_BUCKETS, trend };
 }
 
+/* ────────────────────────────────────────────────────────────
+ * 7-d. 입력 없이 얻는 발견 — 기록 남긴 시간대 / 기록에 담긴 정성 / 날씨
+ *   created_at·note·weather 만으로 계산. 데이터가 없으면 null → 화면에서 숨김.
+ * ──────────────────────────────────────────────────────── */
+const LOGGED_BUCKETS = ["아침", "낮", "저녁", "밤"];
+const hourBucket = (h) => (h >= 5 && h <= 10 ? 0 : h >= 11 && h <= 16 ? 1 : h >= 17 && h <= 21 ? 2 : 3);
+
+export function secLoggedTime(days) {
+  const counts = [0, 0, 0, 0];
+  const moodBy = [[], [], [], []];
+  for (const d of days) {
+    if (!d.created_at) continue;
+    const dt = new Date(d.created_at);
+    if (isNaN(dt.getTime())) continue;
+    const bk = hourBucket(dt.getHours());
+    counts[bk]++;
+    if (typeof d.mood === "number") moodBy[bk].push(d.mood);
+  }
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total < 5) return null;
+  const topIdx = counts.indexOf(Math.max(...counts));
+  const early = [...moodBy[0], ...moodBy[1]], late = [...moodBy[2], ...moodBy[3]];
+  const lateLower = early.length >= 3 && late.length >= 3 && avg(early) - avg(late) >= CONFIG.MOOD_GAP;
+  return { buckets: LOGGED_BUCKETS.map((label, i) => ({ label, count: counts[i] })), top: LOGGED_BUCKETS[topIdx], topCount: counts[topIdx], total, lateLower };
+}
+
+export function secNoteEffort(days) {
+  const withNote = days.filter((d) => d.note && d.note.text && d.note.text.trim().length > 0 && typeof d.mood === "number");
+  if (withNote.length < 5) return null;
+  const rows = withNote.map((d) => ({ len: d.note.text.trim().length, amp: Math.abs(d.mood - 3) }));
+  const avgLen = avg(rows.map((r) => r.len));
+  const thr = Math.max(avgLen, 15);
+  const longAmp = avg(rows.filter((r) => r.len >= thr).map((r) => r.amp));
+  const shortAmp = avg(rows.filter((r) => r.len < thr).map((r) => r.amp));
+  const longest = withNote.reduce((a, b) => (b.note.text.trim().length > a.note.text.trim().length ? b : a));
+  return { count: withNote.length, avgLen: Math.round(avgLen), longestLen: longest.note.text.trim().length, ampLink: longAmp > shortAmp + 0.4 };
+}
+
+// Open-Meteo weathercode 중 '비/궂은 날' 코드
+const RAIN_CODES = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]);
+export function secWeather(days) {
+  const withW = days.filter((d) => d.weather && typeof d.weather.code === "number");
+  if (withW.length < 5) return null;
+  const isRain = (w) => (w.precip != null && w.precip >= 1) || RAIN_CODES.has(w.code);
+  const isSore = (d) => (d.soreness?.length || 0) > 0;
+  const rain = withW.filter((d) => isRain(d.weather));
+  const clear = withW.filter((d) => !isRain(d.weather));
+  const humid = withW.filter((d) => d.weather.humidity != null && d.weather.humidity >= 75);
+  const rainSore = rain.filter(isSore).length, clearSore = clear.filter(isSore).length;
+  const rainRate = rain.length ? rainSore / rain.length : 0;
+  const clearRate = clear.length ? clearSore / clear.length : 0;
+  return {
+    rainDays: rain.length, rainSore, clearDays: clear.length, clearSore,
+    humidDays: humid.length, humidSore: humid.filter(isSore).length,
+    rainMoreSore: rain.length >= 2 && clear.length >= 2 && rainRate > clearRate + 0.15,
+  };
+}
+
 /**
  * 월간 리포트 전체를 만든다.
  * @param {DiaryEntry[]} entries  해당 월의 기록 (정렬 무관 — 내부에서 날짜순 정렬)
@@ -660,6 +718,9 @@ export function buildMonthlyReport(entries, profile, opts) {
   const freeSignals = computeFreeSignals(days);
   const cooccurrence = secCooccurrence(days);
   const bedtime = secBedtime(days);
+  const loggedTime = secLoggedTime(days);
+  const noteEffort = secNoteEffort(days);
+  const weather = secWeather(days);
 
   // 섹션별 집계
   const dCal = secMoodCalendar(days, year, month);
@@ -715,6 +776,9 @@ export function buildMonthlyReport(entries, profile, opts) {
     freeSignals,
     cooccurrence,
     bedtime,
+    loggedTime,
+    noteEffort,
+    weather,
     sections,
     disclaimer: DISCLAIMER,
   };
