@@ -8,8 +8,12 @@ import DiaryWriteFlow from './DiaryWriteFlow';
 /**
  * BMTI 하루일기 허브 — 첫 방문자는 온보딩, 이미 기록해본 사람은 캘린더로 바로 진입.
  */
+const ONBOARDED_KEY = 'bmti_diary_onboarded';
+
 const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, setUserProfile }) => {
   const [hasHistory, setHasHistory] = useState(() => hasDiaryHistory());
+  // 온보딩을 한 번 마친 사람은(첫 기록이 없어도) 다시 온보딩을 보지 않고 바로 캘린더로 간다.
+  const [onboarded, setOnboarded] = useState(() => localStorage.getItem(ONBOARDED_KEY) === '1');
   const [showDiaryFlow, setShowDiaryFlow] = useState(false);
   const [pendingDayMood, setPendingDayMood] = useState(null);
   const [pendingEntry, setPendingEntry] = useState(null); // 수정하러 들어온 경우, 그날 기존 기록 전체
@@ -41,9 +45,10 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
     saveEntry(mood, extra);
   };
 
-  // 온보딩의 onComplete — 온보딩 자체에 완료 화면이 있으니 저장 즉시 캘린더로 전환한다.
-  const handleOnboardingComplete = (mood) => {
-    saveEntry(mood);
+  // 온보딩의 onComplete — 첫 기록 없이도 온보딩을 마치면 바로 말랑 다이어리(캘린더)로 이동한다.
+  const handleOnboardingComplete = () => {
+    localStorage.setItem(ONBOARDED_KEY, '1');
+    setOnboarded(true);
     setShowDiaryFlow(false);
     setEditingDate(null);
   };
@@ -78,7 +83,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
     );
   }
 
-  if (hasHistory) {
+  if (hasHistory || onboarded) {
     return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />;
   }
 

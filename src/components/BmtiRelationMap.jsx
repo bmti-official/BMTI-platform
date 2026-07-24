@@ -61,7 +61,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
           <span className="w-4 h-[1.5px] bg-gray-300 inline-block" /> BMTI 관계도
         </div>
         <h2 className="text-[22px] md:text-2xl font-extrabold tracking-tight leading-snug text-gray-900 break-keep">
-          내 유형과<br />잘 맞는 말랑이는?
+          내 유형과<br />잘 맞는 BMTI는?
         </h2>
         <p className="text-[13px] md:text-sm text-gray-500 mt-3 leading-relaxed break-keep">
           유형마다 <b className="text-gray-700">환상의 짝꿍</b>과 <b className="text-gray-700">조금 다른 템포</b>가 있어요.<br />
