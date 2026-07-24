@@ -10,6 +10,7 @@ import MallangRoom from './components/MallangRoom';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
+import InstallPrompt from './components/InstallPrompt';
 function App() {
   const initialHash = window.location.hash.replace('#', '');
   const [currentView, setCurrentView] = useState(
@@ -338,6 +339,8 @@ function App() {
         onClose={() => setShowSignup(false)}
         onComplete={handleSignupComplete}
       />
+
+      {currentView !== 'quiz' && <InstallPrompt />}
     </div>
   );
 }

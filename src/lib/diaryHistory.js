@@ -41,8 +41,12 @@ export const getEntryForDate = (dateISO) => getDiaryHistory().find(e => e.date =
 // extra에는 말랑이의 발견(월간 리포트)이 쓰는 sleep/overwork/exercise/soreness/note를 담을 수 있다 —
 // 캘린더의 '오늘은 여기까지 할게요' 같은 간단 기록은 extra 없이 mood만 넘기면 된다.
 export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
-  const history = getDiaryHistory().filter(e => e.date !== dateISO);
-  history.push({ date: dateISO, mood, ...extra });
+  const prev = getDiaryHistory();
+  // 기록을 '남긴 시간대' 발견에 쓰려고 최초 작성 시각을 남긴다. 수정 시엔 처음 값을 유지한다.
+  const existing = prev.find(e => e.date === dateISO);
+  const createdAt = existing?.created_at || new Date().toISOString();
+  const history = prev.filter(e => e.date !== dateISO);
+  history.push({ date: dateISO, mood, ...extra, created_at: createdAt });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
   // 오늘 기록을 남긴 경우, 네비게이션 하단의 '오늘 아직 안 썼어요' 빨간 점을 끈다.
@@ -64,8 +68,12 @@ export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
       exercise: extra.exercise ?? null,
       soreness: extra.soreness ?? null,
       note: extra.note ?? null,
+      tags: extra.tags ?? null,
+      sleep_time: extra.sleepTime ?? null,
+      created_at: createdAt,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,date' }).then(({ error }) => {
+      // tags·sleep_time·created_at 컬럼이 아직 없으면 이 저장만 실패한다(로컬 기록은 유지됨).
       if (error) console.error('일기 기록 서버 저장 실패', error);
     });
   }
@@ -91,6 +99,7 @@ export async function syncDiaryHistoryFromServer() {
         overwork: row.overwork, exercise: row.exercise, soreness: row.soreness, note: row.note,
         sleepTime: row.sleep_time ?? local.sleepTime ?? null,
         tags: row.tags ?? local.tags ?? [],
+        created_at: row.created_at ?? local.created_at ?? null,
       };
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));

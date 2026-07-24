@@ -603,7 +603,30 @@ function ProfileLinkCard({ report, profile }) {
   );
 }
 
-// ── 발견 더보기: 대표 발견 외에 눈에 띈 다른 패턴들을 담백하게 나열 ──
+// 발견 유형별 배지 이모지
+const DISC_EMOJI = { D1: "😴", C2: "📍", A1: "⚡", E1: "🏃", F1: "📅", G1: "🌙" };
+
+// 연결(끈) 미니 — 발견 더보기 카드용 (한 줄, 작게)
+function MiniKnot({ pair, t }) {
+  const Node = ({ node }) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#fff", border: `1px solid ${C.line}`, borderRadius: 999, padding: "5px 10px", flexShrink: 0 }}>
+      <span style={{ fontSize: 15 }}>{pairEmoji(node)}</span>
+      <b style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, wordBreak: "keep-all" }}>{node.label}</b>
+    </span>
+  );
+  return (
+    <div style={{ display: "flex", alignItems: "center", marginBottom: 9 }}>
+      <Node node={pair.a} />
+      <div style={{ flex: 1, position: "relative", height: 18, minWidth: 30, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", left: 0, right: 0, top: 8, borderTop: `2px dashed ${t.accent}` }} />
+        <span style={{ position: "relative", fontSize: 9.5, fontWeight: 800, color: "#fff", background: t.accent, padding: "2px 6px", borderRadius: 999, whiteSpace: "nowrap" }}>{pair.overlap}</span>
+      </div>
+      <Node node={pair.b} />
+    </div>
+  );
+}
+
+// ── 발견 더보기: 대표 외 다른 패턴들 — 줄글 대신 끈/스탯으로 보여준다 ──
 function MoreDiscoveries({ discoveries }) {
   const t = getTypeAccent();
   const more = (discoveries || []).slice(1); // [0]은 대표 발견(위 히어로)과 동일
@@ -617,9 +640,21 @@ function MoreDiscoveries({ discoveries }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {more.map((d, i) => (
           <div key={d.id || i} style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "14px 16px", boxShadow: CARD_SHADOW }}>
-            <p style={{ fontSize: 14.5, fontWeight: 800, lineHeight: 1.5, margin: "0 0 8px", color: C.ink, wordBreak: "keep-all" }}>{d.headline}</p>
-            {d.evidence && (
-              <span style={{ display: "inline-block", fontSize: 11, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "3px 9px", borderRadius: 999 }}>근거 · {d.evidence}</span>
+            {d.pair ? (
+              <>
+                <MiniKnot pair={d.pair} t={t} />
+                <p style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.5, margin: 0, color: C.sub, wordBreak: "keep-all" }}>{d.headline}</p>
+              </>
+            ) : (
+              <div style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
+                <span style={{ width: 34, height: 34, borderRadius: 10, background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{DISC_EMOJI[d.id] || "🔎"}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.5, margin: "0 0 7px", color: C.ink, wordBreak: "keep-all" }}>{d.headline}</p>
+                  {d.evidence && (
+                    <span style={{ display: "inline-block", fontSize: 11, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "3px 9px", borderRadius: 999 }}>근거 · {d.evidence}</span>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         ))}
