@@ -5,7 +5,6 @@ import HomeView from './components/HomeView';
 import QuizView from './components/QuizView';
 import ResultView from './components/ResultView';
 import Footer from './components/Footer';
-import TicketView from './components/TicketView';
 import SignupModal from './components/SignupModal';
 import MallangRoom from './components/MallangRoom';
 import MyPageView from './components/MyPageView';
@@ -286,14 +285,6 @@ function App() {
             userProfile={userProfile}
           />
         )}
-        {currentView === 'ticket' && (
-          <TicketView 
-            isLoggedIn={isLoggedIn}
-            bmtiCode={bmtiCode}
-            setView={setCurrentView}
-            onRequireLogin={() => setShowSignup(true)}
-          />
-        )}
         {currentView === 'mallangroom' && (
           <MallangRoom bmtiCode={bmtiCode} isAdmin={userProfile?.nickname === 'BMTI'} userProfile={userProfile} />
         )}
@@ -321,7 +312,7 @@ function App() {
       </main>
 
       {/* Footer for Home/Ticket/Bodyscan/MyPage views */}
-      {['home', 'ticket', 'mypage'].includes(currentView) && <Footer />}
+      {['home', 'mypage'].includes(currentView) && <Footer />}
 
       {/* 비로그인 저장 유도 팝업 */}
       <SavePromptModal

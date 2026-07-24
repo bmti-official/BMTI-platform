@@ -7,6 +7,7 @@ import { BMTI_INFO } from './ResultView';
 import { BMTI_RESULTS } from '../bmti_results';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { getTypeAccent } from '../lib/typeAccent';
+import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.jpg';
 
@@ -270,6 +271,9 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           </button>
         </div>
       )}
+
+      {/* BMTI 유형 관계도 — 16가지 유형이 어떻게 이어지는지 보여주는 지도 */}
+      <BmtiRelationMap bmtiCode={bmtiCode} />
 
       {/* M/Z 유형 이미지 — 화면 꽉 차게, 화면 크기 상관없이 항상 위아래로만 배치.
           M은 원본 비율이 정사각형에 가까워 꽉 채워도 잘리는 캐릭터가 없지만,
