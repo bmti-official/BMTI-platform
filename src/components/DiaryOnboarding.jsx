@@ -15,13 +15,6 @@ const C = {
   tileOff: "#F3F1EC",
 };
 
-// 남긴 유일한 한 페이지 — '여기만의 이야기'(비밀 보장) 안내
-const SECRET = {
-  badge: "🔒 여기만의 이야기",
-  me: "근데 이거... 다른 사람이 볼 수도 있어요? 👀",
-  bot: "여기 남긴 이야기는 아무에게도 보이지 않아요.\n오직 당신과 저만 아는 비밀이에요. 🔒",
-};
-
 const FREQ_OPTS = [
   { id: "none", label: "거의 안 해요" },
   { id: "sometimes", label: "가끔 생각날 때" },
@@ -42,7 +35,7 @@ const POSTURE_OPTS = [
   { id: "other", label: "기타" },
 ];
 
-export default function DiaryOnboarding({ charImage, isLoggedIn, onRequireLogin, onComplete, userId, setUserProfile }) {
+export default function DiaryOnboarding({ isLoggedIn, onRequireLogin, onComplete, userId, setUserProfile }) {
   const [freq, setFreq] = useState(null);
   const [goals, setGoals] = useState([]);
   const [posture, setPosture] = useState(null);
@@ -84,27 +77,10 @@ export default function DiaryOnboarding({ charImage, isLoggedIn, onRequireLogin,
       fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "96px 24px 48px", animation: "fadeUp .4s ease-out" }}>
 
-        {/* 남긴 한 페이지 — '여기만의 이야기' */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-          <Mallang v={5} size={72} />
+        {/* 마스코트 */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 26 }}>
+          <Mallang v={5} size={84} />
         </div>
-        <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 20 }}>{SECRET.badge}</div>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-          <div style={{ maxWidth: "88%", background: C.ink, color: "#fff", borderRadius: "18px 18px 4px 18px",
-            padding: "15px 17px", fontSize: 14.5, lineHeight: 1.65, whiteSpace: "pre-line" }}>
-            {SECRET.me}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 9, alignItems: "flex-end" }}>
-          <Companion image={charImage} />
-          <div style={{ maxWidth: "85%", background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 18px 18px 4px",
-            padding: "15px 17px", fontSize: 14.5, lineHeight: 1.7, whiteSpace: "pre-line" }}>
-            {SECRET.bot}
-          </div>
-        </div>
-
-        {/* 구분선 */}
-        <div style={{ height: 1, background: C.line, margin: "30px 0 26px" }} />
 
         {!isLoggedIn ? (
           /* 미로그인 — 카카오 로그인 먼저 */
@@ -174,15 +150,6 @@ export default function DiaryOnboarding({ charImage, isLoggedIn, onRequireLogin,
           @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
         `}</style>
       </div>
-    </div>
-  );
-}
-
-// AI 동반자 아바타 — 로그인/설문 전에는 유형을 몰라 기본 아이콘으로 대체
-function Companion({ image }) {
-  return (
-    <div style={{ width: 34, height: 34, borderRadius: "50%", background: getTypeAccent().accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
-      {image ? <img src={image} alt="AI" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
     </div>
   );
 }

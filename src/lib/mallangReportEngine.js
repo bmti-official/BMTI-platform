@@ -305,6 +305,12 @@ function detectC2(days) {
     info: c.info,
     sense: `${PARTS[best.part]}가 그 비슷한 순간마다 신호를 보내왔어요.`,
     suggestion: c.sug,
+    // 대표 발견 '연결(끈)' 시각화용 — 상황 ⟷ 부위
+    pair: {
+      a: { kind: "situation", code: best.key, label: SITUATIONS[best.key] },
+      b: { kind: "part", code: best.part, label: PARTS[best.part] },
+      overlap: `${best.n} / ${best.total}번`,
+    },
   };
 }
 
@@ -333,6 +339,45 @@ function detectA1(days) {
     info: `일반적으로 ${LOADS[best.load]}이 이어지면 ${PARTS[best.key]} 주변이 먼저 지친다고 알려져 있어요.`,
     sense: `${LOADS[best.load]}이 길어질 때, 몸이 먼저 알아차리는 것 같아요.`,
     suggestion: `${LOADS[best.load]}이 길어지는 날엔 잠깐씩 한 번 쉬어가면 어떨까요.`,
+    // 대표 발견 '연결(끈)' 시각화용 — 부하 ⟷ 부위
+    pair: {
+      a: { kind: "load", code: best.load, label: LOADS[best.load] },
+      b: { kind: "part", code: best.key, label: PARTS[best.key] },
+      overlap: `${best.n} / ${best.total}번`,
+    },
+  };
+}
+
+/** G1 — 잠의 여파. 잘 못 잔 밤 다음날의 기분이 평소보다 낮은지(시차 상관). */
+function detectSleepAftermath(days) {
+  const byDate = Object.fromEntries(days.map((d) => [d.date, d]));
+  const poorNext = [], goodNext = [];
+  for (const d of days) {
+    if (d.sleep == null) continue;
+    const nx = byDate[shiftISO(d.date, 1)];
+    if (!nx || typeof nx.mood !== "number") continue;
+    if (d.sleep <= 1) poorNext.push(nx.mood);
+    else if (d.sleep >= 2) goodNext.push(nx.mood);
+  }
+  if (poorNext.length < CONFIG.MIN_OBSERVATIONS || goodNext.length < 1) return null;
+  const poorMean = avg(poorNext), goodMean = avg(goodNext);
+  const gap = goodMean - poorMean;
+  if (gap < CONFIG.MOOD_GAP) return null;
+  const overall = avg([...poorNext, ...goodNext]);
+  const lowN = poorNext.filter((m) => m < overall).length || Math.round(poorNext.length * 0.5);
+  return {
+    id: "G1", actionable: 1, strength: gap,
+    fact: `잘 못 잔 다음날의 기분이 평소보다 낮은 편이었어요. (${poorNext.length}번 · 평균 ${poorMean.toFixed(1)} vs ${goodMean.toFixed(1)})`,
+    evidence: `${poorNext.length}번 중 ${lowN}번`,
+    info: "일반적으로 잠이 부족하면 다음날 기분과 활력이 함께 가라앉는다고 알려져 있어요.",
+    sense: "몸이 무거운 다음날은, 전날 밤이 힘들었던 날인 것 같아요.",
+    suggestion: "뒤척인 날 다음날엔 일정을 조금 가볍게 잡아보면 어떨까요.",
+    // 연결(끈) 시각화용 — 잘 못 잔 밤 ⟷ 다음날 기분↓
+    pair: {
+      a: { kind: "sleep", code: "poor", label: "잘 못 잔 밤" },
+      b: { kind: "moodDown", code: "down", label: "다음날 기분 ↓" },
+      overlap: `${poorNext.length}번 중 ${lowN}번`,
+    },
   };
 }
 
@@ -388,7 +433,7 @@ function detectF1(days) {
 
 export function findDiscovery(days, recentIds = []) {
   if (days.length < CONFIG.MIN_RECORD_DAYS) return { found: false, code: "MIN_DAYS", recorded: days.length, required: CONFIG.MIN_RECORD_DAYS };
-  const cands = [detectD1(days), detectC2(days), detectA1(days), detectE1(days), detectF1(days)].filter(Boolean);
+  const cands = [detectD1(days), detectC2(days), detectA1(days), detectE1(days), detectF1(days), detectSleepAftermath(days)].filter(Boolean);
   if (!cands.length) return { found: false, code: "NO_PATTERN", recorded: days.length, required: CONFIG.MIN_RECORD_DAYS };
 
   const streak = (id) => recentIds.filter((p) => p === id).length;
@@ -480,7 +525,7 @@ export function composeDiscovery(result, bmti, empathy = null) {
   const lines = bmti.zm === "Z"
     ? [interp, d.suggestion]
     : [empathy || FALLBACK_EMPATHY, interp, d.suggestion];
-  return { found: true, id: d.id, headline: d.fact, evidence: d.evidence, lines, empathyFirst: bmti.zm === "M" };
+  return { found: true, id: d.id, headline: d.fact, evidence: d.evidence, lines, pair: d.pair || null, empathyFirst: bmti.zm === "M" };
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -548,6 +593,54 @@ function mkSection(id, title, current, data, summary, alert = null) {
   };
 }
 
+/* ────────────────────────────────────────────────────────────
+ * 7-c. 함께 온 기록(태그 동시출현) · 취침 리듬(잠든 시간대→다음날 기분)
+ *   새 입력(오늘의 태그·잠든 시간대)이 쌓이면 자동으로 채워진다. 없으면 null → 화면에서 숨김.
+ * ──────────────────────────────────────────────────────── */
+export function secCooccurrence(days) {
+  const tagDays = {};
+  for (const d of days) for (const tag of d.tags || []) (tagDays[tag] ||= []).push(d);
+  let topTag = null, topN = 0;
+  for (const [tag, arr] of Object.entries(tagDays)) if (arr.length > topN) { topTag = tag; topN = arr.length; }
+  if (!topTag || topN < CONFIG.MIN_OBSERVATIONS) return null;
+
+  const counts = {};
+  const add = (k) => { counts[k] = (counts[k] || 0) + 1; };
+  for (const d of tagDays[topTag]) {
+    if (d.overwork?.yes) add("무리함");
+    if (d.sleep != null && d.sleep <= 1) add("잘 못 잔 날");
+    if (typeof d.mood === "number" && d.mood <= 2) add("힘든 날");
+    for (const s of d.soreness || []) add(`${(s.part === "etc" && s.partOther) ? s.partOther : (PARTS[s.part] || s.part)} 불편`);
+    for (const other of d.tags || []) if (other !== topTag) add(other);
+  }
+  const items = Object.entries(counts).map(([label, count]) => ({ label, count }))
+    .filter((i) => i.count >= 2).sort((a, b) => b.count - a.count).slice(0, 4);
+  if (!items.length) return null;
+  return { tag: topTag, uses: topN, items };
+}
+
+const BEDTIME_BUCKETS = ["~11시", "12시", "1시", "2시 이후"];
+export function secBedtime(days) {
+  const byDate = Object.fromEntries(days.map((d) => [d.date, d]));
+  const sorted = [...days].sort((a, b) => a.date.localeCompare(b.date));
+  const items = [];
+  for (const d of sorted) {
+    const idx = BEDTIME_BUCKETS.indexOf(d.sleepTime);
+    if (idx < 0) continue;
+    const nx = byDate[shiftISO(d.date, 1)];
+    items.push({ date: d.date, bucket: idx, nextMood: (nx && typeof nx.mood === "number") ? nx.mood : null });
+  }
+  if (items.length < CONFIG.MIN_OBSERVATIONS) return null;
+  const withNext = items.filter((i) => i.nextMood != null);
+  let trend = null;
+  if (withNext.length >= CONFIG.MIN_OBSERVATIONS) {
+    const late = withNext.filter((i) => i.bucket >= 2).map((i) => i.nextMood);
+    const early = withNext.filter((i) => i.bucket <= 1).map((i) => i.nextMood);
+    if (late.length && early.length && avg(early) - avg(late) >= CONFIG.MOOD_GAP) trend = "lateLower";
+  }
+  return { items: items.slice(-14), buckets: BEDTIME_BUCKETS, trend };
+}
+
 /**
  * 월간 리포트 전체를 만든다.
  * @param {DiaryEntry[]} entries  해당 월의 기록 (정렬 무관 — 내부에서 날짜순 정렬)
@@ -565,6 +658,8 @@ export function buildMonthlyReport(entries, profile, opts) {
     ? discRaw.all.slice(0, 3).map((raw) => composeDiscovery({ found: true, discovery: raw }, bmti))
     : [];
   const freeSignals = computeFreeSignals(days);
+  const cooccurrence = secCooccurrence(days);
+  const bedtime = secBedtime(days);
 
   // 섹션별 집계
   const dCal = secMoodCalendar(days, year, month);
@@ -618,6 +713,8 @@ export function buildMonthlyReport(entries, profile, opts) {
     discovery,
     discoveries,
     freeSignals,
+    cooccurrence,
+    bedtime,
     sections,
     disclaimer: DISCLAIMER,
   };

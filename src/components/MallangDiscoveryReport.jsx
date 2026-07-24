@@ -89,6 +89,12 @@ const IconTarget = ({ size = 16 }) => (
     <circle cx="12" cy="12" r="1.4" fill="currentColor" />
   </svg>
 );
+const IconLink = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M9 12h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path d="M10 8.5H7.5a3.5 3.5 0 1 0 0 7H10M14 8.5h2.5a3.5 3.5 0 1 1 0 7H14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
 const SECTION_ICON = {
   mood_calendar: IconCalendar, mood_distribution: IconSmile, sore_map: IconMap, sore_moments: IconTimer,
   overwork: IconBattery, movement: IconRun, rest: IconMoon, sleep: IconZzz, notes: IconNotepad,
@@ -144,7 +150,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
   const [showExample, setShowExample] = useState(false);
-  const [tab, setTab] = useState("discovery"); // "records" | "discovery"
+  const [tab, setTab] = useState("records"); // "records" | "discovery"
 
   const monthKey = `${year}-${String(month).padStart(2, "0")}`;
   const entries = getDiaryHistory().filter((e) => e.date.startsWith(monthKey));
@@ -221,11 +227,13 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DiscoveryHero report={report} onShowExample={() => setShowExample(true)} />
-            {report.discovery.found && <MoodFlowCard report={report} />}
-            {report.discovery.found && <SummaryTilesCard report={report} />}
-            {report.discovery.found && <ProfileLinkCard report={report} profile={profile} />}
             {report.discovery.found && <MoreDiscoveries discoveries={report.discoveries} />}
+            {report.discovery.found && <CooccurrenceCard report={report} />}
+            {report.discovery.found && <BedtimeCard report={report} />}
+            {report.discovery.found && <SummaryTilesCard report={report} />}
             {report.discovery.found && <FreeSignals signals={report.freeSignals} />}
+            {report.discovery.found && <MoodFlowCard report={report} />}
+            {report.discovery.found && <ProfileLinkCard report={report} profile={profile} />}
           </div>
         )}
 
@@ -390,18 +398,21 @@ function DiscoveryHero({ report, onShowExample }) {
   return (
     <div style={{ position: "relative", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: 22, padding: "20px 18px 20px", boxShadow: CARD_SHADOW }}>
       <ExampleQButton onClick={onShowExample} t={t} />
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: t.accentDeep, fontWeight: 800, marginBottom: 12, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: t.accentDeep, fontWeight: 800, marginBottom: 14, background: "#fff", padding: "4px 10px", borderRadius: 999 }}>
         ✨ 이번 달의 발견
       </div>
 
+      {/* 연결(끈) 시각화 — 두 기록을 끈으로 잇고 겹친 횟수만 보여준다 (줄글 대신) */}
+      {d.pair && <KnotPair pair={d.pair} t={t} />}
+
       {/* 핵심 발견 한 줄 + 근거 pill */}
-      <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.45, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{d.headline}</p>
+      <p style={{ fontSize: d.pair ? 15.5 : 18, fontWeight: 800, lineHeight: 1.5, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{d.headline}</p>
       {d.evidence && (
         <span style={{ display: "inline-block", fontSize: 11.5, color: t.accentDeep, fontWeight: 800, background: t.accentSoft, padding: "4px 10px", borderRadius: 999 }}>근거 · {d.evidence}</span>
       )}
 
-      {/* 이게 무슨 뜻이에요? — 쉬운 설명 */}
-      {explain.length > 0 && (
+      {/* 끈 카드가 아니면(비교형 발견) 쉬운 설명을 덧붙인다 */}
+      {!d.pair && explain.length > 0 && (
         <div style={{ marginTop: 14, background: "rgba(255,255,255,0.72)", borderRadius: 14, padding: "13px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, marginBottom: 6 }}>이게 무슨 뜻이에요?</div>
           {explain.map((line, i) => (
@@ -417,6 +428,39 @@ function DiscoveryHero({ report, onShowExample }) {
           <p style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.55, margin: 0, color: t.accentDeep }}>{suggestion}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// 연결(끈) 시각화 — [아이콘 A] —겹친 횟수— [아이콘 B]
+const PAIR_EMOJI = {
+  situation: { morning: "🌅", moving: "🚶", sitting: "🪑", standing: "🧍", allday: "🕛", etc: "📍" },
+  load: { sit: "🪑", stand: "🧍", walk: "🚶", lift: "🏋️", etc: "💪" },
+  part: "😣", sleep: "🌙", moodDown: "😔",
+};
+function pairEmoji(node) {
+  const m = PAIR_EMOJI[node.kind];
+  if (!m) return "🔗";
+  return typeof m === "string" ? m : (m[node.code] || "📍");
+}
+function KnotNode({ node }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, width: 84, flexShrink: 0 }}>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 27, boxShadow: "0 2px 8px rgba(28,26,23,0.08)" }}>{pairEmoji(node)}</div>
+      <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, textAlign: "center", lineHeight: 1.25, wordBreak: "keep-all" }}>{node.label}</span>
+    </div>
+  );
+}
+function KnotPair({ pair, t }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", marginBottom: 16 }}>
+      <KnotNode node={pair.a} />
+      {/* 끈 + 겹친 횟수 pill */}
+      <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", height: 56, minWidth: 40 }}>
+        <div style={{ position: "absolute", left: 0, right: 0, top: 27, height: 2, borderTop: `2px dashed ${t.accent}` }} />
+        <span style={{ position: "relative", fontSize: 11, fontWeight: 800, color: "#fff", background: t.accent, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap", boxShadow: "0 1px 4px rgba(28,26,23,0.12)" }}>{pair.overlap} 겹침</span>
+      </div>
+      <KnotNode node={pair.b} />
     </div>
   );
 }
@@ -455,6 +499,61 @@ function SummaryTilesCard({ report }) {
     <InfoCard icon={<IconNotepad size={17} />} title="이번 달 한눈에" hint="이번 달 기록에서 뽑은 조각들이에요.">
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {tiles.map((tile, i) => <FindingTile key={i} {...tile} t={t} />)}
+      </div>
+    </InfoCard>
+  );
+}
+
+// ── 함께 온 기록 — '오늘의 태그'를 축으로, 그날 함께 찍힌 기록의 동시출현 ──
+function CooccurrenceCard({ report }) {
+  const t = getTypeAccent();
+  const c = report.cooccurrence;
+  if (!c) return null;
+  return (
+    <InfoCard icon={<IconLink size={17} />} title="함께 온 기록" hint={`'${c.tag}'을(를) 적은 ${c.uses}번의 날, 이런 것들이 자주 함께였어요.`}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {c.items.map((it) => (
+          <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+            {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
+          </span>
+        ))}
+      </div>
+    </InfoCard>
+  );
+}
+
+// ── 취침 리듬 — 막대 높이=그날 잠든 시간대, 색=다음날 기분 (점수 없이, 기분색으로) ──
+function BedtimeCard({ report }) {
+  const t = getTypeAccent();
+  const b = report.bedtime;
+  if (!b) return null;
+  return (
+    <InfoCard icon={<IconMoon size={17} />} title="이번 달 잠든 시간" hint="막대 높이 = 그날 잠든 시간대 · 색 = 다음날 기분">
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 84, padding: "0 2px" }}>
+        {b.items.map((it, i) => (
+          <div key={i} style={{ flex: 1, minWidth: 5, height: `${((it.bucket + 1) / b.buckets.length) * 100}%`,
+            background: it.nextMood ? MOOD_COLOR[it.nextMood] : "#E7E2D8", borderRadius: 4 }}
+            title={`${it.date} · ${b.buckets[it.bucket]}${it.nextMood ? ` → 다음날 ${MOOD[it.nextMood]}` : ""}`} />
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: C.sub, fontWeight: 700, marginTop: 6 }}>
+        <span>일찍 잠 (막대 낮음)</span><span>늦게 잠 (막대 높음)</span>
+      </div>
+      {b.trend === "lateLower" && (
+        <p style={{ fontSize: 12, color: "#3F3A31", fontWeight: 700, margin: "12px 0 0", lineHeight: 1.5 }}>
+          늦게 잔 날일수록 다음날 기분이 낮은 편이었어요.
+        </p>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 12, paddingTop: 12, borderTop: "1px dashed #EDE9E2" }}>
+        {[1, 2, 3, 4, 5].map((v) => (
+          <div key={v} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: MOOD_COLOR[v], flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.sub }}>{MOOD[v]}</span>
+          </div>
+        ))}
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E7E2D8", flexShrink: 0 }} />다음날 기록 없음
+        </span>
       </div>
     </InfoCard>
   );
