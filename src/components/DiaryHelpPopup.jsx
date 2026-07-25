@@ -23,27 +23,27 @@ const STEPS = [
   },
   {
     id: "lazy",
-    badge: "⏱️ 하루 10초",
-    me: "몸이 계속 무겁긴 한데...\n뭘 또 챙겨야 한다고 생각하니 벌써 지쳐요 🥲",
-    bot: "뭘 챙기라고 안 할게요.\n그냥 오늘 어땠는지만 알려주세요.\n10초면 충분해요. 나머지는 제가 기억할게요. 🧠",
+    badge: "⏱️ 하루 10초면 충분해요",
+    me: "몸은 계속 무거운데,\n뭘 또 챙기려니 벌써 지쳐요 🥲",
+    bot: "따로 챙기실 건 없어요.\n오늘 몸이 어땠는지만 남겨주세요.\n나머지는 제가 기억해둘게요.",
   },
   {
     id: "blame",
     badge: "🌱 당신 탓이 아니에요",
-    me: "운동도 해봤고 앱도 깔아봤는데\n결국 다 흐지부지됐어요...",
-    bot: "지금까지 잘 안 됐던 건, 의지 탓이 아니에요.\n남들 방식에 나를 맞추려 했을 뿐이죠.\n\n성격이 다 다르듯,\n내 몸에 맞는 방식은 따로 있어요.",
+    me: "운동도 앱도 해봤는데,\n늘 흐지부지됐어요…",
+    bot: "잘 안 됐던 건 의지 문제가 아니에요.\n남의 방식에 나를 맞추려 했을 뿐이죠.\n\n사람마다 다르듯,\n내 몸에 맞는 방식은 따로 있어요.",
   },
   {
     id: "safety",
     badge: "🏥 건강이 먼저예요",
-    me: "요즘 목이 계속 뻐근한데...\n이거 괜찮은 걸까요?",
-    bot: "저는 의사가 아니라, 진단은 못 해요.\n많이 아플 땐 병원에 먼저 가주세요. 🏥\n\n대신 언제 병원에 가야 할지는\n꼭 알려드릴게요.",
+    me: "요즘 목이 계속 뻐근한데,\n괜찮은 걸까요?",
+    bot: "저는 의사가 아니라 진단은 해드릴 수 없어요.\n심하게 아프거나 오래간다면\n병원에서 꼭 확인해 주세요. 🏥\n\n여기선 몸이 보내는 작은 신호를\n같이 살펴볼게요.",
   },
   {
     id: "secret",
     badge: "🔒 여기만의 이야기",
-    me: "근데 이거... 다른 사람이 볼 수도 있어요? 👀",
-    bot: "여기 남긴 이야기는 아무에게도 보이지 않아요.\n오직 당신과 저만 아는 비밀이에요. 🔒",
+    me: "이거… 다른 사람도 볼 수 있어요? 👀",
+    bot: "여기 남긴 이야기는 아무에게도 보이지 않아요.\n오직 나만 볼 수 있는 기록이에요.",
   },
 ];
 
@@ -91,9 +91,8 @@ export default function DiaryHelpPopup({ onClose, isLoggedIn, onRequireLogin }) 
                   {step.me}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-                <div style={{ width: 30, height: 30, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
-                <div style={{ maxWidth: "85%", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: "18px 18px 18px 4px", padding: "13px 15px", fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-line" }}>
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{ maxWidth: "88%", background: YELLOW, border: `1px solid ${YELLOW_LINE}`, borderRadius: "18px 18px 18px 4px", padding: "13px 15px", fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-line" }}>
                   {step.bot}
                 </div>
               </div>

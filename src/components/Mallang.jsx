@@ -42,7 +42,7 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
             src={src}
             alt=""
             className="mallang-squish"
-            style={{ width: "100%", height: "100%", display: "block", transformOrigin: "50% 100%", borderRadius: MALLANG_IMG_RADIUS[effectiveSkin] || 0 }}
+            style={{ width: "100%", height: "100%", display: "block", transformOrigin: "50% 100%", objectFit: eye ? "fill" : "contain", borderRadius: MALLANG_IMG_RADIUS[effectiveSkin] || 0 }}
           />
           {eye && (
             <span
