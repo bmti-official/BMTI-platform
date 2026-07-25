@@ -3,7 +3,7 @@
 // localStorage에 저장된 현재 스킨을 읽어 SVG 대신 스킨 이미지를 대신 그려준다.
 import { useRef, useState, useEffect } from "react";
 import { MOODS } from "../data";
-import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT, MALLANG_SIZE_ADJUST, MALLANG_MOOD_FILTER, MALLANG_MOOD_FILTER_OVERRIDE, MALLANG_EYE_RECT } from "../lib/mallangSkins";
+import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT, MALLANG_SIZE_ADJUST, MALLANG_MOOD_FILTER, MALLANG_MOOD_FILTER_OVERRIDE, MALLANG_EYE_RECT, MALLANG_IMG_RADIUS } from "../lib/mallangSkins";
 
 export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
   const [skin, setSkin] = useState(getMallangSkin);
@@ -42,14 +42,14 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
             src={src}
             alt=""
             className="mallang-squish"
-            style={{ width: "100%", height: "100%", display: "block", transformOrigin: "50% 100%" }}
+            style={{ width: "100%", height: "100%", display: "block", transformOrigin: "50% 100%", borderRadius: MALLANG_IMG_RADIUS[effectiveSkin] || 0 }}
           />
           {eye && (
             <span
               style={{
                 position: "absolute", left: `${eye.x * 100}%`, top: `${eye.y * 100}%`,
                 width: `${eye.w * 100}%`, height: `${eye.h * 100}%`,
-                background: eyeMap._color, borderRadius: "45%", transformOrigin: "50% 50%",
+                background: eye.color || eyeMap._color, borderRadius: "45%", transformOrigin: "50% 50%",
                 animation: "mallang-blink-cover 5s ease-in-out infinite", animationDelay: blinkDelay,
               }}
             />

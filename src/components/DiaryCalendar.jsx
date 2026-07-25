@@ -8,7 +8,6 @@ import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   isDayWritable, isEntryLocked,
 } from "../lib/diaryHistory";
-import { MALLANG_SKINS, getMallangSkin, setMallangSkin } from "../lib/mallangSkins";
 import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
@@ -30,9 +29,7 @@ const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showSkinPicker, setShowSkinPicker] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const currentSkin = getMallangSkin();
   const t = getTypeAccent(bmtiCode);
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
@@ -123,22 +120,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
             <span style={{ fontSize: 12, color: C.sub, transform: "translateY(1px)" }}>▼</span>
           </button>
           <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>총 {entryCountThisMonth}일 기록했어요</p>
-
-          {/* 말랑이 스킨(외형) 선택 버튼 — '오늘 평소보다 무리했나요?' 원형 버튼과 같은 스타일로,
-              안에는 지금 스킨 미리보기 대신 '바꾸기' 의미의 교체 아이콘을 넣는다 */}
-          <button
-            onClick={() => setShowSkinPicker(true)}
-            aria-label="말랑이 모양 바꾸기"
-            style={{ position: "absolute", right: 0, top: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
-          >
-            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F3F1EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                <path d="M6 12 h17 M23 12 l-4.5-4.5 M23 12 l-4.5 4.5" stroke={t.accentDeep} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M26 20 h-17 M9 20 l4.5-4.5 M9 20 l4.5 4.5" stroke={t.accentDeep} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, whiteSpace: "nowrap" }}>말랑 바꾸기</span>
-          </button>
         </div>
 
         {/* 요일 */}
@@ -209,33 +190,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
       {showHelp && (
         <DiaryHelpPopup onClose={() => setShowHelp(false)} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
-      )}
-
-      {showSkinPicker && (
-        <div
-          onClick={() => setShowSkinPicker(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 65, background: "rgba(28,26,23,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-        >
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "24px 24px 0 0", padding: "22px 20px 30px" }}>
-            <h3 style={{ textAlign: "center", fontSize: 16, fontWeight: 800, margin: "0 0 18px", color: C.ink }}>말랑이 모양 바꾸기</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-              {Object.entries(MALLANG_SKINS).map(([key, skinInfo]) => {
-                const on = currentSkin === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => { setMallangSkin(key); setShowSkinPicker(false); }}
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 4px", borderRadius: 16,
-                      border: on ? `2px solid ${t.accent}` : "2px solid transparent", background: on ? t.accentSoft : "transparent", cursor: "pointer" }}
-                  >
-                    <Mallang v={5} size={44} skinOverride={key} />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: on ? C.ink : C.sub, whiteSpace: "nowrap" }}>{skinInfo.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       )}
 
       {showMoodPopup && (

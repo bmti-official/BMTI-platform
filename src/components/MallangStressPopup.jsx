@@ -75,7 +75,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
             aria-label="말랑이 누르기"
             style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block" }}
           >
-            <Mallang v={level} size={132} tapKey={tapKey} />
+            <Mallang v={level} size={132} tapKey={tapKey} skinOverride="malang3d" />
           </button>
 
           {showBabies && Array.from({ length: BABY_COUNT / 2 }).map((_, i) => (
@@ -111,7 +111,7 @@ function BabyMallang({ index, tapKey }) {
         animation: `babyPopIn .3s ease-out ${popDelay}s both, babyBounce ${bounceDuration}s ease-in-out ${popDelay + 0.3}s infinite`,
       }}
     >
-      <Mallang v={5} size={36} tapKey={tapKey} />
+      <Mallang v={5} size={36} tapKey={tapKey} skinOverride="malang3d" />
     </div>
   );
 }
