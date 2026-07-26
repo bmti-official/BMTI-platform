@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
@@ -26,76 +26,36 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
 const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null);
 
+// 오늘에 해당하는 달/주만 좌우 전체를 덮는 연한 옐로우, 나머지는 흰색.
+const YELLOW_BG = "#FFFBEA";
+const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const startOfMonth = (d) => new Date(d.getFullYear(), d.getMonth(), 1);
+const startOfWeek = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - x.getDay()); return x; };
+const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+const addWeeks = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n * 7); return x; };
+const sameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+const MONTH_MIN_DATE = new Date(MIN_YEAR, MIN_MONTH - 1, 1);
+
 // M유형 — 따뜻하고 다정한 응원 문구
 const RECORD_MSG_M = [
-  "", // 0일(기록 없음)
-  "첫걸음을 응원해요.",
-  "오늘도 잊지 않았군요!",
-  "내 마음 돌보기 3일 차.",
-  "차곡차곡 쌓이는 하루.",
-  "조금씩 쌓이는 내 모습.",
-  "나의 내면과 친해져요.",
-  "일주일 달성! 멋져요.",
-  "새로운 주도 활기차게!",
-  "매일 더 나아지고 있어요.",
-  "꾸준한 모습이 예뻐요.",
-  "오늘도 수고 많았어요.",
-  "당신의 하루를 응원해요.",
-  "좋은 습관이 생겼네요.",
-  "벌써 2주! 수고했어요.",
-  "절반을 넘어섰네요!",
-  "스스로를 안아주세요.",
-  "반환점을 돌아 순항 중!",
-  "내 마음의 소리에 집중.",
-  "나를 알아가는 즐거움.",
-  "20일의 기적, 대단해요.",
-  "매일의 당신이 빛나요.",
-  "습관이 자리 잡았어요.",
-  "오늘도 다정한 하루.",
-  "흔들림 없는 발걸음.",
-  "거의 다 왔어요. 화이팅!",
-  "나를 위한 최고의 선물.",
-  "끝까지 응원할게요!",
-  "한 달이 코앞이에요!",
-  "조금만 더 힘을 내요.",
-  "찬란한 한 달의 완성.",
-  "수고한 나를 토닥여요.",
+  "", "첫걸음을 응원해요.", "오늘도 잊지 않았군요!", "내 마음 돌보기 3일 차.", "차곡차곡 쌓이는 하루.",
+  "조금씩 쌓이는 내 모습.", "나의 내면과 친해져요.", "일주일 달성! 멋져요.", "새로운 주도 활기차게!", "매일 더 나아지고 있어요.",
+  "꾸준한 모습이 예뻐요.", "오늘도 수고 많았어요.", "당신의 하루를 응원해요.", "좋은 습관이 생겼네요.", "벌써 2주! 수고했어요.",
+  "절반을 넘어섰네요!", "스스로를 안아주세요.", "반환점을 돌아 순항 중!", "내 마음의 소리에 집중.", "나를 알아가는 즐거움.",
+  "20일의 기적, 대단해요.", "매일의 당신이 빛나요.", "습관이 자리 잡았어요.", "오늘도 다정한 하루.", "흔들림 없는 발걸음.",
+  "거의 다 왔어요. 화이팅!", "나를 위한 최고의 선물.", "끝까지 응원할게요!", "한 달이 코앞이에요!", "조금만 더 힘을 내요.",
+  "찬란한 한 달의 완성.", "수고한 나를 토닥여요.",
 ];
 
 // Z유형 — 담백하고 냉철한 동기부여 문구
 const RECORD_MSG_Z = [
-  "", // 0일(기록 없음)
-  "작심삼일은 넘겨봅시다.",
-  "아직 갈 길이 멉니다.",
-  "작심삼일 고비 넘기기.",
-  "페이스 유지하세요.",
-  "아직 초반입니다. 집중.",
-  "루틴이 되어갑니다.",
-  "겨우 일주일, 더 가야죠.",
-  "흐름 끊기지 않게 주의.",
-  "데이터가 쌓이고 있어요.",
-  "이제야 두 자릿수 진입.",
-  "꾸준함도 실력입니다.",
-  "나태해지지 마세요.",
-  "목표에 집중할 시간.",
-  "절반 왔네요. 킵고잉.",
-  "딱 절반 지났습니다.",
-  "후반전 시작입니다.",
-  "절반 넘김. 흐름 유지.",
-  "기록은 배신하지 않죠.",
-  "확실한 패턴 분석 가능.",
-  "20일 달성. 계속 진행.",
-  "데이터 확보. 페이스 유지.",
-  "완주가 눈앞입니다.",
-  "변수 통제 잘하세요.",
-  "무리 없이 달성 중.",
-  "고지가 눈앞. 긴장 유지.",
-  "막판까지 집중하세요.",
-  "유종의 미를 거둡시다.",
-  "막판 스퍼트 올리세요.",
-  "단 며칠 남았습니다.",
-  "사실상 목표 달성.",
-  "완주 성공. 다음 달 준비.",
+  "", "작심삼일은 넘겨봅시다.", "아직 갈 길이 멉니다.", "작심삼일 고비 넘기기.", "페이스 유지하세요.",
+  "아직 초반입니다. 집중.", "루틴이 되어갑니다.", "겨우 일주일, 더 가야죠.", "흐름 끊기지 않게 주의.", "데이터가 쌓이고 있어요.",
+  "이제야 두 자릿수 진입.", "꾸준함도 실력입니다.", "나태해지지 마세요.", "목표에 집중할 시간.", "절반 왔네요. 킵고잉.",
+  "딱 절반 지났습니다.", "후반전 시작입니다.", "절반 넘김. 흐름 유지.", "기록은 배신하지 않죠.", "확실한 패턴 분석 가능.",
+  "20일 달성. 계속 진행.", "데이터 확보. 페이스 유지.", "완주가 눈앞입니다.", "변수 통제 잘하세요.", "무리 없이 달성 중.",
+  "고지가 눈앞. 긴장 유지.", "막판까지 집중하세요.", "유종의 미를 거둡시다.", "막판 스퍼트 올리세요.", "단 며칠 남았습니다.",
+  "사실상 목표 달성.", "완주 성공. 다음 달 준비.",
 ];
 
 function getRecordMessage(count, isM) {
@@ -106,261 +66,122 @@ function getRecordMessage(count, isM) {
 }
 
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin }) {
-  const [cursor, setCursor] = useState(() => new Date());
   const [view, setView] = useState("month"); // "month" | "week"
-  const [weekAnchor, setWeekAnchor] = useState(() => new Date()); // 주간 보기에서 보고 있는 주의 아무 날짜
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const t = getTypeAccent(bmtiCode);
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
   const isM = axisCode.includes("M");
-  // Z유형은 담백하게, M유형은 발랄하게 — 유형별로 다르게 물어보고 다르게 반응해준다.
   const moodQuestionTitle = isM ? "오늘 기분, 어떤 말랑이예요?" : "오늘의 기분을 선택하세요";
   const moodQuestionSub = isM ? "정답은 없어요. 지금 느낌그대로면 돼요" : "기록이 쌓이면 주간 패턴을 찾아드립니다";
   const moodPickedMessage = isM ? "오늘은 그랬군요. 기억해둘게요" : "기록을 완료했습니다";
-  const year = cursor.getFullYear();
-  const month = cursor.getMonth(); // 0-indexed
-  const monthKey = `${year}-${pad(month + 1)}`;
   const todayStr = todayISO();
-
+  const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
   const history = getDiaryHistory();
-  const entryCountThisMonth = history.filter(e => e.date.startsWith(monthKey)).length;
 
-  // ── 주간 보기 계산 ──
-  const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const startOfWeek = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - x.getDay()); return x; };
-  const weekStart = startOfWeek(weekAnchor);
-  const weekDays = Array.from({ length: 7 }, (_, i) => { const x = new Date(weekStart); x.setDate(x.getDate() + i); return x; });
-  const weekEnd = weekDays[6];
-  const minWeekStart = startOfWeek(new Date(MIN_YEAR, MIN_MONTH - 1, 1));
-  const curWeekStart = startOfWeek(new Date());
-  const canPrevWeek = weekStart > minWeekStart;
-  const canNextWeek = weekStart < curWeekStart;
-  const shiftWeek = (delta) => { const x = new Date(weekAnchor); x.setDate(x.getDate() + delta * 7); setWeekAnchor(x); };
-  const weekEntryCount = weekDays.filter(d => history.some(e => e.date === toISO(d))).length;
-  const weekTitle = weekStart.getMonth() === weekEnd.getMonth()
-    ? `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${weekEnd.getDate()}일`
-    : `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${weekEnd.getMonth() + 1}월 ${weekEnd.getDate()}일`;
+  // ── 무한 스크롤: 앞뒤 여러 달/주를 이어 렌더하고, 끝에 가까워지면 조금 로딩 후 더 불러온다 ──
+  const monthMax = addMonths(startOfMonth(today), 12);
+  const weekMin = startOfWeek(MONTH_MIN_DATE);
+  const weekMax = addWeeks(startOfWeek(today), 12);
+  const [months, setMonths] = useState(() => { const cur = startOfMonth(today); return [addMonths(cur, -1), cur, addMonths(cur, 1)].filter(d => d >= MONTH_MIN_DATE && d <= monthMax); });
+  const [weeks, setWeeks] = useState(() => { const cur = startOfWeek(today); return [addWeeks(cur, -1), cur, addWeeks(cur, 1)].filter(d => d >= weekMin && d <= weekMax); });
+  const [loading, setLoading] = useState(null); // 'top' | 'bottom' | null
 
-  const goWeekView = () => { setWeekAnchor(new Date()); setView("week"); };
-  const goMonthView = () => { setCursor(new Date(weekAnchor.getFullYear(), weekAnchor.getMonth(), 1)); setView("month"); };
+  const scrollRef = useRef(null);
+  const loadingRef = useRef(false);
+  const prevHeightRef = useRef(0);
+  const topLoadRef = useRef(false);
 
-  // ── 위아래 스크롤(스와이프)로 이전/다음 달·주 이동 ──
-  const nowDate = new Date();
-  const shiftMonth = (delta) => {
-    const target = new Date(year, month + delta, 1);
-    if (target < new Date(MIN_YEAR, MIN_MONTH - 1, 1)) return;
-    if (target > new Date(nowDate.getFullYear(), nowDate.getMonth(), 1)) return;
-    setCursor(target);
+  // 위로 더 불러오면 스크롤 위치를 보정해 튐 없이 이어지게 한다.
+  useLayoutEffect(() => {
+    const el = scrollRef.current; if (!el) return;
+    if (topLoadRef.current) { el.scrollTop += el.scrollHeight - prevHeightRef.current; topLoadRef.current = false; }
+  }, [months, weeks]);
+
+  // 뷰 전환/첫 진입 시 '오늘' 기간으로 스크롤을 맞춘다.
+  useLayoutEffect(() => {
+    const el = scrollRef.current; if (!el) return;
+    const cur = el.querySelector('[data-current="true"]');
+    if (cur) el.scrollTop = Math.max(0, cur.offsetTop - 100);
+  }, [view]);
+
+  const list = view === "month" ? months : weeks;
+  const minEdge = view === "month" ? MONTH_MIN_DATE : weekMin;
+  const maxEdge = view === "month" ? monthMax : weekMax;
+  const canTop = list[0] > minEdge;
+  const canBottom = list[list.length - 1] < maxEdge;
+
+  const loadMore = (dir) => {
+    if (loadingRef.current) return;
+    if (dir === "top" && !canTop) return;
+    if (dir === "bottom" && !canBottom) return;
+    loadingRef.current = true; setLoading(dir);
+    if (dir === "top") { prevHeightRef.current = scrollRef.current.scrollHeight; topLoadRef.current = true; }
+    setTimeout(() => {
+      if (view === "month") setMonths(p => dir === "top" ? [addMonths(p[0], -1), ...p] : [...p, addMonths(p[p.length - 1], 1)]);
+      else setWeeks(p => dir === "top" ? [addWeeks(p[0], -1), ...p] : [...p, addWeeks(p[p.length - 1], 1)]);
+      setLoading(null); loadingRef.current = false;
+    }, 380);
   };
-  const navigate = (delta) => { if (view === "month") shiftMonth(delta); else shiftWeek(delta); };
-  const navLock = useRef(false);
-  const wheelAcc = useRef(0);
-  const touchStartY = useRef(null);
-  const doNav = (delta) => {
-    if (navLock.current) return;
-    navLock.current = true;
-    navigate(delta);
-    setTimeout(() => { navLock.current = false; }, 450);
-  };
-  const onWheel = (e) => { wheelAcc.current += e.deltaY; if (Math.abs(wheelAcc.current) > 60) { doNav(wheelAcc.current > 0 ? 1 : -1); wheelAcc.current = 0; } };
-  const onTouchStart = (e) => { touchStartY.current = e.touches[0].clientY; };
-  const onTouchEnd = (e) => {
-    if (touchStartY.current == null) return;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dy) > 55) doNav(dy < 0 ? 1 : -1); // 위로 스와이프 = 다음
-    touchStartY.current = null;
+  const onScroll = () => {
+    const el = scrollRef.current; if (!el || loadingRef.current) return;
+    if (el.scrollTop < 160) loadMore("top");
+    else if (el.scrollTop + el.clientHeight > el.scrollHeight - 160) loadMore("bottom");
   };
 
   // 오늘 기분 팝업 — 오늘 기록이 없으면 탭에 들어오자마자 자동으로 뜬다.
   const [showMoodPopup, setShowMoodPopup] = useState(() => !getEntryForDate(todayISO()));
   const [poppedMood, setPoppedMood] = useState(null);
-  // "오늘은 여기까지 할게요"로 짧게 끝내도, 조금 더 기록할 때와 마찬가지로
-  // 스트레스 해소 팝업(말랑이 눌러보기)을 한 번 보여준다.
   const [showStressPopup, setShowStressPopup] = useState(false);
   const [stressMood, setStressMood] = useState(null);
-  // 이미 기록된 날의 말랑이를 누르면, 바로 수정 화면으로 보내지 않고 그날 기록을 먼저 보여준다.
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
 
-  const quickSaveMood = () => {
-    saveDiaryEntry(todayStr, poppedMood);
-    setStressMood(poppedMood);
-    setShowMoodPopup(false);
-    setPoppedMood(null);
-    setShowStressPopup(true);
-  };
-  const continueToFullForm = () => {
-    setShowMoodPopup(false);
-    const v = poppedMood;
-    setPoppedMood(null);
-    onPickMood && onPickMood(v);
-  };
+  const quickSaveMood = () => { saveDiaryEntry(todayStr, poppedMood); setStressMood(poppedMood); setShowMoodPopup(false); setPoppedMood(null); setShowStressPopup(true); };
+  const continueToFullForm = () => { setShowMoodPopup(false); const v = poppedMood; setPoppedMood(null); onPickMood && onPickMood(v); };
 
-  // 미리보기 팝업에 보여줄 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
+  // 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
   const buildEntrySummary = (entry) => {
     const items = [];
     if (entry.sleep != null) items.push({ icon: SLEEP_ICON[entry.sleep], text: SLEEP_LABELS[entry.sleep] });
     if (entry.overwork?.yes) items.push({ icon: "warn", text: "평소보다 무리했어요" });
-    if (entry.exercise?.did === true) {
-      const types = (entry.exercise.types || []).map(t => KEY_TO_EXERCISE_TYPE_LABEL[t] || t).join(", ");
-      items.push({ icon: "walk", text: `운동: ${types}` });
-    } else if (entry.exercise?.did === false) {
-      items.push({ icon: "sofa", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
-    }
-    if (entry.soreness?.length) {
-      const parts = entry.soreness.map(s => (s.part === "etc" && s.partOther ? s.partOther : (KEY_TO_PART_LABEL[s.part] || s.part))).join(", ");
-      items.push({ icon: "bandage", text: `불편함: ${parts}` });
-    }
+    if (entry.exercise?.did === true) { const types = (entry.exercise.types || []).map(x => KEY_TO_EXERCISE_TYPE_LABEL[x] || x).join(", "); items.push({ icon: "walk", text: `운동: ${types}` }); }
+    else if (entry.exercise?.did === false) items.push({ icon: "sofa", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
+    if (entry.soreness?.length) { const parts = entry.soreness.map(s => (s.part === "etc" && s.partOther ? s.partOther : (KEY_TO_PART_LABEL[s.part] || s.part))).join(", "); items.push({ icon: "bandage", text: `불편함: ${parts}` }); }
     if (entry.note?.text) items.push({ icon: "editPencil", text: entry.note.text });
     return items;
   };
 
-  const firstWeekday = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
   return (
-    <div style={{ minHeight: "100vh", background: "#FFFFFF", position: "relative", display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
+    <div style={{ position: "fixed", inset: 0, background: "#FFFFFF", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
 
       {/* 항상 떠 있는 CTA — 도움말(좌) / 월·주 보기 전환(우) */}
-      <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, padding: "0 16px", display: "flex", justifyContent: "space-between", zIndex: 36, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 460, padding: "0 16px", display: "flex", justifyContent: "space-between", zIndex: 36, pointerEvents: "none" }}>
         <button onClick={() => setShowHelp(true)} aria-label="말랑 다이어리 도움말"
           style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: C.sub, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button>
-        <button onClick={view === "month" ? goWeekView : goMonthView} aria-label={view === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"}
+        <button onClick={() => setView(view === "month" ? "week" : "month")} aria-label={view === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"}
           style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: t.accentDeep, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {view === "month" ? <IconWeek /> : <IconMonth />}
         </button>
       </div>
 
       {/* 상·하단 네비와 자연스럽게 이어지도록 위/아래 블러 페이드 */}
-      <div style={{ position: "fixed", top: 52, left: 0, right: 0, height: 34, background: "linear-gradient(#FFFFFF, rgba(255,255,255,0))", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: 64, left: 0, right: 0, height: 38, background: "linear-gradient(rgba(255,255,255,0), #FFFFFF)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
+      <div style={{ position: "fixed", top: 52, left: 0, right: 0, height: 40, background: "linear-gradient(#FFFFFF, rgba(255,255,255,0))", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: 64, left: 0, right: 0, height: 40, background: "linear-gradient(rgba(255,255,255,0), #FFFFFF)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
 
-      <div onWheel={onWheel} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-        style={{ width: "100%", maxWidth: 420, minHeight: "100vh", padding: "100px 16px 92px", touchAction: "pan-y" }}>
-
-        {/* 보이는 이 달/주만 노랑 카드 — 나머지 배경은 흰색 */}
-        <div style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 26, padding: "22px 16px 26px" }}>
-
-        {/* 헤더 (제목/이동) */}
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          {view === "month" ? (
-            <>
-              <button
-                onClick={() => setShowDatePicker(true)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: "4px 8px" }}
-              >
-                <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
-                <span style={{ fontSize: 12, color: C.sub, transform: "translateY(1px)" }}>▼</span>
-              </button>
-              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>{entryCountThisMonth > 0 ? getRecordMessage(entryCountThisMonth, isM) : "아직 기록이 없어요"}</p>
-            </>
-          ) : (
-            <>
-              <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                <button onClick={() => canPrevWeek && shiftWeek(-1)} disabled={!canPrevWeek} aria-label="이전 주" style={{ border: "none", background: "transparent", color: canPrevWeek ? C.ink : "#D8D3C8", fontSize: 18, cursor: canPrevWeek ? "pointer" : "default", padding: "2px 8px" }}>‹</button>
-                <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink, minWidth: 150, textAlign: "center" }}>{weekTitle}</h1>
-                <button onClick={() => canNextWeek && shiftWeek(1)} disabled={!canNextWeek} aria-label="다음 주" style={{ border: "none", background: "transparent", color: canNextWeek ? C.ink : "#D8D3C8", fontSize: 18, cursor: canNextWeek ? "pointer" : "default", padding: "2px 8px" }}>›</button>
-              </div>
-              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>{weekEntryCount > 0 ? getRecordMessage(weekEntryCount, isM) : "이번 주 기록이 없어요"}</p>
-            </>
-          )}
-        </div>
-
-        {view === "week" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {weekDays.map((d, i) => {
-              const dateStr = toISO(d);
-              const entry = getEntryForDate(dateStr);
-              const locked = isEntryLocked(dateStr);
-              const writable = isDayWritable(dateStr);
-              const isToday = dateStr === todayStr;
-              const clickable = (entry && !locked) || (!entry && writable);
-              const onClick = () => {
-                if (entry && !locked) setPreviewDay({ dateStr, entry });
-                else if (!entry && writable) onEditDay && onEditDay(dateStr, null);
-              };
-              return (
-                <WeekDayRow
-                  key={i} date={d} dow={d.getDay()} entry={entry} isToday={isToday}
-                  writable={writable} clickable={clickable} onClick={onClick}
-                  items={entry ? buildEntrySummary(entry) : []} t={t}
-                />
-              );
-            })}
-          </div>
-        ) : (
-        <>
-        {/* 요일 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
-          {WEEKDAYS.map((w, i) => (
-            <div key={w} style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: weekdayColor(i) || C.sub, padding: "6px 0" }}>{w}</div>
-          ))}
-        </div>
-
-        {/* 날짜 그리드 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 28 }}>
-          {cells.map((d, idx) => {
-            if (!d) return <div key={idx} />;
-            const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
-            const entry = getEntryForDate(dateStr);
-            const isToday = dateStr === todayStr;
-            const dow = idx % 7;
-            const writable = isDayWritable(dateStr);
-            return (
-              <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {entry && !isEntryLocked(dateStr) ? (
-                  <button
-                    onClick={() => setPreviewDay({ dateStr, entry })}
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
-                  >
-                    <Mallang v={entry.mood} size={40} />
-                  </button>
-                ) : entry ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
-                    <Mallang v={entry.mood} size={40} />
-                  </div>
-                ) : isToday ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, border: `2px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: weekdayColor(dow) || C.ink }}>
-                      {d}
-                    </div>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: SUN_RED }} />
-                  </div>
-                ) : writable ? (
-                  // 아직 안 썼지만 7일 이내라 쓸 수 있는 날 — 살짝 강조해서 표시
-                  <button
-                    onClick={() => onEditDay && onEditDay(dateStr, null)}
-                    style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
-                  >
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${t.accent}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>
-                      {d}
-                    </div>
-                  </button>
-                ) : (
-                  <span style={{ fontSize: 15, color: weekdayColor(dow) || "#C9C4BB", fontWeight: 500 }}>{d}</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        </>
-        )}
-
+      {/* 스크롤 영역 — 앞뒤 달/주가 이어져 있고, 위/아래로 넘기면 과거·미래가 나온다 */}
+      <div ref={scrollRef} onScroll={onScroll} style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+        <div style={{ paddingTop: 100, paddingBottom: 96 }}>
+          {loading === "top" && <CalLoader />}
+          {view === "month"
+            ? months.map(m => (
+                <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay} />
+              ))
+            : weeks.map(w => (
+                <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay} />
+              ))}
+          {loading === "bottom" && <CalLoader />}
         </div>
       </div>
-
-      {showDatePicker && (
-        <DatePickerModal
-          year={year}
-          month={month}
-          onCancel={() => setShowDatePicker(false)}
-          onConfirm={(y, m) => { setCursor(new Date(y, m, 1)); setShowDatePicker(false); }}
-        />
-      )}
 
       {showHelp && (
         <DiaryHelpPopup onClose={() => setShowHelp(false)} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
@@ -368,8 +189,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
       {showMoodPopup && (
         <>
-          {/* 배경은 하단 네비 바까지 포함해서 전부 톤다운하되, 캐릭터가 떠 있는 자리만 원형으로
-              뚫어서(mask) 그 캐릭터만 톤다운되지 않고 그대로 보이게 한다. */}
+          {/* 배경은 하단 네비 바까지 포함해서 전부 톤다운하되, 캐릭터가 떠 있는 자리만 원형으로 뚫는다. */}
           <div
             onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
             style={{
@@ -378,7 +198,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               maskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
             }}
           />
-          {/* 하단 네비게이션의 캐릭터를 기준으로 그 위에 말풍선이 뜬다 (꼬리가 캐릭터와 겹치지 않게 여유를 둔다) */}
           <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
             <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button
@@ -415,7 +234,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 </div>
               )}
 
-              {/* 말풍선 꼬리 — 하단 네비게이션의 캐릭터를 가리킨다 */}
               <div style={{ position: "absolute", left: "50%", bottom: -8, transform: "translateX(-50%) rotate(45deg)", width: 16, height: 16, background: "#fff" }} />
             </div>
           </div>
@@ -482,6 +300,16 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   );
 }
 
+// 무한 스크롤 로딩 표시
+function CalLoader() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
+      <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2.5px solid #EDE9E2", borderTopColor: GOLD, animation: "calspin .7s linear infinite" }} />
+      <style>{`@keyframes calspin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
 // 월간/주간 전환 아이콘
 const IconWeek = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -498,162 +326,163 @@ const IconMonth = () => (
   </svg>
 );
 
-// ── 주간 보기의 하루 카드 — 그날 기록한 정보를 한눈에 ──
-function WeekDayRow({ date, dow, entry, isToday, writable, clickable, onClick, items, t }) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+// ── 월간 섹션 — 오늘의 달만 좌우 전체 노랑, 나머진 흰색 ──
+function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay }) {
+  const year = monthDate.getFullYear(), month = monthDate.getMonth();
+  const monthKey = `${year}-${pad(month + 1)}`;
+  const count = history.filter(e => e.date.startsWith(monthKey)).length;
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+  return (
+    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? YELLOW_BG : "#fff", width: "100%" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 32px" }}>
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
+          <p style={{ fontSize: 13, color: C.sub, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
+          {WEEKDAYS.map((w, i) => (
+            <div key={w} style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: weekdayColor(i) || C.sub, padding: "6px 0" }}>{w}</div>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 26 }}>
+          {cells.map((d, idx) => {
+            if (!d) return <div key={idx} />;
+            const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
+            const entry = getEntryForDate(dateStr);
+            const isToday = dateStr === todayStr;
+            const dow = idx % 7;
+            const writable = isDayWritable(dateStr);
+            return (
+              <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {entry && !isEntryLocked(dateStr) ? (
+                  <button onClick={() => onDayPreview({ dateStr, entry })} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
+                    <Mallang v={entry.mood} size={40} />
+                  </button>
+                ) : entry ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
+                    <Mallang v={entry.mood} size={40} />
+                  </div>
+                ) : isToday ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, border: `2px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: weekdayColor(dow) || C.ink }}>{d}</div>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: SUN_RED }} />
+                  </div>
+                ) : writable ? (
+                  <button onClick={() => onEditDay && onEditDay(dateStr, null)} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${t.accent}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>{d}</div>
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 15, color: weekdayColor(dow) || "#C9C4BB", fontWeight: 500 }}>{d}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 주간 섹션 — 오늘의 주만 좌우 전체 노랑, 나머진 흰색 ──
+function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, buildEntrySummary, onEditDay }) {
+  const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(weekStart); x.setDate(x.getDate() + i); return x; });
+  const end = days[6];
+  const title = weekStart.getMonth() === end.getMonth()
+    ? `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${end.getDate()}일`
+    : `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${end.getMonth() + 1}월 ${end.getDate()}일`;
+  const count = days.filter(d => history.some(e => e.date === toISO(d))).length;
+  return (
+    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? YELLOW_BG : "#fff", width: "100%" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 30px" }}>
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{title}</h1>
+          <p style={{ fontSize: 13, color: C.sub, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {days.map((d, i) => {
+            const dateStr = toISO(d);
+            const entry = getEntryForDate(dateStr);
+            const locked = isEntryLocked(dateStr);
+            const writable = isDayWritable(dateStr);
+            const isToday = dateStr === todayStr;
+            return (
+              <WeekDayRow
+                key={i} date={d} dow={d.getDay()} entry={entry} isToday={isToday} today={today}
+                writable={writable} locked={locked} items={entry ? buildEntrySummary(entry) : []} t={t}
+                onEdit={() => onEditDay && onEditDay(dateStr, entry || null)}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 주간 하루 카드 (아코디언) — 클릭하면 그날 선택 기록들이 펼쳐진다 ──
+function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items, t, onEdit }) {
+  const [open, setOpen] = useState(false);
   const future = date > today;
   const dayColor = weekdayColor(dow) || C.ink;
   const moodLabel = entry ? (MOODS.find(m => m.v === entry.mood)?.label) : null;
-  const shown = items.slice(0, 4);
-  return (
-    <div
-      onClick={clickable ? onClick : undefined}
-      style={{
-        display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16,
-        border: `1px solid ${isToday ? t.accent : C.line}`, background: isToday ? t.accentSoft : "#fff",
-        cursor: clickable ? "pointer" : "default", opacity: future ? 0.55 : 1, minHeight: 62,
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-      }}
-    >
-      {/* 날짜 */}
-      <div style={{ width: 34, flexShrink: 0, textAlign: "center" }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: weekdayColor(dow) || C.sub }}>{WEEKDAYS[dow]}</div>
-        <div style={{ fontSize: 19, fontWeight: 800, color: dayColor, marginTop: 1 }}>{date.getDate()}</div>
-      </div>
-
-      {/* 무드 */}
-      <div style={{ width: 40, flexShrink: 0, display: "flex", justifyContent: "center" }}>
-        {entry ? <Mallang v={entry.mood} size={38} /> : <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px dashed ${C.line}` }} />}
-      </div>
-
-      {/* 요약 */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {entry ? (
-          <>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{moodLabel}</div>
-            {shown.length > 0 ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 5 }}>
-                {shown.map((it, i) => (
-                  <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 8, padding: "3px 7px", maxWidth: 168 }}>
-                    <span style={{ display: "flex", flexShrink: 0 }}><DiaryIcon name={it.icon} size={13} /></span>
-                    <span style={{ fontSize: 11, color: C.sub, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.text}</span>
-                  </span>
-                ))}
-                {items.length > 4 && <span style={{ fontSize: 11, color: C.sub, fontWeight: 700, alignSelf: "center" }}>+{items.length - 4}</span>}
-              </div>
-            ) : (
-              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, marginTop: 3 }}>기분만 짧게 남긴 날이에요</div>
-            )}
-          </>
-        ) : (
-          <div style={{ fontSize: 12.5, color: writable ? t.accentDeep : C.sub, fontWeight: 700 }}>
-            {future ? "아직 다가오지 않은 날" : writable ? "아직 기록이 없어요 · 눌러서 남겨요" : "기록 없음"}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── 날짜 선택 팝업 (연/월 휠 피커) ──
-function DatePickerModal({ year, month, onCancel, onConfirm }) {
-  const [selYear, setSelYear] = useState(year);
-  const [selMonth, setSelMonth] = useState(month + 1); // 1-indexed로 표시
-
-  const nowYear = new Date().getFullYear();
-  const years = [];
-  for (let y = MIN_YEAR; y <= nowYear + 1; y++) years.push(y);
-  const months = selYear === MIN_YEAR
-    ? Array.from({ length: 12 - MIN_MONTH + 1 }, (_, i) => MIN_MONTH + i)
-    : Array.from({ length: 12 }, (_, i) => i + 1);
-
-  // 연도를 2026년으로 바꿨는데 이미 골라둔 월이 7월 이전이면 7월로 당겨온다.
-  const handleYearChange = (y) => {
-    setSelYear(y);
-    if (y === MIN_YEAR && selMonth < MIN_MONTH) setSelMonth(MIN_MONTH);
+  const hasDetails = !!entry && items.length > 0;
+  const onHeaderClick = () => {
+    if (hasDetails) setOpen(o => !o);
+    else if ((entry && !locked) || (!entry && writable)) onEdit();
   };
-
+  const interactive = hasDetails || (entry && !locked) || (!entry && writable);
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "flex-end", justifyContent: "center", background: "rgba(0,0,0,0.4)" }} onClick={onCancel}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "24px 24px 0 0", padding: "22px 20px 28px" }}>
-        <h3 style={{ textAlign: "center", fontSize: 17, fontWeight: 800, margin: "0 0 16px", color: C.ink }}>날짜 선택</h3>
-        <div style={{ display: "flex", gap: 12 }}>
-          <WheelColumn options={years} value={selYear} onChange={handleYearChange} formatLabel={y => `${y}년`} />
-          <WheelColumn options={months} value={selMonth} onChange={setSelMonth} formatLabel={m => `${m}월`} />
+    <div style={{ borderRadius: 16, border: `1px solid ${isToday ? t.accent : C.line}`, background: isToday ? t.accentSoft : "#fff", opacity: future ? 0.55 : 1, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div onClick={interactive ? onHeaderClick : undefined}
+        style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: interactive ? "pointer" : "default", minHeight: 62 }}>
+        {/* 날짜 */}
+        <div style={{ width: 34, flexShrink: 0, textAlign: "center" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: weekdayColor(dow) || C.sub }}>{WEEKDAYS[dow]}</div>
+          <div style={{ fontSize: 19, fontWeight: 800, color: dayColor, marginTop: 1 }}>{date.getDate()}</div>
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: 15, borderRadius: 16, border: "none", background: "#EFEDE9", color: "#6B6660", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
-          <button onClick={() => onConfirm(selYear, selMonth - 1)} style={{ flex: 1, padding: 15, borderRadius: 16, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>확인</button>
+        {/* 무드 */}
+        <div style={{ width: 40, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+          {entry ? <Mallang v={entry.mood} size={38} /> : <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px dashed ${C.line}` }} />}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function WheelColumn({ options, value, onChange, formatLabel }) {
-  const itemHeight = 46;
-  const padCount = 2; // 위/아래로 2칸씩 여백 → 총 5줄이 보임
-  const containerHeight = itemHeight * (padCount * 2 + 1);
-  const scrollRef = useRef(null);
-  const settleTimer = useRef(null);
-  const selIdx = options.indexOf(value);
-
-  useEffect(() => {
-    if (scrollRef.current && selIdx >= 0) scrollRef.current.scrollTop = selIdx * itemHeight;
-    // 마운트 시, 그리고 목록 길이가 바뀔 때(예: 연도가 2026년이 되어 월 목록이
-    // 7~12월로 줄어들 때)만 강제로 다시 스크롤 위치를 맞추고, 그 외엔 사용자 스크롤에 맡긴다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.length]);
-
-  const settle = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const idx = Math.max(0, Math.min(options.length - 1, Math.round(el.scrollTop / itemHeight)));
-    el.scrollTo({ top: idx * itemHeight, behavior: "smooth" });
-    if (options[idx] !== value) onChange(options[idx]);
-  };
-
-  const handleScroll = () => {
-    if (settleTimer.current) clearTimeout(settleTimer.current);
-    settleTimer.current = setTimeout(settle, 110);
-  };
-
-  const jumpTo = (idx) => {
-    onChange(options[idx]);
-    scrollRef.current?.scrollTo({ top: idx * itemHeight, behavior: "smooth" });
-  };
-
-  return (
-    <div style={{ position: "relative", height: containerHeight, overflow: "hidden", flex: 1 }}>
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        style={{ height: containerHeight, overflowY: "scroll", scrollSnapType: "y mandatory" }}
-      >
-        <div style={{ height: itemHeight * padCount }} />
-        {options.map((opt, idx) => {
-          const dist = Math.abs(idx - selIdx);
-          return (
-            <div
-              key={opt}
-              onClick={() => jumpTo(idx)}
-              style={{
-                height: itemHeight, scrollSnapAlign: "center", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: dist === 0 ? 19 : 16, fontWeight: dist === 0 ? 800 : 500, cursor: "pointer",
-                color: dist === 0 ? C.ink : dist === 1 ? "#B7B2A9" : "#DAD6CE", transition: "color .15s, font-size .15s",
-              }}
-            >
-              {formatLabel(opt)}
+        {/* 요약(접힘) */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {entry ? (
+            <>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{moodLabel}</div>
+              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, marginTop: 3 }}>{hasDetails ? `기록 ${items.length}가지 · 눌러서 보기` : "기분만 짧게 남긴 날이에요"}</div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12.5, color: writable ? t.accentDeep : C.sub, fontWeight: 700 }}>
+              {future ? "아직 다가오지 않은 날" : writable ? "아직 기록이 없어요 · 눌러서 남겨요" : "기록 없음"}
             </div>
-          );
-        })}
-        <div style={{ height: itemHeight * padCount }} />
+          )}
+        </div>
+        {/* 펼침 화살표 */}
+        {hasDetails && <span style={{ flexShrink: 0, fontSize: 12, color: C.sub, transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
       </div>
-      {/* 중앙 선택 밴드 */}
-      <div style={{
-        position: "absolute", top: itemHeight * padCount, left: 0, right: 0, height: itemHeight,
-        borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}`, pointerEvents: "none",
-      }} />
+
+      {/* 아코디언 바디 */}
+      {hasDetails && (
+        <div style={{ maxHeight: open ? 600 : 0, overflow: "hidden", transition: "max-height .3s ease" }}>
+          <div style={{ padding: "2px 14px 14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {items.map((it, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 9, padding: "6px 10px", maxWidth: "100%" }}>
+                  <span style={{ display: "flex", flexShrink: 0 }}><DiaryIcon name={it.icon} size={14} /></span>
+                  <span style={{ fontSize: 12, color: C.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.text}</span>
+                </span>
+              ))}
+            </div>
+            {!locked && (
+              <button onClick={onEdit} style={{ marginTop: 10, border: "none", background: "transparent", color: t.accentDeep, fontSize: 12, fontWeight: 800, cursor: "pointer", padding: "2px 0" }}>수정하기 ›</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
