@@ -69,17 +69,17 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
                 </button>
               )}
             </div>
+
+            {/* 파트너 박스 밑 — BMTI 메인 페이지로 이동 */}
+            <button
+              onClick={() => go('home')}
+              className="w-full py-3.5 rounded-2xl bg-white/95 border border-gray-200 text-gray-700 font-bold text-sm hover:bg-white transition-all shadow-lg flex items-center justify-center gap-1.5"
+            >
+              BMTI 페이지로 이동
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M9 5l7 7-7 7" /></svg>
+            </button>
           </div>
         )}
-
-        <div className="mt-3.5 text-center">
-          <button
-            onClick={() => go('home')}
-            className="text-xs text-white/80 hover:text-white font-medium underline underline-offset-4 cursor-pointer"
-          >
-            BMTI 메인 페이지로 이동
-          </button>
-        </div>
       </div>
     </div>
   );

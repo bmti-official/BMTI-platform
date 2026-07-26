@@ -79,6 +79,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
         initialEntry={pendingEntry}
         targetDate={editingDate || todayISO()}
         charImage={charData?.image}
+        gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
       />
     );
   }

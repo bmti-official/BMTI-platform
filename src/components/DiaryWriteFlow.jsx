@@ -42,8 +42,19 @@ const SLEEP_OPTS = [
 // 잠든 시간대 — 정밀 시간 대신 원탭 칩(취침 리듬/다음날 발견용, 선택 사항)
 const SLEEP_TIME_OPTS = ["~11시", "12시", "1시", "2시 이후"];
 
-// 오늘의 태그 — 한 날에 같이 찍힌 기록으로 '함께 온 기록' 발견을 만드는 원탭 칩(여러 개 선택, 선택 사항)
-const TODAY_TAGS = ["카페인", "군것질/야식", "술", "야근/바쁨", "스트레스", "외출", "집콕", "생리", "과식", "물 많이"];
+// 오늘의 태그 — 한 날에 같이 찍힌 기록으로 '함께 온 기록' 발견을 만든다(여러 개 선택, 선택 사항).
+// 카테고리별로 가로 배치하고, 칸을 넘어가면 가로 스크롤한다. '생리 중'은 여성에게만 노출.
+const TAG_CATEGORIES = [
+  { title: "음식 섭취", tags: [
+    { label: "카페인", icon: "☕" }, { label: "음주", icon: "🍺" }, { label: "야식·과식", icon: "🍜" }, { label: "수분 보충", icon: "💧" },
+  ] },
+  { title: "활동·환경", tags: [
+    { label: "스마트폰·PC", icon: "📱" }, { label: "장거리 운전", icon: "🚗" }, { label: "불편한 신발", icon: "👟" }, { label: "무거운 짐", icon: "🎒" }, { label: "에어컨·추위", icon: "❄️" },
+  ] },
+  { title: "상태·기타", tags: [
+    { label: "스트레스", icon: "😣" }, { label: "긴장함", icon: "😬" }, { label: "방전됨", icon: "🪫" }, { label: "생리 중", icon: "🩸", femaleOnly: true }, { label: "약 복용", icon: "💊" },
+  ] },
+];
 
 // ── 운동 카테고리 (개인 집중형에 스트레칭 포함) ──
 const EXERCISE_CATS = [
@@ -95,7 +106,7 @@ const REORDERABLE_LABEL = {
 // ============================================
 // initialEntry: 캘린더에서 '이전 기록 수정하기'로 들어온 경우, 그날 저장돼있던 전체 기록
 // (mallangReportEngine.js가 쓰는 key 형태 그대로) — 이 화면의 라벨로 되돌려 폼을 미리 채운다.
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
@@ -116,6 +127,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 오늘의 태그(여러 개)
   const [tags, setTags] = useState(() => (Array.isArray(initialEntry?.tags) ? initialEntry.tags : []));
   const toggleTag = (tag) => setTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
+  const isFemale = String(gender).toLowerCase() === "female";
 
   // 운동
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
@@ -150,7 +162,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
 
   // 블럭 순서·숨김·편집 모드
-  const [blockOrder, setBlockOrder] = useState(["sitting", "sleep", "exercise", "tags", "oneLine", "sore"]);
+  const [blockOrder, setBlockOrder] = useState(["sore", "sitting", "sleep", "tags", "exercise", "oneLine"]);
   const [hiddenBlocks, setHiddenBlocks] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
@@ -298,8 +310,13 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     setTimeout(() => setExpanded(e => ({ ...e, sitting: false })), 250);
   };
   const handleSleepPick = (opt) => {
+    // 아이콘만 골랐을 땐 접지 않는다 — 잠든 시간대까지 고르면 그때 접는다.
     setSleepVal(opt.label);
-    setTimeout(() => setExpanded(e => ({ ...e, sleep: false })), 250);
+  };
+  const handleSleepTimePick = (o) => {
+    const next = sleepTime === o ? null : o;
+    setSleepTime(next);
+    if (next && sleepVal) setTimeout(() => setExpanded(e => ({ ...e, sleep: false })), 250);
   };
   const pickExerciseReason = (label) => {
     setExerciseReason(label);
@@ -403,7 +420,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           <div style={{ fontSize: 12.5, fontWeight: 700, color: C.sub, margin: "16px 0 8px" }}>몇 시쯤 잤어요? <span style={{ color: C.tileOffText, fontWeight: 600 }}>(선택)</span></div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
             {SLEEP_TIME_OPTS.map(o => (
-              <Chip key={o} label={o} on={sleepTime === o} onClick={() => setSleepTime(sleepTime === o ? null : o)} />
+              <Chip key={o} label={o} on={sleepTime === o} onClick={() => handleSleepTimePick(o)} />
             ))}
           </div>
         </AccordionCard>
@@ -413,11 +430,22 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       return (
         <AccordionCard question="오늘의 태그" answerText={tags.length ? `${tags.length}개 선택` : null}
           expanded={expanded.tags} onToggle={() => toggle("tags")} done={tags.length > 0}>
-          <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "0 0 10px" }}>오늘 있었던 일을 가볍게 눌러두면, 나중에 뭐랑 자주 겹치는지 찾아드려요.</div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {TODAY_TAGS.map(tag => (
-              <Chip key={tag} label={tag} on={tags.includes(tag)} onClick={() => toggleTag(tag)} />
-            ))}
+          <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "0 0 14px" }}>오늘 있었던 일을 가볍게 눌러두면, 나중에 뭐랑 자주 겹치는지 찾아드려요.</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {TAG_CATEGORIES.map(cat => {
+              const items = cat.tags.filter(tg => !tg.femaleOnly || isFemale);
+              if (!items.length) return null;
+              return (
+                <div key={cat.title}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>{cat.title}</div>
+                  <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 -2px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
+                    {items.map(tg => (
+                      <TagBox key={tg.label} icon={tg.icon} label={tg.label} on={tags.includes(tg.label)} onClick={() => toggleTag(tg.label)} t={t} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </AccordionCard>
       );
@@ -599,9 +627,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘의 말랑이 기분은</h2>
                   {dayMood && !expanded.mood && moodData && (
-                    <div style={{ width: 44, height: 44, borderRadius: "30%", background: moodData.circleBg || moodData.fill, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Mallang v={moodData.v} size={34} />
-                    </div>
+                    <Mallang v={moodData.v} size={44} />
                   )}
                 </div>
                 {/* 펼쳐진 상태 */}
@@ -610,17 +636,13 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6 }}>
                     {DAY_MOODS.map(m => {
                       const on = dayMood === m.v;
-                      const circleBg = m.circleBg || m.fill;
                       // 고른 표정만 커지고 나머지는 작아져서, 균일한 크기의 원 5개가 늘어선
                       // 모양이 아니라 "고른 걸 도드라지게" 보여주는 위계가 생기게 한다.
-                      const badgeSize = on ? 62 : 44;
-                      const mallangSize = on ? 44 : 30;
+                      const mallangSize = on ? 56 : 40;
                       return (
                         <button key={m.v} onClick={() => { setDayMood(m.v); setTimeout(() => setExpanded(e => ({ ...e, mood: false })), 300); }}
-                          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "6px 0", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer" }}>
-                          <div style={{ width: badgeSize, height: badgeSize, borderRadius: "30%", background: on ? circleBg : C.tileOff, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: on ? `0 6px 16px ${circleBg}99` : "none", transition: "all .2s cubic-bezier(.34,1.4,.64,1)" }}>
-                            <Mallang v={m.v} size={mallangSize} />
-                          </div>
+                          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "6px 0", borderRadius: 16, border: "none", background: "transparent", cursor: "pointer", transition: "all .2s cubic-bezier(.34,1.4,.64,1)", transform: on ? "scale(1.08)" : "scale(1)" }}>
+                          <Mallang v={m.v} size={mallangSize} />
                           <span style={{ fontSize: 10, color: on ? C.ink : C.sub, fontWeight: 700 }}>{m.label}</span>
                         </button>
                       );
@@ -754,6 +776,18 @@ function Chip({ label, on, onClick, disabled }) {
     <button onClick={disabled ? undefined : onClick} style={{ flex: "0 0 auto", padding: "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
       border: "none", background: on ? getTypeAccent().accent : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}>
       {label}
+    </button>
+  );
+}
+
+// 오늘의 태그 — 둥근 모서리 네모 박스(아이콘 + 라벨), 가로 스크롤 목록에 들어간다.
+function TagBox({ icon, label, on, onClick, t }) {
+  return (
+    <button onClick={onClick} style={{ flex: "0 0 auto", width: 76, minHeight: 76, borderRadius: 16, cursor: "pointer",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 4px",
+      border: `1.5px solid ${on ? t.accent : C.line}`, background: on ? t.accentSoft : "#fff", transition: "all .15s" }}>
+      <span style={{ fontSize: 23, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: on ? t.accentDeep : C.sub, textAlign: "center", lineHeight: 1.15, wordBreak: "keep-all" }}>{label}</span>
     </button>
   );
 }
