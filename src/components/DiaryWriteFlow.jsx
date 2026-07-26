@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
+import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
 import { DiaryIcon } from "./DiaryIcons";
 import { MOODS as DAY_MOODS } from "../data";
 import {
@@ -46,13 +47,13 @@ const SLEEP_TIME_OPTS = ["~11시", "12시", "1시", "2시 이후"];
 // 카테고리별로 가로 배치하고, 칸을 넘어가면 가로 스크롤한다. '생리 중'은 여성에게만 노출.
 const TAG_CATEGORIES = [
   { title: "음식 섭취", tags: [
-    { label: "카페인", icon: "☕" }, { label: "음주", icon: "🍺" }, { label: "야식·과식", icon: "🍜" }, { label: "수분 보충", icon: "💧" },
+    { label: "카페인", icon: "caffeine" }, { label: "음주", icon: "alcohol" }, { label: "야식·과식", icon: "snacking" }, { label: "수분 보충", icon: "water" },
   ] },
   { title: "활동·환경", tags: [
-    { label: "스마트폰·PC", icon: "📱" }, { label: "장거리 운전", icon: "🚗" }, { label: "불편한 신발", icon: "👟" }, { label: "무거운 짐", icon: "🎒" }, { label: "에어컨·추위", icon: "❄️" },
+    { label: "스마트폰·PC", icon: "phone" }, { label: "장거리 운전", icon: "driving" }, { label: "불편한 신발", icon: "shoes" }, { label: "무거운 짐", icon: "heavyBag" }, { label: "에어컨·추위", icon: "coldAir" },
   ] },
   { title: "상태·기타", tags: [
-    { label: "스트레스", icon: "😣" }, { label: "긴장함", icon: "😬" }, { label: "방전됨", icon: "🪫" }, { label: "생리 중", icon: "🩸", femaleOnly: true }, { label: "약 복용", icon: "💊" },
+    { label: "스트레스", icon: "stress" }, { label: "긴장함", icon: "nervous" }, { label: "방전됨", icon: "drained" }, { label: "생리 중", icon: "period", femaleOnly: true }, { label: "약 복용", icon: "medicine" },
   ] },
 ];
 
@@ -106,11 +107,12 @@ const REORDERABLE_LABEL = {
 // ============================================
 // initialEntry: 캘린더에서 '이전 기록 수정하기'로 들어온 경우, 그날 저장돼있던 전체 기록
 // (mallangReportEngine.js가 쓰는 key 형태 그대로) — 이 화면의 라벨로 되돌려 폼을 미리 채운다.
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, isLoggedIn = true, onRequireLogin = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
+  const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
 
   // 평소보다 무리했는지
   const [overexertVal, setOverexertVal] = useState(() => (initialEntry?.overwork ? (initialEntry.overwork.yes ? "yes" : "no") : null));
@@ -162,7 +164,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
 
   // 블럭 순서·숨김·편집 모드
-  const [blockOrder, setBlockOrder] = useState(["sitting", "sleep", "tags", "exercise", "oneLine", "sore"]);
+  const [blockOrder, setBlockOrder] = useState(["sore", "sleep", "tags", "exercise", "sitting", "oneLine"]);
   const [hiddenBlocks, setHiddenBlocks] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
@@ -431,17 +433,24 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         <AccordionCard question="오늘의 태그" answerText={tags.length ? `${tags.length}개 선택` : null}
           expanded={expanded.tags} onToggle={() => toggle("tags")} done={tags.length > 0}>
           <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "0 0 14px" }}>오늘 있었던 일을 가볍게 눌러두면, 나중에 뭐랑 자주 겹치는지 찾아드려요.</div>
+          <style>{`@keyframes tagArrowBlink{0%,100%{opacity:.2}50%{opacity:.75}} .tag-scroll::-webkit-scrollbar{display:none}`}</style>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {TAG_CATEGORIES.map(cat => {
               const items = cat.tags.filter(tg => !tg.femaleOnly || isFemale);
               if (!items.length) return null;
+              const arrow = { position: "absolute", top: "34%", fontSize: 22, fontWeight: 800, color: "#C9C4BB", pointerEvents: "none", animation: "tagArrowBlink 1.3s ease-in-out infinite" };
               return (
                 <div key={cat.title}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>{cat.title}</div>
-                  <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 -2px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
-                    {items.map(tg => (
-                      <TagBox key={tg.label} icon={tg.icon} label={tg.label} on={tags.includes(tg.label)} onClick={() => toggleTag(tg.label)} t={t} />
-                    ))}
+                  <div style={{ position: "relative" }}>
+                    <div className="tag-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, padding: "0 14px 4px", margin: "0 -14px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
+                      {items.map(tg => (
+                        <TagBox key={tg.label} icon={tg.icon} label={tg.label} on={tags.includes(tg.label)} onClick={() => toggleTag(tg.label)} t={t} />
+                      ))}
+                    </div>
+                    {/* 항목이 더 있다는 좌우 깜박이는 화살표 */}
+                    <span style={{ ...arrow, left: -2 }}>‹</span>
+                    <span style={{ ...arrow, right: -2 }}>›</span>
                   </div>
                 </div>
               );
@@ -700,7 +709,15 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
         {/* ── 완료 팝업 — 캐릭터가 말랑이를 눌러보라고 채팅하듯 안내 ── */}
         {phase === "celebrate" && moodData && (
-          <MallangStressPopup mood={moodData.v} charImage={charImage} nextLabel="완료" onNext={() => { if (onClose) onClose(); }} />
+          <MallangStressPopup mood={moodData.v} charImage={charImage} nextLabel="완료" onNext={() => { if (!isLoggedIn) setShowKakaoPrompt(true); else if (onClose) onClose(); }} />
+        )}
+
+        {/* 로그인 안 한 게스트: 기록 후 카카오 저장 유도 */}
+        {showKakaoPrompt && (
+          <KakaoSavePromptPopup
+            onLogin={() => { setShowKakaoPrompt(false); if (onRequireLogin) onRequireLogin(); if (onClose) onClose(); }}
+            onClose={() => { setShowKakaoPrompt(false); if (onClose) onClose(); }}
+          />
         )}
 
         {/* ── 나가기 전 확인 — 저장 안 한 답변이 있을 때만 뜬다 ── */}
@@ -781,13 +798,19 @@ function Chip({ label, on, onClick, disabled }) {
 }
 
 // 오늘의 태그 — 둥근 모서리 네모 박스(아이콘 + 라벨), 가로 스크롤 목록에 들어간다.
+// '오늘 평소보다 무리했나요?'의 EmojiTile과 동일한 연한 옐로우 배경 스타일.
 function TagBox({ icon, label, on, onClick, t }) {
   return (
-    <button onClick={onClick} style={{ flex: "0 0 auto", width: 76, minHeight: 76, borderRadius: 16, cursor: "pointer",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 4px",
-      border: `1.5px solid ${on ? t.accent : C.line}`, background: on ? t.accentSoft : "#fff", transition: "all .15s" }}>
-      <span style={{ fontSize: 23, lineHeight: 1 }}>{icon}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, color: on ? t.accentDeep : C.sub, textAlign: "center", lineHeight: 1.15, wordBreak: "keep-all" }}>{label}</span>
+    <button onClick={onClick} style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, width: 72 }}>
+      <div style={{
+        width: 54, height: 54, borderRadius: "32%", background: on ? t.accent : C.yellow,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        filter: on ? "none" : "grayscale(0.25) opacity(0.9)",
+        boxShadow: on ? "0 4px 14px rgba(0,0,0,0.12)" : "none", transition: "all .15s",
+      }}>
+        <DiaryIcon name={icon} size={28} />
+      </div>
+      <span style={{ fontSize: 10.5, fontWeight: 700, color: on ? C.ink : C.sub, textAlign: "center", lineHeight: 1.15, wordBreak: "keep-all" }}>{label}</span>
     </button>
   );
 }

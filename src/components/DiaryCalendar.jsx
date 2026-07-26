@@ -3,6 +3,7 @@ import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
 import DiaryHelpPopup from "./DiaryHelpPopup";
+import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
 import { MOODS, CHARACTERS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
@@ -134,6 +135,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [poppedMood, setPoppedMood] = useState(null);
   const [showStressPopup, setShowStressPopup] = useState(false);
   const [stressMood, setStressMood] = useState(null);
+  const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
 
   const quickSaveMood = () => { saveDiaryEntry(todayStr, poppedMood); setStressMood(poppedMood); setShowMoodPopup(false); setPoppedMood(null); setShowStressPopup(true); };
@@ -242,7 +244,11 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
       )}
 
       {showStressPopup && (
-        <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => setShowStressPopup(false)} />
+        <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => { setShowStressPopup(false); if (!isLoggedIn) setShowKakaoPrompt(true); }} />
+      )}
+
+      {showKakaoPrompt && (
+        <KakaoSavePromptPopup onLogin={() => { setShowKakaoPrompt(false); onRequireLogin && onRequireLogin(); }} onClose={() => setShowKakaoPrompt(false)} />
       )}
 
       {previewDay && (() => {

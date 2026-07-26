@@ -80,11 +80,15 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
         targetDate={editingDate || todayISO()}
         charImage={charData?.image}
         gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
+        isLoggedIn={isLoggedIn}
+        onRequireLogin={onRequireLogin}
       />
     );
   }
 
-  if (hasHistory || onboarded) {
+  // 로그인 안 한 게스트도 바로 시작할 수 있게 온보딩을 건너뛰고 캘린더로 보낸다.
+  // (기록은 이 기기에 저장되고, 기록을 마치면 카카오 로그인 유도 팝업이 뜬다.)
+  if (hasHistory || onboarded || !isLoggedIn) {
     return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />;
   }
 

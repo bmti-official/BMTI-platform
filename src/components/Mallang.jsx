@@ -18,7 +18,7 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
   // 캘린더처럼 여러 마리가 동시에 떠 있을 때 전부 같은 박자로 깜박이면 부자연스러워서,
   // 인스턴스마다 한 번만 랜덤 지연을 뽑아 서로 어긋나게 만든다. (SVG 모드에서만 쓰이지만,
   // 훅은 분기 이전에 항상 호출돼야 하므로 여기서 미리 계산해둔다.)
-  const blinkDelay = useRef(-(Math.random() * 4).toFixed(2) + "s").current;
+  const blinkDelay = useRef(-(Math.random() * 9).toFixed(2) + "s").current;
 
   const effectiveSkin = skinOverride || skin;
   const skinImages = MALLANG_SKINS[effectiveSkin]?.images;
@@ -50,7 +50,7 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
                 position: "absolute", left: `${eye.x * 100}%`, top: `${eye.y * 100}%`,
                 width: `${eye.w * 100}%`, height: `${eye.h * 100}%`,
                 background: eye.color || eyeMap._color, borderRadius: "45%", transformOrigin: "50% 50%",
-                animation: "mallang-blink-cover 4s ease-in-out infinite", animationDelay: blinkDelay,
+                animation: "mallang-blink-cover 9s ease-in-out infinite", animationDelay: blinkDelay,
               }}
             />
           )}

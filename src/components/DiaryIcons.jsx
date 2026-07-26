@@ -228,6 +228,159 @@ function IconGear({ size = 20, color = "#5F8A76" }) {
   );
 }
 
+function IconCaffeine({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="6" y="12" width="16" height="14" rx="3" fill="#D4A76A" />
+      <path d="M22 15 h3 a3 3 0 0 1 0 6 h-3" stroke="#B58956" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <rect x="6" y="26" width="16" height="2.5" rx="1.2" fill="#B58956" />
+      <path d="M11 8 q1.5-4 3 0 M15 6 q1.5-4 3 0" stroke="#C9A860" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconAlcohol({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="7" y="8" width="14" height="18" rx="3.5" fill="#F2C94C" />
+      <rect x="7" y="14" width="14" height="12" rx="3.5" fill="#E8A830" />
+      <ellipse cx="14" cy="14" rx="7" ry="1.5" fill="#F2D06B" />
+      <path d="M21 13 h4 a3 3 0 0 1 0 6 h-4" stroke="#C9A227" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <circle cx="12" cy="19" r="1.5" fill="#F2D06B" opacity="0.6" />
+      <circle cx="16" cy="21" r="1" fill="#F2D06B" opacity="0.5" />
+    </svg>
+  );
+}
+
+function IconSnacking({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="6" y="14" width="20" height="12" rx="4" fill="#E8C87D" />
+      <path d="M6 18 h20" stroke="#D4A76A" strokeWidth="1.5" />
+      <path d="M10 8 q0 6 3 6 M16 6 q0 8 3 8 M22 8 q0 6 -3 6" stroke="#C9A860" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconWater({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M16 4 Q8 18 8 22 a8 8 0 0 0 16 0 Q24 18 16 4Z" fill="#7EC8E3" />
+      <path d="M12 22 a5 5 0 0 0 8 0" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+function IconPhone({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="9" y="3" width="14" height="26" rx="3.5" fill="#9BB8D9" stroke="#6A8EB5" strokeWidth="1.2" />
+      <rect x="11" y="6" width="10" height="17" rx="1.5" fill="#D6E6F5" />
+      <circle cx="16" cy="26" r="1.5" fill="#6A8EB5" />
+    </svg>
+  );
+}
+
+function IconDriving({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="14" width="26" height="10" rx="4" fill="#8FC9A9" />
+      <rect x="5" y="10" width="22" height="6" rx="3" fill="#6AAF88" />
+      <rect x="6" y="16" width="6" height="4" rx="1" fill="#D6F0E2" />
+      <rect x="20" y="16" width="6" height="4" rx="1" fill="#D6F0E2" />
+      <circle cx="9" cy="25" r="2.5" fill="#5B4636" />
+      <circle cx="23" cy="25" r="2.5" fill="#5B4636" />
+    </svg>
+  );
+}
+
+function IconShoes({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M5 20 Q5 14 10 12 L18 12 Q26 14 28 18 L28 22 Q28 24 26 24 L7 24 Q5 24 5 22 Z" fill="#9BB8D9" />
+      <path d="M10 12 L18 12" stroke="#6A8EB5" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="13" cy="18" r="1" fill="#D6E6F5" />
+      <circle cx="17" cy="18" r="1" fill="#D6E6F5" />
+      <circle cx="21" cy="19" r="1" fill="#D6E6F5" />
+    </svg>
+  );
+}
+
+function IconHeavyBag({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="8" y="12" width="16" height="16" rx="3.5" fill="#D98E8E" />
+      <path d="M12 12 V8 a4 4 0 0 1 8 0 V12" stroke="#B56E6E" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+      <rect x="14" y="17" width="4" height="5" rx="1.5" fill="#B56E6E" />
+    </svg>
+  );
+}
+
+function IconColdAir({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <line x1="16" y1="3" x2="16" y2="29" stroke="#7EC8E3" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="3" y1="16" x2="29" y2="16" stroke="#7EC8E3" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="6.8" y1="6.8" x2="25.2" y2="25.2" stroke="#7EC8E3" strokeWidth="2" strokeLinecap="round" />
+      <line x1="25.2" y1="6.8" x2="6.8" y2="25.2" stroke="#7EC8E3" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="16" cy="16" r="3" fill="#B5E4F0" />
+    </svg>
+  );
+}
+
+function IconStress({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="13" fill="#F0C0A0" />
+      <path d="M9.5 13 l5 3 M22.5 13 l-5 3" stroke="#8A5A3B" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M11 22 q5 -4 10 0" stroke="#8A5A3B" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+      <path d="M8 7 l2 2 M24 7 l-2 2" stroke="#E05C5C" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconNervous({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="13" fill="#F0D9B5" />
+      <circle cx="11.5" cy="14" r="2.2" fill="#5B4636" />
+      <circle cx="20.5" cy="14" r="2.2" fill="#5B4636" />
+      <path d="M10 21 l2.5 1.5 L15 21 l2.5 1.5 L20 21 l2 1.5" stroke="#8A6A46" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconDrained({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="8" y="5" width="16" height="24" rx="3" fill="#C9C4BC" stroke="#9B9489" strokeWidth="1.2" />
+      <rect x="12" y="2" width="8" height="3" rx="1.5" fill="#9B9489" />
+      <rect x="10.5" y="18" width="11" height="8" rx="1.5" fill="#E05C5C" />
+    </svg>
+  );
+}
+
+function IconPeriod({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M16 5 Q9 16 9 21 a7 7 0 0 0 14 0 Q23 16 16 5Z" fill="#E88A8A" />
+      <path d="M13 20 a4 4 0 0 0 6 0" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+function IconMedicine({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="6" y="10" width="20" height="12" rx="6" fill="#ADA6C4" />
+      <rect x="16" y="10" width="10" height="12" rx="0" fill="#8A7FB0" style={{ clipPath: "inset(0 0 0 0 round 0 6px 6px 0)" }} />
+      <line x1="16" y1="10" x2="16" y2="22" stroke="#7A6FA0" strokeWidth="1.5" />
+      <line x1="10" y1="14" x2="10" y2="18" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
+      <line x1="8" y1="16" x2="12" y2="16" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
 const ICONS = {
   walk: IconWalk, chair: IconChair, sofa: IconSofa, slump: IconSlump,
   allNighter: IconAllNighter, toss: IconToss, mehMoon: IconMehMoon, sleepWell: IconSleepWell,
@@ -235,6 +388,10 @@ const ICONS = {
   clock: IconClock, yawn: IconYawn, bandage: IconBandage, blanket: IconBlanket, forgot: IconForgot,
   standing: IconStanding, heavyLift: IconHeavyLift, editPencil: IconEditPencil,
   gear: IconGear, warn: IconWarn,
+  caffeine: IconCaffeine, alcohol: IconAlcohol, snacking: IconSnacking, water: IconWater,
+  phone: IconPhone, driving: IconDriving, shoes: IconShoes, heavyBag: IconHeavyBag,
+  coldAir: IconColdAir, stress: IconStress, nervous: IconNervous, drained: IconDrained,
+  period: IconPeriod, medicine: IconMedicine,
 };
 
 export function DiaryIcon({ name, size = 28 }) {

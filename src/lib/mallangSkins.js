@@ -28,7 +28,7 @@ export const MALLANG_IMG_RADIUS = {};
 // 스킨별 전체 표시 크기 보정.
 // malang3d의 '그냥저냥'만 캔버스를 꽉 채워 그려져 다른 무드보다 커 보이므로, 그 무드만 줄여 맞춘다.
 export const MALLANG_SIZE_ADJUST = {
-  malang2d: { base: 1.62 }, // 세로로 긴 캔버스라 얼굴이 작게 잡혀 키운다
+  malang2d: { base: 1.18 }, // 400x400 정사각형으로 통일 — 얼굴이 캔버스의 ~80%
   malang3d: { base: 1.12, moods: { 3: 0.68 } },
 };
 
@@ -37,12 +37,12 @@ export const MALLANG_SIZE_ADJUST = {
 // 2D 말랑이는 무드마다 몸 색이 달라 color도 무드별로 둔다.
 export const MALLANG_EYE_RECT = {
   malang2d: {
-    1: { x: 0.26, y: 0.45, w: 0.48, h: 0.10, cw: 198, ch: 352, color: "#5C414F" },
-    2: { x: 0.26, y: 0.45, w: 0.48, h: 0.10, cw: 199, ch: 354, color: "#F0C4C8" },
-    3: { x: 0.26, y: 0.45, w: 0.48, h: 0.10, cw: 206, ch: 366, color: "#FEFEFE" },
-    4: { x: 0.26, y: 0.45, w: 0.48, h: 0.10, cw: 200, ch: 355, color: "#D8EFD7" },
-    5: { x: 0.26, y: 0.45, w: 0.48, h: 0.10, cw: 204, ch: 362, color: "#D1EE85" },
-    _color: "#FEFEFE",
+    1: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#5C4250" },
+    2: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D0C8A3" },
+    3: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#FFFFFF" },
+    4: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D8F0D8" },
+    5: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#E2B206" },
+    _color: "#FFFFFF",
   },
 };
 
