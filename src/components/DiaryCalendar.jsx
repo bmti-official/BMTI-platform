@@ -146,6 +146,33 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const goWeekView = () => { setWeekAnchor(new Date()); setView("week"); };
   const goMonthView = () => { setCursor(new Date(weekAnchor.getFullYear(), weekAnchor.getMonth(), 1)); setView("month"); };
 
+  // ── 위아래 스크롤(스와이프)로 이전/다음 달·주 이동 ──
+  const nowDate = new Date();
+  const shiftMonth = (delta) => {
+    const target = new Date(year, month + delta, 1);
+    if (target < new Date(MIN_YEAR, MIN_MONTH - 1, 1)) return;
+    if (target > new Date(nowDate.getFullYear(), nowDate.getMonth(), 1)) return;
+    setCursor(target);
+  };
+  const navigate = (delta) => { if (view === "month") shiftMonth(delta); else shiftWeek(delta); };
+  const navLock = useRef(false);
+  const wheelAcc = useRef(0);
+  const touchStartY = useRef(null);
+  const doNav = (delta) => {
+    if (navLock.current) return;
+    navLock.current = true;
+    navigate(delta);
+    setTimeout(() => { navLock.current = false; }, 450);
+  };
+  const onWheel = (e) => { wheelAcc.current += e.deltaY; if (Math.abs(wheelAcc.current) > 60) { doNav(wheelAcc.current > 0 ? 1 : -1); wheelAcc.current = 0; } };
+  const onTouchStart = (e) => { touchStartY.current = e.touches[0].clientY; };
+  const onTouchEnd = (e) => {
+    if (touchStartY.current == null) return;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dy) > 55) doNav(dy < 0 ? 1 : -1); // 위로 스와이프 = 다음
+    touchStartY.current = null;
+  };
+
   // 오늘 기분 팝업 — 오늘 기록이 없으면 탭에 들어오자마자 자동으로 뜬다.
   const [showMoodPopup, setShowMoodPopup] = useState(() => !getEntryForDate(todayISO()));
   const [poppedMood, setPoppedMood] = useState(null);
@@ -196,29 +223,30 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FFFDF5", display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 20px 96px" }}>
+    <div style={{ minHeight: "100vh", background: "#FFFFFF", position: "relative", display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
 
-        {/* 헤더 */}
-        <div style={{ position: "relative", textAlign: "center", marginBottom: 22 }}>
-          {/* 도움말 — 처음 로그인했을 때 보여줬던 소개 대화를 팝업으로 다시 볼 수 있다 */}
-          <button
-            onClick={() => setShowHelp(true)}
-            aria-label="말랑 다이어리 도움말"
-            style={{ position: "absolute", left: 0, top: 0, width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: "transparent", color: C.sub, fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            ?
-          </button>
+      {/* 항상 떠 있는 CTA — 도움말(좌) / 월·주 보기 전환(우) */}
+      <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, padding: "0 16px", display: "flex", justifyContent: "space-between", zIndex: 36, pointerEvents: "none" }}>
+        <button onClick={() => setShowHelp(true)} aria-label="말랑 다이어리 도움말"
+          style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: C.sub, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button>
+        <button onClick={view === "month" ? goWeekView : goMonthView} aria-label={view === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"}
+          style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: t.accentDeep, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {view === "month" ? <IconWeek /> : <IconMonth />}
+        </button>
+      </div>
 
-          {/* 우측 상단 — 월간/주간 보기 전환 */}
-          <button
-            onClick={view === "month" ? goWeekView : goMonthView}
-            aria-label={view === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"}
-            style={{ position: "absolute", right: 0, top: 0, width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: "transparent", color: t.accentDeep, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            {view === "month" ? <IconWeek /> : <IconMonth />}
-          </button>
+      {/* 상·하단 네비와 자연스럽게 이어지도록 위/아래 블러 페이드 */}
+      <div style={{ position: "fixed", top: 52, left: 0, right: 0, height: 34, background: "linear-gradient(#FFFFFF, rgba(255,255,255,0))", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: 64, left: 0, right: 0, height: 38, background: "linear-gradient(rgba(255,255,255,0), #FFFFFF)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
 
+      <div onWheel={onWheel} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+        style={{ width: "100%", maxWidth: 420, minHeight: "100vh", padding: "100px 16px 92px", touchAction: "pan-y" }}>
+
+        {/* 보이는 이 달/주만 노랑 카드 — 나머지 배경은 흰색 */}
+        <div style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 26, padding: "22px 16px 26px" }}>
+
+        {/* 헤더 (제목/이동) */}
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
           {view === "month" ? (
             <>
               <button
@@ -322,7 +350,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         </>
         )}
 
-        <div style={{ flex: 1 }} />
+        </div>
       </div>
 
       {showDatePicker && (

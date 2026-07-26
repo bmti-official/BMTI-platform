@@ -162,7 +162,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
 
   // 블럭 순서·숨김·편집 모드
-  const [blockOrder, setBlockOrder] = useState(["sore", "sitting", "sleep", "tags", "exercise", "oneLine"]);
+  const [blockOrder, setBlockOrder] = useState(["sitting", "sleep", "tags", "exercise", "oneLine", "sore"]);
   const [hiddenBlocks, setHiddenBlocks] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
