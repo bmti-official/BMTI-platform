@@ -18,9 +18,10 @@ const ChatIcon = ({ className }) => (
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
-import { todayISO } from '../lib/diaryHistory';
+import { todayISO, getEntryForDate } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
 import MallangClass from './MallangClass';
+import BmtiPartnerPopup from './BmtiPartnerPopup';
 
 // 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양.
 // 활성 상태(말랑이의 발견을 보고 있을 때)엔 막대 3개가 분홍/초록/회색을 돌아가며
@@ -84,6 +85,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   // 말랑 클래스 — 같은 유형·같은 부위끼리 모이는 소그룹 온라인 클래스 소개/예약.
   const [showMallangClass, setShowMallangClass] = useState(false);
+
+  // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 파트너' 팝업.
+  const [showPartner, setShowPartner] = useState(false);
+  const hasLoggedToday = !!getEntryForDate(todayISO());
 
   // 말랑방 화면의 '반 둘러보기' 버튼이 보내는 이벤트 → 말랑 클래스 오버레이를 연다.
   useEffect(() => {
@@ -180,10 +185,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               </button>
             </div>
 
-            {/* 캐릭터 — 바 위로 떠 있는 홈 버튼, 배경원 없이 누끼 캐릭터만 */}
+            {/* 캐릭터 — 바 위로 떠 있는 버튼. 누르면 메인으로 가지 않고 '내 BMTI 파트너' 팝업을 연다 */}
             <button
-              onClick={() => { setView('home'); setShowDiscovery(false); setShowMallangClass(false); }}
-              aria-label="홈으로"
+              onClick={() => setShowPartner(true)}
+              aria-label="내 BMTI 파트너"
               className="absolute left-1/2 -translate-x-1/2 -top-5 z-30 active:scale-95 transition-transform"
             >
               <div className="relative w-14 h-14 flex items-center justify-center">
@@ -195,6 +200,17 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             </button>
           </div>
         </nav>
+      )}
+
+      {showPartner && (
+        <BmtiPartnerPopup
+          bmtiCode={bmtiCode}
+          isLoggedIn={isLoggedIn}
+          hasLoggedToday={hasLoggedToday}
+          setView={setView}
+          onRequireLogin={() => setIsLoggedIn(true)}
+          onClose={() => setShowPartner(false)}
+        />
       )}
 
       {showDiscovery && (

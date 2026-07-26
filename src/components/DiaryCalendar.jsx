@@ -26,6 +26,85 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
 const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null);
 
+// M유형 — 따뜻하고 다정한 응원 문구
+const RECORD_MSG_M = [
+  "", // 0일(기록 없음)
+  "첫걸음을 응원해요.",
+  "오늘도 잊지 않았군요!",
+  "내 마음 돌보기 3일 차.",
+  "차곡차곡 쌓이는 하루.",
+  "조금씩 쌓이는 내 모습.",
+  "나의 내면과 친해져요.",
+  "일주일 달성! 멋져요.",
+  "새로운 주도 활기차게!",
+  "매일 더 나아지고 있어요.",
+  "꾸준한 모습이 예뻐요.",
+  "오늘도 수고 많았어요.",
+  "당신의 하루를 응원해요.",
+  "좋은 습관이 생겼네요.",
+  "벌써 2주! 수고했어요.",
+  "절반을 넘어섰네요!",
+  "스스로를 안아주세요.",
+  "반환점을 돌아 순항 중!",
+  "내 마음의 소리에 집중.",
+  "나를 알아가는 즐거움.",
+  "20일의 기적, 대단해요.",
+  "매일의 당신이 빛나요.",
+  "습관이 자리 잡았어요.",
+  "오늘도 다정한 하루.",
+  "흔들림 없는 발걸음.",
+  "거의 다 왔어요. 화이팅!",
+  "나를 위한 최고의 선물.",
+  "끝까지 응원할게요!",
+  "한 달이 코앞이에요!",
+  "조금만 더 힘을 내요.",
+  "찬란한 한 달의 완성.",
+  "수고한 나를 토닥여요.",
+];
+
+// Z유형 — 담백하고 냉철한 동기부여 문구
+const RECORD_MSG_Z = [
+  "", // 0일(기록 없음)
+  "작심삼일은 넘겨봅시다.",
+  "아직 갈 길이 멉니다.",
+  "작심삼일 고비 넘기기.",
+  "페이스 유지하세요.",
+  "아직 초반입니다. 집중.",
+  "루틴이 되어갑니다.",
+  "겨우 일주일, 더 가야죠.",
+  "흐름 끊기지 않게 주의.",
+  "데이터가 쌓이고 있어요.",
+  "이제야 두 자릿수 진입.",
+  "꾸준함도 실력입니다.",
+  "나태해지지 마세요.",
+  "목표에 집중할 시간.",
+  "절반 왔네요. 킵고잉.",
+  "딱 절반 지났습니다.",
+  "후반전 시작입니다.",
+  "절반 넘김. 흐름 유지.",
+  "기록은 배신하지 않죠.",
+  "확실한 패턴 분석 가능.",
+  "20일 달성. 계속 진행.",
+  "데이터 확보. 페이스 유지.",
+  "완주가 눈앞입니다.",
+  "변수 통제 잘하세요.",
+  "무리 없이 달성 중.",
+  "고지가 눈앞. 긴장 유지.",
+  "막판까지 집중하세요.",
+  "유종의 미를 거둡시다.",
+  "막판 스퍼트 올리세요.",
+  "단 며칠 남았습니다.",
+  "사실상 목표 달성.",
+  "완주 성공. 다음 달 준비.",
+];
+
+function getRecordMessage(count, isM) {
+  if (count <= 0) return "";
+  const msgs = isM ? RECORD_MSG_M : RECORD_MSG_Z;
+  const idx = Math.min(count, msgs.length - 1);
+  return `총 ${count}일 기록했어요. ${msgs[idx]}`;
+}
+
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [view, setView] = useState("month"); // "month" | "week"
@@ -117,8 +196,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "76px 20px 96px" }}>
+    <div style={{ minHeight: "100vh", background: "#FFFDF5", display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
+      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 20px 96px" }}>
 
         {/* 헤더 */}
         <div style={{ position: "relative", textAlign: "center", marginBottom: 22 }}>
@@ -140,8 +219,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
             {view === "month" ? <IconWeek /> : <IconMonth />}
           </button>
 
-          <div style={{ fontSize: 13, fontWeight: 800, color: C.sub, letterSpacing: "-0.01em", marginBottom: 6 }}>말랑 다이어리</div>
-
           {view === "month" ? (
             <>
               <button
@@ -151,7 +228,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
                 <span style={{ fontSize: 12, color: C.sub, transform: "translateY(1px)" }}>▼</span>
               </button>
-              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>총 {entryCountThisMonth}일 기록했어요</p>
+              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>{entryCountThisMonth > 0 ? getRecordMessage(entryCountThisMonth, isM) : "아직 기록이 없어요"}</p>
             </>
           ) : (
             <>
@@ -160,7 +237,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink, minWidth: 150, textAlign: "center" }}>{weekTitle}</h1>
                 <button onClick={() => canNextWeek && shiftWeek(1)} disabled={!canNextWeek} aria-label="다음 주" style={{ border: "none", background: "transparent", color: canNextWeek ? C.ink : "#D8D3C8", fontSize: 18, cursor: canNextWeek ? "pointer" : "default", padding: "2px 8px" }}>›</button>
               </div>
-              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>이번 주 {weekEntryCount}일 기록했어요</p>
+              <p style={{ fontSize: 13.5, color: C.sub, margin: "8px 0 0" }}>{weekEntryCount > 0 ? getRecordMessage(weekEntryCount, isM) : "이번 주 기록이 없어요"}</p>
             </>
           )}
         </div>
@@ -212,11 +289,11 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                     onClick={() => setPreviewDay({ dateStr, entry })}
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
                   >
-                    <Mallang v={entry.mood} size={36} />
+                    <Mallang v={entry.mood} size={40} />
                   </button>
                 ) : entry ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
-                    <Mallang v={entry.mood} size={36} />
+                    <Mallang v={entry.mood} size={40} />
                   </div>
                 ) : isToday ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -407,6 +484,7 @@ function WeekDayRow({ date, dow, entry, isToday, writable, clickable, onClick, i
         display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16,
         border: `1px solid ${isToday ? t.accent : C.line}`, background: isToday ? t.accentSoft : "#fff",
         cursor: clickable ? "pointer" : "default", opacity: future ? 0.55 : 1, minHeight: 62,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
       {/* 날짜 */}

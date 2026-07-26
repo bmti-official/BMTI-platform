@@ -139,7 +139,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       )}
 
       {/* Hero Section */}
-      <section className="pt-24 pb-12 px-6 max-w-5xl mx-auto text-center">
+      <section className="pt-32 pb-12 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-8">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>
@@ -154,9 +154,10 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </p>
       </section>
 
-      {/* CTA Buttons */}
-      <div className="px-6 flex justify-center gap-4 fade-in mb-16">
-        {(!bmtiCode) ? (
+      {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는
+          하단 네비 가운데 캐릭터를 누르면 뜨는 팝업(BmtiPartnerPopup)으로 옮겼다. */}
+      {!bmtiCode && (
+        <div className="px-6 flex justify-center gap-4 fade-in mb-16">
           <div className="flex flex-col items-center w-full max-w-sm">
             <button
               onClick={() => setView('quiz')}
@@ -171,66 +172,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
               2분이면 끝나요 · 로그인 없이 가능
             </p>
           </div>
-        ) : (
-          <div className="w-full max-w-md flex flex-col gap-4">
-            {/* 내 BMTI 파트너 미리보기 */}
-            <div className="rounded-[2rem] p-6 md:p-8 border" style={{ background: '#F7F7F6', borderColor: '#EDEDEB' }}>
-              <p className="text-xs md:text-sm font-bold text-gray-400 mb-4">내 BMTI 파트너</p>
-              <div className="flex items-center gap-4 mb-5">
-                <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
-                  {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || ''}`} />}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-2xl md:text-3xl font-black tracking-tight">{axisCode}</span>
-                    <span className="bg-pink-100 text-pink-600 text-xs md:text-sm font-bold px-2.5 py-1 rounded-full whitespace-nowrap">{CHARACTER_NAMES[axisCode]}</span>
-                  </div>
-                  <p className="text-gray-500 text-sm md:text-base leading-snug whitespace-pre-line break-keep">{charInfo?.catchphrase}</p>
-                </div>
-              </div>
-              {!isLoggedIn ? (
-                <div className="flex flex-col items-center">
-                  <button
-                    onClick={() => { if (onRequireLogin) onRequireLogin(); }}
-                    className="w-full bg-[#FEE500] text-[#3C1E1E] font-bold py-4 rounded-2xl text-[min(3.5vw,15px)] md:text-lg hover:bg-[#F4DC00] transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md mb-3"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]">
-                      <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" />
-                    </svg>
-                    카카오로 3초 저장
-                  </button>
-                  <p className="text-[11px] text-gray-400 flex items-center justify-center gap-1">
-                    <span>🔕</span> 광고 안 보냄 · 결과만 저장
-                  </p>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setView('result')}
-                  className="w-full text-white text-[min(3.5vw,15px)] md:text-lg font-bold py-4 rounded-2xl hover:brightness-105 transition-all"
-                  style={{ background: '#C9975A' }}
-                >
-                  내 결과 자세히 보기
-                </button>
-              )}
-            </div>
-
-            {/* 오늘 하루일기 기록 유도 — 오늘 이미 기록했으면 숨김 */}
-            {(isLoggedIn && !hasLoggedToday) && (
-              <button
-                onClick={() => setView('aichat')}
-                className="w-full rounded-[2rem] p-6 text-left flex items-center justify-between transition-colors hover:brightness-95"
-                style={{ background: t.accentSoft }}
-              >
-                <div>
-                  <p className="font-black mb-1 text-gray-900">오늘 기록, 아직이에요</p>
-                  <p className="text-sm font-medium" style={{ color: t.accent }}>10초면 충분해요</p>
-                </div>
-                <span className="text-2xl" style={{ color: t.accent }}>›</span>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 16 Characters Scroll Section */}
       <section className="w-full overflow-hidden mb-6 relative">

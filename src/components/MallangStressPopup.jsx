@@ -65,22 +65,30 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
         </div>
 
         {/* 말랑이 + (연타 끝에 등장하는) 아기 말랑이들 */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 4, minHeight: 132 }}>
-          {showBabies && Array.from({ length: BABY_COUNT / 2 }).map((_, i) => (
-            <BabyMallang key={`l${i}`} index={i} tapKey={babyTapKey} />
-          ))}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 220 }}>
+          {showBabies && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              {Array.from({ length: BABY_COUNT / 2 }).map((_, i) => (
+                <BabyMallang key={`l${i}`} index={i} tapKey={babyTapKey} />
+              ))}
+            </div>
+          )}
 
           <button
             onClick={handleTap}
             aria-label="말랑이 누르기"
             style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block" }}
           >
-            <Mallang v={level} size={132} tapKey={tapKey} skinOverride="malang3d" />
+            <Mallang v={level} size={220} tapKey={tapKey} skinOverride="malang3d" />
           </button>
 
-          {showBabies && Array.from({ length: BABY_COUNT / 2 }).map((_, i) => (
-            <BabyMallang key={`r${i}`} index={i + BABY_COUNT / 2} tapKey={babyTapKey} />
-          ))}
+          {showBabies && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              {Array.from({ length: BABY_COUNT / 2 }).map((_, i) => (
+                <BabyMallang key={`r${i}`} index={i + BABY_COUNT / 2} tapKey={babyTapKey} />
+              ))}
+            </div>
+          )}
         </div>
 
         <button
@@ -111,7 +119,7 @@ function BabyMallang({ index, tapKey }) {
         animation: `babyPopIn .3s ease-out ${popDelay}s both, babyBounce ${bounceDuration}s ease-in-out ${popDelay + 0.3}s infinite`,
       }}
     >
-      <Mallang v={5} size={36} tapKey={tapKey} skinOverride="malang3d" />
+      <Mallang v={5} size={48} tapKey={tapKey} skinOverride="malang3d" />
     </div>
   );
 }

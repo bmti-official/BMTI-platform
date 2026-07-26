@@ -1,11 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TermsModal from './TermsModal';
 import AdInquiryModal from './AdInquiryModal';
+import { recordVisit, fetchVisitorCounts } from '../lib/visitorTracker';
 
 const Footer = () => {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isAdInquiryOpen, setIsAdInquiryOpen] = useState(false);
+  const [visitors, setVisitors] = useState({ today: 0, total: 0 });
+
+  useEffect(() => {
+    // 방문 기록 후 카운트 조회
+    (async () => {
+      await recordVisit();
+      const counts = await fetchVisitorCounts();
+      setVisitors(counts);
+    })();
+  }, []);
+
+  const fmt = (n) => String(n).padStart(2, '0');
 
   return (
     <footer className="pt-8 pb-28 mt-8 border-t border-gray-100 fade-in px-4 md:px-6 w-full relative">
@@ -51,6 +64,17 @@ const Footer = () => {
           <p>호스팅 제공자: GitHub, Inc.</p>
         </div>
       )}
+
+      {/* 방문자 카운터 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        marginTop: 20, padding: '10px 0',
+        fontSize: 11, fontWeight: 600, color: '#B0AAA0', letterSpacing: '-0.01em',
+      }}>
+        <span>오늘 방문자 : {fmt(visitors.today)}명</span>
+        <span style={{ color: '#D8D3C8' }}>|</span>
+        <span>누적 방문자 : {fmt(visitors.total)}명</span>
+      </div>
 
       <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
       <AdInquiryModal isOpen={isAdInquiryOpen} onClose={() => setIsAdInquiryOpen(false)} />
