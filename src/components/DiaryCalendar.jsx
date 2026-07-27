@@ -366,11 +366,11 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
               <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {entry && !isEntryLocked(dateStr) ? (
                   <button onClick={() => onDayPreview({ dateStr, entry })} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
-                    <Mallang v={entry.mood} size={40} />
+                    <Mallang v={entry.mood} size={34} />
                   </button>
                 ) : entry ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
-                    <Mallang v={entry.mood} size={40} />
+                    <Mallang v={entry.mood} size={34} />
                   </div>
                 ) : isToday ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -452,7 +452,7 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
         </div>
         {/* 무드 */}
         <div style={{ width: 40, flexShrink: 0, display: "flex", justifyContent: "center" }}>
-          {entry ? <Mallang v={entry.mood} size={38} /> : <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px dashed ${C.line}` }} />}
+          {entry ? <Mallang v={entry.mood} size={32} /> : <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px dashed ${C.line}` }} />}
         </div>
         {/* 요약(접힘) */}
         <div style={{ flex: 1, minWidth: 0 }}>

@@ -36,15 +36,10 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
 
   const toggleGoal = (id) => setGoals(g => g.includes(id) ? g.filter(x => x !== id) : (g.length >= 2 ? g : [...g, id]));
 
-  const canNext = [
-    sore.length > 0 && sore.every(s => s.when && !(s.when === "기타" && !(s.whenOther || "").trim())),
-    freq && goals.length > 0,
-    posture && !(posture === "other" && !postureCustom.trim()),
-  ];
-
-  const finish = async () => {
+  const finish = async (soreOverride) => {
     const finalPosture = posture === "other" ? postureCustom.trim() : posture;
-    const soreClean = sore.map(s => ({ part: s.part, when: s.when, whenOther: s.when === "기타" ? (s.whenOther || "").trim() : "" }));
+    const soreSrc = soreOverride !== undefined ? soreOverride : sore;
+    const soreClean = soreSrc.map(s => ({ part: s.part, when: Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []), whenOther: (Array.isArray(s.when) ? s.when : []).includes("기타") ? (s.whenOther || "").trim() : "" }));
     const payload = { mallang_sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture };
 
     if (isLoggedIn && userId) {
@@ -69,15 +64,15 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
     if (onComplete) onComplete();
   };
 
+  // 전부 기재하지 않아도 다음 페이지로 넘어갈 수 있다(항상 활성).
   const next = () => { if (step < 2) setStep(step + 1); else finish(); };
   const back = () => setStep(s => Math.max(0, s - 1));
 
-  const remaining = (() => {
-    // 이 페이지에서 아직 안 채운 필수 항목 수
-    if (step === 0) return sore.length === 0 ? 1 : sore.filter(s => !s.when).length;
-    if (step === 1) return (freq ? 0 : 1) + (goals.length > 0 ? 0 : 1);
-    return posture ? 0 : 1;
-  })();
+  // '저는 불편하지 않아요!' — 불편하지 않다는 것(빈 배열)을 저장하고 다음으로
+  const chooseNoSore = () => { setSore([]); setStep(1); };
+
+  // 페이지별 보라색 안내 문구(고정)
+  const REMAIN_TEXT = ["2개 남았어요", "1개 남았어요", "마지막이에요!"];
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
@@ -101,7 +96,7 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
         {/* 독려 문구 */}
         <p style={{ fontSize: 13, color: C.sub, fontWeight: 700, margin: "2px 0 4px", lineHeight: 1.5 }}>
           {ENCOURAGE[step]}
-          {remaining > 0 && <b style={{ color: t.accent }}> · {remaining}개 남았어요</b>}
+          <b style={{ color: t.accent }}> · {REMAIN_TEXT[step]}</b>
         </p>
 
         <div key={step} style={{ flex: 1, animation: "fadeUp .3s ease-out" }}>
@@ -141,10 +136,15 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
 
         {/* 하단 CTA + 안내 문구 */}
         <div style={{ marginTop: 18 }}>
-          <button onClick={next} disabled={!canNext[step] || saving}
-            style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800,
-              cursor: canNext[step] ? "pointer" : "default", opacity: canNext[step] ? 1 : 0.4 }}>
-            {saving ? "저장하는 중..." : step < 2 ? "다음" : "완료하고 말랑 다이어리 시작하기"}
+          {step === 0 && (
+            <button onClick={chooseNoSore} disabled={saving}
+              style={{ width: "100%", marginBottom: 10, padding: 14, borderRadius: 15, border: `1.5px solid ${C.line}`, background: "#fff", color: C.sub, fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+              저는 불편하지 않아요!
+            </button>
+          )}
+          <button onClick={next} disabled={saving}
+            style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+            {saving ? "저장하는 중..." : "여기까지만 기록할래요"}
           </button>
           <p style={{ textAlign: "center", fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "12px 0 0" }}>
             마이페이지에서 한달에 2번 수정가능합니다.

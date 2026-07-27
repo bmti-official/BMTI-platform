@@ -5,15 +5,10 @@ import { canRetakeTest } from '../lib/bmtiSystem';
 import {
   POSTURE_OPTS, POSTURE_LABELS, POSTURE_KNOWN_IDS,
   FREQ_LABELS as EXERCISE_FREQ_LABELS, GOAL_LABELS as EXERCISE_GOAL_LABELS,
-  SORE_PARTS, WHEN_OPTS, hasBatchim,
+  SORE_PARTS, WHEN_OPTS, hasBatchim, soreSummary,
   editsThisMonth, MONTHLY_EDIT_LIMIT,
-  getGuestMallang, setGuestMallang, getGuestMallangHistory, pushGuestMallangHistory,
+  setGuestMallang, getGuestMallangHistory, pushGuestMallangHistory,
 } from '../lib/mallangProfile';
-
-// 말랑 정보 부위·언제를 사람이 읽는 한 줄 문구로 — "허리(움직일 때), 목(하루 종일)"
-const soreSummary = (sore) => (Array.isArray(sore) && sore.length)
-  ? sore.map(s => `${s.part}${s.when ? `(${s.when === '기타' ? (s.whenOther || '기타') : s.when})` : ''}`).join(', ')
-  : '';
 
 const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onLogout }) => {
   const getCharImage = (fullCode) => {
@@ -43,9 +38,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     const has = prev.find(s => s.part === part);
     if (has) return prev.filter(s => s.part !== part);
     if (prev.length >= 2) return prev;
-    return [...prev, { part, when: null, whenOther: '' }];
+    return [...prev, { part, when: [], whenOther: '' }];
   });
-  const setSoreWhen = (part, when) => setSoreEdit(prev => prev.map(s => s.part === part ? { ...s, when } : s));
+  const toggleSoreWhen = (part, w) => setSoreEdit(prev => prev.map(s => {
+    if (s.part !== part) return s;
+    const cur = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
+    return { ...s, when: cur.includes(w) ? cur.filter(x => x !== w) : [...cur, w] };
+  }));
   const setSoreWhenOther = (part, txt) => setSoreEdit(prev => prev.map(s => s.part === part ? { ...s, whenOther: txt } : s));
 
   // 상위에서 userInfo가 업데이트될 경우(ex. 새로운 BMTI 검사 완료 후) 동기화
@@ -132,7 +131,10 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       return;
     }
     const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
-    const soreClean = soreEdit.map(s => ({ part: s.part, when: s.when, whenOther: s.when === '기타' ? (s.whenOther || '').trim() : '' }));
+    const soreClean = soreEdit.map(s => {
+      const whens = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
+      return { part: s.part, when: whens, whenOther: whens.includes('기타') ? (s.whenOther || '').trim() : '' };
+    });
     const freq = userData.exercise_frequency || null;
     const goals = userData.exercise_goals || [];
     setSavingExercise(true);
@@ -466,7 +468,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
               } else if (userData.common_posture) {
                 setPosturePick('other'); setPostureOther(userData.common_posture);
               } else { setPosturePick(null); setPostureOther(''); }
-              setSoreEdit(Array.isArray(userData.mallang_sore) ? userData.mallang_sore.map(s => ({ part: s.part, when: s.when || null, whenOther: s.whenOther || '' })) : []);
+              setSoreEdit(Array.isArray(userData.mallang_sore) ? userData.mallang_sore.map(s => ({ part: s.part, when: Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []), whenOther: s.whenOther || '' })) : []);
               setIsEditingExercise(true);
             }
           }}
@@ -493,23 +495,26 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                   );
                 })}
               </div>
-              {soreEdit.map((s) => (
-                <div key={s.part} className="mt-3">
-                  <span className="text-gray-500 text-[11px] font-bold block mb-1.5">'{s.part}'{hasBatchim(s.part) ? '은' : '는'} 언제 그러셨어요?</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[...WHEN_OPTS, '기타'].map((w) => (
-                      <button key={w} onClick={() => setSoreWhen(s.part, w)}
-                        className={`text-[11px] py-1 px-2 rounded-md border font-bold transition-colors ${s.when === w ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
-                        {w}
-                      </button>
-                    ))}
+              {soreEdit.map((s) => {
+                const whens = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
+                return (
+                  <div key={s.part} className="mt-3">
+                    <span className="text-gray-500 text-[11px] font-bold block mb-1.5">'{s.part}'{hasBatchim(s.part) ? '은' : '는'} 언제 그러셨어요? <span className="text-gray-400 font-semibold">중복 선택</span></span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[...WHEN_OPTS, '기타'].map((w) => (
+                        <button key={w} onClick={() => toggleSoreWhen(s.part, w)}
+                          className={`text-[11px] py-1 px-2 rounded-md border font-bold transition-colors ${whens.includes(w) ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                          {w}
+                        </button>
+                      ))}
+                    </div>
+                    {whens.includes('기타') && (
+                      <input type="text" value={s.whenOther || ''} onChange={(e) => setSoreWhenOther(s.part, e.target.value.slice(0, 30))}
+                        placeholder="예: 계단 오를 때" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
+                    )}
                   </div>
-                  {s.when === '기타' && (
-                    <input type="text" value={s.whenOther || ''} onChange={(e) => setSoreWhenOther(s.part, e.target.value.slice(0, 30))}
-                      placeholder="예: 계단 오를 때" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div>
               <span className="text-gray-400 text-xs font-bold block mb-2">평소 운동, 어떻게 하세요?</span>

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
 import { getDiaryHistory, mergeWeatherIntoHistory } from "../lib/diaryHistory";
 import { getSavedGeo, requestGeo, fetchWeatherRange } from "../lib/weather";
@@ -159,6 +161,68 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const [showExample, setShowExample] = useState(false);
   const [tab, setTab] = useState("records"); // "records" | "discovery"
   const [, forceWeatherRefresh] = useState(0); // 날씨를 붙인 뒤 리포트를 다시 읽게 하는 트리거
+  const [savingPDF, setSavingPDF] = useState(false);
+  const contentRef = useRef(null);
+
+  // 다음 페인트까지 대기(탭 전환 후 DOM 갱신 + 이미지 로딩)
+  const nextPaint = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120))));
+  const waitForImages = (el) => Promise.all(Array.from(el.querySelectorAll("img")).map((img) =>
+    (img.complete && img.naturalWidth > 0) ? Promise.resolve() : new Promise((res) => { img.onload = res; img.onerror = res; })));
+
+  // '이번달 기록' + '이번달 발견'을 한 PDF로 만들어 카카오톡(OS 공유 시트)으로 전달 (ResultView 패턴 재사용)
+  const handleMonthlyPDF = async () => {
+    if (savingPDF) return;
+    setSavingPDF(true);
+    const prevTab = tab;
+    try {
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 32;
+      const contentWidth = pageWidth - margin * 2;
+      let cursorY = margin;
+
+      // 표지 제목
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(18);
+      pdf.text(`${year}.${String(month).padStart(2, "0")}  Mallang Report`, margin, cursorY + 6);
+      cursorY += 30;
+
+      for (const t of ["records", "discovery"]) {
+        setTab(t);
+        await nextPaint();
+        const root = contentRef.current?.firstElementChild;
+        if (!root) continue;
+        await waitForImages(root);
+        const cards = Array.from(root.children);
+        for (const card of cards) {
+          const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+          const imgData = canvas.toDataURL("image/jpeg", 0.92);
+          const imgHeight = (canvas.height * contentWidth) / canvas.width;
+          if (cursorY !== margin && cursorY + imgHeight > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
+          pdf.addImage(imgData, "JPEG", margin, cursorY, contentWidth, imgHeight);
+          cursorY += imgHeight + 12;
+        }
+      }
+
+      const pdfBlob = pdf.output("blob");
+      const fileName = `말랑리포트_${year}-${String(month).padStart(2, "0")}.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({ files: [pdfFile], title: "말랑 리포트", text: `${year}년 ${month}월 말랑 리포트 — 이번 달 기록과 발견이에요.` });
+      } else {
+        const link = document.createElement("a");
+        link.download = fileName; link.href = URL.createObjectURL(pdfBlob); link.click();
+        URL.revokeObjectURL(link.href);
+        alert("말랑 리포트 PDF가 저장되었어요. 카카오톡 채팅방에서 파일을 첨부해 보내주세요.");
+      }
+    } catch (e) {
+      console.error("월간 리포트 PDF 생성 오류:", e);
+      alert("리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setTab(prevTab);
+      setSavingPDF(false);
+    }
+  };
 
   const monthKey = `${year}-${String(month).padStart(2, "0")}`;
   const entries = getDiaryHistory().filter((e) => e.date.startsWith(monthKey));
@@ -228,6 +292,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           ))}
         </div>
 
+        <div ref={contentRef}>
         {tab === "records" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
@@ -247,11 +312,22 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             {report.discovery.found && <ProfileLinkCard report={report} profile={profile} />}
           </div>
         )}
+        </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 22, padding: "12px 14px", background: "#FFFFFF", border: `1px solid ${C.line}`, borderRadius: 14 }}>
           <span style={{ display: "flex", color: C.sub, marginTop: 1 }}><IconInfo size={14} /></span>
           <p style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.6, margin: 0 }}>{report.disclaimer}</p>
         </div>
+
+        {/* 이번 달 기록·발견을 하나의 PDF로 카카오톡으로 받기 */}
+        <button onClick={handleMonthlyPDF} disabled={savingPDF}
+          style={{ width: "100%", marginTop: 16, padding: 16, borderRadius: 15, border: "none", background: "#FEE500", color: "#3C1E1E", fontSize: 14.5, fontWeight: 800, cursor: savingPDF ? "default" : "pointer", opacity: savingPDF ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+          <svg viewBox="0 0 24 24" style={{ width: 19, height: 19, fill: "#3C1E1E" }}><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
+          {savingPDF ? "PDF 만드는 중..." : `${month}월 기록·발견 PDF로 받기`}
+        </button>
+        <p style={{ textAlign: "center", fontSize: 11, color: C.sub, fontWeight: 600, margin: "10px 0 0" }}>
+          이번 달 기록과 발견을 하나의 PDF로 저장해 카카오톡으로 보낼 수 있어요.
+        </p>
       </div>
 
       {showExample && <DiscoveryExamplePopup onClose={() => setShowExample(false)} />}
