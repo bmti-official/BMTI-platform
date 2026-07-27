@@ -2,24 +2,18 @@ import { useState, useEffect } from 'react';
 import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../data';
 import { supabase } from '../lib/supabaseClient';
 import { canRetakeTest } from '../lib/bmtiSystem';
+import {
+  POSTURE_OPTS, POSTURE_LABELS, POSTURE_KNOWN_IDS,
+  FREQ_LABELS as EXERCISE_FREQ_LABELS, GOAL_LABELS as EXERCISE_GOAL_LABELS,
+  SORE_PARTS, WHEN_OPTS, hasBatchim,
+  editsThisMonth, MONTHLY_EDIT_LIMIT,
+  getGuestMallang, setGuestMallang, getGuestMallangHistory, pushGuestMallangHistory,
+} from '../lib/mallangProfile';
 
-// BMTI 운동일기 첫 진입 온보딩 팝업(DiaryOnboarding.jsx)에서 물어보는 항목과 동일한
-// id/문구 — 저장된 id를 사람이 읽을 문구로 보여주기 위한 매핑표.
-const EXERCISE_FREQ_LABELS = {
-  none: '거의 안 해요', sometimes: '가끔 생각날 때', weekly: '일주일에 몇 번', daily: '거의 매일',
-};
-const EXERCISE_GOAL_LABELS = {
-  flexibility: '💢 뻐근함 줄이기', posture: '🧘🏻‍♀️ 자세 바로잡기', health: '🏃🏻 체력 기르기', stress: '💥 스트레스 풀기',
-};
-const POSTURE_OPTS = [
-  { id: 'sitting', label: '🪑 주로 앉아 있어요', sub: '사무직, 공부 등' },
-  { id: 'standing', label: '🧍 주로 서 있어요', sub: '판매, 요리, 미용 등' },
-  { id: 'moving', label: '🚶 계속 움직여요', sub: '간호, 육아, 서비스 등' },
-  { id: 'mixed', label: '🔄 앉았다 섰다 해요', sub: '다양' },
-  { id: 'other', label: '기타' },
-];
-const POSTURE_LABELS = Object.fromEntries(POSTURE_OPTS.map(o => [o.id, o.label]));
-const POSTURE_KNOWN_IDS = ['sitting', 'standing', 'moving', 'mixed'];
+// 말랑 정보 부위·언제를 사람이 읽는 한 줄 문구로 — "허리(움직일 때), 목(하루 종일)"
+const soreSummary = (sore) => (Array.isArray(sore) && sore.length)
+  ? sore.map(s => `${s.part}${s.when ? `(${s.when === '기타' ? (s.whenOther || '기타') : s.when})` : ''}`).join(', ')
+  : '';
 
 const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onLogout }) => {
   const getCharImage = (fullCode) => {
@@ -41,6 +35,18 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const [savingExercise, setSavingExercise] = useState(false);
   const [posturePick, setPosturePick] = useState(null);
   const [postureOther, setPostureOther] = useState('');
+  const [soreEdit, setSoreEdit] = useState([]); // 수정 모드 불편한 부위 [{part, when, whenOther}]
+  const [mallangHistory, setMallangHistory] = useState([]); // 말랑 정보 스냅샷 박스
+
+  // 수정 모드에서 부위 토글(최대 2) / when 지정
+  const toggleSorePart = (part) => setSoreEdit(prev => {
+    const has = prev.find(s => s.part === part);
+    if (has) return prev.filter(s => s.part !== part);
+    if (prev.length >= 2) return prev;
+    return [...prev, { part, when: null, whenOther: '' }];
+  });
+  const setSoreWhen = (part, when) => setSoreEdit(prev => prev.map(s => s.part === part ? { ...s, when } : s));
+  const setSoreWhenOther = (part, txt) => setSoreEdit(prev => prev.map(s => s.part === part ? { ...s, whenOther: txt } : s));
 
   // 상위에서 userInfo가 업데이트될 경우(ex. 새로운 BMTI 검사 완료 후) 동기화
   useEffect(() => {
@@ -119,31 +125,48 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     });
   };
 
-  const handleSaveExerciseInfo = async () => {
+  const handleSaveMallangInfo = async () => {
+    // 한 달 2회 수정 제한 — 이번 달 'edit' 스냅샷이 이미 2개면 막는다.
+    if (editsThisMonth(mallangHistory) >= MONTHLY_EDIT_LIMIT) {
+      alert(`말랑 정보는 한 달에 ${MONTHLY_EDIT_LIMIT}번까지만 수정할 수 있어요. 다음 달에 다시 시도해주세요.`);
+      return;
+    }
     const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
-    if (userData?.id) {
-      setSavingExercise(true);
-      try {
+    const soreClean = soreEdit.map(s => ({ part: s.part, when: s.when, whenOther: s.when === '기타' ? (s.whenOther || '').trim() : '' }));
+    const freq = userData.exercise_frequency || null;
+    const goals = userData.exercise_goals || [];
+    setSavingExercise(true);
+    const snapshot = { sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture || null, source: 'edit', created_at: new Date().toISOString() };
+    try {
+      if (userData?.id) {
         const { error } = await supabase
           .from('users')
           .update({
-            exercise_frequency: userData.exercise_frequency || null,
-            exercise_goals: userData.exercise_goals || [],
+            exercise_frequency: freq,
+            exercise_goals: goals,
             common_posture: finalPosture || null,
+            mallang_sore: soreClean,
+            mallang_info_updated_at: new Date().toISOString(),
           })
           .eq('id', userData.id);
         if (error) throw error;
-        const updated = { ...userData, common_posture: finalPosture };
-        setUserData(updated);
-        localStorage.setItem('bmti_user', JSON.stringify(updated));
-      } catch (e) {
-        console.error('운동 정보 저장 오류:', e);
-        alert('운동 정보 저장 중 오류가 발생했습니다.');
-        setSavingExercise(false);
-        return;
+        await supabase.from('mallang_info_history').insert({ user_id: userData.id, sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture || null, source: 'edit' });
+      } else {
+        // 게스트 — 로컬에만 저장
+        setGuestMallang({ mallang_sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture || null });
+        pushGuestMallangHistory(snapshot);
       }
+      const updated = { ...userData, common_posture: finalPosture, mallang_sore: soreClean };
+      setUserData(updated);
+      localStorage.setItem('bmti_user', JSON.stringify(updated));
+      setMallangHistory(prev => [snapshot, ...prev]);
+    } catch (e) {
+      console.error('말랑 정보 저장 오류:', e);
+      alert('말랑 정보 저장 중 오류가 발생했습니다.');
       setSavingExercise(false);
+      return;
     }
+    setSavingExercise(false);
     setIsEditingExercise(false);
   };
 
@@ -174,8 +197,19 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     }
   }, [userData]);
 
-  // 모의 무브먼트 라이브 히스토리 데이터
-  const liveHistory = [];
+  // 말랑 정보 스냅샷 히스토리 — 로그인은 서버, 게스트는 로컬
+  useEffect(() => {
+    if (userData?.id) {
+      supabase.from('mallang_info_history')
+        .select('*')
+        .eq('user_id', userData.id)
+        .order('created_at', { ascending: false })
+        .then(({ data }) => { if (data) setMallangHistory(data); })
+        .catch(console.error);
+    } else {
+      setMallangHistory(getGuestMallangHistory());
+    }
+  }, [userData?.id]);
 
   return (
     <div className="pt-24 pb-32 px-4 md:px-6 max-w-3xl mx-auto fade-in">
@@ -355,127 +389,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         )}
       </div>
 
-      {/* 2. 운동 정보 — BMTI 운동일기 첫 진입 온보딩 팝업에서 자동으로 채워지고, 여기서도 수정 가능 */}
-      <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
-        <h3 className="font-bold text-lg text-gray-900">운동 정보</h3>
-        <button
-          onClick={() => {
-            if (isEditingExercise) {
-              handleSaveExerciseInfo();
-            } else {
-              if (userData.common_posture && POSTURE_KNOWN_IDS.includes(userData.common_posture)) {
-                setPosturePick(userData.common_posture);
-                setPostureOther('');
-              } else if (userData.common_posture) {
-                setPosturePick('other');
-                setPostureOther(userData.common_posture);
-              } else {
-                setPosturePick(null);
-                setPostureOther('');
-              }
-              setIsEditingExercise(true);
-            }
-          }}
-          disabled={savingExercise}
-          className="text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
-        >
-          {savingExercise ? '저장 중...' : isEditingExercise ? '저장하기' : '수정하기'}
-        </button>
-      </div>
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8">
-        {isEditingExercise ? (
-          <div className="space-y-5">
-            <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">평소 운동, 어떻게 하세요?</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {Object.entries(EXERCISE_FREQ_LABELS).map(([id, label]) => (
-                  <button
-                    key={id}
-                    onClick={() => setUserData({ ...userData, exercise_frequency: id })}
-                    className={`text-xs py-1.5 px-2 rounded-lg border font-bold transition-colors text-center ${
-                      userData.exercise_frequency === id ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">몸 관리에서 제일 신경 쓰는 건? (최대 2개)</span>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.entries(EXERCISE_GOAL_LABELS).map(([id, label]) => {
-                  const on = (userData.exercise_goals || []).includes(id);
-                  const disabled = !on && (userData.exercise_goals || []).length >= 2;
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => toggleExerciseGoal(id)}
-                      disabled={disabled}
-                      className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${
-                        on ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                      } ${disabled ? 'opacity-40' : ''}`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">요즘 하루 대부분 어떻게 지내요?</span>
-              <div className="flex flex-wrap gap-1.5">
-                {POSTURE_OPTS.map(({ id, label, sub }) => (
-                  <button
-                    key={id}
-                    onClick={() => setPosturePick(id)}
-                    className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors flex flex-col items-start gap-0.5 ${
-                      posturePick === id ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                    }`}
-                  >
-                    <span>{label}</span>
-                    {sub && <span className={`text-[10px] font-semibold ${posturePick === id ? 'text-white/75' : 'text-gray-400'}`}>{sub}</span>}
-                  </button>
-                ))}
-              </div>
-              {posturePick === 'other' && (
-                <input
-                  type="text"
-                  value={postureOther}
-                  onChange={(e) => setPostureOther(e.target.value.slice(0, 20))}
-                  placeholder="짧게 적어주세요 (예: 운전을 오래 해요)"
-                  className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400"
-                />
-              )}
-            </div>
-          </div>
-        ) : (userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
-          <div className="space-y-3">
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">운동 빈도</span>
-              <span className="text-sm">{EXERCISE_FREQ_LABELS[userData.exercise_frequency] || '아직 입력 전이에요'}</span>
-            </div>
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0 md:mt-0.5">운동 목적</span>
-              <div className="flex-1 flex flex-wrap gap-1.5">
-                {(userData.exercise_goals && userData.exercise_goals.length > 0) ? (
-                  userData.exercise_goals.map((id) => (
-                    <span key={id} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-[11px] whitespace-nowrap font-bold">{EXERCISE_GOAL_LABELS[id] || id}</span>
-                  ))
-                ) : (
-                  <span className="text-sm">아직 입력 전이에요</span>
-                )}
-              </div>
-            </div>
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">자주 하는 자세</span>
-              <span className="text-sm">{POSTURE_LABELS[userData.common_posture] || userData.common_posture || '아직 입력 전이에요'}</span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-center text-gray-400 text-sm py-2">BMTI 운동일기를 처음 시작할 때 물어보는 질문에 답하면 여기에 자동으로 채워져요.</p>
-        )}
-      </div>
+      {/* 2. BMTI 히스토리 — 아래 블록. (말랑 정보는 그 다음으로 이동) */}
 
       <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">BMTI 히스토리</h3>
@@ -539,29 +453,155 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         })()}
       </div>
 
+      {/* 3. 말랑 정보 — 온보딩에서 자동으로 채워지고, 여기서 한 달 2번까지 수정 가능 */}
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
-        <h3 className="font-bold text-lg text-gray-900">말랑 클래스 히스토리</h3>
-        <button onClick={() => window.dispatchEvent(new Event('open_mallang_class'))} className="bg-[#C9975A] text-white font-medium py-1.5 px-4 rounded-full hover:brightness-105 transition-all text-xs shadow-sm whitespace-nowrap">
-          둘러보기
+        <h3 className="font-bold text-lg text-gray-900">말랑 정보</h3>
+        <button
+          onClick={() => {
+            if (isEditingExercise) {
+              handleSaveMallangInfo();
+            } else {
+              if (userData.common_posture && POSTURE_KNOWN_IDS.includes(userData.common_posture)) {
+                setPosturePick(userData.common_posture); setPostureOther('');
+              } else if (userData.common_posture) {
+                setPosturePick('other'); setPostureOther(userData.common_posture);
+              } else { setPosturePick(null); setPostureOther(''); }
+              setSoreEdit(Array.isArray(userData.mallang_sore) ? userData.mallang_sore.map(s => ({ part: s.part, when: s.when || null, whenOther: s.whenOther || '' })) : []);
+              setIsEditingExercise(true);
+            }
+          }}
+          disabled={savingExercise}
+          className="text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
+        >
+          {savingExercise ? '저장 중...' : isEditingExercise ? '저장하기' : '수정하기'}
         </button>
       </div>
-      {/* 무브먼트 라이브 히스토리 리스트 (가로 스크롤) */}
-      <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {liveHistory.length > 0 ? (
-          liveHistory.map((item, idx) => (
-            <div 
-              key={idx} 
-              className="min-w-[140px] md:min-w-[160px] bg-white border border-gray-200 p-4 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm snap-start"
-            >
-              <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-gray-50 rounded-full flex items-center justify-center text-2xl">
-                🎥
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8">
+        {isEditingExercise ? (
+          <div className="space-y-5">
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">불편한 부위 (최대 2곳)</span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {SORE_PARTS.map((part) => {
+                  const on = soreEdit.some(s => s.part === part);
+                  const disabled = !on && soreEdit.length >= 2;
+                  return (
+                    <button key={part} onClick={() => toggleSorePart(part)} disabled={disabled}
+                      className={`text-xs py-1.5 px-1 rounded-lg border font-bold transition-colors text-center ${on ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'} ${disabled ? 'opacity-40' : ''}`}>
+                      {part}
+                    </button>
+                  );
+                })}
               </div>
-              <h4 className="font-bold text-gray-900 text-xs text-center mb-1 whitespace-pre-line leading-snug h-8 flex items-center justify-center">{item.title}</h4>
-              <span className="text-[10px] text-gray-400 font-medium mt-1">{item.date}</span>
+              {soreEdit.map((s) => (
+                <div key={s.part} className="mt-3">
+                  <span className="text-gray-500 text-[11px] font-bold block mb-1.5">'{s.part}'{hasBatchim(s.part) ? '은' : '는'} 언제 그러셨어요?</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[...WHEN_OPTS, '기타'].map((w) => (
+                      <button key={w} onClick={() => setSoreWhen(s.part, w)}
+                        className={`text-[11px] py-1 px-2 rounded-md border font-bold transition-colors ${s.when === w ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                        {w}
+                      </button>
+                    ))}
+                  </div>
+                  {s.when === '기타' && (
+                    <input type="text" value={s.whenOther || ''} onChange={(e) => setSoreWhenOther(s.part, e.target.value.slice(0, 30))}
+                      placeholder="예: 계단 오를 때" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">평소 운동, 어떻게 하세요?</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {Object.entries(EXERCISE_FREQ_LABELS).map(([id, label]) => (
+                  <button key={id} onClick={() => setUserData({ ...userData, exercise_frequency: id })}
+                    className={`text-xs py-1.5 px-2 rounded-lg border font-bold transition-colors text-center ${userData.exercise_frequency === id ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">몸 관리에서 제일 신경 쓰는 건? (최대 2개)</span>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(EXERCISE_GOAL_LABELS).map(([id, label]) => {
+                  const on = (userData.exercise_goals || []).includes(id);
+                  const disabled = !on && (userData.exercise_goals || []).length >= 2;
+                  return (
+                    <button key={id} onClick={() => toggleExerciseGoal(id)} disabled={disabled}
+                      className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${on ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'} ${disabled ? 'opacity-40' : ''}`}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400 text-xs font-bold block mb-2">요즘 하루 대부분 어떻게 지내요?</span>
+              <div className="flex flex-wrap gap-1.5">
+                {POSTURE_OPTS.map(({ id, label, sub }) => (
+                  <button key={id} onClick={() => setPosturePick(id)}
+                    className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors flex flex-col items-start gap-0.5 ${posturePick === id ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                    <span>{label}</span>
+                    {sub && <span className={`text-[10px] font-semibold ${posturePick === id ? 'text-white/75' : 'text-gray-400'}`}>{sub}</span>}
+                  </button>
+                ))}
+              </div>
+              {posturePick === 'other' && (
+                <input type="text" value={postureOther} onChange={(e) => setPostureOther(e.target.value.slice(0, 20))}
+                  placeholder="짧게 적어주세요 (예: 운전을 오래 해요)" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
+              )}
+            </div>
+            <p className="text-[11px] text-gray-400 font-medium">이번 달 수정 {editsThisMonth(mallangHistory)}/{MONTHLY_EDIT_LIMIT}회</p>
+          </div>
+        ) : (userData.mallang_sore?.length || userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0 md:mt-0.5">불편한 부위</span>
+              <span className="text-sm">{soreSummary(userData.mallang_sore) || '아직 입력 전이에요'}</span>
+            </div>
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">운동 빈도</span>
+              <span className="text-sm">{EXERCISE_FREQ_LABELS[userData.exercise_frequency] || '아직 입력 전이에요'}</span>
+            </div>
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0 md:mt-0.5">운동 목적</span>
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {(userData.exercise_goals && userData.exercise_goals.length > 0) ? (
+                  userData.exercise_goals.map((id) => (
+                    <span key={id} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-[11px] whitespace-nowrap font-bold">{EXERCISE_GOAL_LABELS[id] || id}</span>
+                  ))
+                ) : (<span className="text-sm">아직 입력 전이에요</span>)}
+              </div>
+            </div>
+            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">자주 하는 자세</span>
+              <span className="text-sm">{POSTURE_LABELS[userData.common_posture] || userData.common_posture || '아직 입력 전이에요'}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-center text-gray-400 text-sm py-2">말랑 다이어리를 처음 시작할 때 물어보는 질문에 답하면 여기에 자동으로 채워져요.</p>
+        )}
+      </div>
+
+      {/* 4. 말랑 정보 히스토리 — 수정할 때마다 스냅샷을 BMTI 히스토리와 같은 박스로 남긴다 */}
+      <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
+        <h3 className="font-bold text-lg text-gray-900">말랑 정보 히스토리</h3>
+      </div>
+      <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {mallangHistory.length > 0 ? (
+          mallangHistory.map((item, idx) => (
+            <div key={idx} className={`min-w-[150px] md:min-w-[170px] bg-white border p-4 rounded-2xl flex flex-col items-center relative overflow-hidden shadow-sm snap-start ${idx === 0 ? 'border-[#C9975A]' : 'border-gray-200'}`}>
+              {idx === 0 && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#C9975A]"></div>}
+              <div className="w-14 h-14 mb-2 bg-gray-50 rounded-full flex items-center justify-center text-2xl">🩹</div>
+              <h4 className="font-bold text-gray-900 text-xs text-center mb-1 leading-snug">{soreSummary(item.sore) || '부위 미입력'}</h4>
+              <span className="text-[10px] text-gray-500 font-medium text-center">{EXERCISE_FREQ_LABELS[item.exercise_frequency] || '운동 미입력'}</span>
+              <span className="text-[10px] text-gray-400 font-medium mt-1">{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span>
             </div>
           ))
         ) : (
-          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 BMTI 라이브 신청 내역이 없습니다.</div>
+          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 말랑 정보가 없습니다.</div>
         )}
       </div>
 

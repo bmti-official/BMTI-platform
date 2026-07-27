@@ -80,15 +80,16 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
         targetDate={editingDate || todayISO()}
         charImage={charData?.image}
         gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
+        mallangSore={userInfo?.mallang_sore}
         isLoggedIn={isLoggedIn}
         onRequireLogin={onRequireLogin}
       />
     );
   }
 
-  // 로그인 안 한 게스트도 바로 시작할 수 있게 온보딩을 건너뛰고 캘린더로 보낸다.
-  // (기록은 이 기기에 저장되고, 기록을 마치면 카카오 로그인 유도 팝업이 뜬다.)
-  if (hasHistory || onboarded || !isLoggedIn) {
+  // 게스트도 3D 온보딩을 한 번 보고(여성 캐릭터 기본), 완료하면 localStorage에 온보딩 완료 표시.
+  // 온보딩을 마쳤거나 이미 기록이 있으면 캘린더로 바로 보낸다.
+  if (hasHistory || onboarded) {
     return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />;
   }
 
@@ -98,6 +99,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
       bmtiCode={bmtiCode}
       charImage={charData?.image}
       charName={charName}
+      gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
       isLoggedIn={isLoggedIn}
       onRequireLogin={onRequireLogin}
       setView={setView}

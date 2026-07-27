@@ -9,6 +9,7 @@ import {
   LOAD_TO_OVEREXERT_LABEL, REASON_TO_EXERCISE_LABEL, KEY_TO_PART_LABEL, KEY_TO_WHEN_LABEL, KEY_TO_EXERCISE_TYPE_LABEL,
 } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
+import { getGuestMallang } from "../lib/mallangProfile";
 
 // ============================================
 // BMTI 하루일기 작성 플로우
@@ -107,7 +108,7 @@ const REORDERABLE_LABEL = {
 // ============================================
 // initialEntry: 캘린더에서 '이전 기록 수정하기'로 들어온 경우, 그날 저장돼있던 전체 기록
 // (mallangReportEngine.js가 쓰는 key 형태 그대로) — 이 화면의 라벨로 되돌려 폼을 미리 채운다.
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, isLoggedIn = true, onRequireLogin = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, mallangSore = null, isLoggedIn = true, onRequireLogin = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
@@ -149,17 +150,30 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     return { cat, text: initialEntry.note.text || "" };
   });
   // 불편한 부위
+  // 소스 우선순위: 그날 기존 기록(initialEntry) > 저장된 말랑 정보(mallangSore/게스트 캐시).
+  // profileParts = 말랑 정보에서 자동으로 불러온 부위(언제는 재질문하지 않고, '얼마나'만 조절).
   const [sore, setSore] = useState(() => {
-    if (!initialEntry?.soreness?.length) return { parts: [], level: 5, whens: {}, whenOthers: {}, partOther: "" };
-    const parts = initialEntry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).slice(0, 2);
-    const whens = {};
-    initialEntry.soreness.forEach(s => {
-      const p = KEY_TO_PART_LABEL[s.part] || s.part;
-      whens[p] = KEY_TO_WHEN_LABEL[s.situation] || "기타";
-    });
-    const etc = initialEntry.soreness.find(s => s.part === "etc");
-    return { parts, level: initialEntry.soreness[0]?.level ?? 5, whens, whenOthers: {}, partOther: etc?.partOther || "" };
+    if (initialEntry?.soreness?.length) {
+      const parts = initialEntry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).slice(0, 2);
+      const whens = {};
+      initialEntry.soreness.forEach(s => {
+        const p = KEY_TO_PART_LABEL[s.part] || s.part;
+        whens[p] = KEY_TO_WHEN_LABEL[s.situation] || "기타";
+      });
+      const etc = initialEntry.soreness.find(s => s.part === "etc");
+      return { parts, level: initialEntry.soreness[0]?.level ?? 5, whens, whenOthers: {}, partOther: etc?.partOther || "", profileParts: [] };
+    }
+    // 저장된 말랑 정보 자동 불러오기 (로그인=props, 게스트=localStorage)
+    const profile = (Array.isArray(mallangSore) && mallangSore.length) ? mallangSore : (getGuestMallang()?.sore || []);
+    if (Array.isArray(profile) && profile.length) {
+      const parts = profile.map(s => s.part).slice(0, 2);
+      const whens = {}, whenOthers = {};
+      profile.forEach(s => { whens[s.part] = s.when || null; if (s.whenOther) whenOthers[s.part] = s.whenOther; });
+      return { parts, level: 5, whens, whenOthers, partOther: "", profileParts: parts.slice() };
+    }
+    return { parts: [], level: 5, whens: {}, whenOthers: {}, partOther: "", profileParts: [] };
   });
+  const [showPartPicker, setShowPartPicker] = useState(false);
 
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
 
@@ -367,6 +381,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     ? soreClauses.map((c, i) => i === soreClauses.length - 1 ? `${c}어요` : `${c}고, `).join("")
     : null;
 
+  // "오늘 [허리]와 [목]의 상태는 어땠나요?" — 말랑 정보로 불러온 부위 문구
+  const soreQuestion = sore.parts.length > 0
+    ? `오늘 ${sore.parts.map((p, i) => `[${partDisplay(p)}]` + (i === sore.parts.length - 1 ? "" : (hasBatchim(partDisplay(p)) ? "과 " : "와 "))).join("")}의 상태는 어땠나요?`
+    : null;
+  const addPart = (p) => setSore(s => ({ ...s, parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]) }));
+
   // ── 말랑이 기분 ──
   const moodData = DAY_MOODS.find(m => m.v === dayMood);
 
@@ -546,53 +566,81 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       );
     }
     if (id === "sore") {
+      const whenText = (p) => (sore.whens[p] === "기타" ? (sore.whenOthers[p] || "직접 입력") : (sore.whens[p] || "—"));
+      const pickable = PARTS.filter(p => !sore.parts.includes(p));
       return (
         <Card title="불편한 부위">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
-            {PARTS.map(p => {
-              const on = sore.parts.includes(p);
-              const disabled = !on && sore.parts.length >= 2;
+          {/* 말랑 정보에서 불러온 부위로 만든 질문 */}
+          {soreQuestion && (
+            <div style={{ padding: "12px 14px", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, fontSize: 14, color: C.ink, fontWeight: 800, lineHeight: 1.5, marginBottom: 4 }}>
+              {soreQuestion}
+            </div>
+          )}
+
+          {sore.parts.length > 0 && <>
+            <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "16px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
+            <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: t.accent }} />
+
+            {sore.parts.map(p => {
+              const fromProfile = (sore.profileParts || []).includes(p);
               return (
-                <Tile key={p} content={p} on={on} disabled={disabled} tint={C.yellow} onClick={() => setSore(s => ({
-                  ...s,
-                  parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]),
-                }))} />
+                <div key={p} style={{ marginTop: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 12.5, color: C.ink, fontWeight: 800 }}>{partDisplay(p)}</div>
+                    <button onClick={() => setSore(s => ({ ...s, parts: s.parts.filter(x => x !== p), profileParts: (s.profileParts || []).filter(x => x !== p) }))}
+                      style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "2px 4px" }}>삭제 ✕</button>
+                  </div>
+                  {fromProfile ? (
+                    /* 말랑 정보로 불러온 부위 — 언제는 재질문하지 않고 표시만 */
+                    <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginTop: 4 }}>언제: {whenText(p)}</div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "8px 0 8px" }}>{partDisplay(p)}{hasBatchim(partDisplay(p)) ? "은" : "는"} 언제 그러셨어요?</div>
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                        {WHEN_OPTS.map(w => (
+                          <Chip key={w} label={w} on={sore.whens[p] === w} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: w } }))} />
+                        ))}
+                        <Chip label="기타" on={sore.whens[p] === "기타"} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: "기타" } }))} />
+                      </div>
+                      {sore.whens[p] === "기타" && (
+                        <input value={sore.whenOthers[p] || ""} onChange={e => setSore(s => ({ ...s, whenOthers: { ...s.whenOthers, [p]: e.target.value } }))}
+                          placeholder="예: 계단 오를 때"
+                          style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+                      )}
+                    </>
+                  )}
+                </div>
               );
             })}
-          </div>
+          </>}
+
+          {/* 다른 부위 추가하기 (최대 2) */}
+          {sore.parts.length < 2 && (
+            <button onClick={() => setShowPartPicker(v => !v)}
+              style={{ marginTop: 16, width: "100%", padding: 12, borderRadius: 14, border: `1px dashed ${C.yellowLine}`, background: C.yellow, color: GOLD, fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+              {showPartPicker ? "부위 선택 닫기" : "+ 다른 부위 추가하기"}
+            </button>
+          )}
+          {(showPartPicker || sore.parts.length === 0) && sore.parts.length < 2 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center", marginTop: 14 }}>
+              {pickable.map(p => (
+                <Tile key={p} content={p} on={false} disabled={false} tint={C.yellow}
+                  onClick={() => { addPart(p); if (p !== "기타") setShowPartPicker(false); }} />
+              ))}
+            </div>
+          )}
           {/* 기타 선택 시 부위 직접 입력 */}
           {sore.parts.includes("기타") && (
             <input value={sore.partOther} onChange={e => setSore(s => ({ ...s, partOther: e.target.value.slice(0, 20) }))}
               placeholder="어디가 불편했나요? 예: 손가락, 종아리"
               style={{ width: "100%", marginTop: 14, padding: "11px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
           )}
-          {sore.parts.length > 0 && <>
-            <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>얼마나 불편했어요? ({sore.level})</div>
-            <input type="range" min="0" max="10" value={sore.level} onChange={e => setSore(s => ({ ...s, level: +e.target.value }))} style={{ width: "100%", accentColor: t.accent }} />
 
-            {sore.parts.map(p => (
-              <div key={p}>
-                <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "14px 0 8px" }}>{partDisplay(p)}{hasBatchim(partDisplay(p)) ? "은" : "는"} 언제 그러셨어요?</div>
-                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                  {WHEN_OPTS.map(w => (
-                    <Chip key={w} label={w} on={sore.whens[p] === w} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: w } }))} />
-                  ))}
-                  <Chip label="기타" on={sore.whens[p] === "기타"} onClick={() => setSore(s => ({ ...s, whens: { ...s.whens, [p]: "기타" } }))} />
-                </div>
-                {sore.whens[p] === "기타" && (
-                  <input value={sore.whenOthers[p] || ""} onChange={e => setSore(s => ({ ...s, whenOthers: { ...s.whenOthers, [p]: e.target.value } }))}
-                    placeholder="예: 계단 오를 때"
-                    style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
-                )}
-              </div>
-            ))}
-
-            {soreHeadline && (
-              <div style={{ marginTop: 14, padding: "12px 14px", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, fontSize: 13, color: C.ink, fontWeight: 700, lineHeight: 1.5 }}>
-                "{soreHeadline}"
-              </div>
-            )}
-          </>}
+          {soreHeadline && (
+            <div style={{ marginTop: 14, padding: "12px 14px", background: "#FAF8F3", borderRadius: 14, fontSize: 13, color: C.sub, fontWeight: 700, lineHeight: 1.5 }}>
+              "{soreHeadline}"
+            </div>
+          )}
         </Card>
       );
     }

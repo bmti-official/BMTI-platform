@@ -1,160 +1,163 @@
 import { useState } from "react";
-import { Mallang } from "./Mallang";
+import BodySelector3D from "./BodySelector3D";
 import { supabase } from "../lib/supabaseClient";
 import { getTypeAccent, GOLD } from "../lib/typeAccent";
+import {
+  FREQ_OPTS, GOAL_OPTS, POSTURE_OPTS,
+  setGuestMallang, pushGuestMallangHistory,
+} from "../lib/mallangProfile";
 
 // ─────────────────────────────────────────────
-// BMTI 하루일기 — 첫 방문자용 온보딩 (한 화면)
-// 예전엔 5개의 대화 페이지를 넘겼지만, 지금은 마지막 '여기만의 이야기' 한 페이지만 남기고
-// 그 아래에서 바로: (미로그인) 카카오 로그인 → (로그인) 운동 습관 3가지 → 말랑 다이어리로 이동.
-// 운동 습관(빈도·목적·자주 하는 자세)은 딱 한 번만 물어보고 마이페이지에 저장된다.
+// BMTI 하루일기 — 첫 방문자용 온보딩 (3페이지)
+// 1) 3D 캐릭터에서 불편한 부위 2초 꾹 눌러 선택 + 언제 그러셨어요
+// 2) 평소 운동 빈도 + 몸 관리 목적(최대 2)
+// 3) 요즘 하루 자세(무거운 물건 포함) → 완료 → 말랑 다이어리(캘린더)
+// 딱 한 번만 물어보고 마이페이지 '말랑 정보'에 저장된다(한 달 2회 수정 가능).
 // ─────────────────────────────────────────────
 
-const C = {
-  bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
-  tileOff: "#F3F1EC",
-};
+const C = { bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", tileOff: "#F3F1EC" };
 
-const FREQ_OPTS = [
-  { id: "none", label: "거의 안 해요" },
-  { id: "sometimes", label: "가끔 생각날 때" },
-  { id: "weekly", label: "일주일에 몇 번" },
-  { id: "daily", label: "거의 매일" },
-];
-const GOAL_OPTS = [
-  { id: "flexibility", label: "💢 뻐근함 줄이기" },
-  { id: "posture", label: "🧘🏻‍♀️ 자세 바로잡기" },
-  { id: "health", label: "🏃🏻 체력 기르기" },
-  { id: "stress", label: "💥 스트레스 풀기" },
-];
-const POSTURE_OPTS = [
-  { id: "sitting", label: "🪑 주로 앉아 있어요", sub: "사무직, 공부 등" },
-  { id: "standing", label: "🧍 주로 서 있어요", sub: "판매, 요리, 미용 등" },
-  { id: "moving", label: "🚶 계속 움직여요", sub: "간호, 육아, 서비스 등" },
-  { id: "mixed", label: "🔄 앉았다 섰다 해요", sub: "다양" },
-  { id: "other", label: "기타" },
+const ENCOURAGE = [
+  "어디가 자주 불편한지 알면, 매일 기록이 훨씬 빨라져요.",
+  "운동 습관을 알면 딱 맞는 말랑 루틴을 추천해드려요.",
+  "거의 다 왔어요! 하루를 어떻게 보내는지만 알려주세요.",
 ];
 
-export default function DiaryOnboarding({ isLoggedIn, onRequireLogin, onComplete, userId, setUserProfile }) {
+export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender, setUserProfile }) {
+  const t = getTypeAccent();
+  const [step, setStep] = useState(0); // 0,1,2
+  const [saving, setSaving] = useState(false);
+
+  const [sore, setSore] = useState([]); // [{part, when, whenOther}]
   const [freq, setFreq] = useState(null);
   const [goals, setGoals] = useState([]);
   const [posture, setPosture] = useState(null);
   const [postureCustom, setPostureCustom] = useState("");
-  const [saving, setSaving] = useState(false);
+
   const toggleGoal = (id) => setGoals(g => g.includes(id) ? g.filter(x => x !== id) : (g.length >= 2 ? g : [...g, id]));
 
-  const finish = () => { if (onComplete) onComplete(); };
+  const canNext = [
+    sore.length > 0 && sore.every(s => s.when && !(s.when === "기타" && !(s.whenOther || "").trim())),
+    freq && goals.length > 0,
+    posture && !(posture === "other" && !postureCustom.trim()),
+  ];
 
-  const submitExerciseInfo = async () => {
+  const finish = async () => {
     const finalPosture = posture === "other" ? postureCustom.trim() : posture;
-    if (userId) {
+    const soreClean = sore.map(s => ({ part: s.part, when: s.when, whenOther: s.when === "기타" ? (s.whenOther || "").trim() : "" }));
+    const payload = { mallang_sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture };
+
+    if (isLoggedIn && userId) {
       setSaving(true);
       try {
-        await supabase.from("users").update({
-          exercise_frequency: freq,
-          exercise_goals: goals,
-          common_posture: finalPosture,
-        }).eq("id", userId);
+        await supabase.from("users").update({ ...payload, mallang_info_updated_at: new Date().toISOString() }).eq("id", userId);
+        await supabase.from("mallang_info_history").insert({ user_id: userId, sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture, source: "onboarding" });
         if (setUserProfile) {
           setUserProfile(prev => {
-            const updated = { ...prev, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture };
+            const updated = { ...prev, ...payload };
             localStorage.setItem("bmti_user", JSON.stringify(updated));
             return updated;
           });
         }
-      } catch (e) {
-        console.error("운동 정보 저장 실패", e);
-      }
+      } catch (e) { console.error("말랑 정보 저장 실패", e); }
       setSaving(false);
+    } else {
+      // 게스트 — 이 기기에만 저장
+      setGuestMallang(payload);
+      pushGuestMallangHistory({ ...payload, sore: soreClean, source: "onboarding" });
     }
-    finish();
+    if (onComplete) onComplete();
   };
 
-  const canSubmit = freq && posture && goals.length > 0 && !(posture === "other" && !postureCustom.trim());
+  const next = () => { if (step < 2) setStep(step + 1); else finish(); };
+  const back = () => setStep(s => Math.max(0, s - 1));
+
+  const remaining = (() => {
+    // 이 페이지에서 아직 안 채운 필수 항목 수
+    if (step === 0) return sore.length === 0 ? 1 : sore.filter(s => !s.when).length;
+    if (step === 1) return (freq ? 0 : 1) + (goals.length > 0 ? 0 : 1);
+    return posture ? 0 : 1;
+  })();
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center",
-      fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "96px 24px 48px", animation: "fadeUp .4s ease-out" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
+      <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column", padding: "76px 24px 96px", position: "relative" }}>
 
-        {/* 마스코트 */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 26 }}>
-          <Mallang v={5} size={84} />
+        {/* 상단바: 이전 버튼 + 진행률 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 40, marginBottom: 6 }}>
+          {step > 0 ? (
+            <button onClick={back} style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 15, color: C.ink, fontWeight: 800, padding: "6px 8px 6px 0", display: "flex", alignItems: "center", gap: 4 }}>
+              ‹ 이전
+            </button>
+          ) : <span />}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{ width: i === step ? 20 : 7, height: 7, borderRadius: 5, background: i <= step ? GOLD : C.line, transition: "all .2s" }} />
+            ))}
+            <span style={{ fontSize: 12, fontWeight: 800, color: C.sub, marginLeft: 4 }}>{step + 1}/3</span>
+          </div>
         </div>
 
-        {!isLoggedIn ? (
-          /* 미로그인 — 카카오 로그인 먼저 */
-          <div style={{ textAlign: "center" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>기록을 시작할까요?</h2>
-            <p style={{ fontSize: 13, color: C.sub, margin: "0 0 22px", lineHeight: 1.6 }}>
-              카카오로 로그인하면 운동 습관을 여쭤보고,<br />오늘부터 매일 기록을 저장해드려요.
-            </p>
-            <button onClick={() => { if (onRequireLogin) onRequireLogin(); }}
-              style={{ width: "100%", padding: 17, borderRadius: 15, border: "none", background: "#FEE500", color: "#3C1E1E", fontSize: 15.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-              <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, fill: "#3C1E1E" }}><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-              카카오로 3초 기록
-            </button>
-            <p style={{ fontSize: 11, color: C.sub, marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <span>🔕</span> 광고 안 보냄 · 결과만 저장
-            </p>
-          </div>
-        ) : (
-          /* 로그인 — 운동 습관 3가지 (딱 한 번, 마이페이지에 저장) */
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>운동 습관을 알려주세요</h2>
-            <p style={{ fontSize: 12.5, color: C.sub, margin: "0 0 22px" }}>딱 한 번만 물어볼게요. 앞으로의 기록에 참고할게요.</p>
+        {/* 독려 문구 */}
+        <p style={{ fontSize: 13, color: C.sub, fontWeight: 700, margin: "2px 0 4px", lineHeight: 1.5 }}>
+          {ENCOURAGE[step]}
+          {remaining > 0 && <b style={{ color: t.accent }}> · {remaining}개 남았어요</b>}
+        </p>
 
-            <ExerciseQuestion label="평소 운동, 어떻게 하세요?">
-              {FREQ_OPTS.map(o => (
-                <PillOption key={o.id} label={o.label} on={freq === o.id} onClick={() => setFreq(o.id)} />
-              ))}
-            </ExerciseQuestion>
+        <div key={step} style={{ flex: 1, animation: "fadeUp .3s ease-out" }}>
+          {step === 0 && (
+            <div>
+              <h2 style={{ fontSize: 19, fontWeight: 800, margin: "8px 0 14px" }}>요즘 어디가 불편하세요?</h2>
+              <BodySelector3D gender={gender} value={sore} onChange={setSore} />
+            </div>
+          )}
 
-            <ExerciseQuestion label="몸 관리에서 제일 신경 쓰는 건? (최대 2개)">
-              {GOAL_OPTS.map(o => (
-                <PillOption key={o.id} label={o.label} on={goals.includes(o.id)} onClick={() => toggleGoal(o.id)} disabled={!goals.includes(o.id) && goals.length >= 2} />
-              ))}
-            </ExerciseQuestion>
+          {step === 1 && (
+            <div>
+              <h2 style={{ fontSize: 19, fontWeight: 800, margin: "8px 0 20px" }}>운동 습관을 알려주세요</h2>
+              <Question label="평소 운동, 어떻게 하세요?">
+                {FREQ_OPTS.map(o => <Pill key={o.id} label={o.label} on={freq === o.id} onClick={() => setFreq(o.id)} />)}
+              </Question>
+              <Question label="몸 관리에서 제일 신경 쓰는 건? (최대 2개)">
+                {GOAL_OPTS.map(o => <Pill key={o.id} label={o.label} on={goals.includes(o.id)} onClick={() => toggleGoal(o.id)} disabled={!goals.includes(o.id) && goals.length >= 2} />)}
+              </Question>
+            </div>
+          )}
 
-            <ExerciseQuestion label="요즘 하루 대부분 어떻게 지내요?">
-              {POSTURE_OPTS.map(o => (
-                <PillOption key={o.id} label={o.label} sub={o.sub} on={posture === o.id} onClick={() => setPosture(o.id)} />
-              ))}
+          {step === 2 && (
+            <div>
+              <h2 style={{ fontSize: 19, fontWeight: 800, margin: "8px 0 20px" }}>요즘 하루 대부분 어떻게 지내요?</h2>
+              <Question label="가장 가까운 걸 골라주세요">
+                {POSTURE_OPTS.map(o => <Pill key={o.id} label={o.label} sub={o.sub} on={posture === o.id} onClick={() => setPosture(o.id)} />)}
+              </Question>
               {posture === "other" && (
-                <input
-                  type="text"
-                  value={postureCustom}
-                  onChange={(e) => setPostureCustom(e.target.value.slice(0, 20))}
+                <input type="text" value={postureCustom} onChange={e => setPostureCustom(e.target.value.slice(0, 20))}
                   placeholder="짧게 적어주세요 (예: 운전을 오래 해요)"
-                  style={{ width: "100%", marginTop: 4, padding: "10px 13px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                />
+                  style={{ width: "100%", marginTop: -8, padding: "11px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
               )}
-            </ExerciseQuestion>
+            </div>
+          )}
+        </div>
 
-            <button
-              onClick={submitExerciseInfo}
-              disabled={!canSubmit || saving}
-              style={{ width: "100%", marginTop: 8, padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff",
-                fontSize: 15, fontWeight: 800, cursor: canSubmit ? "pointer" : "default", opacity: canSubmit ? 1 : 0.4 }}
-            >
-              {saving ? "저장하는 중..." : "저장하고 말랑 다이어리 시작하기"}
-            </button>
-            <button onClick={finish} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 14, border: "none", background: "transparent", color: C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 4 }}>
-              다음에 입력할게요
-            </button>
-          </div>
-        )}
+        {/* 하단 CTA + 안내 문구 */}
+        <div style={{ marginTop: 18 }}>
+          <button onClick={next} disabled={!canNext[step] || saving}
+            style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800,
+              cursor: canNext[step] ? "pointer" : "default", opacity: canNext[step] ? 1 : 0.4 }}>
+            {saving ? "저장하는 중..." : step < 2 ? "다음" : "완료하고 말랑 다이어리 시작하기"}
+          </button>
+          <p style={{ textAlign: "center", fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "12px 0 0" }}>
+            마이페이지에서 한달에 2번 수정가능합니다.
+          </p>
+        </div>
 
-        <style>{`
-          @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-          @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
-        `}</style>
+        <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
       </div>
     </div>
   );
 }
 
-function ExerciseQuestion({ label, children }) {
+function Question({ label, children }) {
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, marginBottom: 10 }}>{label}</div>
@@ -163,14 +166,12 @@ function ExerciseQuestion({ label, children }) {
   );
 }
 
-function PillOption({ label, sub, on, onClick, disabled }) {
+function Pill({ label, sub, on, onClick, disabled }) {
   return (
-    <button
-      onClick={disabled ? undefined : onClick}
-      style={{ padding: sub ? "8px 15px" : "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
+    <button onClick={disabled ? undefined : onClick}
+      style={{ padding: sub ? "8px 15px" : "9px 15px", borderRadius: 18, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
         border: "none", background: on ? getTypeAccent().accent : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s",
-        display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}
-    >
+        display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
       <span>{label}</span>
       {sub && <span style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.75 }}>{sub}</span>}
     </button>
