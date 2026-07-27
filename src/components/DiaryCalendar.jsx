@@ -4,6 +4,7 @@ import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
 import DiaryHelpPopup from "./DiaryHelpPopup";
 import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
+import FeedbackModal from "./FeedbackModal";
 import { MOODS, CHARACTERS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
@@ -69,6 +70,7 @@ function getRecordMessage(count, isM) {
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin }) {
   const [view, setView] = useState("month"); // "month" | "week"
   const [showHelp, setShowHelp] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const t = getTypeAccent(bmtiCode);
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
@@ -182,11 +184,20 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay} />
               ))}
           {loading === "bottom" && <CalLoader />}
+          {/* 말랑 다이어리 개선 의견 받기 */}
+          <button onClick={() => setShowFeedback(true)}
+            style={{ display: "block", margin: "6px auto 4px", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            💬 말랑 다이어리, 개선 의견 보내기
+          </button>
         </div>
       </div>
 
       {showHelp && (
         <DiaryHelpPopup onClose={() => setShowHelp(false)} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
+      )}
+
+      {showFeedback && (
+        <FeedbackModal source="diary" userId={(() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.id || null; } catch { return null; } })()} onClose={() => setShowFeedback(false)} />
       )}
 
       {showMoodPopup && (
@@ -366,11 +377,11 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
               <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {entry && !isEntryLocked(dateStr) ? (
                   <button onClick={() => onDayPreview({ dateStr, entry })} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
-                    <Mallang v={entry.mood} size={34} />
+                    <Mallang v={entry.mood} size={30} />
                   </button>
                 ) : entry ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
-                    <Mallang v={entry.mood} size={34} />
+                    <Mallang v={entry.mood} size={30} />
                   </div>
                 ) : isToday ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -452,7 +463,7 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
         </div>
         {/* 무드 */}
         <div style={{ width: 40, flexShrink: 0, display: "flex", justifyContent: "center" }}>
-          {entry ? <Mallang v={entry.mood} size={32} /> : <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px dashed ${C.line}` }} />}
+          {entry ? <Mallang v={entry.mood} size={28} /> : <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px dashed ${C.line}` }} />}
         </div>
         {/* 요약(접힘) */}
         <div style={{ flex: 1, minWidth: 0 }}>

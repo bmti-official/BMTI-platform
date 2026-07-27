@@ -57,7 +57,8 @@ export default function BodySelector3D({ gender, value, onChange }) {
             <button key={`${view}-${i}`} data-hotspot={z.part} onClick={() => togglePart(z.part)}
               style={{ position: "absolute", left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%`,
                 borderRadius: 14, cursor: "pointer", padding: 0,
-                background: on ? "rgba(201,151,90,0.28)" : "transparent",
+                // 선택 가능한 부위엔 멀어질수록 연해지는 아주 연한 원형 그라데이션으로 위치를 안내
+                background: on ? "rgba(201,151,90,0.28)" : "radial-gradient(circle 15px at 50% 50%, rgba(201,151,90,0.30) 0%, rgba(201,151,90,0.12) 50%, rgba(201,151,90,0) 100%)",
                 border: on ? `2px solid ${GOLD}` : "2px solid transparent",
                 display: "flex", alignItems: "center", justifyContent: "center", transition: "background .12s" }}>
               {on && (

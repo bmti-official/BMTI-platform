@@ -2,12 +2,17 @@ import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
+import FeedbackModal from "./FeedbackModal";
 import { getDiaryHistory, mergeWeatherIntoHistory } from "../lib/diaryHistory";
 import { getSavedGeo, requestGeo, fetchWeatherRange } from "../lib/weather";
 import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
+import bodyFemaleFront from "../assets/3d_body/female_front.png";
+import bodyFemaleBack from "../assets/3d_body/female_back.png";
+import bodyMaleFront from "../assets/3d_body/male_front.png";
+import bodyMaleBack from "../assets/3d_body/male_back.png";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -162,6 +167,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const [tab, setTab] = useState("records"); // "records" | "discovery"
   const [, forceWeatherRefresh] = useState(0); // 날씨를 붙인 뒤 리포트를 다시 읽게 하는 트리거
   const [savingPDF, setSavingPDF] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const contentRef = useRef(null);
 
   // 다음 페인트까지 대기(탭 전환 후 DOM 갱신 + 이미지 로딩)
@@ -179,13 +185,15 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 32;
-      const contentWidth = pageWidth - margin * 2;
+      const CARD_W = 330;               // 카드 폭을 페이지보다 좁혀 여러 장이 한 페이지에 담기도록
+      const usableH = pageHeight - margin * 2;
+      const gap = 14;
       let cursorY = margin;
 
       // 표지 제목
-      pdf.setFont("helvetica", "bold"); pdf.setFontSize(18);
-      pdf.text(`${year}.${String(month).padStart(2, "0")}  Mallang Report`, margin, cursorY + 6);
-      cursorY += 30;
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(16);
+      pdf.text(`${year}.${String(month).padStart(2, "0")}  Mallang Report`, margin, cursorY + 4);
+      cursorY += 26;
 
       for (const t of ["records", "discovery"]) {
         setTab(t);
@@ -196,11 +204,14 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         const cards = Array.from(root.children);
         for (const card of cards) {
           const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+          if (!canvas.width || !canvas.height) continue;
           const imgData = canvas.toDataURL("image/jpeg", 0.92);
-          const imgHeight = (canvas.height * contentWidth) / canvas.width;
-          if (cursorY !== margin && cursorY + imgHeight > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
-          pdf.addImage(imgData, "JPEG", margin, cursorY, contentWidth, imgHeight);
-          cursorY += imgHeight + 12;
+          let w = CARD_W;
+          let h = (canvas.height * w) / canvas.width;
+          if (h > usableH) { w *= usableH / h; h = usableH; }   // 한 장보다 큰 카드는 페이지에 맞게 축소
+          if (cursorY !== margin && cursorY + h > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
+          pdf.addImage(imgData, "JPEG", (pageWidth - w) / 2, cursorY, w, h);
+          cursorY += h + gap;
         }
       }
 
@@ -295,7 +306,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         <div ref={contentRef}>
         {tab === "records" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {report.sections.map((s) => <SectionCard key={s.id} section={s} />)}
+            {report.sections.map((s) => <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} />)}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -319,18 +330,31 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           <p style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.6, margin: 0 }}>{report.disclaimer}</p>
         </div>
 
-        {/* 이번 달 기록·발견을 하나의 PDF로 카카오톡으로 받기 */}
-        <button onClick={handleMonthlyPDF} disabled={savingPDF}
-          style={{ width: "100%", marginTop: 16, padding: 16, borderRadius: 15, border: "none", background: "#FEE500", color: "#3C1E1E", fontSize: 14.5, fontWeight: 800, cursor: savingPDF ? "default" : "pointer", opacity: savingPDF ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
-          <svg viewBox="0 0 24 24" style={{ width: 19, height: 19, fill: "#3C1E1E" }}><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-          {savingPDF ? "PDF 만드는 중..." : `${month}월 기록·발견 PDF로 받기`}
-        </button>
+        {/* 이번 달 기록·발견을 하나의 PDF로 카카오톡으로 받기 — 20일 이상 기록해야 활성화 */}
+        {(() => {
+          const enough = report.meta.recordedDays >= 20;
+          const active = enough && !savingPDF;
+          return (
+            <button onClick={active ? handleMonthlyPDF : undefined} disabled={!active}
+              style={{ width: "100%", marginTop: 16, padding: 16, borderRadius: 15, border: "none", background: enough ? "#FEE500" : "#F3F1EC", color: enough ? "#3C1E1E" : C.sub, fontSize: 14.5, fontWeight: 800, cursor: active ? "pointer" : "default", opacity: savingPDF ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+              {enough && <svg viewBox="0 0 24 24" style={{ width: 19, height: 19, fill: "#3C1E1E" }}><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>}
+              {savingPDF ? "PDF 만드는 중..." : enough ? `${month}월 기록·발견 PDF로 받기` : `20일 이상 기록하면 받을 수 있어요 (${report.meta.recordedDays}/20)`}
+            </button>
+          );
+        })()}
         <p style={{ textAlign: "center", fontSize: 11, color: C.sub, fontWeight: 600, margin: "10px 0 0" }}>
-          이번 달 기록과 발견을 하나의 PDF로 저장해 카카오톡으로 보낼 수 있어요.
+          한 달에 20일 이상 기록하면 기록·발견을 하나의 PDF로 저장해 카카오톡으로 보낼 수 있어요.
         </p>
+
+        {/* 말랑이의 발견 개선 의견 받기 */}
+        <button onClick={() => setShowFeedback(true)}
+          style={{ display: "block", margin: "22px auto 0", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+          💬 말랑이의 발견, 개선 의견 보내기
+        </button>
       </div>
 
       {showExample && <DiscoveryExamplePopup onClose={() => setShowExample(false)} />}
+      {showFeedback && <FeedbackModal source="discovery" userId={userData?.id} onClose={() => setShowFeedback(false)} />}
     </div>
   );
 }
@@ -915,7 +939,7 @@ function FreeSignals({ signals }) {
   );
 }
 
-function SectionCard({ section: s }) {
+function SectionCard({ section: s, gender }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
   return (
@@ -948,7 +972,7 @@ function SectionCard({ section: s }) {
               <p style={{ fontSize: 12.5, fontWeight: 700, color: "#A24B4B", margin: 0, lineHeight: 1.55 }}>{s.alert.message}</p>
             </div>
           )}
-          <SectionBody id={s.id} data={s.data} />
+          <SectionBody id={s.id} data={s.data} gender={gender} />
         </>
       )}
     </div>
@@ -965,12 +989,12 @@ function ProgressBar({ current, required, color }) {
   );
 }
 
-function SectionBody({ id, data }) {
+function SectionBody({ id, data, gender }) {
   if (!data) return null;
   switch (id) {
     case "mood_calendar": return <MoodCalendar data={data} />;
     case "mood_distribution": return <MoodDistribution data={data} />;
-    case "sore_map": return <SoreMap data={data} />;
+    case "sore_map": return <SoreMap data={data} gender={gender} />;
     case "sore_moments": return <SoreMoments data={data} />;
     case "overwork": return <OverworkBody data={data} />;
     case "movement": return <MovementBody data={data} />;
@@ -1061,40 +1085,55 @@ function MoodDistribution({ data }) {
   );
 }
 
-// ── 뻐근 지도: 가로 막대 대신 몸 실루엣 위에 빈도만큼 큰 점을 찍는다 ──
-const BODY_POS = {
-  head: { x: 50, y: 8 }, neck: { x: 50, y: 17 }, shoulder: { x: 31, y: 25 },
-  elbow: { x: 22, y: 47 }, wrist: { x: 21, y: 60 }, back: { x: 50, y: 38 },
-  abdomen: { x: 50, y: 50 }, waist: { x: 50, y: 58 }, pelvis: { x: 50, y: 67 },
-  knee: { x: 43, y: 82 }, ankle: { x: 43, y: 97 },
-  // etc(기타)는 몸 위치가 없어 지도에 점으로 표시하지 않는다.
+// ── 뻐근 지도: 3D 캐릭터 앞(좌)·뒤(우) 위에 불편한 부위마다 빨간 점을 찍는다 ──
+// 엔진 부위 키 → {v: 앞/뒤, x, y}(정규화 이미지 기준 중심 %). BodySelector3D의 히트존과 좌표를 맞춘다.
+const BODY_POS_3D = {
+  head: { v: "front", x: 50, y: 11 }, shoulder: { v: "front", x: 50, y: 31 },
+  elbow: { v: "front", x: 25, y: 49 }, wrist: { v: "front", x: 24, y: 61 },
+  abdomen: { v: "front", x: 50, y: 47 }, pelvis: { v: "front", x: 50, y: 59 },
+  knee: { v: "front", x: 50, y: 77 }, ankle: { v: "front", x: 50, y: 90 },
+  neck: { v: "back", x: 50, y: 26 }, back: { v: "back", x: 50, y: 36 }, waist: { v: "back", x: 50, y: 53 },
+  // etc(기타)는 몸 위치가 없어 지도에 표시하지 않는다.
 };
-function SoreMap({ data }) {
+function SoreMap({ data, gender }) {
+  const isMale = gender === "male" || gender === "M" || gender === "남성";
+  const imgFront = isMale ? bodyMaleFront : bodyFemaleFront;
+  const imgBack = isMale ? bodyMaleBack : bodyFemaleBack;
   const top = [...data.parts].sort((a, b) => b.count - a.count)[0];
+  const maxCount = data.maxCount || 1;
+
+  const Figure = ({ src, view, label }) => (
+    <div style={{ position: "relative", flex: 1, aspectRatio: "1 / 2", maxWidth: 150 }}>
+      <img src={src} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
+      {data.parts.map((p) => {
+        const pos = BODY_POS_3D[p.part];
+        if (!pos || pos.v !== view) return null;
+        const size = 10 + 20 * (p.count / maxCount); // 누적 많을수록 큰 점
+        const isTop = top && p.part === top.part;
+        return (
+          <span key={p.part} title={`${p.label} ${p.count}번`}
+            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size,
+              marginLeft: -size / 2, marginTop: -size / 2, borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
+              animation: isTop ? "soreDotPulse 1.8s ease-in-out infinite" : "none" }} />
+        );
+      })}
+      <span style={{ position: "absolute", bottom: -2, left: 0, right: 0, textAlign: "center", fontSize: 11, fontWeight: 700, color: C.sub }}>{label}</span>
+    </div>
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-      <svg viewBox="0 0 100 106" width="144" height="153">
-        <ellipse cx="50" cy="9" rx="9.5" ry="9.5" fill="#F2EFE8" stroke="#DCD6C8" strokeWidth="1.2" />
-        <path d="M50 18 C33 18 29 31 29 46 L29 65 C29 78 38 83 50 83 C62 83 71 78 71 65 L71 46 C71 31 67 18 50 18 Z" fill="#F2EFE8" stroke="#DCD6C8" strokeWidth="1.2" />
-        <path d="M29 45 C22 46 19 54 19 60" stroke="#DCD6C8" strokeWidth="5.5" fill="none" strokeLinecap="round" />
-        <path d="M71 45 C78 46 81 54 81 60" stroke="#DCD6C8" strokeWidth="5.5" fill="none" strokeLinecap="round" />
-        <path d="M40 83 L38 105 M60 83 L62 105" stroke="#DCD6C8" strokeWidth="6.5" fill="none" strokeLinecap="round" />
-        {data.parts.map((p) => {
-          const pos = BODY_POS[p.part];
-          if (!pos) return null;
-          const r = 3.5 + 6.5 * (p.count / (data.maxCount || 1));
-          return (
-            <circle key={p.part} cx={pos.x} cy={pos.y} r={r} fill={getTypeAccent().accent} opacity={0.7}>
-              <title>{p.label} {p.count}번</title>
-            </circle>
-          );
-        })}
-      </svg>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, width: "100%", paddingBottom: 12 }}>
+        <Figure src={imgFront} view="front" label="앞모습" />
+        <Figure src={imgBack} view="back" label="뒷모습" />
+      </div>
       {top && (
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
-          점이 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: getTypeAccent().accentDeep, fontWeight: 800 }}>{top.label}</b>
+          점이 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
         </p>
       )}
+      <style>{`@keyframes soreDotPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:1}}`}</style>
     </div>
   );
 }
