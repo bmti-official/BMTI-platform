@@ -150,7 +150,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           </span>
         </h1>
         <p className="text-[min(3.5vw,16px)] md:text-xl whitespace-nowrap text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed break-keep w-full">
-          나를 알아야, 나에게 맞출 수 있다.
+          내 몸과 마음을 챙기는 가장 귀여운 건강 다이어리
         </p>
       </section>
 

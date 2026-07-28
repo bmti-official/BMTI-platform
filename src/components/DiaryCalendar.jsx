@@ -159,7 +159,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
     <div style={{ position: "fixed", inset: 0, background: "#FFFFFF", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
 
       {/* 항상 떠 있는 CTA — 도움말(좌) / 월·주 보기 전환(우) */}
-      <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 460, padding: "0 16px", display: "flex", justifyContent: "space-between", zIndex: 36, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", top: 64, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 460, padding: "0 16px", display: "flex", justifyContent: "space-between", zIndex: 36, pointerEvents: "none" }}>
         <button onClick={() => setShowHelp(true)} aria-label="말랑 다이어리 도움말"
           style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: C.sub, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button>
         <button onClick={() => setView(view === "month" ? "week" : "month")} aria-label={view === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"}
@@ -174,7 +174,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
       {/* 스크롤 영역 — 앞뒤 달/주가 이어져 있고, 위/아래로 넘기면 과거·미래가 나온다 */}
       <div ref={scrollRef} onScroll={onScroll} style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ paddingTop: 100, paddingBottom: 96 }}>
+        <div style={{ paddingTop: 84, paddingBottom: 96 }}>
           {loading === "top" && <CalLoader />}
           {view === "month"
             ? months.map(m => (

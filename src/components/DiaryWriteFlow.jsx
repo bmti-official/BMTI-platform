@@ -48,13 +48,13 @@ const SLEEP_TIME_OPTS = ["~11시", "12시", "1시", "2시 이후"];
 // 카테고리별로 가로 배치하고, 칸을 넘어가면 가로 스크롤한다. '생리 중'은 여성에게만 노출.
 const TAG_CATEGORIES = [
   { title: "음식 섭취", tags: [
-    { label: "카페인", icon: "caffeine" }, { label: "음주", icon: "alcohol" }, { label: "야식·과식", icon: "snacking" }, { label: "수분 보충", icon: "water" },
+    { label: "카페인", icon: "caffeine" }, { label: "음주", icon: "alcohol" }, { label: "야식·과식", icon: "snacking" }, { label: "수분 보충", icon: "water" }, { label: "맵거나 짠 음식", icon: "spicy" }, { label: "달달 디저트", icon: "dessert" },
   ] },
   { title: "활동·환경", tags: [
     { label: "스마트폰·PC", icon: "phone" }, { label: "장거리 운전", icon: "driving" }, { label: "불편한 신발", icon: "shoes" }, { label: "무거운 짐", icon: "heavyBag" }, { label: "에어컨·추위", icon: "coldAir" },
   ] },
   { title: "상태·기타", tags: [
-    { label: "스트레스", icon: "stress" }, { label: "긴장함", icon: "nervous" }, { label: "방전됨", icon: "drained" }, { label: "생리 중", icon: "period", femaleOnly: true }, { label: "약 복용", icon: "medicine" },
+    { label: "스트레스", icon: "stress" }, { label: "긴장함", icon: "nervous" }, { label: "방전됨", icon: "drained" }, { label: "소화 불량", icon: "indigestion" }, { label: "생리 중", icon: "period", femaleOnly: true }, { label: "약 복용", icon: "medicine" },
   ] },
 ];
 

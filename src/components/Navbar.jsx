@@ -54,6 +54,30 @@ const GroupIcon = ({ className }) => (
   </svg>
 );
 
+// 상단 홈 아이콘 — 집 실루엣
+const HomeIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <path d="M4 11.2 12 4l8 7.2V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1v-8.8Z" fill="currentColor" />
+  </svg>
+);
+
+// 상단 마이페이지 아이콘 — 사람 실루엣
+const PersonIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <circle cx="12" cy="8" r="4" fill="currentColor" />
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8Z" fill="currentColor" />
+  </svg>
+);
+
+// 알약 안의 한 칸(아이콘 + 라벨). 두 개를 묶어 하나의 떠 있는 알약 버튼을 만든다.
+const PillTab = ({ active, onClick, icon, label }) => (
+  <button onClick={onClick} className="flex flex-col items-center gap-0.5 w-[58px] py-1.5 rounded-2xl active:scale-95 transition-transform"
+    style={active ? { background: '#F3F1EC' } : undefined}>
+    <span className={`w-6 h-6 flex items-center justify-center ${active ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
+    <span className={`text-[9.5px] font-bold whitespace-nowrap ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
+  </button>
+);
+
 const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, bmtiCode }) => {
 
   const [lastChatDate, setLastChatDate] = useState(localStorage.getItem('last_chat_date'));
@@ -104,102 +128,82 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   return (
     <>
-      {/* 상단 바: 로고 + 로그인/마이페이지 */}
-      <nav id="main-nav" className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 px-4 md:px-6 py-3 md:py-3.5">
-          {/* Left: 로고 — 발견·클래스 오버레이가 떠 있어도 눌러서 메인으로 나갈 수 있게 함께 닫는다 */}
-          <div
-            className="cursor-pointer flex items-baseline gap-2"
-            onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('home'); }}
+      {/* 상단: 홈(집) 원형 버튼 — 항상 떠 있음 */}
+      <div className="fixed top-3 left-3 z-40">
+        <button
+          onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('home'); }}
+          aria-label="홈"
+          className="w-11 h-11 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border border-gray-100 flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <HomeIcon className={`w-6 h-6 ${currentView === 'home' ? 'text-black' : 'text-gray-500'}`} />
+        </button>
+      </div>
+
+      {/* 상단: 닉네임 + 마이페이지(사람) 알약 / 미로그인 시 카카오 로그인 — 항상 떠 있음 */}
+      <div id="login-button" className="fixed top-3 right-3 z-40">
+        {isLoggedIn ? (
+          <button
+            onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('mypage'); }}
+            className={`flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border transition-colors active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
           >
-            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight whitespace-nowrap">BMTI</span>
-            <span className="text-[10px] md:text-xs font-serif font-normal text-gray-400 tracking-tight whitespace-nowrap">말랑 다이어리</span>
-          </div>
-
-          {/* Right: Login */}
-          <div className="flex font-medium items-center gap-1 sm:gap-3 md:gap-4">
-            {isLoggedIn ? (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {userProfile && (
-                  <span className="font-bold text-gray-800 text-sm flex items-center">
-                    {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
-                    {userProfile.nickname}
-                  </span>
-                )}
-                <button
-                  onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('mypage'); }}
-                  className={`text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
-                    currentView === 'mypage' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  마이페이지
-                </button>
-              </div>
-            ) : (
-              <div
-                id="login-button"
-                className="flex items-center cursor-pointer"
-                onClick={() => setIsLoggedIn(true)}
-              >
-                <div className="w-8 h-8 bg-[#FEE500] rounded-full flex items-center justify-center hover:bg-[#F4DC00] transition-colors">
-                  <KakaoIcon className="w-4 h-4 fill-black" />
-                </div>
-              </div>
+            {userProfile && (
+              <span className="font-bold text-gray-800 text-sm flex items-center max-w-[110px] truncate">
+                {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+                {userProfile.nickname}
+              </span>
             )}
-          </div>
-        </div>
-      </nav>
+            <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${currentView === 'mypage' ? 'bg-black' : 'bg-gray-100'}`}>
+              <PersonIcon className={`w-4 h-4 ${currentView === 'mypage' ? 'text-white' : 'text-gray-500'}`} />
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsLoggedIn(true)}
+            aria-label="카카오 로그인"
+            className="w-11 h-11 bg-[#FEE500] rounded-full flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:bg-[#F4DC00] transition-colors active:scale-95"
+          >
+            <KakaoIcon className="w-5 h-5 fill-black" />
+          </button>
+        )}
+      </div>
 
-      {/* 하단 바: 운동일기 / 캐릭터(홈) / 라이브 — BMTI 설문 중에는 숨긴다 */}
+      {/* 하단: 두 개의 떠 있는 알약 + 중앙 캐릭터 — BMTI 설문 중에는 숨긴다 */}
       {currentView !== 'quiz' && (
-        <nav id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-40">
-          <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-100">
-            <div className="max-w-7xl mx-auto grid grid-cols-5 items-center px-4 md:px-10" style={{ height: 66 }}>
-              {/* 말랑 다이어리 — 바깥 탭을 살짝 안으로 모은다(ml) */}
-              <button onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-start ml-3 md:ml-5 active:scale-95 transition-transform">
-                <div className={`w-7 h-7 flex items-center justify-center ${currentView === 'aichat' ? '' : 'opacity-40 grayscale'}`}>
-                  <Mallang v={diaryMoodTick} size={26} />
-                </div>
-                <span className={`text-[10px] font-bold whitespace-nowrap ${currentView === 'aichat' ? 'text-black' : 'text-gray-400'}`}>말랑 다이어리</span>
-              </button>
-
-              {/* 말랑이의 발견 — 독립된 페이지로 취급: 밑에 깔린 화면은 항상 홈으로 고정해둔다 */}
-              <button onClick={() => { setShowMallangClass(false); setShowDiscovery(true); setView('home'); }} className="flex flex-col items-center gap-0.5 justify-self-start active:scale-95 transition-transform">
-                <ChartIcon className="w-6 h-6 text-gray-300" active={showDiscovery} />
-                <span className={`text-[10px] font-bold whitespace-nowrap ${showDiscovery ? 'text-black' : 'text-gray-400'}`}>말랑이의 발견</span>
-              </button>
-
-              {/* 중앙 캐릭터 자리 — 실제 아바타는 절대위치로 위에 떠 있음 */}
-              <div />
-
-              {/* 말랑 클래스 — 캐릭터와 라이브 사이 중앙에 오도록. 독립된 페이지로 취급: 밑에 깔린 화면은 항상 홈으로 고정해둔다 */}
-              <button onClick={() => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); }} className="flex flex-col items-center gap-0.5 justify-self-end active:scale-95 transition-transform">
-                <GroupIcon className="w-6 h-6 text-gray-300" />
-                <span className="text-[10px] font-bold whitespace-nowrap text-gray-400">말랑 클래스</span>
-              </button>
-
-              {/* 말랑방 — 바깥 탭을 살짝 안으로 모은다(mr) */}
-              <button onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }} className="flex flex-col items-center gap-0.5 justify-self-end mr-3 md:mr-5 active:scale-95 transition-transform">
-                <ChatIcon className={`w-7 h-7 ${currentView === 'mallangroom' ? 'text-black' : 'text-gray-300'}`} />
-                <span className={`text-[10px] font-bold ${currentView === 'mallangroom' ? 'text-black' : 'text-gray-400'}`}>말랑방</span>
-              </button>
+        <>
+          {/* 좌측 알약: 말랑 다이어리 | 말랑이의 발견 */}
+          <div className="fixed bottom-4 left-3 z-40">
+            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 p-1">
+              <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }}
+                icon={<Mallang v={diaryMoodTick} size={24} />} label="다이어리" />
+              <PillTab active={showDiscovery} onClick={() => { setShowMallangClass(false); setShowDiscovery(true); setView('home'); }}
+                icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="발견" />
             </div>
-
-            {/* 캐릭터 — 바 위로 떠 있는 버튼. 누르면 메인으로 가지 않고 '내 BMTI 파트너' 팝업을 연다 */}
-            <button
-              onClick={() => setShowPartner(true)}
-              aria-label="내 BMTI 파트너"
-              className="absolute left-1/2 -translate-x-1/2 -top-5 z-30 active:scale-95 transition-transform"
-            >
-              <div className="relative w-14 h-14 flex items-center justify-center">
-                {aiAvatar}
-                {showAiChatDot && (
-                  <span className="absolute top-0.5 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-                )}
-              </div>
-            </button>
           </div>
-        </nav>
+
+          {/* 우측 알약: 말랑 클래스 | 말랑방 */}
+          <div className="fixed bottom-4 right-3 z-40">
+            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 p-1">
+              <PillTab active={showMallangClass} onClick={() => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); }}
+                icon={<GroupIcon className="w-5 h-5 text-gray-500" />} label="클래스" />
+              <PillTab active={currentView === 'mallangroom'} onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }}
+                icon={<ChatIcon className="w-5 h-5 text-gray-500" />} label="말랑방" />
+            </div>
+          </div>
+
+          {/* 중앙 캐릭터 — 떠 있는 버튼. 누르면 '내 BMTI 파트너' 팝업을 연다 */}
+          <button
+            onClick={() => setShowPartner(true)}
+            aria-label="내 BMTI 파트너"
+            className="fixed left-1/2 -translate-x-1/2 bottom-3 z-40 active:scale-95 transition-transform"
+          >
+            <div className="relative w-14 h-14 flex items-center justify-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
+              {aiAvatar}
+              {showAiChatDot && (
+                <span className="absolute top-0.5 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+              )}
+            </div>
+          </button>
+        </>
       )}
 
       {showPartner && (

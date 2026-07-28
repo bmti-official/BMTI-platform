@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { HOTSPOTS, VIEW_ORDER, VIEW_LABEL, WHEN_OPTS, hasBatchim } from "../lib/mallangProfile";
-import { getTypeAccent, GOLD } from "../lib/typeAccent";
+import { HOTSPOTS, WHEN_OPTS, hasBatchim } from "../lib/mallangProfile";
+import { getTypeAccent } from "../lib/typeAccent";
 
 import femaleFront from "../assets/3d_body/female_front.png";
 import femaleBack from "../assets/3d_body/female_back.png";
@@ -13,15 +12,14 @@ const IMGS = {
 };
 
 const MAX_PARTS = 2;
+const BLUE = "#4B8FE3"; // 안내점 색
 
-// 성별별 3D 캐릭터의 앞/뒤를 전환하며 부위를 한 번 터치해 최대 2부위 선택.
+// 성별별 3D 캐릭터의 앞(좌)·뒤(우)를 한 화면에 나란히 두고 부위를 한 번 터치해 최대 2부위 선택.
 // value: [{ part, when: string[], whenOther }] / onChange(next)
 export default function BodySelector3D({ gender, value, onChange }) {
   const t = getTypeAccent();
   const isMale = gender === "male" || gender === "M" || gender === "남성";
   const imgSet = IMGS[isMale ? "male" : "female"];
-  const [viewIdx, setViewIdx] = useState(0);
-  const view = VIEW_ORDER[viewIdx];
   const selectedParts = value.map(v => v.part);
 
   const togglePart = (part) => {
@@ -39,45 +37,42 @@ export default function BodySelector3D({ gender, value, onChange }) {
   }));
   const setWhenOther = (part, txt) => onChange(value.map(v => v.part === part ? { ...v, whenOther: txt } : v));
 
-  const flip = () => setViewIdx(i => (i + 1) % VIEW_ORDER.length);
-  const zones = HOTSPOTS[view];
-
-  return (
-    <div style={{ width: "100%" }}>
-      {/* 캐릭터 + 히트존(한 번 터치로 선택) */}
-      <div style={{ position: "relative", width: "100%", maxWidth: 300, margin: "0 auto", aspectRatio: "1 / 2",
-        background: "linear-gradient(180deg,#FAF8F3,#F3F1EC)", borderRadius: 24, overflow: "hidden", touchAction: "manipulation",
+  const Figure = ({ view, label }) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 2",
+        background: "linear-gradient(180deg,#FAF8F3,#F3F1EC)", borderRadius: 20, overflow: "hidden", touchAction: "manipulation",
         userSelect: "none", WebkitUserSelect: "none" }}>
-        <img src={imgSet[view]} alt={VIEW_LABEL[view]} draggable={false}
+        <img src={imgSet[view]} alt={label} draggable={false}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
-
-        {zones.map((z, i) => {
+        {HOTSPOTS[view].map((z, i) => {
           const on = selectedParts.includes(z.part);
           return (
             <button key={`${view}-${i}`} data-hotspot={z.part} onClick={() => togglePart(z.part)}
               style={{ position: "absolute", left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%`,
-                borderRadius: 14, cursor: "pointer", padding: 0,
-                // 선택 가능한 부위엔 멀어질수록 연해지는 아주 연한 원형 그라데이션으로 위치를 안내
-                background: on ? "rgba(201,151,90,0.28)" : "radial-gradient(circle 15px at 50% 50%, rgba(201,151,90,0.30) 0%, rgba(201,151,90,0.12) 50%, rgba(201,151,90,0) 100%)",
-                border: on ? `2px solid ${GOLD}` : "2px solid transparent",
+                borderRadius: 12, cursor: "pointer", padding: 0,
+                // 선택 가능한 부위엔 멀어질수록 옅어지는 아주 연한 파란 원형 그라데이션으로 위치 안내
+                background: on ? "rgba(75,143,227,0.30)" : "radial-gradient(circle 12px at 50% 50%, rgba(75,143,227,0.32) 0%, rgba(75,143,227,0.13) 50%, rgba(75,143,227,0) 100%)",
+                border: on ? `2px solid ${BLUE}` : "2px solid transparent",
                 display: "flex", alignItems: "center", justifyContent: "center", transition: "background .12s" }}>
               {on && (
-                <span style={{ fontSize: 10, fontWeight: 800, color: GOLD, background: "#fff", borderRadius: 8, padding: "1px 5px", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: BLUE, background: "#fff", borderRadius: 7, padding: "1px 4px", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
               )}
             </button>
           );
         })}
       </div>
+      <div style={{ textAlign: "center", fontSize: 11.5, fontWeight: 700, color: "#9B9489", marginTop: 6 }}>{label}</div>
+    </div>
+  );
 
-      {/* 앞/뒤 전환 */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
-        <button onClick={flip}
-          style={{ padding: "9px 18px", borderRadius: 999, border: "1px solid #EDE9E2", background: "#fff",
-            color: "#6B6459", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 1px 3px rgba(0,0,0,.05)" }}>
-          🔄 {VIEW_LABEL[VIEW_ORDER[(viewIdx + 1) % VIEW_ORDER.length]]} 보기
-        </button>
+  return (
+    <div style={{ width: "100%" }}>
+      {/* 앞모습(좌) · 뒷모습(우) 나란히 */}
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <Figure view="front" label="앞모습" />
+        <Figure view="back" label="뒷모습" />
       </div>
-      <p style={{ textAlign: "center", fontSize: 11.5, color: "#B7B2A9", fontWeight: 600, margin: "8px 0 0" }}>
+      <p style={{ textAlign: "center", fontSize: 11.5, color: "#B7B2A9", fontWeight: 600, margin: "10px 0 0" }}>
         불편한 곳을 <b style={{ color: t.accent }}>한 번 터치</b>해 선택하세요 (최대 2곳)
       </p>
 

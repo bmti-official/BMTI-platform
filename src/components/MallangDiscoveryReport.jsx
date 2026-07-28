@@ -1068,13 +1068,15 @@ function MoodDistribution({ data }) {
   const maxRatio = Math.max(...data.items.map((i) => i.ratio), 0.0001);
   const topCount = Math.max(...data.items.map((i) => i.count), 0);
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6, background: "#FBFAF6", borderRadius: 14, padding: "16px 10px 12px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6, background: "#FBFAF6", borderRadius: 14, padding: "18px 8px 12px" }}>
       {data.items.map((it) => {
         const isTop = it.count > 0 && it.count === topCount;
+        // 세로 여유는 늘리되(72), 가로는 칸 폭을 넘지 않도록 상한을 둬 박스 밖으로 삐져나오지 않게 한다.
+        const sz = Math.min(66, Math.max(30, Math.round(72 * (it.ratio / maxRatio))));
         return (
-          <div key={it.mood} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1 }}>
-            <div style={{ height: 58, display: "flex", alignItems: "flex-end" }}>
-              {it.count > 0 && <Mallang v={it.mood} size={Math.max(24, Math.round(58 * (it.ratio / maxRatio)))} />}
+          <div key={it.mood} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+            <div style={{ height: 72, display: "flex", alignItems: "flex-end" }}>
+              {it.count > 0 && <Mallang v={it.mood} size={sz} />}
             </div>
             <span style={{ fontSize: 10, color: "#9B9489", fontWeight: 700, textAlign: "center", lineHeight: 1.3 }}>{it.label}</span>
             <span style={{ fontSize: 13, color: isTop ? t.accentDeep : C.ink, fontWeight: 800 }}>{it.count}번</span>

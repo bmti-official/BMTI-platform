@@ -482,7 +482,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         {isEditingExercise ? (
           <div className="space-y-5">
             <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">불편한 부위 (최대 2곳)</span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-xs font-bold">불편한 부위 (최대 2곳)</span>
+                <button onClick={() => setSoreEdit([])}
+                  className={`text-[11px] py-1 px-2.5 rounded-full border font-bold transition-colors ${soreEdit.length === 0 ? 'bg-[#C9975A] text-white border-[#C9975A]' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}`}>
+                  불편한 곳 없음
+                </button>
+              </div>
               <div className="grid grid-cols-4 gap-1.5">
                 {SORE_PARTS.map((part) => {
                   const on = soreEdit.some(s => s.part === part);

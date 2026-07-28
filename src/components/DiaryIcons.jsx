@@ -360,6 +360,43 @@ function IconDrained({ size = 28 }) {
   );
 }
 
+// 맵거나 짠 음식 — 빨간 고추
+function IconSpicy({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M11 9 Q13 6 16 7 Q15 10 12 11" fill="#5FA85A" />
+      <path d="M11.5 8.5 Q10 5 13 4" stroke="#4C8F48" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M12 10 Q22 12 23 22 Q23 28 17 27 Q9 25 9 15 Q9 11 12 10Z" fill="#E23B2E" />
+      <path d="M14 14 Q19 16 20 22" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.45" />
+    </svg>
+  );
+}
+
+// 달달 디저트 — 케이크 한 조각
+function IconDessert({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M7 15 L16 7 L25 15 L21 26 L11 26 Z" fill="#F6D6A8" />
+      <path d="M7 15 L16 18 L25 15 L21 26 L11 26 Z" fill="#F2C48A" />
+      <path d="M7 15 L16 7 L25 15 L16 18 Z" fill="#E79ABF" />
+      <circle cx="16" cy="5" r="2.2" fill="#E2554F" />
+      <path d="M16 7 L16 10" stroke="#C7413C" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// 소화 불량 — 초록빛으로 힘들어하는 얼굴
+function IconIndigestion({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11" fill="#8FCB9B" />
+      <path d="M10 13 q1.5 2 3 0 M19 13 q1.5 2 3 0" stroke="#3F7A50" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M11 21 q5 -3 10 0" stroke="#3F7A50" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M23 9 q3 1 2 4" stroke="#6FB37F" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconPeriod({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -389,6 +426,7 @@ const ICONS = {
   standing: IconStanding, heavyLift: IconHeavyLift, editPencil: IconEditPencil,
   gear: IconGear, warn: IconWarn,
   caffeine: IconCaffeine, alcohol: IconAlcohol, snacking: IconSnacking, water: IconWater,
+  spicy: IconSpicy, dessert: IconDessert, indigestion: IconIndigestion,
   phone: IconPhone, driving: IconDriving, shoes: IconShoes, heavyBag: IconHeavyBag,
   coldAir: IconColdAir, stress: IconStress, nervous: IconNervous, drained: IconDrained,
   period: IconPeriod, medicine: IconMedicine,
