@@ -158,15 +158,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   return (
     <div style={{ position: "fixed", inset: 0, background: "#FFFFFF", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
 
-      {/* 항상 떠 있는 CTA — 도움말(좌) / 월·주 보기 전환(우) */}
-      <div style={{ position: "fixed", top: 64, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 460, padding: "0 16px", display: "flex", justifyContent: "space-between", zIndex: 36, pointerEvents: "none" }}>
-        <button onClick={() => setShowHelp(true)} aria-label="말랑 다이어리 도움말"
-          style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: C.sub, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button>
-        <button onClick={() => setView(view === "month" ? "week" : "month")} aria-label={view === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"}
-          style={{ pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", color: t.accentDeep, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {view === "month" ? <IconWeek /> : <IconMonth />}
-        </button>
-      </div>
+      {/* '?' / 월·주 전환 버튼은 각 캘린더의 '현재 달·현재 주' 카드 안에 붙어(sticky) 함께 이동한다.
+         (아래 MonthSection·WeekSection의 CalControls 참고) */}
 
       {/* 떠 있는 상·하단 네비 버튼 높이에 맞춘 위/아래 블러 페이드 */}
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 64, background: "linear-gradient(#FFFFFF, rgba(255,255,255,0))", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
@@ -178,10 +171,12 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           {loading === "top" && <CalLoader />}
           {view === "month"
             ? months.map(m => (
-                <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay} />
+                <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay}
+                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} />
               ))
             : weeks.map(w => (
-                <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay} />
+                <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay}
+                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} />
               ))}
           {loading === "bottom" && <CalLoader />}
           {/* 말랑 다이어리 개선 의견 받기 */}
@@ -344,7 +339,22 @@ const IconMonth = () => (
 );
 
 // ── 월간 섹션 — 오늘의 달만 좌우 전체 노랑, 나머진 흰색 ──
-function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay }) {
+// 현재 달·주 카드 안에 붙는 '?'/전환 버튼 — sticky로 그 카드가 보이는 동안 상단에 머문다.
+function CalControls({ calView, onHelp, onToggleView, t }) {
+  const btn = { pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
+  return (
+    <div style={{ position: "sticky", top: 72, zIndex: 36, height: 0, pointerEvents: "none" }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <button onClick={onHelp} aria-label="말랑 다이어리 도움말" style={{ ...btn, color: C.sub, fontSize: 15, fontWeight: 800 }}>?</button>
+        <button onClick={onToggleView} aria-label={calView === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"} style={{ ...btn, color: t.accentDeep }}>
+          {calView === "month" ? <IconWeek /> : <IconMonth />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, calView, onHelp, onToggleView }) {
   const year = monthDate.getFullYear(), month = monthDate.getMonth();
   const monthKey = `${year}-${pad(month + 1)}`;
   const count = history.filter(e => e.date.startsWith(monthKey)).length;
@@ -353,7 +363,8 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
   const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   return (
     <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? YELLOW_BG : "#fff", width: "100%" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 32px" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 32px", position: "relative" }}>
+        {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
           <p style={{ fontSize: 13, color: C.sub, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
@@ -405,7 +416,7 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
 }
 
 // ── 주간 섹션 — 오늘의 주만 좌우 전체 노랑, 나머진 흰색 ──
-function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, buildEntrySummary, onEditDay }) {
+function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, buildEntrySummary, onEditDay, calView, onHelp, onToggleView }) {
   const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(weekStart); x.setDate(x.getDate() + i); return x; });
   const end = days[6];
   const title = weekStart.getMonth() === end.getMonth()
@@ -414,7 +425,8 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
   const count = days.filter(d => history.some(e => e.date === toISO(d))).length;
   return (
     <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? YELLOW_BG : "#fff", width: "100%" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 30px" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 30px", position: "relative" }}>
+        {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{title}</h1>
           <p style={{ fontSize: 13, color: C.sub, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>

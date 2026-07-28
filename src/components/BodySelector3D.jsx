@@ -47,15 +47,15 @@ export default function BodySelector3D({ gender, value, onChange }) {
           const on = selectedParts.includes(z.part);
           return (
             <button key={`${view}-${i}`} data-hotspot={z.part} onClick={() => togglePart(z.part)}
-              className={on ? undefined : "body-guide-dot"}
               style={{ position: "absolute", left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%`,
                 borderRadius: 12, cursor: "pointer", padding: 0,
-                // 선택 가능한 부위엔 멀어질수록 옅어지는 골드 원형 그라데이션으로 위치 안내(천천히 깜빡)
-                background: on ? "rgba(201,151,90,0.30)" : "radial-gradient(circle 13px at 50% 50%, rgba(201,151,90,0.55) 0%, rgba(201,151,90,0.24) 50%, rgba(201,151,90,0) 100%)",
+                background: on ? "rgba(201,151,90,0.30)" : "transparent",
                 border: on ? `2px solid ${GOLD}` : "2px solid transparent",
                 display: "flex", alignItems: "center", justifyContent: "center", transition: "background .12s" }}>
-              {on && (
+              {on ? (
                 <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, background: "#fff", borderRadius: 7, padding: "1px 4px", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
+              ) : (
+                <span className="body-dot" />
               )}
             </button>
           );
@@ -67,16 +67,22 @@ export default function BodySelector3D({ gender, value, onChange }) {
 
   return (
     <div style={{ width: "100%" }}>
-      {/* 안내점: 약 3초간 천천히 보였다가 사라지고, 5초쯤 뒤 다시 나타나는 8초 주기 */}
+      {/* 안내점: '여기를 누르세요' 느낌의 또렷한 타깃 점 — 가운데 골드 점 + 잔잔히 퍼지는 링 */}
       <style>{`
-        @keyframes bodyGuidePulse {
-          0% { opacity: 0; }
-          8% { opacity: 1; }
-          37% { opacity: 1; }
-          46% { opacity: 0; }
-          100% { opacity: 0; }
+        @keyframes bodyDotRing {
+          0% { transform: scale(0.7); opacity: 0.55; }
+          70%, 100% { transform: scale(1.9); opacity: 0; }
         }
-        .body-guide-dot { animation: bodyGuidePulse 8s ease-in-out infinite; }
+        @keyframes bodyDotCore {
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.15); opacity: 1; }
+        }
+        .body-dot { position: relative; width: 15px; height: 15px; display: block; }
+        .body-dot::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+          background: radial-gradient(circle, #D8A24E 0%, #C9975A 70%); box-shadow: 0 1px 3px rgba(140,96,40,0.4);
+          animation: bodyDotCore 2.2s ease-in-out infinite; }
+        .body-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+          border: 2px solid #C9975A; animation: bodyDotRing 2.2s ease-out infinite; }
       `}</style>
       {/* 앞모습(좌) · 뒷모습(우) 나란히 */}
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
