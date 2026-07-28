@@ -168,9 +168,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         </button>
       </div>
 
-      {/* 상·하단 네비와 자연스럽게 이어지도록 위/아래 블러 페이드 */}
-      <div style={{ position: "fixed", top: 52, left: 0, right: 0, height: 40, background: "linear-gradient(#FFFFFF, rgba(255,255,255,0))", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: 64, left: 0, right: 0, height: 40, background: "linear-gradient(rgba(255,255,255,0), #FFFFFF)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
+      {/* 떠 있는 상·하단 네비 버튼 높이에 맞춘 위/아래 블러 페이드 */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 64, background: "linear-gradient(#FFFFFF, rgba(255,255,255,0))", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(rgba(255,255,255,0), #FFFFFF)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
 
       {/* 스크롤 영역 — 앞뒤 달/주가 이어져 있고, 위/아래로 넘기면 과거·미래가 나온다 */}
       <div ref={scrollRef} onScroll={onScroll} style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>

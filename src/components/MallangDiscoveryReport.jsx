@@ -195,6 +195,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
       pdf.text(`${year}.${String(month).padStart(2, "0")}  Mallang Report`, margin, cursorY + 4);
       cursorY += 26;
 
+      // 폰트가 완전히 로드된 뒤 캡처해야 텍스트 기준선이 어긋나지 않는다.
+      if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch { /* noop */ } }
+
       for (const t of ["records", "discovery"]) {
         setTab(t);
         await nextPaint();
@@ -203,7 +206,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         await waitForImages(root);
         const cards = Array.from(root.children);
         for (const card of cards) {
-          const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+          const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true, scrollX: 0, scrollY: -window.scrollY });
           if (!canvas.width || !canvas.height) continue;
           const imgData = canvas.toDataURL("image/jpeg", 0.92);
           let w = CARD_W;
@@ -380,7 +383,7 @@ function DiscoveryExamplePopup({ onClose }) {
             { d: "7/15", s: "목이 불편했어요 · 움직일 때" },
             { d: "7/21", s: "목이 불편했어요 · 오래 앉아있을 때" },
           ].map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "5px 0", fontSize: 12.5 }}>
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", padding: "5px 0", fontSize: 12.5 }}>
               <span style={{ color: C.sub, fontWeight: 700, minWidth: 30 }}>{r.d}</span>
               <span style={{ color: C.ink }}>{r.s}</span>
             </div>
@@ -624,7 +627,7 @@ function CooccurrenceCard({ report }) {
     <InfoCard icon={<IconLink size={17} />} title="함께 온 기록" hint={`'${c.tag}'을(를) 적은 ${c.uses}번의 날, 이런 것들이 자주 함께였어요.`}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {c.items.map((it) => (
-          <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+          <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 5 }}>
             {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
           </span>
         ))}
@@ -751,7 +754,7 @@ function WeatherCard({ report, entries, onWeatherUpdated }) {
             { e: "☀️", label: "맑은 날 불편", n: w.clearSore },
             { e: "💧", label: "습한 날 불편", n: w.humidSore },
           ].map((it) => (
-            <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 13px", display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+            <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 13px", display: "inline-flex", alignItems: "center", gap: 5 }}>
               {it.e} {it.label}<b style={{ fontWeight: 800 }}>{it.n}번</b>
             </span>
           ))}
@@ -1145,7 +1148,7 @@ function SoreMoments({ data }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {data.items.map((it) => (
-        <span key={it.situation} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+        <span key={it.situation} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 5 }}>
           {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
         </span>
       ))}
@@ -1218,7 +1221,7 @@ function BarRow({ label, count, max, color }) {
   const accentDeep = getTypeAccent().accentDeep;
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
         <span>{label}</span><span style={{ color: accentDeep, fontWeight: 800 }}>{count}번</span>
       </div>
       <div style={{ height: 10, borderRadius: 999, background: "#EFEBE3", overflow: "hidden" }}>

@@ -1,5 +1,5 @@
 import { HOTSPOTS, WHEN_OPTS, hasBatchim } from "../lib/mallangProfile";
-import { getTypeAccent } from "../lib/typeAccent";
+import { getTypeAccent, GOLD } from "../lib/typeAccent";
 
 import femaleFront from "../assets/3d_body/female_front.png";
 import femaleBack from "../assets/3d_body/female_back.png";
@@ -12,7 +12,6 @@ const IMGS = {
 };
 
 const MAX_PARTS = 2;
-const BLUE = "#4B8FE3"; // 안내점 색
 
 // 성별별 3D 캐릭터의 앞(좌)·뒤(우)를 한 화면에 나란히 두고 부위를 한 번 터치해 최대 2부위 선택.
 // value: [{ part, when: string[], whenOther }] / onChange(next)
@@ -48,14 +47,15 @@ export default function BodySelector3D({ gender, value, onChange }) {
           const on = selectedParts.includes(z.part);
           return (
             <button key={`${view}-${i}`} data-hotspot={z.part} onClick={() => togglePart(z.part)}
+              className={on ? undefined : "body-guide-dot"}
               style={{ position: "absolute", left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%`,
                 borderRadius: 12, cursor: "pointer", padding: 0,
-                // 선택 가능한 부위엔 멀어질수록 옅어지는 아주 연한 파란 원형 그라데이션으로 위치 안내
-                background: on ? "rgba(75,143,227,0.30)" : "radial-gradient(circle 12px at 50% 50%, rgba(75,143,227,0.32) 0%, rgba(75,143,227,0.13) 50%, rgba(75,143,227,0) 100%)",
-                border: on ? `2px solid ${BLUE}` : "2px solid transparent",
+                // 선택 가능한 부위엔 멀어질수록 옅어지는 골드 원형 그라데이션으로 위치 안내(천천히 깜빡)
+                background: on ? "rgba(201,151,90,0.30)" : "radial-gradient(circle 13px at 50% 50%, rgba(201,151,90,0.55) 0%, rgba(201,151,90,0.24) 50%, rgba(201,151,90,0) 100%)",
+                border: on ? `2px solid ${GOLD}` : "2px solid transparent",
                 display: "flex", alignItems: "center", justifyContent: "center", transition: "background .12s" }}>
               {on && (
-                <span style={{ fontSize: 9, fontWeight: 800, color: BLUE, background: "#fff", borderRadius: 7, padding: "1px 4px", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, background: "#fff", borderRadius: 7, padding: "1px 4px", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
               )}
             </button>
           );
@@ -67,6 +67,17 @@ export default function BodySelector3D({ gender, value, onChange }) {
 
   return (
     <div style={{ width: "100%" }}>
+      {/* 안내점: 약 3초간 천천히 보였다가 사라지고, 5초쯤 뒤 다시 나타나는 8초 주기 */}
+      <style>{`
+        @keyframes bodyGuidePulse {
+          0% { opacity: 0; }
+          8% { opacity: 1; }
+          37% { opacity: 1; }
+          46% { opacity: 0; }
+          100% { opacity: 0; }
+        }
+        .body-guide-dot { animation: bodyGuidePulse 8s ease-in-out infinite; }
+      `}</style>
       {/* 앞모습(좌) · 뒷모습(우) 나란히 */}
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
         <Figure view="front" label="앞모습" />
