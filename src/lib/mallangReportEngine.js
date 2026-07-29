@@ -738,10 +738,10 @@ export function buildMonthlyReport(entries, profile, opts) {
   const sections = [
     mkSection("mood_calendar", "기분 달력", days.length, dCal, `이번 달 ${days.length}일을 기록했어요.`),
 
-    mkSection("mood_distribution", "이번 달 말랑이들", days.length, dDist,
-      dDist.top ? `이번 달은 '${MOOD[dDist.top]}'한 날이 가장 많았어요.` : null),
+    mkSection("mood_distribution", "이번 달 말랑이 어워즈", days.length, dDist,
+      dDist.top ? `이번 달은 '${MOOD[dDist.top]} 말랑이'가 가장 많이 찾아왔네요!` : null),
 
-    mkSection("sore_map", "불편한 곳 지도", soreCount, dSore,
+    mkSection("sore_map", "바디 스캔", soreCount, dSore,
       dSore.parts[0] ? `${eulreul(dSore.parts[0].label)} ${dSore.parts[0].count}번 짚어주셨어요. 평균 ${dSore.parts[0].avgLevel.toFixed(1)}이었어요.` : null),
 
     mkSection("sore_moments", "불편했던 순간", soreCount, dMoments,
@@ -761,10 +761,10 @@ export function buildMonthlyReport(entries, profile, opts) {
     mkSection("rest", "쉬어간 날", dRest.days, dRest,
       dRest.items[0] ? `쉬어간 날엔 '${dRest.items[0].label}'가 가장 많았어요.` : null),
 
-    mkSection("sleep", "잠든 날", dSleep.recorded, dSleep,
+    mkSection("sleep", "말랑이의 밤", dSleep.recorded, dSleep,
       dSleep.items[0]?.count ? `'${dSleep.items[0].label}'라고 적어주신 날이 ${dSleep.items[0].count}번이었어요.` : null),
 
-    mkSection("notes", "한 줄 일기 모아보기", dNotes.items.length, dNotes,
+    mkSection("notes", "한 줄 일기장", dNotes.items.length, dNotes,
       dNotes.items.length ? `이번 달 ${dNotes.items.length}줄을 남기셨어요.` : null),
   ];
 

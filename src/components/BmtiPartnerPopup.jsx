@@ -29,17 +29,6 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {/* 오늘 하루일기 기록 유도 — 오늘 아직 안 남겼을 때만 */}
-            {(isLoggedIn && !hasLoggedToday) && (
-              <button onClick={() => go('aichat')} className="w-full rounded-[1.6rem] p-5 text-left flex items-center justify-between transition-colors hover:brightness-95 shadow-lg" style={{ background: t.accentSoft }}>
-                <div>
-                  <p className="font-black mb-0.5 text-gray-900">오늘 기록, 아직이에요</p>
-                  <p className="text-sm font-medium" style={{ color: t.accent }}>10초면 충분해요</p>
-                </div>
-                <span className="text-2xl" style={{ color: t.accent }}>›</span>
-              </button>
-            )}
-
             {/* 내 BMTI 파트너 */}
             <div className="rounded-[2rem] p-6 border shadow-2xl" style={{ background: '#F7F7F6', borderColor: '#EDEDEB' }}>
               <p className="text-xs font-bold text-gray-400 mb-4">내 BMTI 파트너</p>
@@ -70,14 +59,16 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               )}
             </div>
 
-            {/* 파트너 박스 밑 — BMTI 메인 페이지로 이동 */}
-            <button
-              onClick={() => go('home')}
-              className="w-full py-3.5 rounded-2xl bg-white/95 border border-gray-200 text-gray-700 font-bold text-sm hover:bg-white transition-all shadow-lg flex items-center justify-center gap-1.5"
-            >
-              BMTI 페이지로 이동
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M9 5l7 7-7 7" /></svg>
-            </button>
+            {/* 파트너 박스 밑 — 오늘 하루일기 기록 유도(오늘 아직 안 남겼을 때만) */}
+            {(isLoggedIn && !hasLoggedToday) && (
+              <button onClick={() => go('aichat')} className="w-full rounded-[1.6rem] p-5 text-left flex items-center justify-between transition-colors hover:brightness-95 shadow-lg" style={{ background: t.accentSoft }}>
+                <div>
+                  <p className="font-black mb-0.5 text-gray-900">오늘 기록, 아직이에요</p>
+                  <p className="text-sm font-medium" style={{ color: t.accent }}>10초면 충분해요</p>
+                </div>
+                <span className="text-2xl" style={{ color: t.accent }}>›</span>
+              </button>
+            )}
           </div>
         )}
       </div>

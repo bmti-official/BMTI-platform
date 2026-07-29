@@ -309,7 +309,15 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         <div ref={contentRef}>
         {tab === "records" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {report.sections.map((s) => <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} />)}
+            {report.sections.map((s) => {
+              // 무리·움직임·쉬어감 세 카드는 '활동량 요약'(달리기 트랙) 하나로 합친다.
+              if (s.id === "overwork" || s.id === "rest") return null;
+              if (s.id === "movement") {
+                const find = (id) => report.sections.find(x => x.id === id);
+                return <ActivityTrackCard key="activity" entries={entries} move={find("movement")} rest={find("rest")} over={find("overwork")} />;
+              }
+              return <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} />;
+            })}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -942,7 +950,78 @@ function FreeSignals({ signals }) {
   );
 }
 
-function SectionCard({ section: s, gender }) {
+// ── 활동량 요약: 무리·움직임·쉬어감을 하나의 '달리기 트랙(마라톤 코스)'으로 ──
+const ACT_TYPE = {
+  move: { icon: "👟", label: "운동", color: "#3F9F5B", bg: "#E4F5E7" },
+  rest: { icon: "⛺", label: "쉼", color: "#6E8BC4", bg: "#E7EDF9" },
+  over: { icon: "💦", label: "무리", color: "#D98A2B", bg: "#FBEFD9" },
+};
+function ActivityTrackCard({ entries, move, rest, over }) {
+  const t = getTypeAccent();
+  const days = [...(entries || [])].filter(e => e && e.mood).sort((a, b) => a.date.localeCompare(b.date));
+  const markers = [];
+  for (const d of days) {
+    let k = null;
+    if (d.overwork?.yes) k = "over";
+    else if (d.exercise?.did === true) k = "move";
+    else if (d.exercise?.did === false) k = "rest";
+    if (k) markers.push({ day: Number(d.date.slice(-2)), k });
+  }
+  const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
+  const has = markers.length > 0;
+  return (
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}><IconRun size={18} /></span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>활동량 요약</span>
+      </div>
+      {/* 요약 스탯 */}
+      <div style={{ display: "flex", gap: 7, marginBottom: 4 }}>
+        {[["move", moveN], ["rest", restN], ["over", overN]].map(([k, n]) => (
+          <div key={k} style={{ flex: 1, background: ACT_TYPE[k].bg, borderRadius: 12, padding: "9px 6px", textAlign: "center" }}>
+            <div style={{ fontSize: 15 }}>{ACT_TYPE[k].icon}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: ACT_TYPE[k].color, marginTop: 1 }}>{ACT_TYPE[k].label} {n}일</div>
+          </div>
+        ))}
+      </div>
+
+      {has ? (
+        <>
+          <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "12px 0 0", textAlign: "center" }}>이번 달 코스를 달려온 말랑이 🏃</p>
+          <div className="act-track" style={{ position: "relative", overflowX: "auto", padding: "26px 4px 10px", marginTop: 2 }}>
+            {/* 달리는 말랑이 */}
+            <div style={{ position: "absolute", top: 2, left: 4, animation: "mallangRun 0.9s ease-in-out infinite", zIndex: 2 }}>
+              <Mallang v={4} size={30} />
+            </div>
+            {/* 트랙(점선) + 이정표 */}
+            <div style={{ display: "flex", alignItems: "center", minWidth: "max-content" }}>
+              {markers.map((m, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                  {i > 0 && <span style={{ width: 22, height: 0, borderTop: `2px dashed ${C.line}` }} />}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                    <span style={{ width: 30, height: 30, borderRadius: "50%", background: ACT_TYPE[m.k].bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>{ACT_TYPE[m.k].icon}</span>
+                    <span style={{ fontSize: 9.5, fontWeight: 700, color: C.sub }}>{m.day}일</span>
+                  </div>
+                </div>
+              ))}
+              <span style={{ width: 22, height: 0, borderTop: `2px dashed ${C.line}` }} />
+              <span style={{ fontSize: 20 }}>🏁</span>
+            </div>
+          </div>
+          <style>{`
+            .act-track::-webkit-scrollbar { display: none; }
+            .act-track { scrollbar-width: none; }
+            @keyframes mallangRun { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(3deg); } }
+          `}</style>
+        </>
+      ) : (
+        <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "14px 0 2px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
+      )}
+    </div>
+  );
+}
+
+function SectionCard({ section: s, gender, entries }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
   return (
@@ -975,7 +1054,7 @@ function SectionCard({ section: s, gender }) {
               <p style={{ fontSize: 12.5, fontWeight: 700, color: "#A24B4B", margin: 0, lineHeight: 1.55 }}>{s.alert.message}</p>
             </div>
           )}
-          <SectionBody id={s.id} data={s.data} gender={gender} />
+          <SectionBody id={s.id} data={s.data} gender={gender} entries={entries} />
         </>
       )}
     </div>
@@ -992,7 +1071,7 @@ function ProgressBar({ current, required, color }) {
   );
 }
 
-function SectionBody({ id, data, gender }) {
+function SectionBody({ id, data, gender, entries }) {
   if (!data) return null;
   switch (id) {
     case "mood_calendar": return <MoodCalendar data={data} />;
@@ -1002,7 +1081,7 @@ function SectionBody({ id, data, gender }) {
     case "overwork": return <OverworkBody data={data} />;
     case "movement": return <MovementBody data={data} />;
     case "rest": return <RestBody data={data} />;
-    case "sleep": return <SleepBody data={data} />;
+    case "sleep": return <SleepBody data={data} entries={entries} />;
     case "notes": return <NotesBody data={data} />;
     default: return null;
   }
@@ -1065,27 +1144,44 @@ function MoodCalendar({ data }) {
   );
 }
 
-// ── 이번 달 말랑이들: 막대+% 대신 마스코트 크기로 빈도를 표현한다 ──
+// ── 이번 달 말랑이 어워즈: 가장 많이 찾아온 기분 TOP 3 금·은·동 시상대 ──
+const PODIUM = [
+  { rank: 1, medal: "🥇", h: 74, order: 2, bar: "#F4C542", size: 56 },
+  { rank: 2, medal: "🥈", h: 54, order: 1, bar: "#C7CDD6", size: 46 },
+  { rank: 3, medal: "🥉", h: 40, order: 3, bar: "#D9A066", size: 42 },
+];
 function MoodDistribution({ data }) {
-  const t = getTypeAccent();
-  const maxRatio = Math.max(...data.items.map((i) => i.ratio), 0.0001);
-  const topCount = Math.max(...data.items.map((i) => i.count), 0);
+  const ranked = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 3);
+  if (ranked.length === 0) return null;
+  const podium = PODIUM.slice(0, ranked.length).map((p, i) => ({ ...p, item: ranked[i] }));
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6, background: "#FBFAF6", borderRadius: 14, padding: "18px 8px 12px" }}>
-      {data.items.map((it) => {
-        const isTop = it.count > 0 && it.count === topCount;
-        // 세로 여유는 늘리되(72), 가로는 칸 폭을 넘지 않도록 상한을 둬 박스 밖으로 삐져나오지 않게 한다.
-        const sz = Math.min(66, Math.max(30, Math.round(72 * (it.ratio / maxRatio))));
-        return (
-          <div key={it.mood} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
-            <div style={{ height: 72, display: "flex", alignItems: "flex-end" }}>
-              {it.count > 0 && <Mallang v={it.mood} size={sz} />}
+    <div style={{ background: "linear-gradient(180deg,#FFFCF2,#FBF7EA)", borderRadius: 16, padding: "18px 12px 14px", position: "relative", overflow: "hidden" }}>
+      {/* 1등 축하 폭죽 */}
+      {[...Array(10)].map((_, i) => (
+        <span key={i} style={{ position: "absolute", left: `${8 + i * 9}%`, top: "6%", fontSize: 12,
+          animation: `awardPop 1.8s ease-out ${(i % 5) * 0.18}s infinite` }}>{["🎉", "✨", "🎊"][i % 3]}</span>
+      ))}
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 8, position: "relative", zIndex: 1 }}>
+        {podium.sort((a, b) => a.order - b.order).map((p) => (
+          <div key={p.rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0, maxWidth: 96 }}>
+            {p.rank === 1 && <div style={{ fontSize: 20, marginBottom: -6, animation: "crownBob 2s ease-in-out infinite" }}>👑</div>}
+            <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+              <Mallang v={p.item.mood} size={p.size} />
             </div>
-            <span style={{ fontSize: 10, color: "#9B9489", fontWeight: 700, textAlign: "center", lineHeight: 1.3 }}>{it.label}</span>
-            <span style={{ fontSize: 13, color: isTop ? t.accentDeep : C.ink, fontWeight: 800 }}>{it.count}번</span>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, marginTop: 4, textAlign: "center", lineHeight: 1.2, wordBreak: "keep-all" }}>{p.item.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, marginBottom: 5 }}>{p.item.count}번</div>
+            {/* 시상대 단 */}
+            <div style={{ width: "100%", height: p.h, background: `linear-gradient(180deg, ${p.bar}, ${p.bar}CC)`, borderRadius: "8px 8px 0 0",
+              display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 6, boxShadow: "inset 0 2px 0 rgba(255,255,255,0.45)" }}>
+              <span style={{ fontSize: 18 }}>{p.medal}</span>
+            </div>
           </div>
-        );
-      })}
+        ))}
+      </div>
+      <style>{`
+        @keyframes awardPop { 0% { transform: translateY(0) scale(.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(26px) scale(1); opacity: 0; } }
+        @keyframes crownBob { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-3px) rotate(6deg); } }
+      `}</style>
     </div>
   );
 }
@@ -1113,14 +1209,14 @@ function SoreMap({ data, gender }) {
       {data.parts.map((p) => {
         const pos = BODY_POS_3D[p.part];
         if (!pos || pos.v !== view) return null;
-        const size = 10 + 20 * (p.count / maxCount); // 누적 많을수록 큰 점
+        const size = 18 + 16 * (p.count / maxCount); // 누적 많을수록 큰 반창고
         const isTop = top && p.part === top.part;
         return (
           <span key={p.part} title={`${p.label} ${p.count}번`}
-            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size,
-              marginLeft: -size / 2, marginTop: -size / 2, borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
-              animation: isTop ? "soreDotPulse 1.8s ease-in-out infinite" : "none" }} />
+            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, fontSize: size, lineHeight: 1,
+              transform: "translate(-50%,-50%) rotate(-28deg)", transformOrigin: "center",
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))",
+              animation: isTop ? "soreBandagePulse 1.6s ease-in-out infinite" : "none" }}>🩹</span>
         );
       })}
       <span style={{ position: "absolute", bottom: -2, left: 0, right: 0, textAlign: "center", fontSize: 11, fontWeight: 700, color: C.sub }}>{label}</span>
@@ -1135,10 +1231,10 @@ function SoreMap({ data, gender }) {
       </div>
       {top && (
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
-          점이 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
+          반창고가 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
         </p>
       )}
-      <style>{`@keyframes soreDotPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:1}}`}</style>
+      <style>{`@keyframes soreBandagePulse{0%,100%{transform:translate(-50%,-50%) rotate(-28deg) scale(1)}50%{transform:translate(-50%,-50%) rotate(-28deg) scale(1.22)}}`}</style>
     </div>
   );
 }
@@ -1192,27 +1288,116 @@ function RestBody({ data }) {
   );
 }
 
-function SleepBody({ data }) {
-  const max = Math.max(...data.items.map((i) => i.count), 1);
+// ── 말랑이의 밤: 자는 말랑이 + 머리 위 꿈방울(수면 질) + 협탁 시계(취침 시간대) ──
+const SLEEP_EMOJI = { 3: "😴", 2: "😌", 1: "🔄", 0: "🌙" };
+const BUBBLE_POS = [
+  { left: "50%", top: "0%", tx: "-50%" },
+  { left: "12%", top: "22%", tx: "0" },
+  { left: "74%", top: "16%", tx: "0" },
+  { left: "40%", top: "44%", tx: "0" },
+];
+function SleepBody({ data, entries }) {
+  const bubbles = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 4);
+  const maxRatio = Math.max(...bubbles.map(b => b.ratio), 0.0001);
+  // 취침 시간대 최빈값
+  const bt = {};
+  (entries || []).forEach(e => { if (e.sleepTime) bt[e.sleepTime] = (bt[e.sleepTime] || 0) + 1; });
+  const topBed = Object.entries(bt).sort((a, b) => b[1] - a[1])[0];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {data.items.map((it) => (
-        <BarRow key={it.level} label={it.label} count={it.count} max={max} color={getTypeAccent().accent} />
+    <div style={{ background: "linear-gradient(180deg,#2E2A44,#413A5E)", borderRadius: 16, padding: "16px 16px 18px", position: "relative", overflow: "hidden" }}>
+      {/* 별 */}
+      {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (
+        <span key={i} style={{ position: "absolute", left: `${10 + i * 20}%`, top: `${6 + (i % 2) * 10}%`, color: "rgba(255,255,255,0.45)", fontSize: 10, animation: `twinkle 2.6s ease-in-out ${i * 0.4}s infinite` }}>{s}</span>
       ))}
+
+      {/* 꿈방울 영역 */}
+      <div style={{ position: "relative", height: 150, marginBottom: 6 }}>
+        {bubbles.map((b, i) => {
+          const pos = BUBBLE_POS[i] || BUBBLE_POS[3];
+          const sz = 34 + Math.round(40 * (b.ratio / maxRatio));
+          return (
+            <div key={b.level} title={`${b.label} ${Math.round(b.ratio * 100)}%`}
+              style={{ position: "absolute", left: pos.left, top: pos.top, "--tx": pos.tx, transform: `translateX(${pos.tx})`, width: sz, height: sz,
+                borderRadius: "50%", background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95), rgba(210,225,255,0.72))",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                animation: `dreamFloat ${3 + i * 0.5}s ease-in-out ${i * 0.3}s infinite` }}>
+              <span style={{ fontSize: Math.round(sz * 0.4) }}>{SLEEP_EMOJI[b.level]}</span>
+              <span style={{ fontSize: 9, fontWeight: 800, color: "#5B5470" }}>{Math.round(b.ratio * 100)}%</span>
+            </div>
+          );
+        })}
+        {/* 자는 말랑이 + 이불 */}
+        <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: 96, textAlign: "center" }}>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <Mallang v={5} size={54} />
+            {/* 이불 */}
+            <div style={{ position: "absolute", left: -8, right: -8, bottom: -2, height: 22, background: "linear-gradient(180deg,#8C7FB8,#6E63A0)", borderRadius: "12px 12px 6px 6px", boxShadow: "inset 0 2px 0 rgba(255,255,255,0.2)" }} />
+          </div>
+          <span style={{ position: "absolute", right: -6, top: -6, fontSize: 13, color: "#fff", animation: "zzz 2.4s ease-in-out infinite" }}>💤</span>
+        </div>
+      </div>
+
+      {/* 협탁 시계 */}
+      {topBed && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(0,0,0,0.28)", borderRadius: 12, padding: "9px 14px", marginTop: 4 }}>
+          <span style={{ fontSize: 16 }}>🕛</span>
+          <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", fontWeight: 600 }}>가장 자주 잠든 시간</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "#FFD98A", textShadow: "0 0 8px rgba(255,200,90,0.5)" }}>{topBed[0]}</span>
+        </div>
+      )}
+      <style>{`
+        @keyframes dreamFloat { 0%,100% { transform: translateX(var(--tx,0)) translateY(0); } 50% { transform: translateX(var(--tx,0)) translateY(-7px); } }
+        @keyframes twinkle { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+        @keyframes zzz { 0%,100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(-4px); opacity: 1; } }
+      `}</style>
     </div>
   );
 }
 
+// ── 한 줄 일기장: 코르크 보드에 꽂힌 폴라로이드 사진첩 (터치하면 커진다) ──
+const NOTE_CAT = {
+  "운동습관": { emoji: "🏃", tint: "#E4F5E7" },
+  "일상": { emoji: "🌤️", tint: "#FDF6D3" },
+  "고민": { emoji: "💭", tint: "#F0E6FB" },
+};
 function NotesBody({ data }) {
-  const t = getTypeAccent();
+  const [open, setOpen] = useState(null);
+  const items = data.items || [];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {data.items.map((it, i) => (
-        <div key={i} style={{ background: "#FBFAF6", borderRadius: 12, borderLeft: `3px solid ${t.accent}`, padding: "11px 13px" }}>
-          <div style={{ fontSize: 11, color: C.sub, fontWeight: 700, marginBottom: 4 }}>{it.date} · {it.category}</div>
-          <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, lineHeight: 1.55 }}>{it.text}</div>
+    <div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", background: "#E7D6B8", backgroundImage: "radial-gradient(rgba(150,110,60,0.18) 1px, transparent 1px)", backgroundSize: "10px 10px", borderRadius: 14, padding: "16px 12px" }}>
+        {items.map((it, i) => {
+          const cat = NOTE_CAT[it.category] || { emoji: "📝", tint: "#F3F1EC" };
+          const tilt = (i % 3 - 1) * 3.2;
+          return (
+            <button key={i} onClick={() => setOpen(it)}
+              style={{ width: "44%", maxWidth: 150, background: "#fff", border: "none", borderRadius: 4, padding: "8px 8px 0", boxShadow: "0 3px 10px rgba(60,45,25,0.22)", cursor: "pointer", transform: `rotate(${tilt}deg)`, transition: "transform .15s" }}>
+              <div style={{ position: "relative", aspectRatio: "1 / 1", borderRadius: 2, background: cat.tint, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                <span style={{ fontSize: 34 }}>{cat.emoji}</span>
+                <span style={{ position: "absolute", top: 5, left: "50%", transform: "translateX(-50%)", width: 14, height: 14, borderRadius: "50%", background: "#D6584F", boxShadow: "0 1px 2px rgba(0,0,0,0.3)" }} />
+              </div>
+              <div style={{ padding: "7px 3px 9px", textAlign: "left" }}>
+                <div style={{ fontSize: 9.5, color: C.sub, fontWeight: 700, marginBottom: 2 }}>{it.date.slice(5)} · {it.category}</div>
+                <div style={{ fontSize: 11.5, color: C.ink, fontWeight: 600, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{it.text}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {open && (
+        <div onClick={() => setOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 300, background: "#fff", borderRadius: 6, padding: "12px 12px 0", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", animation: "polaroidPop .28s cubic-bezier(.22,.9,.32,1)" }}>
+            <div style={{ aspectRatio: "1 / 1", borderRadius: 2, background: (NOTE_CAT[open.category] || {}).tint || "#F3F1EC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}>{(NOTE_CAT[open.category] || {}).emoji || "📝"}</div>
+            <div style={{ padding: "14px 6px 18px" }}>
+              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginBottom: 7 }}>{open.date} · {open.category}</div>
+              <div style={{ fontSize: 15, color: C.ink, fontWeight: 600, lineHeight: 1.6, wordBreak: "keep-all" }}>{open.text}</div>
+            </div>
+          </div>
+          <style>{`@keyframes polaroidPop{from{opacity:0;transform:scale(.9) rotate(-2deg)}to{opacity:1;transform:scale(1) rotate(0)}}`}</style>
         </div>
-      ))}
+      )}
     </div>
   );
 }
