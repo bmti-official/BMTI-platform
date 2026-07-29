@@ -158,7 +158,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   return (
     <div style={{ position: "fixed", inset: 0, background: "#FFFFFF", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
 
-      {/* '?' / 월·주 전환 버튼은 각 캘린더의 '현재 달·현재 주' 카드 안에 붙어(sticky) 함께 이동한다.
+      {/* '?' / 월·주 전환 버튼은 '오늘' 달·주 카드 안 좌우에 붙어(sticky) 그 기간이 보이는 동안 고정된다.
          (아래 MonthSection·WeekSection의 CalControls 참고) */}
 
       {/* 떠 있는 상·하단 네비 버튼 높이에 맞춘 위/아래 블러 페이드 */}
@@ -172,7 +172,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           {view === "month"
             ? months.map(m => (
                 <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay}
-                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} />
+                  onToday={() => setShowMoodPopup(true)} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} />
               ))
             : weeks.map(w => (
                 <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay}
@@ -339,11 +339,11 @@ const IconMonth = () => (
 );
 
 // ── 월간 섹션 — 오늘의 달만 좌우 전체 노랑, 나머진 흰색 ──
-// 현재 달·주 카드 안에 붙는 '?'/전환 버튼 — sticky로 그 카드가 보이는 동안 상단에 머문다.
+// '오늘' 달·주 카드 안 좌우에 붙는 '?'/전환 버튼 — 그 기간이 화면에 보이는 동안 상단에 고정(sticky).
 function CalControls({ calView, onHelp, onToggleView, t }) {
-  const btn = { pointerEvents: "auto", width: 38, height: 38, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.10)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
+  const btn = { pointerEvents: "auto", width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
   return (
-    <div style={{ position: "sticky", top: 72, zIndex: 36, height: 0, pointerEvents: "none" }}>
+    <div style={{ position: "sticky", top: 70, zIndex: 36, height: 0, pointerEvents: "none" }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <button onClick={onHelp} aria-label="말랑 다이어리 도움말" style={{ ...btn, color: C.sub, fontSize: 15, fontWeight: 800 }}>?</button>
         <button onClick={onToggleView} aria-label={calView === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"} style={{ ...btn, color: t.accentDeep }}>
@@ -354,7 +354,7 @@ function CalControls({ calView, onHelp, onToggleView, t }) {
   );
 }
 
-function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, calView, onHelp, onToggleView }) {
+function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, onToday, calView, onHelp, onToggleView }) {
   const year = monthDate.getFullYear(), month = monthDate.getMonth();
   const monthKey = `${year}-${pad(month + 1)}`;
   const count = history.filter(e => e.date.startsWith(monthKey)).length;
@@ -395,10 +395,11 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
                     <Mallang v={entry.mood} size={30} />
                   </div>
                 ) : isToday ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <button onClick={() => onToday && onToday()} aria-label="오늘 기록하기"
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, border: `2px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: weekdayColor(dow) || C.ink }}>{d}</div>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: SUN_RED }} />
-                  </div>
+                    <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.04em", color: t.accentDeep }}>today</span>
+                  </button>
                 ) : writable ? (
                   <button onClick={() => onEditDay && onEditDay(dateStr, null)} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${t.accent}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>{d}</div>

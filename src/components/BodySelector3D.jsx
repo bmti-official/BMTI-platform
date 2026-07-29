@@ -77,12 +77,12 @@ export default function BodySelector3D({ gender, value, onChange }) {
           0%, 100% { transform: scale(1); opacity: 0.9; }
           50% { transform: scale(1.15); opacity: 1; }
         }
-        .body-dot { position: relative; width: 15px; height: 15px; display: block; }
+        .body-dot { position: relative; width: 8px; height: 8px; display: block; }
         .body-dot::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
-          background: radial-gradient(circle, #D8A24E 0%, #C9975A 70%); box-shadow: 0 1px 3px rgba(140,96,40,0.4);
+          background: radial-gradient(circle, #F79089 0%, #EE6A62 70%); box-shadow: 0 1px 2px rgba(200,90,80,0.32);
           animation: bodyDotCore 2.2s ease-in-out infinite; }
         .body-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
-          border: 2px solid #C9975A; animation: bodyDotRing 2.2s ease-out infinite; }
+          border: 1.5px solid #EE6A62; animation: bodyDotRing 2.2s ease-out infinite; }
       `}</style>
       {/* 앞모습(좌) · 뒷모습(우) 나란히 */}
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>

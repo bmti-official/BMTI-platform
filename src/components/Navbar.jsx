@@ -69,9 +69,9 @@ const PersonIcon = ({ className }) => (
   </svg>
 );
 
-// 알약 안의 한 칸(아이콘 + 라벨). 두 개를 묶어 하나의 떠 있는 알약 버튼을 만든다.
+// 알약 안의 한 칸(아이콘 + 라벨). 여러 칸을 묶어 화면 가로를 꽉 채우는 알약을 만든다.
 const PillTab = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-0.5 w-[58px] py-1.5 rounded-2xl active:scale-95 transition-transform"
+  <button onClick={onClick} className="flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl active:scale-95 transition-transform"
     style={active ? { background: '#F3F1EC' } : undefined}>
     <span className={`w-6 h-6 flex items-center justify-center ${active ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
     <span className={`text-[9.5px] font-bold whitespace-nowrap ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
@@ -167,22 +167,17 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         )}
       </div>
 
-      {/* 하단: 두 개의 떠 있는 알약 + 중앙 캐릭터 — BMTI 설문 중에는 숨긴다 */}
+      {/* 하단: 하나의 기다란 떠 있는 알약(가운데 캐릭터 자리) — BMTI 설문 중에는 숨긴다 */}
       {currentView !== 'quiz' && (
         <>
-          {/* 좌측 알약: 말랑 다이어리 | 말랑이의 발견 */}
-          <div className="fixed bottom-4 left-3 z-40">
-            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 p-1">
+          <div className="fixed bottom-3 left-2 right-2 z-40">
+            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
               <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }}
                 icon={<Mallang v={diaryMoodTick} size={24} />} label="다이어리" />
               <PillTab active={showDiscovery} onClick={() => { setShowMallangClass(false); setShowDiscovery(true); setView('home'); }}
                 icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="발견" />
-            </div>
-          </div>
-
-          {/* 우측 알약: 말랑 클래스 | 말랑방 */}
-          <div className="fixed bottom-4 right-3 z-40">
-            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 p-1">
+              {/* 가운데 캐릭터 자리 */}
+              <span className="w-14 shrink-0" aria-hidden="true" />
               <PillTab active={showMallangClass} onClick={() => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); }}
                 icon={<GroupIcon className="w-5 h-5 text-gray-500" />} label="클래스" />
               <PillTab active={currentView === 'mallangroom'} onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }}
@@ -190,11 +185,11 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             </div>
           </div>
 
-          {/* 중앙 캐릭터 — 떠 있는 버튼. 누르면 '내 BMTI 파트너' 팝업을 연다 */}
+          {/* 중앙 캐릭터 — 알약 위로 떠 있는 버튼. 누르면 '내 BMTI 파트너' 팝업을 연다 */}
           <button
             onClick={() => setShowPartner(true)}
             aria-label="내 BMTI 파트너"
-            className="fixed left-1/2 -translate-x-1/2 bottom-3 z-40 active:scale-95 transition-transform"
+            className="fixed left-1/2 -translate-x-1/2 bottom-5 z-40 active:scale-95 transition-transform"
           >
             <div className="relative w-14 h-14 flex items-center justify-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
               {aiAvatar}
