@@ -3,6 +3,19 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
 import FeedbackModal from "./FeedbackModal";
+import { DiaryIcon } from "./DiaryIcons";
+import { SLEEP_ICON } from "../lib/diaryEntryLabels";
+
+// 오늘의 태그 라벨 → 아이콘 이름 (DiaryWriteFlow의 TAG_CATEGORIES와 동일하게 유지)
+const TAG_ICON = {
+  "카페인": "caffeine", "음주": "alcohol", "야식·과식": "snacking", "수분 보충": "water", "맵거나 짠 음식": "spicy", "달달 디저트": "dessert",
+  "스마트폰·PC": "phone", "장거리 운전": "driving", "불편한 신발": "shoes", "무거운 짐": "heavyBag", "에어컨·추위": "coldAir",
+  "스트레스": "stress", "긴장함": "nervous", "방전됨": "drained", "소화 불량": "indigestion", "생리 중": "period", "약 복용": "medicine",
+};
+// 활동량 트랙 말풍선용 이모지
+const LOAD_EMOJI = { sit: "🪑", stand: "🧍", walk: "🚶", lift: "📦", etc: "💥" };
+const REASON_EMOJI = { busy: "⏰", tired: "🔋", sick: "🤒", rest: "🛋️", forgot: "💭" };
+const EX_EMOJI = { "요가": "🧘", "걷기/산책": "🚶", "러닝·조깅": "🏃", "헬스·PT": "🏋️", "필라테스": "🤸", "수영": "🏊", "자전거": "🚴", "등산": "🥾", "축구": "⚽", "농구": "🏀", "배드민턴": "🏸", "테니스": "🎾", "크로스핏": "💪", "댄스": "💃", "스트레칭": "🙆", "명상·호흡": "🧘" };
 import { getDiaryHistory, mergeWeatherIntoHistory } from "../lib/diaryHistory";
 import { getSavedGeo, requestGeo, fetchWeatherRange } from "../lib/weather";
 import {
@@ -309,15 +322,18 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         <div ref={contentRef}>
         {tab === "records" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {report.sections.map((s) => {
-              // 무리·움직임·쉬어감 세 카드는 '활동량 요약'(달리기 트랙) 하나로 합친다.
-              if (s.id === "overwork" || s.id === "rest") return null;
-              if (s.id === "movement") {
-                const find = (id) => report.sections.find(x => x.id === id);
-                return <ActivityTrackCard key="activity" entries={entries} move={find("movement")} rest={find("rest")} over={find("overwork")} />;
-              }
-              return <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} />;
-            })}
+            {(() => {
+              const find = (id) => report.sections.find(x => x.id === id);
+              const topMood = find("mood_distribution")?.data?.top || null;
+              return report.sections.map((s) => {
+                // 무리·움직임·쉬어감 세 카드는 '활동량 요약' 하나로, '불편했던 순간'은 '바디 스캔'에 합친다.
+                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments") return null;
+                if (s.id === "movement") {
+                  return <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")} />;
+                }
+                return <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null} />;
+              });
+            })()}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -950,78 +966,71 @@ function FreeSignals({ signals }) {
   );
 }
 
-// ── 활동량 요약: 무리·움직임·쉬어감을 하나의 '달리기 트랙(마라톤 코스)'으로 ──
-const ACT_TYPE = {
-  move: { icon: "👟", label: "운동", color: "#3F9F5B", bg: "#E4F5E7" },
-  rest: { icon: "⛺", label: "쉼", color: "#6E8BC4", bg: "#E7EDF9" },
-  over: { icon: "💦", label: "무리", color: "#D98A2B", bg: "#FBEFD9" },
-};
-function ActivityTrackCard({ entries, move, rest, over }) {
-  const t = getTypeAccent();
-  const days = [...(entries || [])].filter(e => e && e.mood).sort((a, b) => a.date.localeCompare(b.date));
-  const markers = [];
-  for (const d of days) {
-    let k = null;
-    if (d.overwork?.yes) k = "over";
-    else if (d.exercise?.did === true) k = "move";
-    else if (d.exercise?.did === false) k = "rest";
-    if (k) markers.push({ day: Number(d.date.slice(-2)), k });
-  }
-  const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
-  const has = markers.length > 0;
+// ── 활동량 요약: 무리·움직임·쉬어감을 3개의 단거리 트랙으로 ──
+// 단거리 트랙 한 레인 — 금메달 말랑이가 일수만큼 앞서 달리고, 머리 위 말풍선에 1위 종목/이유
+function ActLane({ emoji, label, days, maxDays, bubbleEmoji, bubbleLabel, mood }) {
+  const pos = days > 0 ? Math.min(88, 10 + 78 * (days / (maxDays || 1))) : 6;
   return (
-    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+      <div style={{ width: 62, flexShrink: 0, paddingBottom: 6 }}>
+        <div style={{ fontSize: 14 }}>{emoji}</div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: C.ink }}>{label}</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.sub }}>{days}일</div>
+      </div>
+      <div style={{ position: "relative", flex: 1, height: 62 }}>
+        {/* 트랙 라인 + 결승선 */}
+        <div style={{ position: "absolute", left: 0, right: 14, bottom: 11, borderTop: "2px dashed #E3DED4" }} />
+        <span style={{ position: "absolute", right: -2, bottom: 3, fontSize: 16 }}>🏁</span>
+        {days > 0 && (
+          <div style={{ position: "absolute", bottom: 5, left: `${pos}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2 }}>
+            {bubbleLabel && (
+              <div style={{ background: "#fff", border: "1px solid #EDE9E2", borderRadius: 10, padding: "2px 7px", fontSize: 9.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(0,0,0,.12)", marginBottom: 3 }}>
+                {bubbleEmoji} {bubbleLabel} 1위
+              </div>
+            )}
+            <div style={{ animation: "mallangRun .9s ease-in-out infinite" }}><Mallang v={mood} size={26} /></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function ActivityTrackCard({ topMood, move, rest, over }) {
+  const t = getTypeAccent();
+  const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
+  const maxDays = Math.max(moveN, restN, overN, 1);
+  const mood = topMood || 4; // 이번 달 금메달 말랑이
+  const exTop = move?.data?.byType?.[0];
+  const restTop = rest?.data?.items?.[0];
+  const overTop = over?.data?.items?.[0];
+  const lanes = [
+    { key: "move", emoji: "🏃‍♂️", label: "운동함", days: moveN, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
+    { key: "rest", emoji: "🛌", label: "쉬어감", days: restN, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
+    { key: "over", emoji: "💦", label: "무리함", days: overN, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
+  ];
+  const has = moveN + restN + overN > 0;
+  return (
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}><IconRun size={18} /></span>
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>활동량 요약</span>
       </div>
-      {/* 요약 스탯 */}
-      <div style={{ display: "flex", gap: 7, marginBottom: 4 }}>
-        {[["move", moveN], ["rest", restN], ["over", overN]].map(([k, n]) => (
-          <div key={k} style={{ flex: 1, background: ACT_TYPE[k].bg, borderRadius: 12, padding: "9px 6px", textAlign: "center" }}>
-            <div style={{ fontSize: 15 }}>{ACT_TYPE[k].icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: ACT_TYPE[k].color, marginTop: 1 }}>{ACT_TYPE[k].label} {n}일</div>
-          </div>
-        ))}
-      </div>
-
+      <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 8px" }}>금메달 말랑이가 세 트랙을 달렸어요. 많이 한 트랙일수록 앞서 있어요 🏁</p>
       {has ? (
-        <>
-          <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "12px 0 0", textAlign: "center" }}>이번 달 코스를 달려온 말랑이 🏃</p>
-          <div className="act-track" style={{ position: "relative", overflowX: "auto", padding: "26px 4px 10px", marginTop: 2 }}>
-            {/* 달리는 말랑이 */}
-            <div style={{ position: "absolute", top: 2, left: 4, animation: "mallangRun 0.9s ease-in-out infinite", zIndex: 2 }}>
-              <Mallang v={4} size={30} />
-            </div>
-            {/* 트랙(점선) + 이정표 */}
-            <div style={{ display: "flex", alignItems: "center", minWidth: "max-content" }}>
-              {markers.map((m, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                  {i > 0 && <span style={{ width: 22, height: 0, borderTop: `2px dashed ${C.line}` }} />}
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                    <span style={{ width: 30, height: 30, borderRadius: "50%", background: ACT_TYPE[m.k].bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>{ACT_TYPE[m.k].icon}</span>
-                    <span style={{ fontSize: 9.5, fontWeight: 700, color: C.sub }}>{m.day}일</span>
-                  </div>
-                </div>
-              ))}
-              <span style={{ width: 22, height: 0, borderTop: `2px dashed ${C.line}` }} />
-              <span style={{ fontSize: 20 }}>🏁</span>
-            </div>
-          </div>
-          <style>{`
-            .act-track::-webkit-scrollbar { display: none; }
-            .act-track { scrollbar-width: none; }
-            @keyframes mallangRun { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(3deg); } }
-          `}</style>
-        </>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {lanes.map(l => (
+            <ActLane key={l.key} emoji={l.emoji} label={l.label} days={l.days} maxDays={maxDays} bubbleEmoji={l.be} bubbleLabel={l.bl} mood={mood} />
+          ))}
+        </div>
       ) : (
-        <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "14px 0 2px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
+        <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "10px 0 2px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
       )}
+      <style>{`@keyframes mallangRun{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}`}</style>
     </div>
   );
 }
 
-function SectionCard({ section: s, gender, entries }) {
+function SectionCard({ section: s, gender, entries, topMood, moments }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
   return (
@@ -1054,7 +1063,7 @@ function SectionCard({ section: s, gender, entries }) {
               <p style={{ fontSize: 12.5, fontWeight: 700, color: "#A24B4B", margin: 0, lineHeight: 1.55 }}>{s.alert.message}</p>
             </div>
           )}
-          <SectionBody id={s.id} data={s.data} gender={gender} entries={entries} />
+          <SectionBody id={s.id} data={s.data} gender={gender} entries={entries} topMood={topMood} moments={moments} />
         </>
       )}
     </div>
@@ -1071,18 +1080,18 @@ function ProgressBar({ current, required, color }) {
   );
 }
 
-function SectionBody({ id, data, gender, entries }) {
+function SectionBody({ id, data, gender, entries, topMood, moments }) {
   if (!data) return null;
   switch (id) {
     case "mood_calendar": return <MoodCalendar data={data} />;
     case "mood_distribution": return <MoodDistribution data={data} />;
-    case "sore_map": return <SoreMap data={data} gender={gender} />;
+    case "sore_map": return <SoreMap data={data} gender={gender} moments={moments} />;
     case "sore_moments": return <SoreMoments data={data} />;
     case "overwork": return <OverworkBody data={data} />;
     case "movement": return <MovementBody data={data} />;
     case "rest": return <RestBody data={data} />;
-    case "sleep": return <SleepBody data={data} entries={entries} />;
-    case "notes": return <NotesBody data={data} />;
+    case "sleep": return <SleepBody data={data} entries={entries} topMood={topMood} />;
+    case "notes": return <NotesBody data={data} entries={entries} />;
     default: return null;
   }
 }
@@ -1196,12 +1205,14 @@ const BODY_POS_3D = {
   neck: { v: "back", x: 50, y: 26 }, back: { v: "back", x: 50, y: 36 }, waist: { v: "back", x: 50, y: 53 },
   // etc(기타)는 몸 위치가 없어 지도에 표시하지 않는다.
 };
-function SoreMap({ data, gender }) {
+function SoreMap({ data, gender, moments }) {
+  const t = getTypeAccent();
   const isMale = gender === "male" || gender === "M" || gender === "남성";
   const imgFront = isMale ? bodyMaleFront : bodyFemaleFront;
   const imgBack = isMale ? bodyMaleBack : bodyFemaleBack;
   const top = [...data.parts].sort((a, b) => b.count - a.count)[0];
   const maxCount = data.maxCount || 1;
+  const momentItems = moments?.items || [];
 
   const Figure = ({ src, view, label }) => (
     <div style={{ position: "relative", flex: 1, aspectRatio: "1 / 2", maxWidth: 150 }}>
@@ -1233,6 +1244,20 @@ function SoreMap({ data, gender }) {
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
           반창고가 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
         </p>
+      )}
+
+      {/* 불편했던 순간 — 바디 스캔에 함께 포함 */}
+      {momentItems.length > 0 && (
+        <div style={{ width: "100%", marginTop: 4, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10, textAlign: "center" }}>언제 불편했나요?</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+            {momentItems.map((it) => (
+              <span key={it.situation} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
+              </span>
+            ))}
+          </div>
+        </div>
       )}
       <style>{`@keyframes soreBandagePulse{0%,100%{transform:translate(-50%,-50%) rotate(-28deg) scale(1)}50%{transform:translate(-50%,-50%) rotate(-28deg) scale(1.22)}}`}</style>
     </div>
@@ -1289,14 +1314,13 @@ function RestBody({ data }) {
 }
 
 // ── 말랑이의 밤: 자는 말랑이 + 머리 위 꿈방울(수면 질) + 협탁 시계(취침 시간대) ──
-const SLEEP_EMOJI = { 3: "😴", 2: "😌", 1: "🔄", 0: "🌙" };
 const BUBBLE_POS = [
   { left: "50%", top: "0%", tx: "-50%" },
   { left: "12%", top: "22%", tx: "0" },
   { left: "74%", top: "16%", tx: "0" },
   { left: "40%", top: "44%", tx: "0" },
 ];
-function SleepBody({ data, entries }) {
+function SleepBody({ data, entries, topMood }) {
   const bubbles = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 4);
   const maxRatio = Math.max(...bubbles.map(b => b.ratio), 0.0001);
   // 취침 시간대 최빈값
@@ -1322,7 +1346,7 @@ function SleepBody({ data, entries }) {
                 borderRadius: "50%", background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95), rgba(210,225,255,0.72))",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 animation: `dreamFloat ${3 + i * 0.5}s ease-in-out ${i * 0.3}s infinite` }}>
-              <span style={{ fontSize: Math.round(sz * 0.4) }}>{SLEEP_EMOJI[b.level]}</span>
+              <DiaryIcon name={SLEEP_ICON[b.level]} size={Math.round(sz * 0.46)} />
               <span style={{ fontSize: 9, fontWeight: 800, color: "#5B5470" }}>{Math.round(b.ratio * 100)}%</span>
             </div>
           );
@@ -1330,7 +1354,7 @@ function SleepBody({ data, entries }) {
         {/* 자는 말랑이 + 이불 */}
         <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: 96, textAlign: "center" }}>
           <div style={{ position: "relative", display: "inline-block" }}>
-            <Mallang v={5} size={54} />
+            <Mallang v={topMood || 5} size={54} />
             {/* 이불 */}
             <div style={{ position: "absolute", left: -8, right: -8, bottom: -2, height: 22, background: "linear-gradient(180deg,#8C7FB8,#6E63A0)", borderRadius: "12px 12px 6px 6px", boxShadow: "inset 0 2px 0 rgba(255,255,255,0.2)" }} />
           </div>
@@ -1361,43 +1385,72 @@ const NOTE_CAT = {
   "일상": { emoji: "🌤️", tint: "#FDF6D3" },
   "고민": { emoji: "💭", tint: "#F0E6FB" },
 };
-function NotesBody({ data }) {
+// 폴라로이드 '사진'칸 — 그날 오늘의 태그 아이콘들을 담고, 없으면 카테고리 이모지
+function PhotoInner({ tags, cat, big }) {
+  const shown = (tags || []).filter(tg => TAG_ICON[tg]).slice(0, 4);
+  if (shown.length === 0) return <span style={{ fontSize: big ? 64 : 34 }}>{cat.emoji}</span>;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: big ? 12 : 6, alignItems: "center", justifyContent: "center", padding: big ? 12 : 4 }}>
+      {shown.map(tg => <DiaryIcon key={tg} name={TAG_ICON[tg]} size={big ? 40 : 26} />)}
+    </div>
+  );
+}
+function NotesBody({ data, entries }) {
   const [open, setOpen] = useState(null);
   const items = data.items || [];
+  const tagsByDate = {};
+  (entries || []).forEach(e => { if (e?.date && Array.isArray(e.tags)) tagsByDate[e.date] = e.tags; });
+  const tagLabels = (it) => (tagsByDate[it.date] || []);
+
   return (
     <div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", background: "#E7D6B8", backgroundImage: "radial-gradient(rgba(150,110,60,0.18) 1px, transparent 1px)", backgroundSize: "10px 10px", borderRadius: 14, padding: "16px 12px" }}>
         {items.map((it, i) => {
           const cat = NOTE_CAT[it.category] || { emoji: "📝", tint: "#F3F1EC" };
           const tilt = (i % 3 - 1) * 3.2;
+          const tags = tagLabels(it);
           return (
             <button key={i} onClick={() => setOpen(it)}
               style={{ width: "44%", maxWidth: 150, background: "#fff", border: "none", borderRadius: 4, padding: "8px 8px 0", boxShadow: "0 3px 10px rgba(60,45,25,0.22)", cursor: "pointer", transform: `rotate(${tilt}deg)`, transition: "transform .15s" }}>
               <div style={{ position: "relative", aspectRatio: "1 / 1", borderRadius: 2, background: cat.tint, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                <span style={{ fontSize: 34 }}>{cat.emoji}</span>
+                <PhotoInner tags={tags} cat={cat} />
                 <span style={{ position: "absolute", top: 5, left: "50%", transform: "translateX(-50%)", width: 14, height: 14, borderRadius: "50%", background: "#D6584F", boxShadow: "0 1px 2px rgba(0,0,0,0.3)" }} />
               </div>
               <div style={{ padding: "7px 3px 9px", textAlign: "left" }}>
                 <div style={{ fontSize: 9.5, color: C.sub, fontWeight: 700, marginBottom: 2 }}>{it.date.slice(5)} · {it.category}</div>
                 <div style={{ fontSize: 11.5, color: C.ink, fontWeight: 600, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{it.text}</div>
+                {tags.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 5 }}>
+                    {tags.slice(0, 3).map(tg => <span key={tg} style={{ fontSize: 8.5, fontWeight: 700, color: "#8A6A3A", background: "#F3EAD8", borderRadius: 6, padding: "1px 5px" }}>#{tg}</span>)}
+                  </div>
+                )}
               </div>
             </button>
           );
         })}
       </div>
 
-      {open && (
-        <div onClick={() => setOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 300, background: "#fff", borderRadius: 6, padding: "12px 12px 0", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", animation: "polaroidPop .28s cubic-bezier(.22,.9,.32,1)" }}>
-            <div style={{ aspectRatio: "1 / 1", borderRadius: 2, background: (NOTE_CAT[open.category] || {}).tint || "#F3F1EC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}>{(NOTE_CAT[open.category] || {}).emoji || "📝"}</div>
-            <div style={{ padding: "14px 6px 18px" }}>
-              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginBottom: 7 }}>{open.date} · {open.category}</div>
-              <div style={{ fontSize: 15, color: C.ink, fontWeight: 600, lineHeight: 1.6, wordBreak: "keep-all" }}>{open.text}</div>
+      {open && (() => {
+        const cat = NOTE_CAT[open.category] || { emoji: "📝", tint: "#F3F1EC" };
+        const tags = tagLabels(open);
+        return (
+          <div onClick={() => setOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 300, background: "#fff", borderRadius: 6, padding: "12px 12px 0", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", animation: "polaroidPop .28s cubic-bezier(.22,.9,.32,1)" }}>
+              <div style={{ aspectRatio: "1 / 1", borderRadius: 2, background: cat.tint, display: "flex", alignItems: "center", justifyContent: "center" }}><PhotoInner tags={tags} cat={cat} big /></div>
+              <div style={{ padding: "14px 6px 18px" }}>
+                <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginBottom: 7 }}>{open.date} · {open.category}</div>
+                <div style={{ fontSize: 15, color: C.ink, fontWeight: 600, lineHeight: 1.6, wordBreak: "keep-all" }}>{open.text}</div>
+                {tags.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 12 }}>
+                    {tags.map(tg => <span key={tg} style={{ fontSize: 11, fontWeight: 700, color: "#8A6A3A", background: "#F3EAD8", borderRadius: 999, padding: "4px 10px" }}>#{tg}</span>)}
+                  </div>
+                )}
+              </div>
             </div>
+            <style>{`@keyframes polaroidPop{from{opacity:0;transform:scale(.9) rotate(-2deg)}to{opacity:1;transform:scale(1) rotate(0)}}`}</style>
           </div>
-          <style>{`@keyframes polaroidPop{from{opacity:0;transform:scale(.9) rotate(-2deg)}to{opacity:1;transform:scale(1) rotate(0)}}`}</style>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
