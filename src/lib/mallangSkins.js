@@ -41,7 +41,7 @@ export const MALLANG_EYE_RECT = {
     2: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D0C8A3" },
     3: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#FFFFFF" },
     4: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D8F0D8" },
-    5: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#EFC81A" },
+    5: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D9B417" },
     _color: "#FFFFFF",
   },
 };

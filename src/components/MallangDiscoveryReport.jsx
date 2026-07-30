@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, Fragment } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
@@ -338,10 +338,12 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
                 if (s.id === "movement") {
                   return <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")} />;
                 }
-                return <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null} />;
+                const card = <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null} />;
+                // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
+                if (s.id === "notes") return <Fragment key="notes-group"><SoulmateCard entries={entries} />{card}</Fragment>;
+                return card;
               });
             })()}
-            <SoulmateCard entries={entries} />
           </div>
         ) : (
           <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} />
@@ -1035,11 +1037,15 @@ function SoulmateCard({ entries }) {
   const top = Object.entries(pc).sort((a, b) => b[1] - a[1])[0];
   if (!top || top[1] < 2) return null;
   const [a, b] = top[0].split("|"); const n = top[1];
+  // 각 태그를 이번 달 몇 번 선택했는지(개별 선택 횟수)
+  const solo = {};
+  (entries || []).forEach(e => { [...new Set((e.tags || []))].forEach(tg => { solo[tg] = (solo[tg] || 0) + 1; }); });
   const wit = SOULMATE_WIT[top[0]] || `이 둘이 만난 날이 무려 ${n}일이나 되네요. 서로 꼭 붙어다니는 단짝이었어요 🤝`;
   const badge = (name) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, animation: "soulmateBob 2.2s ease-in-out infinite" }}>
       <span style={{ width: 58, height: 58, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}><DiaryIcon name={TAG_ICON[name]} size={32} /></span>
       <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink }}>{name}</span>
+      <span style={{ fontSize: 10.5, fontWeight: 700, color: t.accentDeep }}>{solo[name] || 0}번 선택</span>
     </div>
   );
   return (
@@ -1048,9 +1054,12 @@ function SoulmateCard({ entries }) {
         <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, fontSize: 16 }}>💞</span>
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>영혼의 단짝</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "4px 0 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "4px 0 6px" }}>
         {badge(a)}
-        <span style={{ fontSize: 20, animation: "soulmateHeart 1.4s ease-in-out infinite" }}>💞</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <span style={{ fontSize: 20, animation: "soulmateHeart 1.4s ease-in-out infinite" }}>💞</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: t.accentDeep, whiteSpace: "nowrap" }}>함께 {n}번</span>
+        </div>
         {badge(b)}
       </div>
       <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, textAlign: "center", margin: "0 0 6px", wordBreak: "keep-all" }}>이번 달, <b style={{ color: t.accentDeep }}>[{a}]</b>와 <b style={{ color: t.accentDeep }}>[{b}]</b>은 찰떡궁합 영혼의 단짝이었어요!</p>
@@ -1716,6 +1725,8 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode }) {
 // 1. 기분 자판기(슬롯)
 function SlotCard({ slots }) {
   const [idx, setIdx] = useState(0);
+  const [pulls, setPulls] = useState(0);
+  const pull = () => { setIdx((idx + 1) % slots.length); setPulls(p => p + 1); };
   const cur = slots[idx];
   const found = !!cur.detail;
   const t = getTypeAccent();
@@ -1755,17 +1766,36 @@ function SlotCard({ slots }) {
         </div>
       </div>
 
-      {/* 돌리기 버튼 + 진행 표시 */}
-      <button onClick={() => setIdx((idx + 1) % slots.length)}
-        style={{ width: "100%", marginTop: 12, padding: "10px", borderRadius: 12, border: "none", background: t.accentSoft, color: t.accentDeep, fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-        🎰 다음 기준 돌리기 <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.7 }}>{idx + 1}/{slots.length}</span>
-      </button>
-      <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 8 }}>
+      {/* 3D 빨강 레버 — 누르면 내려갔다 올라오며 다음 기준으로 */}
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
+        <button onClick={pull} aria-label="레버 당기기" style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4, lineHeight: 0 }}>
+          <div key={pulls} style={{ animation: pulls ? "leverPull .5s cubic-bezier(.34,1.56,.64,1)" : "none" }}>
+            <svg width="40" height="66" viewBox="0 0 42 72" fill="none">
+              <defs>
+                <linearGradient id="slotRod" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#9C968C" /><stop offset="0.5" stopColor="#EDE9E2" /><stop offset="1" stopColor="#8F897F" /></linearGradient>
+                <radialGradient id="slotBall" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stopColor="#FF8A7E" /><stop offset="0.55" stopColor="#E23B2E" /><stop offset="1" stopColor="#A8241A" /></radialGradient>
+              </defs>
+              {/* 받침 */}
+              <rect x="6" y="54" width="30" height="14" rx="5" fill="#57524C" />
+              <ellipse cx="21" cy="55" rx="9" ry="3.6" fill="#3B3733" />
+              {/* 로드 */}
+              <rect x="18" y="20" width="6" height="36" rx="3" fill="url(#slotRod)" />
+              {/* 빨강 3D 손잡이 */}
+              <circle cx="21" cy="16" r="12.5" fill="url(#slotBall)" />
+              <ellipse cx="16.5" cy="10.5" rx="4.2" ry="3" fill="rgba(255,255,255,0.55)" />
+            </svg>
+          </div>
+        </button>
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 4 }}>
         {slots.map((s, i) => <span key={i} style={{ width: i === idx ? 16 : 6, height: 6, borderRadius: 4, background: i === idx ? t.accent : "#E5E0D6", transition: "all .2s" }} />)}
       </div>
 
       <Insight>{cur.message}</Insight>
-      <style>{`@keyframes slotSpin{0%{opacity:0;transform:translateY(-18px)}60%{transform:translateY(3px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+      <style>{`
+        @keyframes slotSpin{0%{opacity:0;transform:translateY(-18px)}60%{transform:translateY(3px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes leverPull{0%{transform:translateY(0)}35%{transform:translateY(14px)}100%{transform:translateY(0)}}
+      `}</style>
     </InsCard>
   );
 }
