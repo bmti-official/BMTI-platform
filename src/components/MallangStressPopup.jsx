@@ -21,8 +21,16 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
   const [level, setLevel] = useState(mood);
   const [showBabies, setShowBabies] = useState(false);
   const [babyTapKey, setBabyTapKey] = useState(0);
+  const [phase, setPhase] = useState("idle"); // idle | press | release — 젤리 스쿼시&스트레치
   const lastTapAt = useRef(0);
   const comboRef = useRef(0);
+  const releaseTimer = useRef(null);
+
+  // 누르면 눌린 쪽으로 납작+옆으로 퍼짐, 떼면 살짝 길쭉해졌다가 오버슛으로 복귀(부피 보존).
+  const onPressDown = () => { clearTimeout(releaseTimer.current); setPhase("press"); };
+  const onPressUp = () => { setPhase("release"); clearTimeout(releaseTimer.current); releaseTimer.current = setTimeout(() => setPhase("idle"), 240); };
+  const bodyTf = phase === "press" ? "scaleX(1.15) scaleY(0.85)" : phase === "release" ? "scaleX(0.93) scaleY(1.07)" : "scale(1)";
+  const shineTf = phase === "press" ? "translateY(4px) scaleX(1.22) scaleY(0.8)" : phase === "release" ? "translateY(-3px) scaleX(0.9) scaleY(1.12)" : "translateY(0) scale(1)";
 
   const handleTap = () => {
     const now = Date.now();
@@ -76,16 +84,20 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
 
           <button
             onClick={handleTap}
+            onPointerDown={onPressDown}
+            onPointerUp={onPressUp}
+            onPointerLeave={onPressUp}
             aria-label="말랑이 누르기"
-            style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block", position: "relative" }}
+            style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block", position: "relative", touchAction: "manipulation" }}
           >
             {/* 무대(은은한 조명) */}
             <div style={{ position: "absolute", left: "50%", top: "52%", transform: "translate(-50%,-50%)", width: 240, height: 240, borderRadius: "50%", background: `radial-gradient(circle, ${t.accentSoft} 0%, rgba(255,255,255,0) 68%)`, pointerEvents: "none" }} />
-            <div style={{ position: "relative", filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.14))" }}>
-              <Mallang v={level} size={248} tapKey={tapKey} skinOverride="malang2d" />
+            {/* 젤리 몸통 — 스쿼시&스트레치(부피 보존) + 오버슛 복귀 */}
+            <div style={{ position: "relative", filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.14))", transformOrigin: "50% 100%", transform: bodyTf, transition: "transform .42s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
+              <Mallang v={level} size={248} skinOverride="malang2d" />
             </div>
-            {/* 누를 때마다 터지는 반짝 효과 */}
-            {tapKey > 0 && <TapBurst key={tapKey} accent={t.accent} />}
+            {/* 표면 하이라이트 — 몸통과 살짝 다른 타이밍으로 출렁여 말캉한 광택 느낌 */}
+            <div style={{ position: "absolute", left: "31%", top: "20%", width: "27%", height: "17%", borderRadius: "50%", background: "radial-gradient(circle at 42% 40%, rgba(255,255,255,0.85), rgba(255,255,255,0) 70%)", filter: "blur(2px)", pointerEvents: "none", transformOrigin: "50% 60%", transform: shineTf, transition: "transform .5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s" }} />
           </button>
 
           {showBabies && (
@@ -108,32 +120,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
         @keyframes mallangPopIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
         @keyframes babyPopIn{from{opacity:0;transform:scale(.3) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
         @keyframes babyBounce{0%,100%{transform:translateY(0) rotate(var(--baby-tilt,0deg))}50%{transform:translateY(-7px) rotate(var(--baby-tilt,0deg))}}
-        @keyframes tapRipple{0%{transform:scale(.35);opacity:.55}100%{transform:scale(1.5);opacity:0}}
-        @keyframes tapParticle{0%{transform:translate(0,0) scale(.3) rotate(0);opacity:0}18%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.15) rotate(var(--rot));opacity:0}}
       `}</style>
-    </div>
-  );
-}
-
-// 말랑이를 누를 때마다 터지는 반짝 효과 — 링 + 사방으로 튀는 반짝이/하트.
-const BURST_EMOJI = ["✨", "💛", "⭐", "💫", "🌟", "💖"];
-function TapBurst({ accent }) {
-  const parts = Array.from({ length: 8 });
-  return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 3 }}>
-      <span style={{ position: "absolute", width: 130, height: 130, borderRadius: "50%", border: `3px solid ${accent}`, animation: "tapRipple .5s ease-out forwards" }} />
-      {parts.map((_, i) => {
-        const ang = (i / parts.length) * 360 + (Math.random() * 24 - 12);
-        const dist = 72 + Math.random() * 34;
-        const dx = Math.cos((ang * Math.PI) / 180) * dist;
-        const dy = Math.sin((ang * Math.PI) / 180) * dist;
-        const rot = `${Math.random() * 120 - 60}deg`;
-        return (
-          <span key={i} style={{ position: "absolute", fontSize: 15 + Math.round(Math.random() * 6), "--dx": `${dx}px`, "--dy": `${dy}px`, "--rot": rot, animation: `tapParticle .6s ease-out forwards` }}>
-            {BURST_EMOJI[i % BURST_EMOJI.length]}
-          </span>
-        );
-      })}
     </div>
   );
 }
