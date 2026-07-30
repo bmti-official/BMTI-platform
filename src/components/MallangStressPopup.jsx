@@ -65,7 +65,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
         </div>
 
         {/* 말랑이 + (연타 끝에 등장하는) 아기 말랑이들 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 220 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 250 }}>
           {showBabies && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
               {Array.from({ length: BABY_COUNT / 2 }).map((_, i) => (
@@ -77,9 +77,15 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
           <button
             onClick={handleTap}
             aria-label="말랑이 누르기"
-            style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block" }}
+            style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "block", position: "relative" }}
           >
-            <Mallang v={level} size={220} tapKey={tapKey} skinOverride="malang2d" />
+            {/* 무대(은은한 조명) */}
+            <div style={{ position: "absolute", left: "50%", top: "52%", transform: "translate(-50%,-50%)", width: 240, height: 240, borderRadius: "50%", background: `radial-gradient(circle, ${t.accentSoft} 0%, rgba(255,255,255,0) 68%)`, pointerEvents: "none" }} />
+            <div style={{ position: "relative", filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.14))" }}>
+              <Mallang v={level} size={248} tapKey={tapKey} skinOverride="malang2d" />
+            </div>
+            {/* 누를 때마다 터지는 반짝 효과 */}
+            {tapKey > 0 && <TapBurst key={tapKey} accent={t.accent} />}
           </button>
 
           {showBabies && (
@@ -102,7 +108,32 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
         @keyframes mallangPopIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
         @keyframes babyPopIn{from{opacity:0;transform:scale(.3) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
         @keyframes babyBounce{0%,100%{transform:translateY(0) rotate(var(--baby-tilt,0deg))}50%{transform:translateY(-7px) rotate(var(--baby-tilt,0deg))}}
+        @keyframes tapRipple{0%{transform:scale(.35);opacity:.55}100%{transform:scale(1.5);opacity:0}}
+        @keyframes tapParticle{0%{transform:translate(0,0) scale(.3) rotate(0);opacity:0}18%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.15) rotate(var(--rot));opacity:0}}
       `}</style>
+    </div>
+  );
+}
+
+// 말랑이를 누를 때마다 터지는 반짝 효과 — 링 + 사방으로 튀는 반짝이/하트.
+const BURST_EMOJI = ["✨", "💛", "⭐", "💫", "🌟", "💖"];
+function TapBurst({ accent }) {
+  const parts = Array.from({ length: 8 });
+  return (
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 3 }}>
+      <span style={{ position: "absolute", width: 130, height: 130, borderRadius: "50%", border: `3px solid ${accent}`, animation: "tapRipple .5s ease-out forwards" }} />
+      {parts.map((_, i) => {
+        const ang = (i / parts.length) * 360 + (Math.random() * 24 - 12);
+        const dist = 72 + Math.random() * 34;
+        const dx = Math.cos((ang * Math.PI) / 180) * dist;
+        const dy = Math.sin((ang * Math.PI) / 180) * dist;
+        const rot = `${Math.random() * 120 - 60}deg`;
+        return (
+          <span key={i} style={{ position: "absolute", fontSize: 15 + Math.round(Math.random() * 6), "--dx": `${dx}px`, "--dy": `${dy}px`, "--rot": rot, animation: `tapParticle .6s ease-out forwards` }}>
+            {BURST_EMOJI[i % BURST_EMOJI.length]}
+          </span>
+        );
+      })}
     </div>
   );
 }
