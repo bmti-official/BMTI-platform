@@ -59,6 +59,13 @@ const IconMap = ({ size = 16 }) => (
     <circle cx="12" cy="10" r="2.3" stroke="currentColor" strokeWidth="1.7" />
   </svg>
 );
+// 바디 스캔 — 카메라 아이콘
+const IconCamera = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M4 8h3l1.4-2h7.2L17 8h3a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 20H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 8Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <circle cx="12" cy="13" r="3.3" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
 const IconTimer = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="13" r="8" stroke="currentColor" strokeWidth="1.7" />
@@ -123,7 +130,7 @@ const IconLink = ({ size = 16 }) => (
   </svg>
 );
 const SECTION_ICON = {
-  mood_calendar: IconCalendar, mood_distribution: IconSmile, sore_map: IconMap, sore_moments: IconTimer,
+  mood_calendar: IconCalendar, mood_distribution: IconSmile, sore_map: IconCamera, sore_moments: IconTimer,
   overwork: IconBattery, movement: IconRun, rest: IconMoon, sleep: IconZzz, notes: IconNotepad,
 };
 
@@ -336,19 +343,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             })()}
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <DiscoveryHero report={report} onShowExample={() => setShowExample(true)} />
-            {report.discovery.found && <MoreDiscoveries discoveries={report.discoveries} />}
-            {report.discovery.found && <CooccurrenceCard report={report} />}
-            {report.discovery.found && <BedtimeCard report={report} />}
-            {report.discovery.found && <SummaryTilesCard report={report} />}
-            {report.discovery.found && <FreeSignals signals={report.freeSignals} />}
-            {report.discovery.found && <LoggedTimeCard report={report} />}
-            {report.discovery.found && <NoteEffortCard report={report} />}
-            {report.discovery.found && <WeatherCard report={report} entries={entries} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />}
-            {report.discovery.found && <MoodFlowCard report={report} />}
-            {report.discovery.found && <ProfileLinkCard report={report} profile={profile} />}
-          </div>
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} />
         )}
         </div>
 
@@ -1220,14 +1215,14 @@ function SoreMap({ data, gender, moments }) {
       {data.parts.map((p) => {
         const pos = BODY_POS_3D[p.part];
         if (!pos || pos.v !== view) return null;
-        const size = 18 + 16 * (p.count / maxCount); // 누적 많을수록 큰 반창고
+        const size = 10 + 20 * (p.count / maxCount); // 누적 많을수록 큰 점
         const isTop = top && p.part === top.part;
         return (
           <span key={p.part} title={`${p.label} ${p.count}번`}
-            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, fontSize: size, lineHeight: 1,
-              transform: "translate(-50%,-50%) rotate(-28deg)", transformOrigin: "center",
-              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))",
-              animation: isTop ? "soreBandagePulse 1.6s ease-in-out infinite" : "none" }}>🩹</span>
+            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size,
+              marginLeft: -size / 2, marginTop: -size / 2, borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
+              animation: isTop ? "soreDotPulse 1.8s ease-in-out infinite" : "none" }} />
         );
       })}
       <span style={{ position: "absolute", bottom: -2, left: 0, right: 0, textAlign: "center", fontSize: 11, fontWeight: 700, color: C.sub }}>{label}</span>
@@ -1242,7 +1237,7 @@ function SoreMap({ data, gender, moments }) {
       </div>
       {top && (
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
-          반창고가 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
+          점이 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
         </p>
       )}
 
@@ -1259,7 +1254,7 @@ function SoreMap({ data, gender, moments }) {
           </div>
         </div>
       )}
-      <style>{`@keyframes soreBandagePulse{0%,100%{transform:translate(-50%,-50%) rotate(-28deg) scale(1)}50%{transform:translate(-50%,-50%) rotate(-28deg) scale(1.22)}}`}</style>
+      <style>{`@keyframes soreDotPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:1}}`}</style>
     </div>
   );
 }
@@ -1362,6 +1357,17 @@ function SleepBody({ data, entries, topMood }) {
         </div>
       </div>
 
+      {/* 꿈방울 아이콘이 뜻하는 수면 상태 문구 */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginBottom: 8 }}>
+        {[...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count).map(it => (
+          <span key={it.level} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.12)", borderRadius: 999, padding: "4px 9px 4px 5px" }}>
+            <DiaryIcon name={SLEEP_ICON[it.level]} size={15} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{it.label}</span>
+            <b style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A" }}>{Math.round(it.ratio * 100)}%</b>
+          </span>
+        ))}
+      </div>
+
       {/* 협탁 시계 */}
       {topBed && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(0,0,0,0.28)", borderRadius: 12, padding: "9px 14px", marginTop: 4 }}>
@@ -1387,11 +1393,13 @@ const NOTE_CAT = {
 };
 // 폴라로이드 '사진'칸 — 그날 오늘의 태그 아이콘들을 담고, 없으면 카테고리 이모지
 function PhotoInner({ tags, cat, big }) {
-  const shown = (tags || []).filter(tg => TAG_ICON[tg]).slice(0, 4);
+  const shown = (tags || []).filter(tg => TAG_ICON[tg]);
   if (shown.length === 0) return <span style={{ fontSize: big ? 64 : 34 }}>{cat.emoji}</span>;
+  // 4개가 넘으면 줄바꿈해서 모든 아이콘을 담는다(개수 많으면 살짝 작게).
+  const sz = big ? (shown.length > 6 ? 32 : 40) : (shown.length > 6 ? 20 : shown.length > 4 ? 23 : 26);
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: big ? 12 : 6, alignItems: "center", justifyContent: "center", padding: big ? 12 : 4 }}>
-      {shown.map(tg => <DiaryIcon key={tg} name={TAG_ICON[tg]} size={big ? 40 : 26} />)}
+    <div style={{ display: "flex", flexWrap: "wrap", gap: big ? 10 : 5, alignItems: "center", justifyContent: "center", padding: big ? 12 : 5, width: "100%", boxSizing: "border-box" }}>
+      {shown.map(tg => <DiaryIcon key={tg} name={TAG_ICON[tg]} size={sz} />)}
     </div>
   );
 }
@@ -1465,6 +1473,328 @@ function BarRow({ label, count, max, color }) {
       <div style={{ height: 10, borderRadius: 999, background: "#EFEBE3", overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${Math.max(8, Math.round((count / max) * 100))}%`, background: color, borderRadius: 999, transition: "width .3s ease" }} />
       </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// 이번 달 발견 — 8가지 인사이트
+// ══════════════════════════════════════════════════════════════
+const WD_FULL = ["일", "월", "화", "수", "목", "금", "토"];
+const ONB_FREQ_LABEL = { none: "거의 안 해요", sometimes: "가끔 생각날 때", weekly: "일주일에 몇 번", daily: "거의 매일" };
+const ONB_POSTURE_LABEL = { sitting: "주로 앉아 있어요", standing: "주로 서 있어요", moving: "계속 움직여요", mixed: "앉았다 섰다 해요", heavy: "무거운 물건을 자주 들어요" };
+const RAIN_CODES2 = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]);
+
+function topOf(map) { let k = null, n = 0; for (const [key, v] of Object.entries(map)) if (v > n) { n = v; k = key; } return k == null ? null : { key: k, n }; }
+
+function computeInsights(entries, userData, report) {
+  const days = [...(entries || [])].filter(e => e && typeof e.mood === "number").sort((a, b) => a.date.localeCompare(b.date));
+  const byDate = Object.fromEntries(days.map(d => [d.date, d]));
+  const nextOf = (ds) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() + 1); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; return byDate[iso]; };
+  const wd = (ds) => new Date(ds + "T00:00:00").getDay();
+
+  // ── 1. 기분 연결고리 (슬롯) ──
+  const link = (() => {
+    const exDays = days.filter(d => d.exercise?.did === true);
+    if (exDays.length >= 4) { const r = exDays.filter(d => d.mood >= 4).length / exDays.length; if (r >= 0.6) return { slots: ["🏃 운동한 날", "몸을 움직이면", "😊 좋았어요"], message: `몸을 움직인 날의 ${Math.round(r * 100)}%는 '좋았어요·괜찮았어요' 기분으로 마무리했어요! 움직임이 확실한 기분 전환이 되었네요.` }; }
+    const wdTired = {}; days.forEach(d => { if (d.mood <= 2) wdTired[wd(d.date)] = (wdTired[wd(d.date)] || 0) + 1; });
+    const tw = topOf(wdTired); if (tw && tw.n >= 2) return { slots: [`📅 ${WD_FULL[tw.key]}요일`, "저녁이 되면", "😩 지쳤어요"], message: `이번 달은 ${WD_FULL[tw.key]}요일에 가장 많이 '지쳤어요'를 선택했네요. ${WD_FULL[tw.key]}요일엔 유독 더 맛있는 음식으로 스스로를 위로해 볼까요?` };
+    const wDays = days.filter(d => d.weather && typeof d.weather.code === "number");
+    if (wDays.length >= 4) { const rain = wDays.filter(d => (d.weather.precip != null && d.weather.precip >= 1) || RAIN_CODES2.has(d.weather.code)); if (rain.length >= 3) { const r = rain.filter(d => d.mood <= 3).length / rain.length; if (r >= 0.6) return { slots: ["🌧️ 비 오는 날", "하늘이 흐리면", "😐 그냥저냥 이하"], message: `비가 오는 날의 ${Math.round(r * 100)}%는 기분이 '그냥저냥' 이하로 떨어졌어요. 맑은 날을 더 알차게 즐겨봐요!` }; } }
+    const nights = days.filter(d => (d.tags || []).includes("야식·과식") || d.sleepTime === "1시" || d.sleepTime === "2시 이후");
+    if (nights.length >= 3) { const r = nights.map(d => nextOf(d.date)).filter(nx => nx && nx.mood <= 3).length / nights.length; if (r >= 0.55) return { slots: ["🍜 야식·늦잠", "그 다음 날엔", "😐 그냥저냥 이하"], message: `야식·과식 태그를 남기거나 밤 12시 이후에 잠든 날엔 다음 날 여지없이 기분이 '그냥저냥' 이하로 떨어졌어요.` }; }
+    return null;
+  })();
+
+  // ── 2. 수면 나비효과 ──
+  const butterfly = (() => {
+    const poor = days.filter(d => d.sleep != null && d.sleep <= 1);
+    if (poor.length < 3) return null;
+    const nexts = poor.map(d => nextOf(d.date)).filter(Boolean);
+    if (nexts.length < 3) return null;
+    const overRate = nexts.filter(n => n.overwork?.yes).length / nexts.length;
+    const soreParts = {}; nexts.forEach(n => (n.soreness || []).forEach(s => { soreParts[s.part] = (soreParts[s.part] || 0) + 1; }));
+    const topSore = topOf(soreParts);
+    const tagCnt = {}; nexts.forEach(n => (n.tags || []).forEach(tg => { tagCnt[tg] = (tagCnt[tg] || 0) + 1; }));
+    const topTags = Object.entries(tagCnt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([t]) => t);
+    let message;
+    if (topSore && overRate >= 0.4) message = `'뒤척였어요·밤을 새웠어요'로 기록한 다음 날엔 유독 오래 앉아 무리하고, ${PARTS[topSore.key] || topSore.key}이(가) 뻐근하다는 기록이 많았어요. 피곤할수록 자세가 쉽게 무너지나 봐요.`;
+    else if (topTags.length) message = `수면의 질이 좋지 않았던 다음 날엔 어김없이 ${topTags.map(t => `#${t}`).join("과 ")} 태그를 찾으셨네요!`;
+    else if (topSore) message = `잘 못 잔 다음 날엔 ${PARTS[topSore.key] || topSore.key} 불편함을 더 자주 느끼셨어요.`;
+    else return null;
+    return { poorN: poor.length, topSore: topSore ? (PARTS[topSore.key] || topSore.key) : null, topTags, overRate, message };
+  })();
+
+  // ── 3. 기록의 정성 ──
+  const effort = (() => {
+    const withNote = days.filter(d => d.note?.text && d.note.text.trim().length > 0);
+    if (withNote.length < 3) return null;
+    const avgLen = Math.round(withNote.reduce((s, d) => s + d.note.text.trim().length, 0) / withNote.length);
+    return { count: withNote.length, avgLen };
+  })();
+
+  // ── 4. 기록 시간대 ──
+  const logged = (() => {
+    const hrs = days.map(d => d.created_at ? new Date(d.created_at) : null).filter(dt => dt && !isNaN(dt.getTime())).map(dt => dt.getHours());
+    if (hrs.length < 5) return report?.loggedTime ? { bucket: report.loggedTime.top, hour: null } : null;
+    const c = {}; hrs.forEach(h => { c[h] = (c[h] || 0) + 1; });
+    const th = topOf(c); return { bucket: null, hour: th ? Number(th.key) : null };
+  })();
+
+  // ── 5. 회복력 ──
+  const recovery = (() => {
+    let drops = 0, recovered = 0, totalDays = 0;
+    for (let i = 0; i < days.length; i++) {
+      if (days[i].mood <= 2) {
+        drops++;
+        for (let j = i + 1; j < Math.min(days.length, i + 6); j++) { if (days[j].mood >= 4) { recovered++; totalDays += (new Date(days[j].date) - new Date(days[i].date)) / 86400000; break; } }
+      }
+    }
+    if (drops < 2) return null;
+    const avgD = recovered ? Math.max(1, Math.round(totalDays / recovered)) : null;
+    return { drops, recovered, avgDays: avgD };
+  })();
+
+  // ── 6. 무리 연속 ──
+  const streak = (() => {
+    let best = [], cur = [];
+    for (let i = 0; i < days.length; i++) {
+      if (days[i].overwork?.yes) {
+        if (cur.length && (new Date(days[i].date) - new Date(cur[cur.length - 1].date)) === 86400000) cur.push(days[i]);
+        else cur = [days[i]];
+        if (cur.length > best.length) best = [...cur];
+      } else cur = [];
+    }
+    if (best.length < 2) return null;
+    const end = best[best.length - 1].date; const ws = new Date(end + "T00:00:00"); ws.setDate(ws.getDate() - ws.getDay());
+    const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(ws); d.setDate(d.getDate() + i); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; return { iso, day: d.getDate(), over: !!byDate[iso]?.overwork?.yes }; });
+    return { len: best.length, week };
+  })();
+
+  // ── 7. 프로필 팩트체크 ──
+  const factcheck = (() => {
+    const rows = [];
+    const moveN = days.filter(d => d.exercise?.did === true).length;
+    const freq = userData?.exercise_frequency;
+    if (freq && moveN > 0) {
+      const expect = { none: 0, sometimes: 4, weekly: 10, daily: 22 }[freq] ?? 8;
+      if (moveN >= expect + 4) rows.push(`처음엔 운동을 '${ONB_FREQ_LABEL[freq]}' 하겠다고 하셨는데, 이번 달 실제로는 ${moveN}일이나 몸을 움직이셨네요! 엄청난 발전이에요.`);
+      else rows.push(`이번 달엔 ${moveN}일 몸을 움직이셨어요. 처음 목표 '${ONB_FREQ_LABEL[freq]}'와 나란히 가고 있어요.`);
+    }
+    const loadC = {}; days.forEach(d => (d.overwork?.loads || []).forEach(l => { loadC[l] = (loadC[l] || 0) + 1; }));
+    const tl = topOf(loadC);
+    const posture = userData?.common_posture;
+    if (tl && posture && ONB_POSTURE_LABEL[posture]) rows.push(`'${ONB_POSTURE_LABEL[posture]}'라고 하셨던 프로필처럼, 이번 달도 '${LOADS[tl.key] || tl.key}'으로 무리한 날이 가장 많았어요. 그 부담을 덜어주는 관리가 필요해요.`);
+    const goals = userData?.exercise_goals || [];
+    if (goals.includes("flexibility")) {
+      const half = Math.floor(days.length / 2);
+      const lv = (arr) => { const xs = arr.flatMap(d => (d.soreness || []).map(s => s.level)); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
+      const a = lv(days.slice(0, half)), b = lv(days.slice(half));
+      if (a != null && b != null && a - b >= 0.6) rows.push(`건강 목표가 '뻐근함 줄이기'였죠! 다행히 이번 달 후반부로 갈수록 불편함 강도가 평균 ${a.toFixed(1)}점에서 ${b.toFixed(1)}점으로 줄어들고 있어요.`);
+    }
+    return rows.length ? rows.slice(0, 2) : null;
+  })();
+
+  // ── 8. 코치의 편지 ──
+  const letter = (() => {
+    const nm = userData?.nickname || "회원";
+    const soreC = {}; days.forEach(d => (d.soreness || []).forEach(s => { soreC[s.part] = (soreC[s.part] || 0) + 1; }));
+    const ts = topOf(soreC); const topSore = ts ? (PARTS[ts.key] || ts.key) : null;
+    const parts = [];
+    parts.push(topSore ? `${nm}님, 이번 달도 뻐근한 ${topSore}을(를) 이끌고 정말 고생 많으셨어요.` : `${nm}님, 이번 달도 하루하루 성실히 기록해주셔서 고마워요.`);
+    if (butterfly && butterfly.topSore) parts.push(`기록을 보니 유독 잠을 못 잔 다음 날 ${butterfly.topSore} 불편함을 많이 느끼셨네요. 척추 주변 근육은 잘 자는 동안 가장 많이 회복된다는 사실, 알고 계셨나요?`);
+    else if (recovery && recovery.recovered) parts.push(`힘들었던 날에도 스스로를 잘 다독여 평균 ${recovery.avgDays || 2}일 만에 컨디션을 끌어올리셨어요. 그 회복력이 정말 멋져요.`);
+    parts.push(`다음 달엔 자기 전 5분만 따뜻한 물로 몸을 데워보세요. 수면의 질이 오르면 뻐근함도 훨씬 줄어들 거예요. 다음 달의 ${nm}님도 곁에서 응원할게요!`);
+    return { nickname: nm, body: parts.join(" ") };
+  })();
+
+  return { link, butterfly, effort, logged, recovery, streak, factcheck, letter, recordedDays: days.length };
+}
+
+// ── 인사이트 카드 공통 껍데기 ──
+function InsCard({ badge, title, sub, children, bg }) {
+  return (
+    <div style={{ background: bg || C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: getTypeAccent().accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>{badge}</div>
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>{title}</div>
+      {sub && <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0" }}>{sub}</p>}
+      <div style={{ marginTop: 14 }}>{children}</div>
+    </div>
+  );
+}
+function Insight({ children }) {
+  return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all" }}>{children}</p>;
+}
+
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode }) {
+  const ins = computeInsights(entries, userData, report);
+  const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
+  if (ins.recordedDays < 3) {
+    return <div style={{ textAlign: "center", padding: "40px 20px", color: C.sub, fontSize: 13.5, fontWeight: 600, lineHeight: 1.6 }}>아직 발견을 찾을 만큼 기록이 모이지 않았어요.<br />며칠 더 기록하면 이번 달의 이야기를 들려드릴게요.</div>;
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {ins.link && <SlotCard link={ins.link} />}
+      {ins.butterfly && <ButterflyCard data={ins.butterfly} />}
+      {ins.recovery && <RecoveryCard data={ins.recovery} />}
+      {ins.streak && <StreakCard data={ins.streak} />}
+      {ins.effort && <EffortCard data={ins.effort} />}
+      {ins.logged && <LampClockCard data={ins.logged} nickname={nickname} />}
+      {ins.factcheck && <FactCheckCard rows={ins.factcheck} />}
+      <LetterCard data={ins.letter} isM={isM} />
+    </div>
+  );
+}
+
+// 1. 기분 자판기(슬롯)
+function SlotCard({ link }) {
+  return (
+    <InsCard badge="기분 연결고리" title="기분 자판기" sub="어떤 하루가 어떤 기분을 불러왔을까요?">
+      <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
+        {link.slots.map((s, i) => (
+          <div key={i} style={{ flex: 1, minWidth: 0, position: "relative" }}>
+            <div style={{ height: 62, borderRadius: 12, background: "linear-gradient(180deg,#FFFDF6,#F4EFE2)", border: "1.5px solid #EAE2CF", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "4px 5px", boxShadow: "inset 0 6px 10px -8px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, lineHeight: 1.25, wordBreak: "keep-all", animation: `slotSpin .6s cubic-bezier(.2,.7,.3,1) ${i * 0.15}s both` }}>{s}</span>
+            </div>
+            {i < link.slots.length - 1 && <span style={{ position: "absolute", right: -6, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 900, color: C.sub, zIndex: 1 }}>{i === link.slots.length - 2 ? "=" : "+"}</span>}
+          </div>
+        ))}
+      </div>
+      <Insight>{link.message}</Insight>
+      <style>{`@keyframes slotSpin{0%{opacity:0;transform:translateY(-16px) scale(.9)}100%{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+    </InsCard>
+  );
+}
+
+// 2. 밤낮 연결 고리
+function ButterflyCard({ data }) {
+  return (
+    <InsCard badge="수면 나비효과" title="오늘의 잠 → 내일의 나">
+      <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #ECE7DC" }}>
+        <div style={{ background: "linear-gradient(180deg,#3A3560,#4A4372)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 17 }}>🌙</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.92)" }}>잘 못 잔 밤 {data.poorN}번</span>
+        </div>
+        <div style={{ height: 18, background: "repeating-linear-gradient(90deg,#D8CFBE 0 6px,transparent 6px 12px)", opacity: 0.6 }} />
+        <div style={{ background: "linear-gradient(180deg,#FFF6E4,#FDEFD2)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 17 }}>🌤️</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#8A6A2E" }}>{data.topSore ? `다음 날 ${data.topSore} 뻐근` : (data.topTags[0] ? `다음 날 #${data.topTags[0]}` : "다음 날 컨디션 저하")}</span>
+        </div>
+      </div>
+      <Insight>{data.message}</Insight>
+    </InsCard>
+  );
+}
+
+// 5. 오뚝이 회복력
+function RecoveryCard({ data }) {
+  return (
+    <InsCard badge="회복력 · 탄성 지수" title="나의 놀라운 회복력">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "6px 0 2px" }}>
+        <div style={{ animation: "ottugi 1.8s ease-in-out infinite", transformOrigin: "bottom center" }}><Mallang v={4} size={54} /></div>
+        <div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: getTypeAccent().accentDeep, lineHeight: 1 }}>{data.recovered}/{data.drops}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: C.sub, marginTop: 3 }}>다시 일어난 횟수</div>
+        </div>
+      </div>
+      <Insight>놀라운 회복력! 이번 달 기분이 힘들게 떨어졌던 {data.drops}번 중 {data.recovered}번은 {data.avgDays ? `평균 ${data.avgDays}일 만에` : "곧"} 다시 '괜찮았어요'로 컨디션을 끌어올리셨어요. 스스로를 아주 잘 돌보고 계시네요!</Insight>
+      <style>{`@keyframes ottugi{0%,100%{transform:rotate(-11deg)}50%{transform:rotate(11deg)}}`}</style>
+    </InsCard>
+  );
+}
+
+// 6. 주간 형광펜(연속 무리)
+function StreakCard({ data }) {
+  return (
+    <InsCard badge="연속과 공백" title="브레이크가 필요한 순간">
+      <div style={{ display: "flex", gap: 4, justifyContent: "space-between" }}>
+        {data.week.map((c, i) => (
+          <div key={i} style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: i === 0 ? "#E0554F" : i === 6 ? "#2F6FE0" : C.sub, marginBottom: 4 }}>{WD_FULL[i]}</div>
+            <div style={{ position: "relative", height: 34, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: c.over ? "#8A5A00" : C.ink, background: c.over ? "linear-gradient(180deg,#FFE98A,#FFDF5C)" : "#F5F2EC", boxShadow: c.over ? "0 1px 4px rgba(230,190,40,0.5)" : "none" }}>
+              {c.day}{c.over && <span style={{ position: "absolute", top: -3, right: -1, fontSize: 10 }}>💦</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <Insight>이번 달 가장 길게 무리한 건 무려 <b style={{ color: "#D98A2B", fontWeight: 800 }}>{data.len}일 연속</b>이었어요. 열심히 달린 만큼, 다음 달엔 중간중간 꼭 쉼표를 찍어주세요.</Insight>
+    </InsCard>
+  );
+}
+
+// 3. 원고지 정성
+function EffortCard({ data }) {
+  return (
+    <InsCard badge="나를 돌본 시간" title="기록을 남긴 정성">
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ flex: 1, borderRadius: 12, background: "#FBFAF4", backgroundImage: "linear-gradient(#EDE7D6 1px,transparent 1px),linear-gradient(90deg,#EDE7D6 1px,transparent 1px)", backgroundSize: "13px 13px", border: "1px solid #E7DFCB", padding: "14px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: C.ink }}>{data.count}편</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>이번 달 일기</div>
+        </div>
+        <div style={{ flex: 1, borderRadius: 12, background: "#FBFAF4", backgroundImage: "linear-gradient(#EDE7D6 1px,transparent 1px),linear-gradient(90deg,#EDE7D6 1px,transparent 1px)", backgroundSize: "13px 13px", border: "1px solid #E7DFCB", padding: "14px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: C.ink }}>{data.avgLen}자</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>평균 문장 길이</div>
+        </div>
+      </div>
+      <Insight>이번 달 남겨주신 일기는 총 {data.count}편! 평균 {data.avgLen}자의 정성스러운 문장들로 하루를 돌아보셨어요. 나를 돌보기 위해 참 다정하게 노력한 한 달이네요.</Insight>
+    </InsCard>
+  );
+}
+
+// 4. 무드등 시계
+function LampClockCard({ data, nickname }) {
+  const timeText = data.hour != null ? `${data.hour < 12 ? "오전" : "오후"} ${((data.hour + 11) % 12) + 1}시` : `${data.bucket}`;
+  return (
+    <InsCard badge="나의 리듬" title="주로 기록을 남긴 시간대">
+      <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 8px" }}>
+        <div style={{ width: 108, height: 108, borderRadius: "50%", background: "radial-gradient(circle at 50% 40%,#FFE9B0,#F6C560)", boxShadow: "0 0 26px rgba(246,197,96,0.6)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "lampGlow 3s ease-in-out infinite" }}>
+          <span style={{ fontSize: 20 }}>🕯️</span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#7A5A16", marginTop: 2 }}>{timeText}</span>
+        </div>
+      </div>
+      <Insight>이번 달 {nickname || "회원"}님은 주로 {timeText}에 하루를 마무리하며 기록을 남기셨어요. 가장 차분해지는 나만의 시간이네요.</Insight>
+      <style>{`@keyframes lampGlow{0%,100%{box-shadow:0 0 22px rgba(246,197,96,0.5)}50%{box-shadow:0 0 32px rgba(246,197,96,0.8)}}`}</style>
+    </InsCard>
+  );
+}
+
+// 7. 초심 저울(프로필 팩트체크)
+function FactCheckCard({ rows }) {
+  return (
+    <InsCard badge="처음의 다짐 · 팩트 체크" title="프로필과 이어보기">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 12, padding: "12px 13px" }}>
+            <span style={{ fontSize: 15, marginTop: 1 }}>⚖️</span>
+            <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{r}</p>
+          </div>
+        ))}
+      </div>
+    </InsCard>
+  );
+}
+
+// 8. 코치의 편지
+function LetterCard({ data, isM }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "linear-gradient(180deg,#FFFDF7,#FBF4E6)", borderRadius: 20, padding: "20px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #EEE4CE", position: "relative", overflow: "hidden" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: getTypeAccent().accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>이번 달의 피날레</div>
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink }}>BMTI 코치의 편지</div>
+      {!open ? (
+        <button onClick={() => setOpen(true)} style={{ margin: "16px auto 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", width: "100%" }}>
+          <span style={{ width: 56, height: 56, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%,#E0685E,#C0433B)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, boxShadow: "0 3px 10px rgba(160,50,40,0.4)", animation: "sealBob 2s ease-in-out infinite" }}>✉️</span>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: getTypeAccent().accentDeep }}>봉투를 열어 편지 확인하기</span>
+        </button>
+      ) : (
+        <div style={{ marginTop: 14, animation: "letterOpen .4s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: "16px 15px", border: "1px dashed #E3D6B4", lineHeight: 1.7, fontSize: 13.5, color: "#3F3A31", fontWeight: 600, wordBreak: "keep-all" }}>
+            {data.body}
+          </div>
+          <div style={{ textAlign: "right", fontSize: 12, fontWeight: 800, color: getTypeAccent().accentDeep, marginTop: 10 }}>— 당신의 BMTI 코치 드림</div>
+        </div>
+      )}
+      <style>{`@keyframes sealBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes letterOpen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
 }
