@@ -39,9 +39,9 @@ export const MALLANG_EYE_RECT = {
   malang2d: {
     1: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#5C4250" },
     2: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D0C8A3" },
-    3: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#FFFFFF" },
-    4: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D8F0D8" },
-    5: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#E4F5FC" },
+    3: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#EAE4FB" },
+    4: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#D9C7F5" },
+    5: { x: 0.25, y: 0.40, w: 0.50, h: 0.11, cw: 400, ch: 400, color: "#BF8FE9" },
     _color: "#FFFFFF",
   },
 };
