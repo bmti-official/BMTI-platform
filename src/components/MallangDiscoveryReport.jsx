@@ -341,6 +341,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
                 return <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null} />;
               });
             })()}
+            <SoulmateCard entries={entries} />
           </div>
         ) : (
           <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} />
@@ -1025,6 +1026,40 @@ function ActivityTrackCard({ topMood, move, rest, over }) {
   );
 }
 
+// ── 영혼의 단짝: 이번 달 가장 자주 함께 찍힌 태그 두 개(찰떡궁합) ──
+const SOULMATE_WIT = { "스트레스|카페인": "스트레스받을 때마다 커피를 찾으셨군요 🧐", "야식·과식|음주": "한잔하면 야식이 빠질 수 없죠 🍻", "긴장함|카페인": "긴장될 땐 커피 한 모금으로 버티셨네요 ☕" };
+function SoulmateCard({ entries }) {
+  const t = getTypeAccent();
+  const pc = {};
+  (entries || []).forEach(e => { const tags = [...new Set((e.tags || []).filter(x => TAG_ICON[x]))]; for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) { const k = [tags[i], tags[j]].sort().join("|"); pc[k] = (pc[k] || 0) + 1; } });
+  const top = Object.entries(pc).sort((a, b) => b[1] - a[1])[0];
+  if (!top || top[1] < 2) return null;
+  const [a, b] = top[0].split("|"); const n = top[1];
+  const wit = SOULMATE_WIT[top[0]] || `이 둘이 만난 날이 무려 ${n}일이나 되네요. 서로 꼭 붙어다니는 단짝이었어요 🤝`;
+  const badge = (name) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, animation: "soulmateBob 2.2s ease-in-out infinite" }}>
+      <span style={{ width: 58, height: 58, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}><DiaryIcon name={TAG_ICON[name]} size={32} /></span>
+      <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink }}>{name}</span>
+    </div>
+  );
+  return (
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, fontSize: 16 }}>💞</span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>영혼의 단짝</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "4px 0 10px" }}>
+        {badge(a)}
+        <span style={{ fontSize: 20, animation: "soulmateHeart 1.4s ease-in-out infinite" }}>💞</span>
+        {badge(b)}
+      </div>
+      <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, textAlign: "center", margin: "0 0 6px", wordBreak: "keep-all" }}>이번 달, <b style={{ color: t.accentDeep }}>[{a}]</b>와 <b style={{ color: t.accentDeep }}>[{b}]</b>은 찰떡궁합 영혼의 단짝이었어요!</p>
+      <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, textAlign: "center", margin: 0, lineHeight: 1.55, wordBreak: "keep-all" }}>{wit}</p>
+      <style>{`@keyframes soulmateBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes soulmateHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}`}</style>
+    </div>
+  );
+}
+
 function SectionCard({ section: s, gender, entries, topMood, moments }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
@@ -1494,16 +1529,48 @@ function computeInsights(entries, userData, report) {
   const wd = (ds) => new Date(ds + "T00:00:00").getDay();
 
   // ── 1. 기분 연결고리 (슬롯) ──
-  const link = (() => {
-    const exDays = days.filter(d => d.exercise?.did === true);
-    if (exDays.length >= 4) { const r = exDays.filter(d => d.mood >= 4).length / exDays.length; if (r >= 0.6) return { slots: ["🏃 운동한 날", "몸을 움직이면", "😊 좋았어요"], message: `몸을 움직인 날의 ${Math.round(r * 100)}%는 '좋았어요·괜찮았어요' 기분으로 마무리했어요! 움직임이 확실한 기분 전환이 되었네요.` }; }
-    const wdTired = {}; days.forEach(d => { if (d.mood <= 2) wdTired[wd(d.date)] = (wdTired[wd(d.date)] || 0) + 1; });
-    const tw = topOf(wdTired); if (tw && tw.n >= 2) return { slots: [`📅 ${WD_FULL[tw.key]}요일`, "저녁이 되면", "😩 지쳤어요"], message: `이번 달은 ${WD_FULL[tw.key]}요일에 가장 많이 '지쳤어요'를 선택했네요. ${WD_FULL[tw.key]}요일엔 유독 더 맛있는 음식으로 스스로를 위로해 볼까요?` };
-    const wDays = days.filter(d => d.weather && typeof d.weather.code === "number");
-    if (wDays.length >= 4) { const rain = wDays.filter(d => (d.weather.precip != null && d.weather.precip >= 1) || RAIN_CODES2.has(d.weather.code)); if (rain.length >= 3) { const r = rain.filter(d => d.mood <= 3).length / rain.length; if (r >= 0.6) return { slots: ["🌧️ 비 오는 날", "하늘이 흐리면", "😐 그냥저냥 이하"], message: `비가 오는 날의 ${Math.round(r * 100)}%는 기분이 '그냥저냥' 이하로 떨어졌어요. 맑은 날을 더 알차게 즐겨봐요!` }; } }
-    const nights = days.filter(d => (d.tags || []).includes("야식·과식") || d.sleepTime === "1시" || d.sleepTime === "2시 이후");
-    if (nights.length >= 3) { const r = nights.map(d => nextOf(d.date)).filter(nx => nx && nx.mood <= 3).length / nights.length; if (r >= 0.55) return { slots: ["🍜 야식·늦잠", "그 다음 날엔", "😐 그냥저냥 이하"], message: `야식·과식 태그를 남기거나 밤 12시 이후에 잠든 날엔 다음 날 여지없이 기분이 '그냥저냥' 이하로 떨어졌어요.` }; }
-    return null;
+  // 5가지 분석 기준(요일·날씨·수면·태그·활동)별로 [상세 기록]→[기분] 슬롯 인사이트
+  const domMood = (arr) => { const c = {}; arr.forEach(d => { c[d.mood] = (c[d.mood] || 0) + 1; }); const t = topOf(c); return t ? { mood: Number(t.key), n: t.n, ratio: t.n / arr.length } : null; };
+  const slots = (() => {
+    const out = [];
+    // 요일
+    out.push((() => {
+      let best = null;
+      for (let w = 0; w < 7; w++) { const dd = days.filter(d => wd(d.date) === w); if (dd.length < 2) continue; const dm = domMood(dd); if (dm && dm.ratio >= 0.5 && (!best || dm.n * dm.ratio > best.score)) best = { w, ...dm, score: dm.n * dm.ratio }; }
+      return best ? { key: "weekday", emoji: "📆", label: "요일", detail: `${WD_FULL[best.w]}요일`, moodV: best.mood, message: `이번 달 ${WD_FULL[best.w]}요일엔 ${Math.round(best.ratio * 100)}% '${MOOD[best.mood]}'가 나왔어요. 요일마다 나만의 리듬이 있네요!` } : { key: "weekday", emoji: "📆", label: "요일", message: "이번 달 요일 슬롯에선 특별한 발견이 없었어요." };
+    })());
+    // 날씨
+    out.push((() => {
+      const wDays = days.filter(d => d.weather && typeof d.weather.code === "number");
+      const rain = wDays.filter(d => (d.weather.precip != null && d.weather.precip >= 1) || RAIN_CODES2.has(d.weather.code));
+      if (rain.length >= 3) { const dm = domMood(rain); if (dm && dm.ratio >= 0.5) return { key: "weather", emoji: "🌤️", label: "날씨", detail: "비 오는 날", moodV: dm.mood, message: `비가 오는 날의 ${Math.round(dm.ratio * 100)}%는 기분이 '${MOOD[dm.mood]}'였어요. 궂은 날일수록 스스로를 더 챙겨봐요!` }; }
+      return { key: "weather", emoji: "🌤️", label: "날씨", message: "이번 달 날씨 슬롯에선 특별한 발견이 없었어요." };
+    })());
+    // 수면
+    out.push((() => {
+      let best = null;
+      for (let lv = 0; lv <= 3; lv++) { const dd = days.filter(d => d.sleep === lv); if (dd.length < 2) continue; const dm = domMood(dd); if (dm && dm.ratio >= 0.5 && (!best || dm.n * dm.ratio > best.score)) best = { lv, ...dm, score: dm.n * dm.ratio }; }
+      return best ? { key: "sleep", emoji: "🛌", label: "수면", detail: SLEEP[best.lv], detailIcon: SLEEP_ICON[best.lv], moodV: best.mood, message: `이번 달 수면 슬롯이 '${SLEEP[best.lv]}'에 멈춘 날, 기분 슬롯은 ${Math.round(best.ratio * 100)}% '${MOOD[best.mood]}'가 나왔어요. 역시 잠이 최고의 보약이네요!` } : { key: "sleep", emoji: "🛌", label: "수면", message: "이번 달 수면 슬롯에선 특별한 발견이 없었어요." };
+    })());
+    // 태그
+    out.push((() => {
+      const tagDays = {}; days.forEach(d => (d.tags || []).forEach(tg => { if (TAG_ICON[tg]) (tagDays[tg] ||= []).push(d); }));
+      let best = null;
+      for (const [tg, dd] of Object.entries(tagDays)) { if (dd.length < 3) continue; const dm = domMood(dd); if (dm && dm.ratio >= 0.5 && (!best || dm.n * dm.ratio > best.score)) best = { tg, ...dm, score: dm.n * dm.ratio }; }
+      return best ? { key: "tag", emoji: "🏷️", label: "태그", detail: best.tg, detailIcon: TAG_ICON[best.tg], moodV: best.mood, message: `#${best.tg}를 남긴 날엔 ${Math.round(best.ratio * 100)}% 기분이 '${MOOD[best.mood]}'였어요.` } : { key: "tag", emoji: "🏷️", label: "태그", message: "이번 달 태그 슬롯에선 특별한 발견이 없었어요." };
+    })());
+    // 활동
+    out.push((() => {
+      const cands = [
+        { detail: "운동한 날", dd: days.filter(d => d.exercise?.did === true) },
+        { detail: "무리한 날", dd: days.filter(d => d.overwork?.yes) },
+        { detail: "쉬어간 날", dd: days.filter(d => d.exercise?.did === false) },
+      ];
+      let best = null;
+      for (const c of cands) { if (c.dd.length < 2) continue; const dm = domMood(c.dd); if (dm && dm.ratio >= 0.5 && (!best || dm.n * dm.ratio > best.score)) best = { detail: c.detail, ...dm, score: dm.n * dm.ratio }; }
+      return best ? { key: "activity", emoji: "🏃", label: "활동", detail: best.detail, moodV: best.mood, message: `${best.detail}의 ${Math.round(best.ratio * 100)}%는 '${MOOD[best.mood]}' 기분이었어요!` } : { key: "activity", emoji: "🏃", label: "활동", message: "이번 달 활동 슬롯에선 특별한 발견이 없었어요." };
+    })());
+    return out;
   })();
 
   // ── 2. 수면 나비효과 ──
@@ -1608,7 +1675,7 @@ function computeInsights(entries, userData, report) {
     return { nickname: nm, body: parts.join(" ") };
   })();
 
-  return { link, butterfly, effort, logged, recovery, streak, factcheck, letter, recordedDays: days.length };
+  return { slots, butterfly, effort, logged, recovery, streak, factcheck, letter, recordedDays: days.length };
 }
 
 // ── 인사이트 카드 공통 껍데기 ──
@@ -1634,7 +1701,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode }) {
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {ins.link && <SlotCard link={ins.link} />}
+      {ins.slots && <SlotCard slots={ins.slots} />}
       {ins.butterfly && <ButterflyCard data={ins.butterfly} />}
       {ins.recovery && <RecoveryCard data={ins.recovery} />}
       {ins.streak && <StreakCard data={ins.streak} />}
@@ -1647,21 +1714,58 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode }) {
 }
 
 // 1. 기분 자판기(슬롯)
-function SlotCard({ link }) {
+function SlotCard({ slots }) {
+  const [idx, setIdx] = useState(0);
+  const cur = slots[idx];
+  const found = !!cur.detail;
+  const t = getTypeAccent();
+  // 슬롯 3칸: [분석 기준] + [나의 기록] = [기분]
+  const box = { flex: 1, minWidth: 0, position: "relative" };
+  const win = { height: 66, borderRadius: 12, background: "linear-gradient(180deg,#FFFDF6,#F4EFE2)", border: "1.5px solid #EAE2CF", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "4px 5px", boxShadow: "inset 0 6px 10px -8px rgba(0,0,0,0.2)", overflow: "hidden" };
+  const conn = (sym) => <span style={{ position: "absolute", right: -6, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 900, color: C.sub, zIndex: 1 }}>{sym}</span>;
   return (
-    <InsCard badge="기분 연결고리" title="기분 자판기" sub="어떤 하루가 어떤 기분을 불러왔을까요?">
-      <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
-        {link.slots.map((s, i) => (
-          <div key={i} style={{ flex: 1, minWidth: 0, position: "relative" }}>
-            <div style={{ height: 62, borderRadius: 12, background: "linear-gradient(180deg,#FFFDF6,#F4EFE2)", border: "1.5px solid #EAE2CF", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "4px 5px", boxShadow: "inset 0 6px 10px -8px rgba(0,0,0,0.2)", overflow: "hidden" }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, lineHeight: 1.25, wordBreak: "keep-all", animation: `slotSpin .6s cubic-bezier(.2,.7,.3,1) ${i * 0.15}s both` }}>{s}</span>
-            </div>
-            {i < link.slots.length - 1 && <span style={{ position: "absolute", right: -6, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 900, color: C.sub, zIndex: 1 }}>{i === link.slots.length - 2 ? "=" : "+"}</span>}
+    <InsCard badge="기분 연결고리" title="기분 자판기" sub="버튼을 눌러 5가지 기준을 하나씩 돌려보세요">
+      <div key={idx} style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
+        {/* 1. 분석 기준 */}
+        <div style={box}>
+          <div style={{ ...win, animation: "slotSpin .5s cubic-bezier(.2,.7,.3,1) both" }}>
+            <span style={{ fontSize: 20 }}>{cur.emoji}</span>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: C.ink, marginTop: 1 }}>{cur.label}</span>
           </div>
-        ))}
+          {conn("+")}
+        </div>
+        {/* 2. 나의 기록 */}
+        <div style={box}>
+          <div style={{ ...win, animation: "slotSpin .5s cubic-bezier(.2,.7,.3,1) .12s both" }}>
+            {found ? <>
+              {cur.detailIcon ? <DiaryIcon name={cur.detailIcon} size={22} /> : <span style={{ fontSize: 18 }}>📝</span>}
+              <span style={{ fontSize: 10, fontWeight: 800, color: C.ink, marginTop: 2, lineHeight: 1.15, wordBreak: "keep-all" }}>{cur.detail}</span>
+            </> : <span style={{ fontSize: 24, fontWeight: 900, color: "#C9C4BB" }}>?</span>}
+          </div>
+          {conn("=")}
+        </div>
+        {/* 3. 기분 */}
+        <div style={box}>
+          <div style={{ ...win, animation: "slotSpin .5s cubic-bezier(.2,.7,.3,1) .24s both" }}>
+            {found ? <>
+              <Mallang v={cur.moodV} size={34} />
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.ink, marginTop: 1 }}>{MOOD[cur.moodV]}</span>
+            </> : <span style={{ fontSize: 24, fontWeight: 900, color: "#C9C4BB" }}>?</span>}
+          </div>
+        </div>
       </div>
-      <Insight>{link.message}</Insight>
-      <style>{`@keyframes slotSpin{0%{opacity:0;transform:translateY(-16px) scale(.9)}100%{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+
+      {/* 돌리기 버튼 + 진행 표시 */}
+      <button onClick={() => setIdx((idx + 1) % slots.length)}
+        style={{ width: "100%", marginTop: 12, padding: "10px", borderRadius: 12, border: "none", background: t.accentSoft, color: t.accentDeep, fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        🎰 다음 기준 돌리기 <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.7 }}>{idx + 1}/{slots.length}</span>
+      </button>
+      <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 8 }}>
+        {slots.map((s, i) => <span key={i} style={{ width: i === idx ? 16 : 6, height: 6, borderRadius: 4, background: i === idx ? t.accent : "#E5E0D6", transition: "all .2s" }} />)}
+      </div>
+
+      <Insight>{cur.message}</Insight>
+      <style>{`@keyframes slotSpin{0%{opacity:0;transform:translateY(-18px)}60%{transform:translateY(3px)}100%{opacity:1;transform:translateY(0)}}`}</style>
     </InsCard>
   );
 }

@@ -14,11 +14,15 @@ function IconWalk({ size = 28 }) {
 function IconChair({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect x="9" y="4" width="14" height="4" rx="2" fill="#B58956" />
-      <rect x="9" y="8" width="4" height="14" rx="2" fill="#B58956" />
-      <rect x="9" y="20" width="14" height="4" rx="2" fill="#8A5A3B" />
-      <rect x="10" y="24" width="3" height="6" rx="1.3" fill="#5B4636" />
-      <rect x="19" y="24" width="3" height="6" rx="1.3" fill="#5B4636" />
+      {/* 등받이 */}
+      <rect x="8" y="4" width="16" height="15" rx="3.5" fill="#B58956" />
+      {/* 등받이 쿠션 */}
+      <rect x="10.5" y="6.5" width="11" height="9" rx="2.2" fill="#C89A66" />
+      {/* 좌판 */}
+      <rect x="7" y="17.5" width="18" height="4" rx="2" fill="#8A5A3B" />
+      {/* 다리 */}
+      <rect x="8.6" y="21" width="3" height="8" rx="1.4" fill="#5B4636" />
+      <rect x="20.4" y="21" width="3" height="8" rx="1.4" fill="#5B4636" />
     </svg>
   );
 }
