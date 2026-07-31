@@ -30,7 +30,6 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
   const onPressDown = () => { clearTimeout(releaseTimer.current); setPhase("press"); };
   const onPressUp = () => { setPhase("release"); clearTimeout(releaseTimer.current); releaseTimer.current = setTimeout(() => setPhase("idle"), 240); };
   const bodyTf = phase === "press" ? "scaleX(1.15) scaleY(0.85)" : phase === "release" ? "scaleX(0.93) scaleY(1.07)" : "scale(1)";
-  const shineTf = phase === "press" ? "translateY(4px) scaleX(1.22) scaleY(0.8)" : phase === "release" ? "translateY(-3px) scaleX(0.9) scaleY(1.12)" : "translateY(0) scale(1)";
 
   const handleTap = () => {
     const now = Date.now();
@@ -96,8 +95,6 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
             <div style={{ position: "relative", filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.14))", transformOrigin: "50% 100%", transform: bodyTf, transition: "transform .42s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
               <Mallang v={level} size={248} skinOverride="malang2d" />
             </div>
-            {/* 표면 하이라이트 — 몸통과 살짝 다른 타이밍으로 출렁여 말캉한 광택 느낌 */}
-            <div style={{ position: "absolute", left: "31%", top: "20%", width: "27%", height: "17%", borderRadius: "50%", background: "radial-gradient(circle at 42% 40%, rgba(255,255,255,0.85), rgba(255,255,255,0) 70%)", filter: "blur(2px)", pointerEvents: "none", transformOrigin: "50% 60%", transform: shineTf, transition: "transform .5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s" }} />
           </button>
 
           {showBabies && (
