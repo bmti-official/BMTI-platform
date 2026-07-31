@@ -166,24 +166,19 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(rgba(255,255,255,0), #FFFFFF)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 34, pointerEvents: "none" }} />
 
       {/* 스크롤 영역 — 앞뒤 달/주가 이어져 있고, 위/아래로 넘기면 과거·미래가 나온다 */}
-      <div ref={scrollRef} onScroll={onScroll} style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+      <div ref={scrollRef} onScroll={onScroll} data-scroll-top style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
         <div style={{ paddingTop: 84, paddingBottom: 96 }}>
           {loading === "top" && <CalLoader />}
           {view === "month"
             ? months.map(m => (
                 <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay}
-                  onToday={() => setShowMoodPopup(true)} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} />
+                  onToday={() => setShowMoodPopup(true)} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={() => setShowFeedback(true)} />
               ))
             : weeks.map(w => (
                 <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay}
-                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} />
+                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={() => setShowFeedback(true)} />
               ))}
           {loading === "bottom" && <CalLoader />}
-          {/* 말랑 다이어리 개선 의견 받기 */}
-          <button onClick={() => setShowFeedback(true)}
-            style={{ display: "block", margin: "6px auto 4px", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
-            💬 말랑 다이어리, 개선 의견 보내기
-          </button>
         </div>
       </div>
 
@@ -354,7 +349,9 @@ function CalControls({ calView, onHelp, onToggleView, t }) {
   );
 }
 
-function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, onToday, calView, onHelp, onToggleView }) {
+// 현재(오늘) 달·주 카드의 연옐로우 배경 — 위아래 끝부분만 흰색으로 살짝 페이드.
+const CUR_BG = `linear-gradient(180deg, #FFFFFF 0px, ${YELLOW_BG} 22px, ${YELLOW_BG} calc(100% - 22px), #FFFFFF 100%)`;
+function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, onToday, calView, onHelp, onToggleView, onFeedback }) {
   const year = monthDate.getFullYear(), month = monthDate.getMonth();
   const monthKey = `${year}-${pad(month + 1)}`;
   const count = history.filter(e => e.date.startsWith(monthKey)).length;
@@ -362,7 +359,7 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   return (
-    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? YELLOW_BG : "#fff", width: "100%" }}>
+    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? CUR_BG : "#fff", width: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 32px", position: "relative" }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -411,13 +408,19 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
             );
           })}
         </div>
+        {isCurrent && onFeedback && (
+          <button onClick={onFeedback}
+            style={{ display: "block", margin: "22px auto 0", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            💬 다이어리의 개선 의견 보내기
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 // ── 주간 섹션 — 오늘의 주만 좌우 전체 노랑, 나머진 흰색 ──
-function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, buildEntrySummary, onEditDay, calView, onHelp, onToggleView }) {
+function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, buildEntrySummary, onEditDay, calView, onHelp, onToggleView, onFeedback }) {
   const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(weekStart); x.setDate(x.getDate() + i); return x; });
   const end = days[6];
   const title = weekStart.getMonth() === end.getMonth()
@@ -425,7 +428,7 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
     : `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${end.getMonth() + 1}월 ${end.getDate()}일`;
   const count = days.filter(d => history.some(e => e.date === toISO(d))).length;
   return (
-    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? YELLOW_BG : "#fff", width: "100%" }}>
+    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? CUR_BG : "#fff", width: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 30px", position: "relative" }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -448,6 +451,12 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
             );
           })}
         </div>
+        {isCurrent && onFeedback && (
+          <button onClick={onFeedback}
+            style={{ display: "block", margin: "22px auto 0", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            💬 다이어리의 개선 의견 보내기
+          </button>
+        )}
       </div>
     </div>
   );

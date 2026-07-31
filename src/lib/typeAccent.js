@@ -14,7 +14,6 @@ export function getTypeAccent(bmtiCode) {
   }
   const axis = code ? String(code).split("-")[0] : "";
   const isM = axis.includes("M");
-  return isM
-    ? { key: "M", accent: "#E86A9E", accentSoft: "#FCE7EF", accentDeep: "#C4517A" }   // 연분홍
-    : { key: "Z", accent: "#8B7BD8", accentSoft: "#EDE8F9", accentDeep: "#6B5BB5" };  // 연보라
+  // M·Z 모두 동일한 포인트 색(연보라)으로 통일한다.
+  return { key: isM ? "M" : "Z", accent: "#8B7BD8", accentSoft: "#EDE8F9", accentDeep: "#6B5BB5" }; // 연보라
 }

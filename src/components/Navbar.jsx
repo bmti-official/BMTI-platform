@@ -78,6 +78,32 @@ const PillTab = ({ active, onClick, icon, label }) => (
   </button>
 );
 
+// 모든 페이지 우측 하단 — 위로 한번에 올리는 동그란 버튼(창/내부 스크롤 모두 맨 위로).
+const AppScrollTop = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      let any = (window.scrollY || document.documentElement.scrollTop || 0) > 320;
+      document.querySelectorAll('[data-scroll-top]').forEach((el) => { if (el.scrollTop > 320) any = true; });
+      setShow(any);
+    };
+    const id = setInterval(check, 350);
+    window.addEventListener('scroll', check, { passive: true });
+    check();
+    return () => { clearInterval(id); window.removeEventListener('scroll', check); };
+  }, []);
+  const up = () => {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
+    document.querySelectorAll('[data-scroll-top]').forEach((el) => { try { el.scrollTo({ top: 0, behavior: 'smooth' }); } catch { el.scrollTop = 0; } });
+  };
+  return (
+    <button onClick={up} aria-label="맨 위로"
+      style={{ position: 'fixed', right: 12, bottom: 82, zIndex: 41, width: 44, height: 44, borderRadius: '50%', border: '1px solid #EDE9E2', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', boxShadow: '0 3px 12px rgba(0,0,0,0.16)', cursor: 'pointer', display: show ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 19V7M6 13l6-6 6 6" stroke="#6B6459" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
+  );
+};
+
 const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, bmtiCode }) => {
 
   const [lastChatDate, setLastChatDate] = useState(localStorage.getItem('last_chat_date'));
@@ -128,6 +154,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   return (
     <>
+      {/* 모든 페이지: 위로 한번에 올리기 버튼 */}
+      <AppScrollTop />
+
       {/* 상단: 홈(집) 원형 버튼 — 항상 떠 있음 */}
       <div className="fixed top-3 left-3 z-40">
         <button
@@ -175,7 +204,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }}
                 icon={<Mallang v={diaryMoodTick} size={24} />} label="다이어리" />
               <PillTab active={showDiscovery} onClick={() => { setShowMallangClass(false); setShowDiscovery(true); setView('home'); }}
-                icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="발견" />
+                icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="기록·발견" />
               {/* 가운데 캐릭터 자리 */}
               <span className="w-14 shrink-0" aria-hidden="true" />
               <PillTab active={showMallangClass} onClick={() => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); }}

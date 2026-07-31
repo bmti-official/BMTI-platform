@@ -10,7 +10,7 @@ import { SLEEP_ICON } from "../lib/diaryEntryLabels";
 const TAG_ICON = {
   "카페인": "caffeine", "음주": "alcohol", "야식·과식": "snacking", "수분 보충": "water", "맵거나 짠 음식": "spicy", "달달 디저트": "dessert",
   "스마트폰·PC": "phone", "장거리 운전": "driving", "불편한 신발": "shoes", "무거운 짐": "heavyBag", "에어컨·추위": "coldAir",
-  "스트레스": "stress", "긴장함": "nervous", "방전됨": "drained", "소화 불량": "indigestion", "생리 중": "period", "약 복용": "medicine",
+  "스트레스": "stress", "긴장함": "nervous", "방전됨": "drained", "소화 불량": "indigestion", "생리 중": "period", "생리함": "menstrual", "약 복용": "medicine",
 };
 // 활동량 트랙 말풍선용 이모지
 const LOAD_EMOJI = { sit: "🪑", stand: "🧍", walk: "🚶", lift: "📦", etc: "💥" };
@@ -33,7 +33,8 @@ import bodyMaleBack from "../assets/3d_body/male_back.png";
 const C = {
   page: "#FFFFFF", bg: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2", card: "#FFFFFF",
 };
-const MOOD_COLOR = { 1: "#B85450", 2: "#F7C6D9", 3: "#B7B2A9", 4: "#BEE3C0", 5: "#5F8A76" };
+// 현재 2D 말랑이 몸통 색과 맞춘 무드 색(힘들었어요→좋았어요)
+const MOOD_COLOR = { 1: "#8A6E7E", 2: "#C9C09E", 3: "#E8E8EB", 4: "#D0BFEB", 5: "#BF8FE9" };
 const CARD_SHADOW = "0 1px 2px rgba(28,26,23,0.03), 0 8px 20px rgba(28,26,23,0.05)";
 
 // 섹션 제목 옆 아이콘 — 기기마다 다르게 보이는 유니코드 이모지 대신, 사이트의 다른 하단
@@ -129,6 +130,14 @@ const IconLink = ({ size = 16 }) => (
     <path d="M10 8.5H7.5a3.5 3.5 0 1 0 0 7H10M14 8.5h2.5a3.5 3.5 0 1 1 0 7H14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
   </svg>
 );
+const IconTag = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h5.7a2 2 0 0 1 1.4.6l6.3 6.3a1.6 1.6 0 0 1 0 2.3l-5.7 5.7a1.6 1.6 0 0 1-2.3 0L4.6 12.6A2 2 0 0 1 4 11.2V5.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <circle cx="8.4" cy="8.4" r="1.4" fill="currentColor" />
+  </svg>
+);
+// 기분 자판기 '분석 기준' 슬롯 아이콘 (이모지 대신 라인 아이콘)
+const SLOT_CAT_ICON = { weekday: IconCalendar, weather: IconCloud, sleep: IconMoon, tag: IconTag, activity: IconRun };
 const SECTION_ICON = {
   mood_calendar: IconCalendar, mood_distribution: IconSmile, sore_map: IconCamera, sore_moments: IconTimer,
   overwork: IconBattery, movement: IconRun, rest: IconMoon, sleep: IconZzz, notes: IconNotepad,
@@ -189,6 +198,8 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   const [savingPDF, setSavingPDF] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const contentRef = useRef(null);
+  const scrollerRef = useRef(null);
+  const goTab = (key) => { setTab(key); scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" }); };
 
   // 다음 페인트까지 대기(탭 전환 후 DOM 갱신 + 이미지 로딩)
   const nextPaint = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120))));
@@ -283,7 +294,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
+    <div ref={scrollerRef} data-scroll-top style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 18px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "2px 0 2px" }}>
           <button
@@ -306,12 +317,13 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
-        {/* 카테고리 탭 — 이번달 기록(근거 데이터) / 이번달 발견(패턴) */}
-        <div style={{ display: "flex", background: "#F3F1EC", borderRadius: 999, padding: 4, marginBottom: 18 }}>
+        {/* 카테고리 탭 — 스크롤을 따라 상단에 고정(sticky). 누르면 맨 위로 올라간다 */}
+        <div style={{ position: "sticky", top: 54, zIndex: 20, background: C.page, paddingBottom: 12, marginBottom: 6 }}>
+        <div style={{ display: "flex", background: "#F3F1EC", borderRadius: 999, padding: 4 }}>
           {[["records", "이번달 기록"], ["discovery", "이번달 발견"]].map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => goTab(key)}
               style={{
                 flex: 1, border: "none", cursor: "pointer", borderRadius: 999, padding: "9px 0",
                 fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
@@ -324,6 +336,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
               {label}
             </button>
           ))}
+        </div>
         </div>
 
         <div ref={contentRef}>
@@ -374,7 +387,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         {/* 말랑이의 발견 개선 의견 받기 */}
         <button onClick={() => setShowFeedback(true)}
           style={{ display: "block", margin: "22px auto 0", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
-          💬 말랑이의 발견, 개선 의견 보내기
+          💬 다이어리와 기록·발견의 개선 의견 보내기
         </button>
       </div>
 
@@ -1684,7 +1697,36 @@ function computeInsights(entries, userData, report) {
     return { nickname: nm, body: parts.join(" ") };
   })();
 
-  return { slots, butterfly, effort, logged, recovery, streak, factcheck, letter, recordedDays: days.length };
+  // ── 여성 전용: 생리 전(PMS) 마법의 D-Day ──
+  const dday = (() => {
+    const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
+    const female = g.includes("female") || g.includes("여");
+    if (!female) return null;
+    const shiftISO = (ds, n) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+    const isPeriod = (d) => (d.tags || []).some(tg => tg === "생리 중" || tg === "생리함");
+    const pset = new Set(days.filter(isPeriod).map(d => d.date));
+    if (!pset.size) return null;
+    const starts = [...pset].filter(dt => !pset.has(shiftISO(dt, -1))).sort();
+    if (!starts.length) return null;
+    const pmsDays = []; const pmsSet = new Set();
+    starts.forEach(s => { for (let k = 1; k <= 7; k++) { const d = byDate[shiftISO(s, -k)]; if (d && !isPeriod(d)) { pmsDays.push(d); pmsSet.add(d.date); } } });
+    if (pmsDays.length < 2) return null;
+    const base = days.filter(d => !pmsSet.has(d.date) && !isPeriod(d));
+    const cards = [];
+    const tagRate = (arr, tag) => arr.length ? arr.filter(d => (d.tags || []).includes(tag)).length / arr.length : 0;
+    for (const tag of ["야식·과식", "달달 디저트"]) {
+      const pr = tagRate(pmsDays, tag), br = tagRate(base, tag);
+      const cnt = pmsDays.filter(d => (d.tags || []).includes(tag)).length;
+      if (cnt >= 2 && pr >= br * 1.6 + 0.05) { const mult = br > 0 ? Math.max(2, Math.round(pr / br)) : 3; cards.push({ dlabel: "D-4", icon: "🍩", title: "식욕의 비밀", text: `생리 4일 전부터 평소보다 '#${tag}' 태그가 ${mult}배 많아졌어요. 호르몬이 에너지를 비축하려는 자연스러운 현상이니 자책 금지!` }); break; }
+    }
+    const soreRate = (arr, parts) => { let n = 0, t = 0; arr.forEach(d => (d.soreness || []).forEach(s => { t++; if (parts.includes(s.part)) n++; })); return t ? n / t : 0; };
+    if (soreRate(pmsDays, ["pelvis", "waist"]) >= soreRate(base, ["pelvis", "waist"]) + 0.2) {
+      cards.push({ dlabel: "D-2", icon: "⚡", title: "불편함의 이동", text: `평소엔 '목/어깨'가 아팠지만, 생리 이틀 전부터는 '골반'과 '허리' 불편함이 집중적으로 기록됐어요.` });
+    }
+    return cards.length ? { cards } : null;
+  })();
+
+  return { slots, butterfly, effort, logged, recovery, streak, factcheck, dday, letter, recordedDays: days.length };
 }
 
 // ── 인사이트 카드 공통 껍데기 ──
@@ -1716,6 +1758,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode }) {
       {ins.streak && <StreakCard data={ins.streak} />}
       {ins.effort && <EffortCard data={ins.effort} />}
       {ins.logged && <LampClockCard data={ins.logged} nickname={nickname} />}
+      {ins.dday && <DdayCard data={ins.dday} />}
       {ins.factcheck && <FactCheckCard rows={ins.factcheck} />}
       <LetterCard data={ins.letter} isM={isM} />
     </div>
@@ -1740,8 +1783,8 @@ function SlotCard({ slots }) {
         {/* 1. 분석 기준 */}
         <div style={box}>
           <div style={{ ...win, animation: "slotSpin .5s cubic-bezier(.2,.7,.3,1) both" }}>
-            <span style={{ fontSize: 20 }}>{cur.emoji}</span>
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: C.ink, marginTop: 1 }}>{cur.label}</span>
+            <span style={{ color: t.accentDeep, display: "flex" }}>{(() => { const I = SLOT_CAT_ICON[cur.key]; return I ? <I size={22} /> : null; })()}</span>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: C.ink, marginTop: 2 }}>{cur.label}</span>
           </div>
           {conn("+")}
         </div>
@@ -1749,7 +1792,7 @@ function SlotCard({ slots }) {
         <div style={box}>
           <div style={{ ...win, animation: "slotSpin .5s cubic-bezier(.2,.7,.3,1) .12s both" }}>
             {found ? <>
-              {cur.detailIcon ? <DiaryIcon name={cur.detailIcon} size={22} /> : <span style={{ fontSize: 18 }}>📝</span>}
+              {cur.detailIcon ? <DiaryIcon name={cur.detailIcon} size={22} /> : <span style={{ color: t.accentDeep, display: "flex" }}>{(() => { const I = SLOT_CAT_ICON[cur.key]; return I ? <I size={20} /> : <IconNotepad size={20} />; })()}</span>}
               <span style={{ fontSize: 10, fontWeight: 800, color: C.ink, marginTop: 2, lineHeight: 1.15, wordBreak: "keep-all" }}>{cur.detail}</span>
             </> : <span style={{ fontSize: 24, fontWeight: 900, color: "#C9C4BB" }}>?</span>}
           </div>
@@ -1909,6 +1952,31 @@ function FactCheckCard({ rows }) {
 }
 
 // 8. 코치의 편지
+// 4-여성. 마법의 D-Day 카운트다운 — PMS 기간을 카드 스와이프로
+function DdayCard({ data }) {
+  const t = getTypeAccent();
+  return (
+    <InsCard badge="여성 전용 · PMS 돋보기" title="마법의 D-Day 카운트다운" sub="생리 직전 일주일을 확대해서 봤어요">
+      <div className="dday-scroll" style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 2px 8px", margin: "0 -2px", scrollSnapType: "x mandatory" }}>
+        {data.cards.map((c, i) => (
+          <div key={i} style={{ flex: "0 0 82%", scrollSnapAlign: "center", background: "linear-gradient(180deg,#FFF3F6,#FBE7EE)", border: "1px solid #F4D3DE", borderRadius: 16, padding: "16px 15px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 22 }}>{c.icon}</span>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "#C4517A" }}>{c.dlabel}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: C.ink }}>{c.title}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 12.5, color: "#5A4048", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all" }}>{c.text}</p>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, textAlign: "center", margin: "4px 0 0" }}>← 옆으로 넘겨보세요 →</p>
+      <style>{`.dday-scroll::-webkit-scrollbar{display:none}.dday-scroll{scrollbar-width:none}`}</style>
+    </InsCard>
+  );
+}
+
 function LetterCard({ data, isM }) {
   const [open, setOpen] = useState(false);
   return (

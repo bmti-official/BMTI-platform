@@ -401,6 +401,20 @@ function IconIndigestion({ size = 28 }) {
   );
 }
 
+// 생리함 — 생리 기록 달력에 빨간 물방울
+function IconMenstrual({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="6" y="7" width="20" height="19" rx="4" fill="#F6DBE2" />
+      <rect x="6" y="7" width="20" height="6" rx="4" fill="#E0607E" />
+      <rect x="10" y="4.5" width="2.4" height="4" rx="1.2" fill="#C74C6B" />
+      <rect x="19.6" y="4.5" width="2.4" height="4" rx="1.2" fill="#C74C6B" />
+      <path d="M16 14 Q12 19.5 12 22 a4 4 0 0 0 8 0 Q20 19.5 16 14Z" fill="#DA3A5A" />
+      <path d="M14 21.5 a2.5 2.5 0 0 0 4 0" stroke="#fff" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.55" />
+    </svg>
+  );
+}
+
 function IconPeriod({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -433,7 +447,7 @@ const ICONS = {
   spicy: IconSpicy, dessert: IconDessert, indigestion: IconIndigestion,
   phone: IconPhone, driving: IconDriving, shoes: IconShoes, heavyBag: IconHeavyBag,
   coldAir: IconColdAir, stress: IconStress, nervous: IconNervous, drained: IconDrained,
-  period: IconPeriod, medicine: IconMedicine,
+  period: IconPeriod, menstrual: IconMenstrual, medicine: IconMedicine,
 };
 
 export function DiaryIcon({ name, size = 28 }) {
