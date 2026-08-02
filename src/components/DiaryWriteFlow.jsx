@@ -49,13 +49,13 @@ const SLEEP_TIME_OPTS = ["~11시", "12시", "1시", "2시 이후"];
 // 카테고리별로 가로 배치하고, 칸을 넘어가면 가로 스크롤한다. '생리 중'은 여성에게만 노출.
 const TAG_CATEGORIES = [
   { title: "음식 섭취", tags: [
-    { label: "카페인", icon: "caffeine" }, { label: "음주", icon: "alcohol" }, { label: "야식·과식", icon: "snacking" }, { label: "수분 보충", icon: "water" }, { label: "맵거나 짠 음식", icon: "spicy" }, { label: "달달 디저트", icon: "dessert" },
+    { label: "카페인", icon: "caffeine" }, { label: "음주", icon: "alcohol" }, { label: "야식·과식", icon: "snacking" }, { label: "수분 보충", icon: "water" }, { label: "맵거나 짠 음식", icon: "spicy" }, { label: "달달 디저트", icon: "dessert" }, { label: "영양제", icon: "supplement" },
   ] },
   { title: "활동·환경", tags: [
     { label: "스마트폰·PC", icon: "phone" }, { label: "장거리 운전", icon: "driving" }, { label: "불편한 신발", icon: "shoes" }, { label: "무거운 짐", icon: "heavyBag" }, { label: "에어컨·추위", icon: "coldAir" },
   ] },
   { title: "상태·기타", tags: [
-    { label: "스트레스", icon: "stress" }, { label: "긴장함", icon: "nervous" }, { label: "방전됨", icon: "drained" }, { label: "소화 불량", icon: "indigestion" }, { label: "생리 중", icon: "period", femaleOnly: true }, { label: "생리함", icon: "menstrual", femaleOnly: true }, { label: "약 복용", icon: "medicine" },
+    { label: "스트레스", icon: "stress" }, { label: "긴장함", icon: "nervous" }, { label: "방전됨", icon: "drained" }, { label: "소화 불량", icon: "indigestion" }, { label: "생리 중", icon: "period", femaleOnly: true }, { label: "생리함", icon: "menstrual", femaleOnly: true }, { label: "진통제", icon: "medicine" },
   ] },
 ];
 
@@ -132,7 +132,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 오늘의 태그(여러 개)
   const [tags, setTags] = useState(() => (Array.isArray(initialEntry?.tags) ? initialEntry.tags : []));
   const toggleTag = (tag) => setTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
-  const isFemale = String(gender).toLowerCase() === "female";
+  const isAdmin = (() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.nickname === "BMTI"; } catch { return false; } })();
+  const g = String(gender || "").toLowerCase();
+  // 관리자는 성별과 무관하게 여성 전용 항목(생리 등)도 선택할 수 있다.
+  const isFemale = g.includes("female") || g.includes("여") || isAdmin;
 
   // 운동
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
@@ -605,9 +608,19 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                   <button onClick={() => setSore(s => ({ ...s, parts: s.parts.filter(x => x !== p), profileParts: (s.profileParts || []).filter(x => x !== p) }))}
                     style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "2px 4px" }}>삭제 ✕</button>
                 </div>
-                {/* 부위별 강도 조절 */}
-                <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "10px 0 6px" }}>얼마나 불편했어요? ({lvl})</div>
-                <input type="range" min="0" max="10" value={lvl} onChange={e => setSore(s => ({ ...s, levels: { ...s.levels, [p]: +e.target.value } }))} style={{ width: "100%", accentColor: t.accent }} />
+                {/* 부위별 강도 조절 — 두꺼운 게이지 + 좌우 -/+ 버튼 */}
+                <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "10px 0 8px" }}>얼마나 불편했어요? ({lvl})</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button onClick={() => setSore(s => ({ ...s, levels: { ...s.levels, [p]: Math.max(0, lvl - 1) } }))} aria-label="줄이기"
+                    style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 10, border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 20, fontWeight: 800, lineHeight: 1, cursor: "pointer" }}>−</button>
+                  <div onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setSore(s => ({ ...s, levels: { ...s.levels, [p]: Math.max(0, Math.min(10, Math.round(((e.clientX - r.left) / r.width) * 10))) } })); }}
+                    style={{ flex: 1, height: 16, borderRadius: 999, background: "#EFEBE3", position: "relative", cursor: "pointer" }}>
+                    <div style={{ height: "100%", width: `${lvl * 10}%`, background: t.accent, borderRadius: 999, transition: "width .12s" }} />
+                    <span style={{ position: "absolute", top: "50%", left: `${lvl * 10}%`, transform: "translate(-50%,-50%)", width: 22, height: 22, borderRadius: "50%", background: "#fff", border: `3px solid ${t.accent}`, boxShadow: "0 1px 4px rgba(0,0,0,.22)" }} />
+                  </div>
+                  <button onClick={() => setSore(s => ({ ...s, levels: { ...s.levels, [p]: Math.min(10, lvl + 1) } }))} aria-label="늘리기"
+                    style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 10, border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 20, fontWeight: 800, lineHeight: 1, cursor: "pointer" }}>+</button>
+                </div>
                 {/* 언제 — 말랑 정보 부위는 표시만, 추가한 부위는 중복 선택 */}
                 {fromProfile ? (
                   <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginTop: 8 }}>언제: {whenText(p) || "—"}</div>

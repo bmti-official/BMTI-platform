@@ -415,6 +415,18 @@ function IconMenstrual({ size = 28 }) {
   );
 }
 
+// 영양제 — 초록 영양제 통에 흰 십자
+function IconSupplement({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="11" y="3.5" width="10" height="4.2" rx="1.6" fill="#5E8A54" />
+      <rect x="9" y="7.5" width="14" height="21" rx="4.5" fill="#8FCB78" />
+      <rect x="9" y="12" width="14" height="16.5" rx="0" fill="#7BBB63" style={{ clipPath: "inset(0 0 0 0 round 0 0 4.5px 4.5px)" }} />
+      <path d="M16 15 v6.5 M12.75 18.25 h6.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconPeriod({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -444,7 +456,7 @@ const ICONS = {
   standing: IconStanding, heavyLift: IconHeavyLift, editPencil: IconEditPencil,
   gear: IconGear, warn: IconWarn,
   caffeine: IconCaffeine, alcohol: IconAlcohol, snacking: IconSnacking, water: IconWater,
-  spicy: IconSpicy, dessert: IconDessert, indigestion: IconIndigestion,
+  spicy: IconSpicy, dessert: IconDessert, indigestion: IconIndigestion, supplement: IconSupplement,
   phone: IconPhone, driving: IconDriving, shoes: IconShoes, heavyBag: IconHeavyBag,
   coldAir: IconColdAir, stress: IconStress, nervous: IconNervous, drained: IconDrained,
   period: IconPeriod, menstrual: IconMenstrual, medicine: IconMedicine,

@@ -8,9 +8,9 @@ import { SLEEP_ICON } from "../lib/diaryEntryLabels";
 
 // 오늘의 태그 라벨 → 아이콘 이름 (DiaryWriteFlow의 TAG_CATEGORIES와 동일하게 유지)
 const TAG_ICON = {
-  "카페인": "caffeine", "음주": "alcohol", "야식·과식": "snacking", "수분 보충": "water", "맵거나 짠 음식": "spicy", "달달 디저트": "dessert",
+  "카페인": "caffeine", "음주": "alcohol", "야식·과식": "snacking", "수분 보충": "water", "맵거나 짠 음식": "spicy", "달달 디저트": "dessert", "영양제": "supplement",
   "스마트폰·PC": "phone", "장거리 운전": "driving", "불편한 신발": "shoes", "무거운 짐": "heavyBag", "에어컨·추위": "coldAir",
-  "스트레스": "stress", "긴장함": "nervous", "방전됨": "drained", "소화 불량": "indigestion", "생리 중": "period", "생리함": "menstrual", "약 복용": "medicine",
+  "스트레스": "stress", "긴장함": "nervous", "방전됨": "drained", "소화 불량": "indigestion", "생리 중": "period", "생리함": "menstrual", "진통제": "medicine",
 };
 // 활동량 트랙 말풍선용 이모지
 const LOAD_EMOJI = { sit: "🪑", stand: "🧍", walk: "🚶", lift: "📦", etc: "💥" };
@@ -1700,7 +1700,8 @@ function computeInsights(entries, userData, report) {
   // ── 여성 전용: 생리 전(PMS) 마법의 D-Day ──
   const dday = (() => {
     const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
-    const female = g.includes("female") || g.includes("여");
+    // 관리자(BMTI)는 성별과 무관하게 PMS 카드를 볼 수 있다.
+    const female = g.includes("female") || g.includes("여") || userData?.nickname === "BMTI";
     if (!female) return null;
     const shiftISO = (ds, n) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
     const isPeriod = (d) => (d.tags || []).some(tg => tg === "생리 중" || tg === "생리함");
