@@ -6,7 +6,7 @@ import QuizView from './components/QuizView';
 import ResultView from './components/ResultView';
 import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
-import MallangRoom from './components/MallangRoom';
+import ServicePrep from './components/ServicePrep';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
@@ -286,8 +286,11 @@ function App() {
             userProfile={userProfile}
           />
         )}
-        {currentView === 'mallangroom' && (
-          <MallangRoom bmtiCode={bmtiCode} isAdmin={userProfile?.nickname === 'BMTI'} userProfile={userProfile} />
+        {currentView === 'curation' && (
+          <ServicePrep kind="curation" bmtiCode={bmtiCode} />
+        )}
+        {currentView === 'reservation' && (
+          <ServicePrep kind="reservation" bmtiCode={bmtiCode} />
         )}
         {currentView === 'aichat' && (
           <AiChatHub

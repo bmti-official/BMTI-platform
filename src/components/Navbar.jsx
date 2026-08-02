@@ -5,22 +5,11 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   </svg>
 );
 
-// 하단 네비 우측 — 말랑방(채팅) 아이콘
-const ChatIcon = ({ className }) => (
-  <svg viewBox="0 0 32 32" className={className} fill="none">
-    <path d="M6 5h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H13l-6 5v-5H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z" fill="currentColor" />
-    <circle cx="11.5" cy="13.5" r="1.7" fill="white" />
-    <circle cx="16" cy="13.5" r="1.7" fill="white" />
-    <circle cx="20.5" cy="13.5" r="1.7" fill="white" />
-  </svg>
-);
-
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
 import { todayISO, getEntryForDate } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
-import MallangClass from './MallangClass';
 import BmtiPartnerPopup from './BmtiPartnerPopup';
 
 // 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양.
@@ -44,13 +33,20 @@ const ChartIcon = ({ className, active }) => (
   </svg>
 );
 
-// 하단 네비 '말랑 클래스' 아이콘 — 함께 모인 사람들 모양
-const GroupIcon = ({ className }) => (
+// 하단 네비 '큐레이션' 아이콘 — 펼쳐진 책
+const BookIcon = ({ className }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none">
-    <circle cx="8.5" cy="8" r="3.2" fill="currentColor" />
-    <circle cx="16.5" cy="9" r="2.6" fill="currentColor" opacity="0.55" />
-    <path d="M2.8 20c0-3.3 2.6-5.7 5.7-5.7s5.7 2.4 5.7 5.7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    <path d="M14.6 20c0-2.5 1.7-4.4 3.9-4.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.55" />
+    <path d="M12 6.2C10.3 5 8.3 4.4 6 4.4c-.8 0-1.4.6-1.4 1.4v11c0 .8.6 1.4 1.4 1.4 2.3 0 4.3.6 6 1.8" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+    <path d="M12 6.2C13.7 5 15.7 4.4 18 4.4c.8 0 1.4.6 1.4 1.4v11c0 .8-.6 1.4-1.4 1.4-2.3 0-4.3.6-6 1.8" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+    <path d="M12 6.2V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+// 하단 네비 '예약' 아이콘 — 티켓
+const TicketIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.6a1.6 1.6 0 0 0 0 3.2v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15v-1.7a1.6 1.6 0 0 0 0-3.2V8.5Z" fill="currentColor" />
+    <path d="M12 8v1.6M12 11.6v1.6M12 15.2V17" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
@@ -83,6 +79,8 @@ const AppScrollTop = () => {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const check = () => {
+      // 캘린더가 떠 있으면(현재 달/주 카드 존재) 캘린더 자체 버튼이 위/아래 이동을 담당하므로 전역 버튼은 숨긴다.
+      if (document.querySelector('[data-current="true"]')) { setShow(false); return; }
       let any = (window.scrollY || document.documentElement.scrollTop || 0) > 320;
       document.querySelectorAll('[data-scroll-top]').forEach((el) => { if (el.scrollTop > 320) any = true; });
       setShow(any);
@@ -94,12 +92,7 @@ const AppScrollTop = () => {
   }, []);
   const up = () => {
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
-    document.querySelectorAll('[data-scroll-top]').forEach((el) => {
-      // 캘린더처럼 '현재(오늘)' 카드가 있으면 그 위치까지만, 없으면 맨 위로
-      const cur = el.querySelector('[data-current="true"]');
-      const top = cur ? Math.max(0, cur.offsetTop - 100) : 0;
-      try { el.scrollTo({ top, behavior: 'smooth' }); } catch { el.scrollTop = top; }
-    });
+    document.querySelectorAll('[data-scroll-top]').forEach((el) => { try { el.scrollTo({ top: 0, behavior: 'smooth' }); } catch { el.scrollTop = 0; } });
   };
   return (
     <button onClick={up} aria-label="맨 위로"
@@ -138,19 +131,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   // 말랑이의 발견 — 기분 기록이 쌓인 달에서 패턴을 찾아 보여주는 월간 리포트.
   const [showDiscovery, setShowDiscovery] = useState(false);
 
-  // 말랑 클래스 — 같은 유형·같은 부위끼리 모이는 소그룹 온라인 클래스 소개/예약.
-  const [showMallangClass, setShowMallangClass] = useState(false);
-
   // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 파트너' 팝업.
   const [showPartner, setShowPartner] = useState(false);
   const hasLoggedToday = !!getEntryForDate(todayISO());
-
-  // 말랑방 화면의 '반 둘러보기' 버튼이 보내는 이벤트 → 말랑 클래스 오버레이를 연다.
-  useEffect(() => {
-    const openClass = () => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); };
-    window.addEventListener('open_mallang_class', openClass);
-    return () => window.removeEventListener('open_mallang_class', openClass);
-  }, [setView]);
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -165,7 +148,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {/* 상단: 홈(집) 원형 버튼 — 항상 떠 있음 */}
       <div className="fixed top-3 left-3 z-40">
         <button
-          onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('home'); }}
+          onClick={() => { setShowDiscovery(false); setView('home'); }}
           aria-label="홈"
           className="w-11 h-11 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border border-gray-100 flex items-center justify-center active:scale-95 transition-transform"
         >
@@ -177,7 +160,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       <div id="login-button" className="fixed top-3 right-3 z-40">
         {isLoggedIn ? (
           <button
-            onClick={() => { setShowDiscovery(false); setShowMallangClass(false); setView('mypage'); }}
+            onClick={() => { setShowDiscovery(false); setView('mypage'); }}
             className={`flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border transition-colors active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
           >
             {userProfile && (
@@ -206,16 +189,16 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         <>
           <div className="fixed bottom-3 left-2 right-2 z-40">
             <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
-              <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); setShowMallangClass(false); }}
+              <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); }}
                 icon={<Mallang v={diaryMoodTick} size={24} />} label="다이어리" />
-              <PillTab active={showDiscovery} onClick={() => { setShowMallangClass(false); setShowDiscovery(true); setView('home'); }}
+              <PillTab active={showDiscovery} onClick={() => { setShowDiscovery(true); setView('home'); }}
                 icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="기록·발견" />
               {/* 가운데 캐릭터 자리 */}
               <span className="w-14 shrink-0" aria-hidden="true" />
-              <PillTab active={showMallangClass} onClick={() => { setShowDiscovery(false); setShowMallangClass(true); setView('home'); }}
-                icon={<GroupIcon className="w-5 h-5 text-gray-500" />} label="클래스" />
-              <PillTab active={currentView === 'mallangroom'} onClick={() => { setView('mallangroom'); setShowDiscovery(false); setShowMallangClass(false); }}
-                icon={<ChatIcon className="w-5 h-5 text-gray-500" />} label="말랑방" />
+              <PillTab active={currentView === 'curation'} onClick={() => { setShowDiscovery(false); setView('curation'); }}
+                icon={<BookIcon className="w-5 h-5 text-gray-500" />} label="큐레이션" />
+              <PillTab active={currentView === 'reservation'} onClick={() => { setShowDiscovery(false); setView('reservation'); }}
+                icon={<TicketIcon className="w-5 h-5 text-gray-500" />} label="예약" />
             </div>
           </div>
 
@@ -250,17 +233,6 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} />
       )}
 
-      {showMallangClass && (
-        <MallangClass
-          onClose={() => setShowMallangClass(false)}
-          bmtiCode={bmtiCode}
-          charImage={charData?.image}
-          isLoggedIn={isLoggedIn}
-          onRequireLogin={() => setIsLoggedIn(true)}
-          isAdmin={userProfile?.nickname === 'BMTI'}
-          userProfile={userProfile}
-        />
-      )}
     </>
   );
 };

@@ -94,6 +94,28 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const loadingRef = useRef(false);
   const prevHeightRef = useRef(0);
   const topLoadRef = useRef(false);
+  // 현재 달/주 카드 기준으로 위/아래 어디에 있는지 → 떠 있는 '현재로 이동' 버튼 방향
+  const [curBtn, setCurBtn] = useState(null); // 'up' | 'down' | null
+
+  const restTopOfCurrent = () => {
+    const el = scrollRef.current; if (!el) return null;
+    const cur = el.querySelector('[data-current="true"]');
+    return cur ? Math.max(0, cur.offsetTop - 100) : null;
+  };
+  const updateCurBtn = () => {
+    const el = scrollRef.current; if (!el) return;
+    const rest = restTopOfCurrent();
+    if (rest == null) { setCurBtn(null); return; }
+    const delta = el.scrollTop - rest;
+    if (delta > 140) setCurBtn('up');        // 현재보다 아래(미래)에 있음 → 위로 올라가 현재로
+    else if (delta < -140) setCurBtn('down'); // 현재보다 위(과거)에 있음 → 아래로 내려가 현재로
+    else setCurBtn(null);
+  };
+  const goCurrent = () => {
+    const el = scrollRef.current; const rest = restTopOfCurrent();
+    if (!el || rest == null) return;
+    try { el.scrollTo({ top: rest, behavior: 'smooth' }); } catch { el.scrollTop = rest; }
+  };
 
   // 위로 더 불러오면 스크롤 위치를 보정해 튐 없이 이어지게 한다.
   useLayoutEffect(() => {
@@ -106,6 +128,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
     const el = scrollRef.current; if (!el) return;
     const cur = el.querySelector('[data-current="true"]');
     if (cur) el.scrollTop = Math.max(0, cur.offsetTop - 100);
+    setCurBtn(null);
   }, [view]);
 
   const list = view === "month" ? months : weeks;
@@ -127,7 +150,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
     }, 380);
   };
   const onScroll = () => {
-    const el = scrollRef.current; if (!el || loadingRef.current) return;
+    const el = scrollRef.current; if (!el) return;
+    updateCurBtn();
+    if (loadingRef.current) return;
     if (el.scrollTop < 160) loadMore("top");
     else if (el.scrollTop + el.clientHeight > el.scrollHeight - 160) loadMore("bottom");
   };
@@ -181,6 +206,16 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           {loading === "bottom" && <CalLoader />}
         </div>
       </div>
+
+      {/* '현재 달/주로 이동' 떠 있는 버튼 — 현재보다 아래면 '맨 위로', 위면 '맨 아래로' */}
+      {curBtn && (
+        <button onClick={goCurrent} aria-label={curBtn === 'up' ? '현재 달로 올라가기' : '현재 달로 내려가기'}
+          style={{ position: "fixed", right: 12, bottom: 100, zIndex: 40, width: 44, height: 44, borderRadius: "50%", border: "1px solid #EDE9E2", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 3px 12px rgba(0,0,0,0.16)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ transform: curBtn === 'down' ? 'rotate(180deg)' : 'none' }}>
+            <path d="M12 19V7M6 13l6-6 6 6" stroke="#6B6459" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
 
       {showHelp && (
         <DiaryHelpPopup onClose={() => setShowHelp(false)} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />

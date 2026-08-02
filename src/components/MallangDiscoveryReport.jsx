@@ -1836,16 +1836,22 @@ function computeInsights(entries, userData, report) {
     const base = days.filter(d => !pmsSet.has(d.date) && !isPeriod(d));
     const cards = [];
     const tagRate = (arr, tag) => arr.length ? arr.filter(d => (d.tags || []).includes(tag)).length / arr.length : 0;
+    // ① 식욕 — 생리 일주일 전 구간에서 야식·단 음식 태그가 늘었는지. 없으면 '변화 없음' 카드로.
+    let foodCard = null;
     for (const tag of ["야식·과식", "달달 디저트"]) {
       const pr = tagRate(pmsDays, tag), br = tagRate(base, tag);
       const cnt = pmsDays.filter(d => (d.tags || []).includes(tag)).length;
-      if (cnt >= 2 && pr >= br * 1.6 + 0.05) { const mult = br > 0 ? Math.max(2, Math.round(pr / br)) : 3; cards.push({ dlabel: "D-4", icon: "🍩", title: "식욕의 비밀", text: `생리 4일 전부터 평소보다 '#${tag}' 태그가 ${mult}배 많아졌어요. 호르몬이 에너지를 비축하려는 자연스러운 현상이니 자책 금지!` }); break; }
+      if (cnt >= 2 && pr >= br * 1.6 + 0.05) { const mult = br > 0 ? Math.max(2, Math.round(pr / br)) : 3; foodCard = { dlabel: "식욕 ↑", icon: "🍩", title: "식욕의 변화", text: `생리 일주일 전부터 평소보다 '#${tag}' 태그가 ${mult}배 많아졌어요. 호르몬이 에너지를 비축하려는 자연스러운 현상이니 자책 금지!` }; break; }
     }
+    cards.push(foodCard || { dlabel: "식욕", icon: "🍽️", title: "식욕의 변화", text: "이번 달은 생리 일주일 전 식욕(야식·단 음식) 변화가 뚜렷하게 잡히진 않았어요. 기록이 더 쌓이면 나만의 패턴을 찾아드릴게요." });
+    // ② 불편함 — 상관관계를 못 찾아도 박스 자체는 항상 보여준다.
     const soreRate = (arr, parts) => { let n = 0, t = 0; arr.forEach(d => (d.soreness || []).forEach(s => { t++; if (parts.includes(s.part)) n++; })); return t ? n / t : 0; };
     if (soreRate(pmsDays, ["pelvis", "waist"]) >= soreRate(base, ["pelvis", "waist"]) + 0.2) {
-      cards.push({ dlabel: "D-2", icon: "⚡", title: "불편함의 이동", text: `평소엔 '목/어깨'가 아팠지만, 생리 이틀 전부터는 '골반'과 '허리' 불편함이 집중적으로 기록됐어요.` });
+      cards.push({ dlabel: "불편함 ↑", icon: "⚡", title: "불편함의 이동", text: "평소엔 '목·어깨'가 불편했지만, 생리 일주일 전부터는 '골반·허리' 불편함이 더 자주 기록됐어요." });
+    } else {
+      cards.push({ dlabel: "불편함", icon: "🩹", title: "불편함의 변화", text: "이번 달은 생리 일주일 전 불편한 부위의 뚜렷한 변화(골반·허리 집중)는 발견되지 않았어요. 기록이 더 쌓이면 찾아드릴게요." });
     }
-    return cards.length ? { cards } : null;
+    return { cards };
   })();
 
   return { slots, butterfly, effort, logged, recovery, streak, factcheck, dday, letter, recordedDays: days.length };
@@ -1901,17 +1907,14 @@ function SlotCard({ slots }) {
   // 슬롯 3칸: [분석 기준] + [나의 기록] = [기분]
   const box = { flex: 1, minWidth: 0, position: "relative" };
   const win = { height: 66, borderRadius: 12, background: "linear-gradient(180deg,#FFFDF6,#F4EFE2)", border: "1.5px solid #EAE2CF", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "4px 5px", boxShadow: "inset 0 6px 10px -8px rgba(0,0,0,0.2)", overflow: "hidden" };
-  const conn = (sym) => <span style={{ position: "absolute", right: -6, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 900, color: C.sub, zIndex: 1 }}>{sym}</span>;
   return (
     <InsCard badge="기분 연결고리" title="기분 자판기" sub="버튼을 눌러 5가지 기준을 하나씩 돌려보세요">
       <div key={idx} style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
-        {/* 1. 분석 기준 */}
+        {/* 1. 분석 기준 — 이모지 없이 문구만 */}
         <div style={box}>
           <div style={{ ...win, animation: "slotSpin .5s cubic-bezier(.2,.7,.3,1) both" }}>
-            <span style={{ color: t.accentDeep, display: "flex" }}>{(() => { const I = SLOT_CAT_ICON[cur.key]; return I ? <I size={22} /> : null; })()}</span>
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: C.ink, marginTop: 2 }}>{cur.label}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>{cur.label}</span>
           </div>
-          {conn("+")}
         </div>
         {/* 2. 나의 기록 */}
         <div style={box}>
@@ -1921,7 +1924,6 @@ function SlotCard({ slots }) {
               <span style={{ fontSize: 10, fontWeight: 800, color: C.ink, marginTop: 2, lineHeight: 1.15, wordBreak: "keep-all" }}>{cur.detail}</span>
             </> : <span style={{ fontSize: 24, fontWeight: 900, color: "#C9C4BB" }}>?</span>}
           </div>
-          {conn("=")}
         </div>
         {/* 3. 기분 */}
         <div style={box}>
@@ -1968,19 +1970,36 @@ function SlotCard({ slots }) {
   );
 }
 
-// 2. 밤낮 연결 고리
+// 2. 밤낮 연결 고리 — '잘 못 잔 밤'이 '다음날'에 남긴 흔적을 위→아래 흐름으로 보여준다
 function ButterflyCard({ data }) {
+  const t = getTypeAccent();
+  const dayResult = data.topSore ? `${data.topSore}이 뻐근했어요` : (data.topTags?.[0] ? `#${data.topTags[0]} 태그가 많았어요` : "컨디션이 가라앉았어요");
+  const dayEmoji = data.topSore ? "😣" : (data.topTags?.[0] ? "🏷️" : "🥱");
   return (
-    <InsCard badge="수면 나비효과" title="오늘의 잠 → 내일의 나">
-      <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #ECE7DC" }}>
-        <div style={{ background: "linear-gradient(180deg,#3A3560,#4A4372)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 17 }}>🌙</span>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.92)" }}>잘 못 잔 밤 {data.poorN}번</span>
+    <InsCard badge="수면 나비효과" title="오늘의 잠 → 내일의 나" sub="잘 못 잔 밤이 다음날 몸에 남긴 흔적이에요">
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* 밤 패널 */}
+        <div style={{ background: "linear-gradient(135deg,#37325C,#4B4477)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 26, lineHeight: 1 }}>🌙</span>
+          <div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.62)", marginBottom: 2 }}>뒤척이거나 밤을 새운 밤</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>잘 못 잔 밤이 <b style={{ color: "#FFD98A", fontSize: 17 }}>{data.poorN}번</b></div>
+          </div>
         </div>
-        <div style={{ height: 18, background: "repeating-linear-gradient(90deg,#D8CFBE 0 6px,transparent 6px 12px)", opacity: 0.6 }} />
-        <div style={{ background: "linear-gradient(180deg,#FFF6E4,#FDEFD2)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 17 }}>🌤️</span>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#8A6A2E" }}>{data.topSore ? `다음 날 ${data.topSore} 뻐근` : (data.topTags[0] ? `다음 날 #${data.topTags[0]}` : "다음 날 컨디션 저하")}</span>
+        {/* 연결 화살표 + '다음날' 라벨 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: "-4px 0" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: t.accentSoft, color: t.accentDeep, fontSize: 11, fontWeight: 800, padding: "4px 12px", borderRadius: 999 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            그 다음날
+          </span>
+        </div>
+        {/* 다음날 패널 */}
+        <div style={{ background: "linear-gradient(135deg,#FFF3DC,#FCE8C6)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 26, lineHeight: 1 }}>{dayEmoji}</span>
+          <div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: "#B08A48", marginBottom: 2 }}>다음날 자주 남긴 기록</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#7A5A22" }}>{dayResult}</div>
+          </div>
         </div>
       </div>
       <Insight>{data.message}</Insight>
@@ -2081,7 +2100,7 @@ function FactCheckCard({ rows }) {
 function DdayCard({ data }) {
   const t = getTypeAccent();
   return (
-    <InsCard badge="여성 전용 · PMS 돋보기" title="마법의 D-Day 카운트다운" sub="생리 직전 일주일을 확대해서 봤어요">
+    <InsCard badge="여성 전용 · PMS 돋보기" title="마법의 D-Day 카운트다운" sub="생리 직전 일주일의 식욕·불편함 변화를 확대해서 봤어요">
       <div className="dday-scroll" style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 2px 8px", margin: "0 -2px", scrollSnapType: "x mandatory" }}>
         {data.cards.map((c, i) => (
           <div key={i} style={{ flex: "0 0 82%", scrollSnapAlign: "center", background: "linear-gradient(180deg,#FFF3F6,#FBE7EE)", border: "1px solid #F4D3DE", borderRadius: 16, padding: "16px 15px" }}>
