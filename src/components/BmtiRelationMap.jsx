@@ -71,8 +71,8 @@ export default function BmtiRelationMap({ bmtiCode }) {
 
       {/* 트리오 — 환상의 짝꿍 ↔ 나 ↔ 조금 다른 템포 */}
       <div className="relative mb-4">
-        {/* 뒤에 깔리는 연결선 */}
-        <div className="absolute left-[16%] right-[16%] top-[46px] flex items-center pointer-events-none" style={{ zIndex: 0 }}>
+        {/* 뒤에 깔리는 연결선 — 캐릭터 원의 아래쪽을 지나가게 하여 원이 선 위에 놓이도록 한다 */}
+        <div className="absolute left-[16%] right-[16%] top-[74px] flex items-center pointer-events-none" style={{ zIndex: 0 }}>
           <span className="flex-1 h-[2px]" style={{ background: `linear-gradient(90deg, ${GOOD}, ${selColor})` }} />
           <span className="flex-1 h-[2px]" style={{ background: `linear-gradient(90deg, ${selColor}, ${BAD})`, borderTop: '0' }} />
         </div>
@@ -108,20 +108,16 @@ export default function BmtiRelationMap({ bmtiCode }) {
         </div>
       </div>
 
-      {/* 이유 카드 */}
+      {/* 이유 카드 — 두 박스의 높이를 동일하게 고정해 유형을 바꿔도 페이지가 흔들리지 않게 한다 */}
       <div className="flex flex-col gap-2.5 mb-6">
-        {good.reason && (
-          <div className="rounded-2xl p-3.5 border" style={{ background: '#FDF1F5', borderColor: '#F6D8E2' }}>
-            <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {nickOf(good.code)}와 잘 맞는 이유</div>
-            <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{good.reason}</p>
-          </div>
-        )}
-        {bad.reason && (
-          <div className="rounded-2xl p-3.5 border" style={{ background: '#F4F6F9', borderColor: '#DFE5EC' }}>
-            <div className="text-[11.5px] font-extrabold mb-1" style={{ color: BAD }}>🤔 {nickOf(bad.code)}와 살짝 어긋나는 이유</div>
-            <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{bad.reason}</p>
-          </div>
-        )}
+        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 132 }}>
+          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {good.code ? `${nickOf(good.code)}와 잘 맞는 이유` : '환상의 짝꿍'}</div>
+          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{good.reason || '아직 소개할 짝꿍이 없어요.'}</p>
+        </div>
+        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#F4F6F9', borderColor: '#DFE5EC', height: 132 }}>
+          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: BAD }}>🤔 {bad.code ? `${nickOf(bad.code)}와 살짝 어긋나는 이유` : '조금 다른 템포'}</div>
+          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{bad.reason || '아직 소개할 유형이 없어요.'}</p>
+        </div>
       </div>
 
       {/* 16유형 선택 그리드 */}

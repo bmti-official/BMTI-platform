@@ -94,7 +94,12 @@ const AppScrollTop = () => {
   }, []);
   const up = () => {
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
-    document.querySelectorAll('[data-scroll-top]').forEach((el) => { try { el.scrollTo({ top: 0, behavior: 'smooth' }); } catch { el.scrollTop = 0; } });
+    document.querySelectorAll('[data-scroll-top]').forEach((el) => {
+      // 캘린더처럼 '현재(오늘)' 카드가 있으면 그 위치까지만, 없으면 맨 위로
+      const cur = el.querySelector('[data-current="true"]');
+      const top = cur ? Math.max(0, cur.offsetTop - 100) : 0;
+      try { el.scrollTo({ top, behavior: 'smooth' }); } catch { el.scrollTop = top; }
+    });
   };
   return (
     <button onClick={up} aria-label="맨 위로"

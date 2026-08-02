@@ -1,4 +1,4 @@
-import { useState, useRef, Fragment } from "react";
+import { useState, useRef, useMemo, Fragment } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
@@ -188,6 +188,79 @@ function buildBmti(bmtiCode) {
   };
 }
 
+// ══════════════════════════════════════════════════════════════
+// 잠금 미리보기 — 기록이 부족해 잠긴 박스에 '하드 유저' 예시를 블러로 보여주고,
+// 커서를 올리면(또는 탭하면) 블러가 풀리며 어떤 정보가 나오는지 확인할 수 있다.
+// ══════════════════════════════════════════════════════════════
+function LockedPreview({ children, label }) {
+  const [reveal, setReveal] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setReveal(true)}
+      onMouseLeave={() => setReveal(false)}
+      onClick={() => setReveal((v) => !v)}
+      style={{ position: "relative", cursor: "pointer", userSelect: "none", WebkitTapHighlightColor: "transparent" }}
+    >
+      <div style={{ filter: reveal ? "none" : "blur(6px)", opacity: reveal ? 1 : 0.92, transform: reveal ? "none" : "scale(0.995)", transition: "filter .3s ease, opacity .3s ease, transform .3s ease", pointerEvents: "none" }}>
+        {children}
+      </div>
+      {/* 잠금 안내 배지 — 블러 상태에서만 보인다 */}
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: reveal ? 0 : 1, transition: "opacity .25s ease" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(28,26,23,0.74)", color: "#fff", fontSize: 12, fontWeight: 800, padding: "8px 14px", borderRadius: 999, boxShadow: "0 4px 14px rgba(0,0,0,0.22)", whiteSpace: "nowrap", backdropFilter: "blur(2px)" }}>
+          🔒 {label || "커서를 올리면 예시를 볼 수 있어요"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// 하드 유저 한 달치 예시 기록 — 잠긴 박스의 블러 미리보기에 쓴다. 실제 엔진/인사이트 파이프라인에
+// 그대로 태워서(같은 렌더러) 데이터 모양이 어긋나지 않게 한다.
+const EX_Y = 2025, EX_M = 6;
+const exISO = (d) => `${EX_Y}-06-${String(d).padStart(2, "0")}`;
+const exAt = (d, h) => `${exISO(d)}T${String(h).padStart(2, "0")}:15:00`;
+function buildExampleEntries() {
+  const S = (part, situation, level) => ({ part, situation, level });
+  // [일, 기분, 수면, 취침시간대, 기록시각(시), 그 외]
+  const spec = [
+    [1, 3, 1, "1시", 23, { soreness: [S("neck", "sitting", 5)], tags: ["카페인"], note: { category: "일상", text: "오늘은 목이 좀 뻐근했다. 물을 자주 마셔야지." } }],
+    [2, 4, 3, "~11시", 22, { exercise: { did: true, types: ["러닝·조깅"] }, overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 4)], tags: ["스트레스", "카페인"], note: { category: "운동습관", text: "아침 러닝 30분! 개운하다." } }],
+    [3, 3, 2, "12시", 22, { soreness: [S("shoulder", "moving", 4)], tags: ["야식·과식"] }],
+    [4, 2, 2, "2시 이후", 23, { exercise: { did: false, reason: "tired" }, tags: ["스마트폰·PC"], note: { category: "고민", text: "너무 피곤해서 아무것도 못 했다." } }],
+    [5, 5, 1, "1시", 21, { exercise: { did: false, reason: "rest" }, tags: ["수분 보충"] }],
+    [6, 4, 3, "~11시", 22, { exercise: { did: true, types: ["걷기/산책"] }, overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 5)], tags: ["스트레스", "카페인"] }],
+    [7, 5, 3, "~11시", 21, { tags: ["수분 보충"], note: { category: "일상", text: "오랜만에 푹 잤다. 컨디션 최고." } }],
+    [8, 4, 2, "12시", 22, { exercise: { did: true, types: ["헬스·PT"] }, soreness: [S("shoulder", "standing", 4)], tags: ["카페인"] }],
+    [9, 3, 1, "1시", 23, { soreness: [S("neck", "sitting", 4)], tags: ["야식·과식", "카페인"] }],
+    [10, 4, 3, "~11시", 22, { overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 5)], tags: ["카페인"] }],
+    [11, 2, 0, "2시 이후", 23, { exercise: { did: false, reason: "tired" }, overwork: { yes: true, loads: ["sit"] }, soreness: [S("back", "sitting", 5)], note: { category: "고민", text: "허리가 계속 아프다. 오래 앉아있어서 그런가." } }],
+    [12, 3, 2, "12시", 22, { overwork: { yes: true, loads: ["stand"] }, soreness: [S("neck", "sitting", 4)] }],
+    [13, 4, 1, "1시", 22, { overwork: { yes: true, loads: ["sit"] }, soreness: [S("pelvis", "allday", 6)], tags: ["긴장함"] }],
+    [14, 4, 3, "~11시", 22, { overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 4)] }],
+    [15, 5, 3, "~11시", 21, { exercise: { did: true, types: ["요가"] }, soreness: [S("waist", "morning", 6)], tags: ["야식·과식"], note: { category: "일상", text: "요가하고 나니 몸이 개운. 근데 밤에 야식이 당긴다." } }],
+    [16, 4, 2, "12시", 22, { soreness: [S("pelvis", "allday", 5)], tags: ["야식·과식", "달달 디저트"] }],
+    [17, 5, 3, "~11시", 22, { exercise: { did: true, types: ["걷기/산책"] }, soreness: [S("waist", "morning", 6)], tags: ["야식·과식", "카페인"] }],
+    [18, 2, 0, "2시 이후", 23, { exercise: { did: false, reason: "rest" }, soreness: [S("pelvis", "allday", 5)], tags: ["야식·과식"], note: { category: "고민", text: "이유 없이 예민한 하루." } }],
+    [19, 5, 3, "~11시", 21, { exercise: { did: true, types: ["러닝·조깅"] }, soreness: [S("waist", "morning", 6)] }],
+    [20, 3, 2, "12시", 22, { soreness: [S("pelvis", "allday", 5)], tags: ["생리 중"] }],
+    [21, 2, 1, "1시", 23, { tags: ["생리 중", "달달 디저트"], note: { category: "일상", text: "컨디션 난조. 초콜릿으로 버티는 중." } }],
+    [22, 4, 3, "~11시", 22, { exercise: { did: false, reason: "busy" }, tags: ["생리 중"] }],
+    [23, 5, 3, "~11시", 21, { soreness: [S("shoulder", "sitting", 4)], tags: ["카페인"] }],
+    [24, 4, 2, "12시", 22, { exercise: { did: true, types: ["헬스·PT"] }, tags: ["수분 보충"] }],
+    [25, 3, 2, "12시", 22, { exercise: { did: false, reason: "tired" }, soreness: [S("neck", "sitting", 3)] }],
+    [26, 5, 3, "~11시", 21, { exercise: { did: true, types: ["요가"] }, tags: ["수분 보충"], note: { category: "운동습관", text: "한 달 마무리 요가. 뿌듯!" } }],
+  ];
+  return spec.map(([d, mood, sleep, sleepTime, hour, extra]) => ({
+    date: exISO(d), created_at: exAt(d, hour), mood, sleep, sleepTime,
+    soreness: extra.soreness || [], tags: extra.tags || [],
+    ...(extra.exercise ? { exercise: extra.exercise } : {}),
+    ...(extra.overwork ? { overwork: extra.overwork } : {}),
+    ...(extra.note ? { note: extra.note } : {}),
+  }));
+}
+const EXAMPLE_ENTRIES = buildExampleEntries();
+const EXAMPLE_USER = { nickname: "회원", kakao_gender: "female", kakaoGender: "female", exercise_frequency: "sometimes", common_posture: "sitting", exercise_goals: ["flexibility"] };
+
 export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -277,6 +350,10 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 
   const report = buildMonthlyReport(entries, profile, { year, month, bmti, empathy: null, recentDiscoveryIds });
 
+  // 잠긴 박스의 블러 미리보기용 — 하드 유저 예시를 같은 파이프라인에 태운다.
+  const exReport = useMemo(() => buildMonthlyReport(EXAMPLE_ENTRIES, buildProfile(EXAMPLE_USER), { year: EX_Y, month: EX_M, bmti: buildBmti("OCDM"), empathy: null, recentDiscoveryIds: [] }), []);
+  const exIns = useMemo(() => computeInsights(EXAMPLE_ENTRIES, EXAMPLE_USER, exReport), [exReport]);
+
   if (report.discovery.found) recordDiscovery(monthKey, report.discovery.id);
 
   const canGoPrev = !(year === 2026 && month === 7);
@@ -344,22 +421,27 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {(() => {
               const find = (id) => report.sections.find(x => x.id === id);
+              const exFind = (id) => exReport.sections.find(x => x.id === id);
               const topMood = find("mood_distribution")?.data?.top || null;
+              const exTopMood = exFind("mood_distribution")?.data?.top || null;
+              const gender = userData?.kakao_gender || userData?.kakaoGender;
               return report.sections.map((s) => {
                 // 무리·움직임·쉬어감 세 카드는 '활동량 요약' 하나로, '불편했던 순간'은 '바디 스캔'에 합친다.
                 if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments") return null;
                 if (s.id === "movement") {
-                  return <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")} />;
+                  return <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
+                    exTopMood={exTopMood} exMove={exFind("movement")} exRest={exFind("rest")} exOver={exFind("overwork")} />;
                 }
-                const card = <SectionCard key={s.id} section={s} gender={userData?.kakao_gender || userData?.kakaoGender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null} />;
+                const card = <SectionCard key={s.id} section={s} gender={gender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null}
+                  exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} />;
                 // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
-                if (s.id === "notes") return <Fragment key="notes-group"><SoulmateCard entries={entries} />{card}</Fragment>;
+                if (s.id === "notes") return <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment>;
                 return card;
               });
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} />
         )}
         </div>
 
@@ -1006,20 +1088,37 @@ function ActLane({ emoji, label, days, maxDays, bubbleEmoji, bubbleLabel, mood }
     </div>
   );
 }
-function ActivityTrackCard({ topMood, move, rest, over }) {
-  const t = getTypeAccent();
+// 세 트랙 레인을 그린다 — 실제/예시 공용
+function buildActLanes(move, rest, over) {
   const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
-  const maxDays = Math.max(moveN, restN, overN, 1);
-  const mood = topMood || 4; // 이번 달 금메달 말랑이
   const exTop = move?.data?.byType?.[0];
   const restTop = rest?.data?.items?.[0];
   const overTop = over?.data?.items?.[0];
-  const lanes = [
-    { key: "move", emoji: "🏃‍♂️", label: "운동함", days: moveN, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
-    { key: "rest", emoji: "🛌", label: "쉬어감", days: restN, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
-    { key: "over", emoji: "💦", label: "무리함", days: overN, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
-  ];
-  const has = moveN + restN + overN > 0;
+  return {
+    maxDays: Math.max(moveN, restN, overN, 1),
+    total: moveN + restN + overN,
+    lanes: [
+      { key: "move", emoji: "🏃‍♂️", label: "운동함", days: moveN, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
+      { key: "rest", emoji: "🛌", label: "쉬어감", days: restN, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
+      { key: "over", emoji: "💦", label: "무리함", days: overN, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
+    ],
+  };
+}
+function ActLanes({ lanes, maxDays, mood }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {lanes.map(l => (
+        <ActLane key={l.key} emoji={l.emoji} label={l.label} days={l.days} maxDays={maxDays} bubbleEmoji={l.be} bubbleLabel={l.bl} mood={mood} />
+      ))}
+    </div>
+  );
+}
+function ActivityTrackCard({ topMood, move, rest, over, exTopMood, exMove, exRest, exOver }) {
+  const t = getTypeAccent();
+  const mood = topMood || 4; // 이번 달 금메달 말랑이
+  const { maxDays, total, lanes } = buildActLanes(move, rest, over);
+  const has = total > 0;
+  const ex = buildActLanes(exMove, exRest, exOver);
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -1028,13 +1127,14 @@ function ActivityTrackCard({ topMood, move, rest, over }) {
       </div>
       <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 8px" }}>금메달 말랑이가 세 트랙을 달렸어요. 많이 한 트랙일수록 앞서 있어요 🏁</p>
       {has ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {lanes.map(l => (
-            <ActLane key={l.key} emoji={l.emoji} label={l.label} days={l.days} maxDays={maxDays} bubbleEmoji={l.be} bubbleLabel={l.bl} mood={mood} />
-          ))}
-        </div>
+        <ActLanes lanes={lanes} maxDays={maxDays} mood={mood} />
       ) : (
-        <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "10px 0 2px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
+        <div>
+          <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "6px 0 12px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
+          <LockedPreview label="이렇게 채워질 거예요 · 커서를 올려보세요">
+            <ActLanes lanes={ex.lanes} maxDays={ex.maxDays} mood={exTopMood || 4} />
+          </LockedPreview>
+        </div>
       )}
       <style>{`@keyframes mallangRun{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}`}</style>
     </div>
@@ -1043,17 +1143,24 @@ function ActivityTrackCard({ topMood, move, rest, over }) {
 
 // ── 영혼의 단짝: 이번 달 가장 자주 함께 찍힌 태그 두 개(찰떡궁합) ──
 const SOULMATE_WIT = { "스트레스|카페인": "스트레스받을 때마다 커피를 찾으셨군요 🧐", "야식·과식|음주": "한잔하면 야식이 빠질 수 없죠 🍻", "긴장함|카페인": "긴장될 땐 커피 한 모금으로 버티셨네요 ☕" };
-function SoulmateCard({ entries }) {
-  const t = getTypeAccent();
+// 태그 쌍 동시출현에서 '단짝'을 뽑는다 — 없으면 null
+function computeSoulmate(entries) {
   const pc = {};
   (entries || []).forEach(e => { const tags = [...new Set((e.tags || []).filter(x => TAG_ICON[x]))]; for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) { const k = [tags[i], tags[j]].sort().join("|"); pc[k] = (pc[k] || 0) + 1; } });
   const top = Object.entries(pc).sort((a, b) => b[1] - a[1])[0];
   if (!top || top[1] < 2) return null;
   const [a, b] = top[0].split("|"); const n = top[1];
-  // 각 태그를 이번 달 몇 번 선택했는지(개별 선택 횟수)
   const solo = {};
   (entries || []).forEach(e => { [...new Set((e.tags || []))].forEach(tg => { solo[tg] = (solo[tg] || 0) + 1; }); });
   const wit = SOULMATE_WIT[top[0]] || `이 둘이 만난 날이 무려 ${n}일이나 되네요. 서로 꼭 붙어다니는 단짝이었어요 🤝`;
+  return { a, b, n, solo, wit };
+}
+function SoulmateCard({ entries, exampleEntries }) {
+  const t = getTypeAccent();
+  const real = computeSoulmate(entries);
+  const soul = real || computeSoulmate(exampleEntries);
+  if (!soul) return null;
+  const { a, b, n, solo, wit } = soul;
   const badge = (name) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, animation: "soulmateBob 2.2s ease-in-out infinite" }}>
       <span style={{ width: 58, height: 58, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}><DiaryIcon name={TAG_ICON[name]} size={32} /></span>
@@ -1061,12 +1168,8 @@ function SoulmateCard({ entries }) {
       <span style={{ fontSize: 10.5, fontWeight: 700, color: t.accentDeep }}>{solo[name] || 0}번 선택</span>
     </div>
   );
-  return (
-    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, fontSize: 16 }}>💞</span>
-        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>영혼의 단짝</span>
-      </div>
+  const body = (
+    <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "4px 0 6px" }}>
         {badge(a)}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -1077,14 +1180,25 @@ function SoulmateCard({ entries }) {
       </div>
       <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, textAlign: "center", margin: "0 0 6px", wordBreak: "keep-all" }}>이번 달, <b style={{ color: t.accentDeep }}>[{a}]</b>와 <b style={{ color: t.accentDeep }}>[{b}]</b>은 찰떡궁합 영혼의 단짝이었어요!</p>
       <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, textAlign: "center", margin: 0, lineHeight: 1.55, wordBreak: "keep-all" }}>{wit}</p>
+    </>
+  );
+  return (
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, fontSize: 16 }}>💞</span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>영혼의 단짝</span>
+        {!real && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
+      </div>
+      {real ? body : <LockedPreview label="이렇게 채워질 거예요 · 커서를 올려보세요">{body}</LockedPreview>}
       <style>{`@keyframes soulmateBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes soulmateHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}`}</style>
     </div>
   );
 }
 
-function SectionCard({ section: s, gender, entries, topMood, moments }) {
+function SectionCard({ section: s, gender, entries, topMood, moments, exampleSection, exampleMoments, exTopMood }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
+  const hasExample = !s.unlocked && exampleSection?.data;
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 22px", boxShadow: CARD_SHADOW, border: `1px solid ${s.unlocked ? "#F1EEE8" : "#F3F1EC"}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
@@ -1105,6 +1219,13 @@ function SectionCard({ section: s, gender, entries, topMood, moments }) {
               {s.progress.current}/{s.progress.required}
             </span>
           </div>
+          {hasExample && (
+            <div style={{ marginTop: 16 }}>
+              <LockedPreview label="이렇게 채워질 거예요 · 커서를 올려보세요">
+                <SectionBody id={s.id} data={exampleSection.data} gender={gender} entries={EXAMPLE_ENTRIES} topMood={exTopMood} moments={exampleMoments} />
+              </LockedPreview>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -1745,22 +1866,25 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns }) {
   const ins = computeInsights(entries, userData, report);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
-  if (ins.recordedDays < 3) {
-    return <div style={{ textAlign: "center", padding: "40px 20px", color: C.sub, fontSize: 13.5, fontWeight: 600, lineHeight: 1.6 }}>아직 발견을 찾을 만큼 기록이 모이지 않았어요.<br />며칠 더 기록하면 이번 달의 이야기를 들려드릴게요.</div>;
-  }
+  const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
+  const female = g.includes("female") || g.includes("여") || userData?.nickname === "BMTI";
+  // 기록이 부족해 아직 못 찾은 발견은 하드 유저 예시를 블러로 보여주고, 커서를 올리면 풀린다.
+  const LK = "이렇게 채워질 거예요 · 커서를 올려보세요";
+  const lock = (node) => <LockedPreview label={LK}>{node}</LockedPreview>;
+  const slotFound = (ins.slots || []).some(s => s.detail);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {ins.slots && <SlotCard slots={ins.slots} />}
-      {ins.butterfly && <ButterflyCard data={ins.butterfly} />}
-      {ins.recovery && <RecoveryCard data={ins.recovery} />}
-      {ins.streak && <StreakCard data={ins.streak} />}
-      {ins.effort && <EffortCard data={ins.effort} />}
-      {ins.logged && <LampClockCard data={ins.logged} nickname={nickname} />}
-      {ins.dday && <DdayCard data={ins.dday} />}
-      {ins.factcheck && <FactCheckCard rows={ins.factcheck} />}
+      {slotFound ? <SlotCard slots={ins.slots} /> : lock(<SlotCard slots={exIns.slots} />)}
+      {ins.butterfly ? <ButterflyCard data={ins.butterfly} /> : (exIns.butterfly && lock(<ButterflyCard data={exIns.butterfly} />))}
+      {ins.recovery ? <RecoveryCard data={ins.recovery} /> : (exIns.recovery && lock(<RecoveryCard data={exIns.recovery} />))}
+      {ins.streak ? <StreakCard data={ins.streak} /> : (exIns.streak && lock(<StreakCard data={exIns.streak} />))}
+      {ins.effort ? <EffortCard data={ins.effort} /> : (exIns.effort && lock(<EffortCard data={exIns.effort} />))}
+      {ins.logged ? <LampClockCard data={ins.logged} nickname={nickname} /> : (exIns.logged && lock(<LampClockCard data={exIns.logged} nickname={nickname} />))}
+      {female && (ins.dday ? <DdayCard data={ins.dday} /> : (exIns.dday && lock(<DdayCard data={exIns.dday} />)))}
+      {ins.factcheck ? <FactCheckCard rows={ins.factcheck} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} />))}
       <LetterCard data={ins.letter} isM={isM} />
     </div>
   );
