@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, Fragment } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
+import { CHARACTERS, CHARACTER_NAMES } from "../data";
 import FeedbackModal from "./FeedbackModal";
 import { DiaryIcon } from "./DiaryIcons";
 import { SLEEP_ICON } from "../lib/diaryEntryLabels";
@@ -198,16 +199,17 @@ function LockedPreview({ children, label }) {
     <div
       onMouseEnter={() => setReveal(true)}
       onMouseLeave={() => setReveal(false)}
-      onClick={() => setReveal((v) => !v)}
-      style={{ position: "relative", cursor: "pointer", userSelect: "none", WebkitTapHighlightColor: "transparent" }}
+      onClick={() => setReveal(true)}
+      style={{ position: "relative", cursor: reveal ? "default" : "pointer", userSelect: "none", WebkitTapHighlightColor: "transparent" }}
     >
-      <div style={{ filter: reveal ? "none" : "blur(6px)", opacity: reveal ? 1 : 0.92, transform: reveal ? "none" : "scale(0.995)", transition: "filter .3s ease, opacity .3s ease, transform .3s ease", pointerEvents: "none" }}>
+      {/* 열리면 내부를 조작(스와이프 등)할 수 있게 pointerEvents를 켠다 */}
+      <div style={{ filter: reveal ? "none" : "blur(6px)", opacity: reveal ? 1 : 0.92, transform: reveal ? "none" : "scale(0.995)", transition: "filter .3s ease, opacity .3s ease, transform .3s ease", pointerEvents: reveal ? "auto" : "none" }}>
         {children}
       </div>
       {/* 잠금 안내 배지 — 블러 상태에서만 보인다 */}
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: reveal ? 0 : 1, transition: "opacity .25s ease" }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(28,26,23,0.74)", color: "#fff", fontSize: 12, fontWeight: 800, padding: "8px 14px", borderRadius: 999, boxShadow: "0 4px 14px rgba(0,0,0,0.22)", whiteSpace: "nowrap", backdropFilter: "blur(2px)" }}>
-          🔒 {label || "커서를 올리면 예시를 볼 수 있어요"}
+          🔒 {label || "이렇게 채워질 거예요 · 클릭해보세요"}
         </span>
       </div>
     </div>
@@ -302,24 +304,44 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
       // 폰트가 완전히 로드된 뒤 캡처해야 텍스트 기준선이 어긋나지 않는다.
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch { /* noop */ } }
 
-      for (const t of ["records", "discovery"]) {
-        setTab(t);
-        await nextPaint();
-        const root = contentRef.current?.firstElementChild;
-        if (!root) continue;
-        await waitForImages(root);
-        const cards = Array.from(root.children);
-        for (const card of cards) {
-          const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true, scrollX: 0, scrollY: -window.scrollY });
-          if (!canvas.width || !canvas.height) continue;
-          const imgData = canvas.toDataURL("image/jpeg", 0.92);
-          let w = CARD_W;
-          let h = (canvas.height * w) / canvas.width;
-          if (h > usableH) { w *= usableH / h; h = usableH; }   // 한 장보다 큰 카드는 페이지에 맞게 축소
-          if (cursorY !== margin && cursorY + h > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
-          pdf.addImage(imgData, "JPEG", (pageWidth - w) / 2, cursorY, w, h);
-          cursorY += h + gap;
+      // html2canvas는 position:fixed 조상 + 내부 스크롤 오프셋에서 좌표를 잘못 잡아
+      // 문구가 밀리거나 캡처가 늘어난다. 캡처 동안만 스크롤러를 일반 흐름(static)으로 되돌린다.
+      const scroller = scrollerRef.current;
+      const saved = scroller ? { position: scroller.style.position, inset: scroller.style.inset, top: scroller.style.top, left: scroller.style.left, right: scroller.style.right, bottom: scroller.style.bottom, overflow: scroller.style.overflow, height: scroller.style.height } : null;
+      if (scroller) {
+        scroller.style.position = "static";
+        scroller.style.inset = "auto";
+        scroller.style.overflow = "visible";
+        scroller.style.height = "auto";
+      }
+      try {
+        for (const t of ["records", "discovery"]) {
+          setTab(t);
+          await nextPaint();
+          const root = contentRef.current?.firstElementChild;
+          if (!root) continue;
+          await waitForImages(root);
+          const cards = Array.from(root.children);
+          for (const card of cards) {
+            const rect = card.getBoundingClientRect();
+            const canvas = await html2canvas(card, {
+              scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true,
+              width: Math.ceil(rect.width), height: Math.ceil(rect.height),
+              windowWidth: document.documentElement.clientWidth,
+              scrollX: 0, scrollY: -window.scrollY,
+            });
+            if (!canvas.width || !canvas.height) continue;
+            const imgData = canvas.toDataURL("image/jpeg", 0.92);
+            let w = CARD_W;
+            let h = (canvas.height * w) / canvas.width;
+            if (h > usableH) { w *= usableH / h; h = usableH; }   // 한 장보다 큰 카드는 페이지에 맞게 축소
+            if (cursorY !== margin && cursorY + h > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
+            pdf.addImage(imgData, "JPEG", (pageWidth - w) / 2, cursorY, w, h);
+            cursorY += h + gap;
+          }
         }
+      } finally {
+        if (scroller && saved) Object.assign(scroller.style, saved);
       }
 
       const pdfBlob = pdf.output("blob");
@@ -1131,7 +1153,7 @@ function ActivityTrackCard({ topMood, move, rest, over, exTopMood, exMove, exRes
       ) : (
         <div>
           <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "6px 0 12px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
-          <LockedPreview label="이렇게 채워질 거예요 · 커서를 올려보세요">
+          <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">
             <ActLanes lanes={ex.lanes} maxDays={ex.maxDays} mood={exTopMood || 4} />
           </LockedPreview>
         </div>
@@ -1189,7 +1211,7 @@ function SoulmateCard({ entries, exampleEntries }) {
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>영혼의 단짝</span>
         {!real && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
-      {real ? body : <LockedPreview label="이렇게 채워질 거예요 · 커서를 올려보세요">{body}</LockedPreview>}
+      {real ? body : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{body}</LockedPreview>}
       <style>{`@keyframes soulmateBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes soulmateHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}`}</style>
     </div>
   );
@@ -1221,7 +1243,7 @@ function SectionCard({ section: s, gender, entries, topMood, moments, exampleSec
           </div>
           {hasExample && (
             <div style={{ marginTop: 16 }}>
-              <LockedPreview label="이렇게 채워질 거예요 · 커서를 올려보세요">
+              <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">
                 <SectionBody id={s.id} data={exampleSection.data} gender={gender} entries={EXAMPLE_ENTRIES} topMood={exTopMood} moments={exampleMoments} />
               </LockedPreview>
             </div>
@@ -1805,17 +1827,43 @@ function computeInsights(entries, userData, report) {
     return rows.length ? rows.slice(0, 2) : null;
   })();
 
-  // ── 8. 코치의 편지 ──
+  // ── 8. 파트너의 편지 — 이번 달 실제 기록 신호(기분·부위·수면·운동·태그·일기)를 엮어 개인 맞춤으로 ──
   const letter = (() => {
     const nm = userData?.nickname || "회원";
     const soreC = {}; days.forEach(d => (d.soreness || []).forEach(s => { soreC[s.part] = (soreC[s.part] || 0) + 1; }));
     const ts = topOf(soreC); const topSore = ts ? (PARTS[ts.key] || ts.key) : null;
-    const parts = [];
-    parts.push(topSore ? `${nm}님, 이번 달도 뻐근한 ${topSore}을(를) 이끌고 정말 고생 많으셨어요.` : `${nm}님, 이번 달도 하루하루 성실히 기록해주셔서 고마워요.`);
-    if (butterfly && butterfly.topSore) parts.push(`기록을 보니 유독 잠을 못 잔 다음 날 ${butterfly.topSore} 불편함을 많이 느끼셨네요. 척추 주변 근육은 잘 자는 동안 가장 많이 회복된다는 사실, 알고 계셨나요?`);
-    else if (recovery && recovery.recovered) parts.push(`힘들었던 날에도 스스로를 잘 다독여 평균 ${recovery.avgDays || 2}일 만에 컨디션을 끌어올리셨어요. 그 회복력이 정말 멋져요.`);
-    parts.push(`다음 달엔 자기 전 5분만 따뜻한 물로 몸을 데워보세요. 수면의 질이 오르면 뻐근함도 훨씬 줄어들 거예요. 다음 달의 ${nm}님도 곁에서 응원할게요!`);
-    return { nickname: nm, body: parts.join(" ") };
+    const moodC = {}; days.forEach(d => { moodC[d.mood] = (moodC[d.mood] || 0) + 1; });
+    const tm = topOf(moodC); const topMood = tm ? Number(tm.key) : null;
+    const tagC = {}; days.forEach(d => (d.tags || []).forEach(tg => { if (TAG_ICON[tg]) tagC[tg] = (tagC[tg] || 0) + 1; }));
+    const tt = topOf(tagC); const topTag = tt ? tt.key : null;
+    const moveN = days.filter(d => d.exercise?.did === true).length;
+    const noteN = days.filter(d => d.note?.text && d.note.text.trim()).length;
+
+    // 받침 유무에 따른 조사
+    const josa = (w, a, b) => { const s = String(w || ""); const c = s.charCodeAt(s.length - 1); const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; return has ? a : b; };
+    const P = [];
+    // 1) 인사 + 성실도
+    P.push(`${nm}님, 안녕하세요.${days.length ? ` 이번 달 ${days.length}일 동안 하루하루를 남겨주셨네요.` : ""} 바쁜 와중에도 자신의 몸과 마음을 들여다본 그 시간이 저는 참 좋았어요.`);
+    // 2) 가장 많던 기분 (개인화)
+    const moodLine = {
+      1: `이번 달은 '힘들었어요' 말랑이가 자주 찾아왔죠. 그런 날에도 기록을 놓지 않은 ${nm}님이 정말 대단해요.`,
+      2: `'지쳤어요' 말랑이가 유난히 자주 보였어요. 조금 지쳐도 스스로를 챙긴 한 달이었어요.`,
+      3: `잔잔하게 '그냥저냥'인 날이 많았어요. 그 평온함도 잘 지내온 증거예요.`,
+      4: `'괜찮았어요' 말랑이가 가장 많이 웃어준 달이었어요. 그 균형이 참 보기 좋았어요.`,
+      5: `'좋았어요' 말랑이가 제일 자주 찾아온 반짝이는 한 달이었네요!`,
+    }[topMood];
+    if (moodLine) P.push(moodLine);
+    // 3) 몸 신호
+    if (butterfly && butterfly.topSore) P.push(`기록을 보니 잘 못 잔 다음 날 유독 ${butterfly.topSore}${josa(butterfly.topSore, "이", "가")} 힘들어했어요. 몸은 밤사이 가장 많이 회복된다고 하니, 다음 달엔 잠을 먼저 챙겨주면 어떨까요.`);
+    else if (topSore) P.push(`이번 달엔 ${topSore}${josa(topSore, "이", "가")} 자주 신호를 보냈어요. 다음 달엔 그 부위를 조금만 더 아껴주기로 해요.`);
+    else if (recovery && recovery.recovered) P.push(`힘든 날에도 평균 ${recovery.avgDays || 2}일 만에 다시 일어선 회복력, 곁에서 지켜보며 감탄했어요.`);
+    // 4) 습관
+    if (moveN >= 3) P.push(`이번 달 ${moveN}일이나 몸을 움직였어요. 그 꾸준함, 분명 몸이 먼저 알아줄 거예요.`);
+    else if (topTag) P.push(`'#${topTag}'와 함께한 날이 많았죠. 나를 이루는 작은 습관 하나까지 살펴본 한 달이었어요.`);
+    else if (noteN >= 3) P.push(`짧게라도 남겨준 ${noteN}편의 일기에서 ${nm}님의 하루하루가 고스란히 느껴졌어요.`);
+    // 5) 마무리
+    P.push(`다음 달에도 ${nm}님의 몸과 마음 곁에서 함께 걸을게요. 우리, 또 만나요!`);
+    return { nickname: nm, body: P.join(" ") };
   })();
 
   // ── 여성 전용: 생리 전(PMS) 마법의 D-Day ──
@@ -1878,7 +1926,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
   const female = g.includes("female") || g.includes("여") || userData?.nickname === "BMTI";
   // 기록이 부족해 아직 못 찾은 발견은 하드 유저 예시를 블러로 보여주고, 커서를 올리면 풀린다.
-  const LK = "이렇게 채워질 거예요 · 커서를 올려보세요";
+  const LK = "이렇게 채워질 거예요 · 클릭해보세요";
   const lock = (node) => <LockedPreview label={LK}>{node}</LockedPreview>;
   const slotFound = (ins.slots || []).some(s => s.detail);
   return (
@@ -1891,7 +1939,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
       {ins.logged ? <LampClockCard data={ins.logged} nickname={nickname} /> : (exIns.logged && lock(<LampClockCard data={exIns.logged} nickname={nickname} />))}
       {female && (ins.dday ? <DdayCard data={ins.dday} /> : (exIns.dday && lock(<DdayCard data={exIns.dday} />)))}
       {ins.factcheck ? <FactCheckCard rows={ins.factcheck} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} />))}
-      <LetterCard data={ins.letter} isM={isM} />
+      <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} />
     </div>
   );
 }
@@ -2099,11 +2147,22 @@ function FactCheckCard({ rows }) {
 // 4-여성. 마법의 D-Day 카운트다운 — PMS 기간을 카드 스와이프로
 function DdayCard({ data }) {
   const t = getTypeAccent();
+  const ref = useRef(null);
+  const [idx, setIdx] = useState(0);
+  const drag = useRef({ on: false, x: 0, sl: 0 });
+  const N = data.cards.length;
+  // 마우스 드래그로도 넘길 수 있게(데스크톱). 터치는 네이티브 가로 스크롤이 담당.
+  const onDown = (e) => { if (e.pointerType === "touch") return; const el = ref.current; drag.current = { on: true, x: e.clientX, sl: el.scrollLeft }; };
+  const onMove = (e) => { if (!drag.current.on) return; ref.current.scrollLeft = drag.current.sl - (e.clientX - drag.current.x); };
+  const onUp = () => { drag.current.on = false; };
+  const onScroll = () => { const el = ref.current; if (!el) return; setIdx(Math.round(el.scrollLeft / (el.clientWidth * 0.86))); };
+  const goTo = (i) => { const el = ref.current; if (!el) return; const to = Math.max(0, Math.min(N - 1, i)); el.scrollTo({ left: to * el.clientWidth * 0.86, behavior: "smooth" }); };
   return (
     <InsCard badge="여성 전용 · PMS 돋보기" title="마법의 D-Day 카운트다운" sub="생리 직전 일주일의 식욕·불편함 변화를 확대해서 봤어요">
-      <div className="dday-scroll" style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 2px 8px", margin: "0 -2px", scrollSnapType: "x mandatory" }}>
+      <div ref={ref} className="dday-scroll" onScroll={onScroll} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
+        style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 2px 8px", margin: "0 -2px", scrollSnapType: "x mandatory", touchAction: "pan-x pan-y", cursor: "grab" }}>
         {data.cards.map((c, i) => (
-          <div key={i} style={{ flex: "0 0 82%", scrollSnapAlign: "center", background: "linear-gradient(180deg,#FFF3F6,#FBE7EE)", border: "1px solid #F4D3DE", borderRadius: 16, padding: "16px 15px" }}>
+          <div key={i} style={{ flex: "0 0 86%", scrollSnapAlign: "center", background: "linear-gradient(180deg,#FFF3F6,#FBE7EE)", border: "1px solid #F4D3DE", borderRadius: 16, padding: "16px 15px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>{c.icon}</span>
               <div>
@@ -2115,29 +2174,50 @@ function DdayCard({ data }) {
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, textAlign: "center", margin: "4px 0 0" }}>← 옆으로 넘겨보세요 →</p>
+      {/* 좌우 화살표 + 점 인디케이터 — 넘길 수 있다는 걸 분명히 */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 4 }}>
+        <button onClick={() => goTo(idx - 1)} disabled={idx <= 0} aria-label="이전" style={{ border: "none", background: "transparent", color: idx <= 0 ? "#E0D6DA" : "#C4517A", fontSize: 18, fontWeight: 900, cursor: idx <= 0 ? "default" : "pointer", padding: "0 4px" }}>‹</button>
+        <div style={{ display: "flex", gap: 5 }}>
+          {data.cards.map((_, i) => <span key={i} style={{ width: i === idx ? 16 : 6, height: 6, borderRadius: 4, background: i === idx ? "#E8618C" : "#F4D3DE", transition: "all .2s" }} />)}
+        </div>
+        <button onClick={() => goTo(idx + 1)} disabled={idx >= N - 1} aria-label="다음" style={{ border: "none", background: "transparent", color: idx >= N - 1 ? "#E0D6DA" : "#C4517A", fontSize: 18, fontWeight: 900, cursor: idx >= N - 1 ? "default" : "pointer", padding: "0 4px" }}>›</button>
+      </div>
       <style>{`.dday-scroll::-webkit-scrollbar{display:none}.dday-scroll{scrollbar-width:none}`}</style>
     </InsCard>
   );
 }
 
-function LetterCard({ data, isM }) {
+function LetterCard({ data, isM, bmtiCode }) {
   const [open, setOpen] = useState(false);
+  const t = getTypeAccent();
+  const axis = bmtiCode ? String(bmtiCode).split("-")[0] : "";
+  const charData = CHARACTERS.find(c => c.id === axis);
+  const charName = CHARACTER_NAMES[axis] ? String(CHARACTER_NAMES[axis]).replace(/\n/g, " ") : "말랑이";
   return (
     <div style={{ background: "linear-gradient(180deg,#FFFDF7,#FBF4E6)", borderRadius: 20, padding: "20px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #EEE4CE", position: "relative", overflow: "hidden" }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: getTypeAccent().accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>이번 달의 피날레</div>
-      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink }}>BMTI 코치의 편지</div>
+      <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>이번 달의 피날레</div>
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink }}>내 BMTI 파트너의 편지</div>
+
+      {/* 누끼 파트너 캐릭터 — 박스 안에 담는다 */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, margin: "16px 0 4px" }}>
+        <div style={{ width: 96, height: 96, borderRadius: 24, background: `radial-gradient(circle at 50% 40%, #fff, ${t.accentSoft})`, border: `1px solid ${t.accentSoft}`, boxShadow: "inset 0 1px 4px rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", animation: open ? "none" : "sealBob 2.6s ease-in-out infinite" }}>
+          {charData
+            ? <img src={charData.image} alt={charName} className={charData.imgClass || ""} style={{ width: "82%", height: "82%", objectFit: "contain" }} />
+            : <span style={{ fontSize: 40 }}>💌</span>}
+        </div>
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: t.accentDeep }}>{charName} 파트너</div>
+      </div>
+
       {!open ? (
-        <button onClick={() => setOpen(true)} style={{ margin: "16px auto 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", width: "100%" }}>
-          <span style={{ width: 56, height: 56, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%,#E0685E,#C0433B)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, boxShadow: "0 3px 10px rgba(160,50,40,0.4)", animation: "sealBob 2s ease-in-out infinite" }}>✉️</span>
-          <span style={{ fontSize: 12.5, fontWeight: 800, color: getTypeAccent().accentDeep }}>봉투를 열어 편지 확인하기</span>
+        <button onClick={() => setOpen(true)} style={{ margin: "6px auto 0", display: "block", border: "none", background: t.accent, color: "#fff", cursor: "pointer", padding: "11px 20px", borderRadius: 999, fontSize: 13, fontWeight: 800, boxShadow: `0 4px 12px ${t.accentSoft}` }}>
+          ✉️ 파트너의 편지 열어보기
         </button>
       ) : (
-        <div style={{ marginTop: 14, animation: "letterOpen .4s ease-out" }}>
+        <div style={{ marginTop: 12, animation: "letterOpen .4s ease-out" }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: "16px 15px", border: "1px dashed #E3D6B4", lineHeight: 1.7, fontSize: 13.5, color: "#3F3A31", fontWeight: 600, wordBreak: "keep-all" }}>
             {data.body}
           </div>
-          <div style={{ textAlign: "right", fontSize: 12, fontWeight: 800, color: getTypeAccent().accentDeep, marginTop: 10 }}>— 당신의 BMTI 코치 드림</div>
+          <div style={{ textAlign: "right", fontSize: 12, fontWeight: 800, color: t.accentDeep, marginTop: 10 }}>— 당신의 BMTI 파트너, {charName} 드림</div>
         </div>
       )}
       <style>{`@keyframes sealBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes letterOpen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>

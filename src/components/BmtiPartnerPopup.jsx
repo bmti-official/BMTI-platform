@@ -69,6 +69,12 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
                 <span className="text-2xl" style={{ color: t.accent }}>›</span>
               </button>
             )}
+
+            {/* 메인 페이지로 이동 */}
+            <button onClick={() => go('home')} className="w-full bg-white rounded-[1.6rem] py-4 text-[14px] font-bold text-gray-700 shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M4 11.2 12 4l8 7.2V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1v-8.8Z" fill="currentColor" /></svg>
+              메인 페이지로 이동
+            </button>
           </div>
         )}
       </div>

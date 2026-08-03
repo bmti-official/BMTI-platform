@@ -97,7 +97,7 @@ const CATEGORIES = [
 // "기분" 블럭은 항상 맨 위 고정, 나머지 5개만 순서 변경·숨기기 대상이다.
 const REORDERABLE_LABEL = {
   sitting: "오늘 평소보다 무리했나요",
-  sleep: "얼마나 푹 잤나요",
+  sleep: "전날 밤 잘 잤어요",
   exercise: "오늘 운동 했나요",
   tags: "오늘의 태그",
   oneLine: "한 줄 일기",
@@ -448,7 +448,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     }
     if (id === "sleep") {
       return (
-        <AccordionCard question="얼마나 푹 잤나요?" answerIcon={sleepOpt?.icon} answerText={sleepVal}
+        <AccordionCard question="전날 밤 잘 잤어요" answerIcon={sleepOpt?.icon} answerText={sleepVal}
           expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
           <div style={{ display: "flex", gap: 6 }}>
             {SLEEP_OPTS.map(opt => (

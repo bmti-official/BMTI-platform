@@ -15,6 +15,13 @@ export const EXERCISE_TYPE_KEY = {
   "축구": "soccer", "농구": "basketball", "배드민턴": "badminton", "테니스": "tennis", "크로스핏": "crossfit", "댄스": "dance",
 };
 
+// '오늘의 태그' 라벨 → DiaryIcons 아이콘 이름 (DiaryWriteFlow의 TAG_CATEGORIES와 동일하게 유지)
+export const TAG_LABEL_TO_ICON = {
+  "카페인": "caffeine", "음주": "alcohol", "야식·과식": "snacking", "수분 보충": "water", "맵거나 짠 음식": "spicy", "달달 디저트": "dessert", "영양제": "supplement",
+  "스마트폰·PC": "phone", "장거리 운전": "driving", "불편한 신발": "shoes", "무거운 짐": "heavyBag", "에어컨·추위": "coldAir",
+  "스트레스": "stress", "긴장함": "nervous", "방전됨": "drained", "소화 불량": "indigestion", "생리 중": "period", "진통제": "medicine",
+};
+
 const invert = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [v, k]));
 export const LOAD_TO_OVEREXERT_LABEL = invert(OVEREXERT_LOAD_KEY);
 export const REASON_TO_EXERCISE_LABEL = invert(EXERCISE_REASON_KEY);

@@ -10,7 +10,7 @@ import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   isDayWritable, isEntryLocked,
 } from "../lib/diaryHistory";
-import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON } from "../lib/diaryEntryLabels";
+import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON, TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
 // 색상 통일: 핵심 버튼 골드 / 박스 연옐로우 / 강조 요소는 유형별(M 연분홍·Z 연보라).
@@ -292,7 +292,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         const moodInfo = MOODS.find(m => m.v === previewDay.entry.mood);
         return (
           <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: "#fff", borderRadius: 24, padding: "18px 20px 22px", position: "relative" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 24, padding: "18px 20px 22px", position: "relative" }}>
               <button
                 onClick={() => setPreviewDay(null)}
                 aria-label="닫기"
@@ -309,8 +309,27 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{moodInfo?.label}</div>
               </div>
 
+              {/* 오늘의 태그 — 아이콘으로 미리보기 */}
+              {(() => {
+                const tags = (previewDay.entry.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
+                if (!tags.length) return null;
+                return (
+                  <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "12px 14px", marginBottom: 12 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>오늘의 태그</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {tags.map(tg => (
+                        <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.yellow, borderRadius: 999, padding: "5px 11px 5px 7px" }}>
+                          <DiaryIcon name={TAG_LABEL_TO_ICON[tg]} size={18} />
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: C.ink }}>{tg}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {items.length > 0 ? (
-                <div style={{ background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
+                <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
                   {items.map((it, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
                       <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={22} /></div>
