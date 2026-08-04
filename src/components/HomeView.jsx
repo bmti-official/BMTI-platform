@@ -138,8 +138,32 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
+      {/* 상단 가로형 CTA 광고판 — 모바일 화면 가로를 가득 채우고 모서리는 살짝 둥글게 */}
+      <div className="pt-24 md:pt-28 px-3">
+        <button
+          onClick={() => setView('aichat')}
+          className="group block w-full rounded-2xl overflow-hidden text-left shadow-[0_8px_24px_-10px_rgba(139,123,216,0.55)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: 'linear-gradient(100deg, #8B7BD8 0%, #A99BE6 52%, #CFC4F2 100%)' }}
+        >
+          <div className="flex items-center gap-3 px-5 py-4 md:py-5">
+            <span className="text-3xl md:text-4xl shrink-0">🌿</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-bold text-[min(4.2vw,17px)] md:text-lg leading-snug break-keep">
+                오늘 내 몸의 컨디션, 말랑 다이어리에 기록해요
+              </div>
+              <div className="text-white/85 text-[min(3.2vw,12.5px)] md:text-sm font-medium mt-0.5 break-keep">
+                하루 1분이면 충분해요 · 지금 바로 시작하기
+              </div>
+            </div>
+            <svg className="w-5 h-5 md:w-6 md:h-6 text-white shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </button>
+      </div>
+
       {/* Hero Section */}
-      <section className="pt-40 pb-12 px-6 max-w-5xl mx-auto text-center">
+      <section className="pt-10 md:pt-12 pb-12 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-8">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>

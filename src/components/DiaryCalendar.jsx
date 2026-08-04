@@ -165,6 +165,13 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [stressMood, setStressMood] = useState(null);
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
+  const [futureToast, setFutureToast] = useState(false); // 미래 날짜를 눌렀을 때 2초 안내
+  const futureTimer = useRef(null);
+  const showFutureToast = () => {
+    setFutureToast(true);
+    clearTimeout(futureTimer.current);
+    futureTimer.current = setTimeout(() => setFutureToast(false), 2000);
+  };
 
   const quickSaveMood = () => { saveDiaryEntry(todayStr, poppedMood); setStressMood(poppedMood); setShowMoodPopup(false); setPoppedMood(null); setShowStressPopup(true); };
   const continueToFullForm = () => { setShowMoodPopup(false); const v = poppedMood; setPoppedMood(null); onPickMood && onPickMood(v); };
@@ -198,7 +205,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           {view === "month"
             ? months.map(m => (
                 <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay}
-                  onToday={() => setShowMoodPopup(true)} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={() => setShowFeedback(true)} />
+                  onToday={() => setShowMoodPopup(true)} onFuture={showFutureToast} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={() => setShowFeedback(true)} />
               ))
             : weeks.map(w => (
                 <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay}
@@ -362,6 +369,14 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           </div>
         );
       })()}
+
+      {/* 미래 날짜 안내 토스트 — 2초 후 사라짐 */}
+      {futureToast && (
+        <div style={{ position: "fixed", left: "50%", bottom: 118, transform: "translateX(-50%)", zIndex: 80, maxWidth: "calc(100% - 48px)", background: "rgba(28,26,23,0.92)", color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: 1.45, padding: "12px 18px", borderRadius: 14, textAlign: "center", boxShadow: "0 6px 22px rgba(0,0,0,0.22)", animation: "calToastUp .26s cubic-bezier(.22,.9,.32,1)" }}>
+          지금은 기록할 수 없지만, 나중엔 무슨 일이 있을까요?
+          <style>{`@keyframes calToastUp{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}`}</style>
+        </div>
+      )}
     </div>
   );
 }
@@ -410,7 +425,7 @@ function CalControls({ calView, onHelp, onToggleView, t }) {
 
 // 현재(오늘) 달·주 카드의 연옐로우 배경 — 위아래 끝부분만 흰색으로 살짝 페이드.
 const CUR_BG = `linear-gradient(180deg, #FFFFFF 0px, ${YELLOW_BG} 22px, ${YELLOW_BG} calc(100% - 22px), #FFFFFF 100%)`;
-function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, onToday, calView, onHelp, onToggleView, onFeedback }) {
+function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, onToday, onFuture, calView, onHelp, onToggleView, onFeedback }) {
   const year = monthDate.getFullYear(), month = monthDate.getMonth();
   const monthKey = `${year}-${pad(month + 1)}`;
   const count = history.filter(e => e.date.startsWith(monthKey)).length;
@@ -432,7 +447,7 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 26 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 16 }}>
           {cells.map((d, idx) => {
             if (!d) return <div key={idx} />;
             const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
@@ -440,28 +455,44 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
             const isToday = dateStr === todayStr;
             const dow = idx % 7;
             const writable = isDayWritable(dateStr);
+            const future = dateStr > todayStr;
+            const locked = entry && isEntryLocked(dateStr);
+
+            // 위쪽 동그라미 + 아래쪽 날짜(작게). 상태별로 동그라미 모양/클릭 동작이 달라진다.
+            let top, onClick, ariaLabel;
+            if (entry) {
+              top = <Mallang v={entry.mood} size={30} />;
+              if (!locked) onClick = () => onDayPreview({ dateStr, entry });
+            } else if (isToday) {
+              top = <div style={{ width: 34, height: 34, borderRadius: "50%", border: `2px solid ${C.ink}`, background: t.accentSoft }} />;
+              onClick = () => onToday && onToday(); ariaLabel = "오늘 기록하기";
+            } else if (writable) {
+              top = <div style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px solid ${t.accent}` }} />;
+              onClick = () => onEditDay && onEditDay(dateStr, null);
+            } else if (future) {
+              // 미래 날짜 — 회색 테두리 동그라미, 누르면 가벼운 안내
+              top = <div style={{ width: 34, height: 34, borderRadius: "50%", border: "1.5px solid #D8D4CC" }} />;
+              onClick = () => onFuture && onFuture(); ariaLabel = "아직 기록할 수 없는 날";
+            } else {
+              // 지난날 중 기록 못 하는 날 — 옅은 회색 동그라미
+              top = <div style={{ width: 34, height: 34, borderRadius: "50%", border: "1.5px solid #EFEBE3" }} />;
+            }
+
+            const numColor = weekdayColor(dow) || (future ? "#C9C4BB" : C.ink);
+            const dateLabel = (
+              <span style={{ fontSize: 10.5, fontWeight: isToday ? 800 : 600, color: isToday ? t.accentDeep : numColor, marginTop: 5, lineHeight: 1 }}>{d}</span>
+            );
             return (
-              <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {entry && !isEntryLocked(dateStr) ? (
-                  <button onClick={() => onDayPreview({ dateStr, entry })} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
-                    <Mallang v={entry.mood} size={30} />
-                  </button>
-                ) : entry ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 2 }}>
-                    <Mallang v={entry.mood} size={30} />
-                  </div>
-                ) : isToday ? (
-                  <button onClick={() => onToday && onToday()} aria-label="오늘 기록하기"
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, border: `2px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: weekdayColor(dow) || C.ink }}>{d}</div>
-                    <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.04em", color: t.accentDeep }}>today</span>
-                  </button>
-                ) : writable ? (
-                  <button onClick={() => onEditDay && onEditDay(dateStr, null)} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${t.accent}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: weekdayColor(dow) || C.ink }}>{d}</div>
+              <div key={idx} style={{ display: "flex", justifyContent: "center" }}>
+                {onClick ? (
+                  <button onClick={onClick} aria-label={ariaLabel}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
+                    {top}{dateLabel}
                   </button>
                 ) : (
-                  <span style={{ fontSize: 15, color: weekdayColor(dow) || "#C9C4BB", fontWeight: 500 }}>{d}</span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {top}{dateLabel}
+                  </div>
                 )}
               </div>
             );
