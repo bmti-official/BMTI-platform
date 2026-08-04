@@ -13,8 +13,10 @@ import SavePromptModal from './components/SavePromptModal';
 import InstallPrompt from './components/InstallPrompt';
 function App() {
   const initialHash = window.location.hash.replace('#', '');
+  // 재방문(다이어리 온보딩을 마친) 유저는 첫 화면을 다이어리로 연다. 단, 링크에 해시가 있으면 그 화면 우선.
+  const isReturningDiaryUser = (() => { try { return localStorage.getItem('bmti_diary_onboarded') === '1'; } catch { return false; } })();
   const [currentView, setCurrentView] = useState(
-    initialHash === 'quiz' ? 'quiz' : (initialHash ? 'result' : 'home')
+    initialHash === 'quiz' ? 'quiz' : (initialHash ? 'result' : (isReturningDiaryUser ? 'aichat' : 'home'))
   );
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);

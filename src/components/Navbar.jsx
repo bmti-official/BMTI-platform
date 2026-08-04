@@ -223,7 +223,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           bmtiCode={bmtiCode}
           isLoggedIn={isLoggedIn}
           hasLoggedToday={hasLoggedToday}
-          setView={setView}
+          setView={(v) => { setShowDiscovery(false); setView(v); }}
           onRequireLogin={() => setIsLoggedIn(true)}
           onClose={() => setShowPartner(false)}
         />

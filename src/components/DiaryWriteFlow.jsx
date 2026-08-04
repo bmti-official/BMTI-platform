@@ -132,7 +132,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 오늘의 태그(여러 개)
   const [tags, setTags] = useState(() => (Array.isArray(initialEntry?.tags) ? initialEntry.tags : []));
   const toggleTag = (tag) => setTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
-  const isAdmin = (() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.nickname === "BMTI"; } catch { return false; } })();
+  const bmtiUser = (() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null"); } catch { return null; } })();
+  const isAdmin = bmtiUser?.nickname === "BMTI";
+  const nickname = bmtiUser?.nickname || null;
   const g = String(gender || "").toLowerCase();
   // 관리자는 성별과 무관하게 여성 전용 항목(생리 등)도 선택할 수 있다.
   const isFemale = g.includes("female") || g.includes("여") || isAdmin;
@@ -712,7 +714,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘의 말랑이 기분은</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘 {nickname || "말랑이"}의 기분은</h2>
                   {dayMood && !expanded.mood && moodData && (
                     <Mallang v={moodData.v} size={44} />
                   )}

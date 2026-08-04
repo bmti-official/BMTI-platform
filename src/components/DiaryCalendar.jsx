@@ -75,7 +75,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
   const isM = axisCode.includes("M");
-  const moodQuestionTitle = isM ? "오늘 기분, 어떤 말랑이예요?" : "오늘의 기분을 선택하세요";
+  const nickname = (() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.nickname || null; } catch { return null; } })();
+  const moodQuestionTitle = nickname ? `${nickname} 님, 오늘 기분은 어떠신가요?` : "오늘 기분은 어떠신가요?";
   const moodQuestionSub = isM ? "정답은 없어요. 지금 느낌그대로면 돼요" : "기록이 쌓이면 주간 패턴을 찾아드립니다";
   const moodPickedMessage = isM ? "오늘은 그랬군요. 기억해둘게요" : "기록을 완료했습니다";
   const todayStr = todayISO();
@@ -171,7 +172,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   // 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
   const buildEntrySummary = (entry) => {
     const items = [];
-    if (entry.sleep != null) items.push({ icon: SLEEP_ICON[entry.sleep], text: SLEEP_LABELS[entry.sleep] });
+    if (entry.sleep != null) items.push({ icon: SLEEP_ICON[entry.sleep], text: `어제 잠은 '${SLEEP_LABELS[entry.sleep]}'` });
     if (entry.overwork?.yes) items.push({ icon: "warn", text: "평소보다 무리했어요" });
     if (entry.exercise?.did === true) { const types = (entry.exercise.types || []).map(x => KEY_TO_EXERCISE_TYPE_LABEL[x] || x).join(", "); items.push({ icon: "walk", text: `운동: ${types}` }); }
     else if (entry.exercise?.did === false) items.push({ icon: "sofa", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
@@ -292,15 +293,18 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         const moodInfo = MOODS.find(m => m.v === previewDay.entry.mood);
         return (
           <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 24, padding: "18px 20px 22px", position: "relative" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 24, position: "relative", maxHeight: "85vh", overflow: "hidden" }}>
+              {/* 우측 상단 X — 카드에 고정(스크롤돼도 항상 보임) */}
               <button
                 onClick={() => setPreviewDay(null)}
                 aria-label="닫기"
-                style={{ position: "absolute", top: 12, right: 14, border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer", padding: 4 }}
+                style={{ position: "absolute", top: 10, right: 10, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.9)", color: C.sub, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
               >
                 ✕
               </button>
 
+              {/* 스크롤 영역 — 내용이 길어도 팝업 높이를 넘지 않게 */}
+              <div style={{ maxHeight: "85vh", overflowY: "auto", padding: "18px 20px 22px" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, marginBottom: 18 }}>
                 <Mallang v={previewDay.entry.mood} size={60} />
                 <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, marginTop: 10 }}>
@@ -353,6 +357,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               >
                 괜찮아요, 그냥 볼게요
               </button>
+              </div>
             </div>
           </div>
         );
