@@ -93,7 +93,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
             <div style={{ position: "absolute", left: "50%", top: "52%", transform: "translate(-50%,-50%)", width: 240, height: 240, borderRadius: "50%", background: `radial-gradient(circle, ${t.accentSoft} 0%, rgba(255,255,255,0) 68%)`, pointerEvents: "none" }} />
             {/* 젤리 몸통 — 스쿼시&스트레치(부피 보존) + 오버슛 복귀 */}
             <div style={{ position: "relative", filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.14))", transformOrigin: "50% 100%", transform: bodyTf, transition: "transform .42s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
-              <Mallang v={level} size={248} skinOverride="malang2d" />
+              <Mallang v={level} size={248} skinOverride="malang2d" noBlink />
             </div>
           </button>
 

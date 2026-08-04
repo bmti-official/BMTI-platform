@@ -142,17 +142,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       <section className="pt-40 pb-12 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-8">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
-            {/* 내 몸에도 MBTI가 있다고? */}
-            <span className="font-sans text-[min(3.6vw,15px)] md:text-lg font-bold text-gray-400 mb-5 md:mb-7 tracking-tight">
-              내 몸에도 MBTI가 있다고?
-            </span>
-            {/* BMTI 워드마크 + '물리치료사가 만든' 대각선 배지(좌측 위 코너) */}
-            <div className="relative inline-block">
-              <span className="absolute top-0 -left-3 md:-left-8 -translate-y-1/2 -rotate-12 font-sans font-extrabold whitespace-nowrap text-[min(3.4vw,14px)] md:text-xl" style={{ color: '#8B7BD8' }}>
-                물리치료사가 만든
-              </span>
-              <span className="text-6xl md:text-8xl font-bold">BMTI</span>
-            </div>
+            <span className="text-6xl md:text-8xl font-bold">BMTI</span>
             <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>
           </div>
           <span className="text-[min(3vw,11px)] md:text-lg whitespace-nowrap text-gray-400 font-sans tracking-widest md:tracking-[0.3em] font-medium mt-6 block uppercase">

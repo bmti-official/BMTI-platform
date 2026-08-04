@@ -7,6 +7,7 @@ import ResultView from './components/ResultView';
 import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
 import ServicePrep from './components/ServicePrep';
+import CurationView from './components/CurationView';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
@@ -289,7 +290,7 @@ function App() {
           />
         )}
         {currentView === 'curation' && (
-          <ServicePrep kind="curation" bmtiCode={bmtiCode} />
+          <CurationView bmtiCode={bmtiCode} />
         )}
         {currentView === 'reservation' && (
           <ServicePrep kind="reservation" bmtiCode={bmtiCode} />

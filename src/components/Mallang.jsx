@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { MOODS } from "../data";
 import { MALLANG_SKINS, getMallangSkin, MALLANG_SKIN_EVENT, MALLANG_SIZE_ADJUST, MALLANG_MOOD_FILTER, MALLANG_MOOD_FILTER_OVERRIDE, MALLANG_EYE_RECT, MALLANG_IMG_RADIUS } from "../lib/mallangSkins";
 
-export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
+export function Mallang({ v, size = 44, tapKey = 0, skinOverride, noBlink = false }) {
   const [skin, setSkin] = useState(getMallangSkin);
   useEffect(() => {
     // skinOverride가 있으면(스킨 고르기 팝업의 미리보기처럼 특정 스킨을 강제로 보여줘야 할 때)
@@ -44,7 +44,7 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
             className="mallang-squish"
             style={{ width: "100%", height: "100%", display: "block", transformOrigin: "50% 100%", objectFit: eye ? "fill" : "contain", borderRadius: MALLANG_IMG_RADIUS[effectiveSkin] || 0 }}
           />
-          {eye && (
+          {eye && !noBlink && (
             <span
               style={{
                 position: "absolute", left: `${eye.x * 100}%`, top: `${eye.y * 100}%`,
@@ -63,7 +63,7 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride }) {
   // 힘들었어요(v=1)는 배경이 짙은 검붉은색이라 기본 잉크색 선화가 거의 안 보여서,
   // 무드별로 밝은 선 색을 따로 지정할 수 있게 함 (없으면 기존 어두운 잉크색 사용).
   const eye = m.line || "#2B2A28";
-  const eyeStyle = { animationDelay: blinkDelay };
+  const eyeStyle = noBlink ? { animation: "none" } : { animationDelay: blinkDelay };
   return (
     // key에 tapKey를 같이 섞어서, 표정(무드)이 바뀔 때뿐 아니라 (기본 동작 그대로 유지)
     // 외부에서 tapKey를 올려주는 경우(예: 스트레스 해소 팝업에서 말랑이를 꾹 눌렀을 때)에도

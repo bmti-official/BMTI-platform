@@ -165,7 +165,7 @@ export const CHARACTERS = [
   { id: 'OCDM', image: imgOCDM, originalImage: origOCDM, color: 'bg-[#fceef2]' },
   { id: 'OCDZ', image: imgOCDZ, originalImage: origOCDZ, color: 'bg-[#eaf5f0]', imgClass: 'translate-x-3' },
   { id: 'OCQM', image: imgOCQM, originalImage: origOCQM, color: 'bg-[#f5f3ef]' },
-  { id: 'OCQZ', image: imgOCQZ, originalImage: origOCQZ, color: 'bg-[#e9ecef]' },
+  { id: 'OCQZ', image: imgOCQZ, originalImage: origOCQZ, color: 'bg-[#e9ecef]', imgClass: 'scale-[1.5] -translate-y-[6%]' },
   { id: 'OLDM', image: imgOLDM, originalImage: origOLDM, color: 'bg-[#f4f4f5]' },
   { id: 'OLDZ', image: imgOLDZ, originalImage: origOLDZ, color: 'bg-[#ffeedd]' },
   { id: 'OLQM', image: imgOLQM, originalImage: origOLQM, color: 'bg-[#fdf0f3]' },
