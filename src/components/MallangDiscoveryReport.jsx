@@ -412,13 +412,13 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             ›
           </button>
         </div>
-        <p style={{ textAlign: "center", fontSize: 12.5, color: C.sub, fontWeight: 700, margin: "0 0 16px" }}>
+        <p style={{ textAlign: "center", fontSize: 12.5, color: "#8B7BD8", fontWeight: 700, margin: "0 0 16px" }}>
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
         {/* 카테고리 탭 — 스크롤을 따라 상단에 고정(sticky). 누르면 맨 위로 올라간다 */}
         <div style={{ position: "sticky", top: 54, zIndex: 20, background: C.page, paddingBottom: 12, marginBottom: 6 }}>
-        <div style={{ display: "flex", background: "#F3F1EC", borderRadius: 999, padding: 4 }}>
+        <div style={{ display: "flex", background: YELLOW, borderRadius: 999, padding: 4 }}>
           {[["records", "이번달 기록"], ["discovery", "이번달 발견"]].map(([key, label]) => (
             <button
               key={key}
@@ -438,7 +438,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         </div>
         </div>
 
+        <style>{`@keyframes discoTabFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
         <div ref={contentRef}>
+        <div key={tab} style={{ animation: savingPDF ? "none" : "discoTabFade .3s ease" }}>
         {tab === "records" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {(() => {
@@ -465,6 +467,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
         ) : (
           <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} />
         )}
+        </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 22, padding: "12px 14px", background: "#FFFFFF", border: `1px solid ${C.line}`, borderRadius: 14 }}>

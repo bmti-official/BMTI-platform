@@ -438,7 +438,7 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
-          <p style={{ fontSize: 13, color: C.sub, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
+          <p style={{ fontSize: 13, color: t.accent, fontWeight: 700, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
@@ -516,14 +516,17 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
   const title = weekStart.getMonth() === end.getMonth()
     ? `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${end.getDate()}일`
     : `${weekStart.getMonth() + 1}월 ${weekStart.getDate()}일 – ${end.getMonth() + 1}월 ${end.getDate()}일`;
-  const count = days.filter(d => history.some(e => e.date === toISO(d))).length;
+  // 주간 요약 문구도 '월간 기준'으로 — 그 주의 대표 월(가운데 날짜)의 총 기록 일수를 쓴다.
+  const monthRef = days[3];
+  const monthKey = `${monthRef.getFullYear()}-${pad(monthRef.getMonth() + 1)}`;
+  const count = history.filter(e => e.date.startsWith(monthKey)).length;
   return (
     <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? CUR_BG : "#fff", width: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 30px", position: "relative" }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{title}</h1>
-          <p style={{ fontSize: 13, color: C.sub, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
+          <p style={{ fontSize: 13, color: t.accent, fontWeight: 700, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {days.map((d, i) => {

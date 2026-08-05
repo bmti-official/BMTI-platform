@@ -190,7 +190,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       <div className="pt-24 md:pt-28 px-3 max-w-[440px] mx-auto">
         <div
           ref={bannerTrackRef}
-          className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)] aspect-[3840/1118]"
+          className="relative overflow-hidden rounded-2xl aspect-[3840/1118]"
           onPointerDown={onBannerDown}
           onPointerMove={onBannerMove}
           onPointerUp={onBannerUp}
