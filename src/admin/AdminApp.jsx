@@ -13,6 +13,97 @@ const CARD = { background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14
 const fmtDate = (s) => (s ? new Date(s).toLocaleString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
 const SOURCE_LABEL = { diary: '다이어리', discovery: '기록·발견', curation: '큐레이션' };
 const GENDER_LABEL = { male: '남성', female: '여성' };
+const TRACK = '#ECEAF4'; // 막대 배경(연보라 톤)
+const AGE_ORDER = ['10대', '20대', '30대', '40대', '50대 이상'];
+
+const normGender = (g) => (g === 'male' || g === '남성' ? '남성' : g === 'female' || g === '여성' ? '여성' : (g || '미상'));
+
+// 라벨→개수를 세어 [{label, value}] 로 (order가 있으면 그 순서, 없으면 내림차순)
+function tally(rows, getKey, order) {
+  const m = new Map();
+  rows.forEach(r => { const k = getKey(r); if (k == null || k === '') return; m.set(k, (m.get(k) || 0) + 1); });
+  let arr = [...m.entries()].map(([label, value]) => ({ label, value }));
+  if (order) arr.sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label));
+  else arr.sort((a, b) => b.value - a.value);
+  return arr;
+}
+
+// ── 지표 타일 ──
+function StatTile({ label, value, sub }) {
+  return (
+    <div style={{ ...CARD, padding: '16px 18px', flex: '1 1 140px', minWidth: 140 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: SUB, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: INK, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      {sub && <div style={{ fontSize: 11.5, fontWeight: 600, color: ACCENT, marginTop: 6 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── 막대(단색 연보라) 그룹 — 각 막대에 값 직접 표기 ──
+function BarGroup({ title, data, total }) {
+  const max = Math.max(1, ...data.map(d => d.value));
+  return (
+    <div style={{ ...CARD, padding: '16px 18px' }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: INK, marginBottom: 14 }}>{title}</div>
+      {data.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: SUB, padding: '6px 0' }}>데이터 없음</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {data.map(d => {
+            const pct = total ? Math.round((d.value / total) * 100) : 0;
+            return (
+              <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ width: 78, flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: INK, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.label}</span>
+                <div style={{ flex: 1, height: 20, background: TRACK, borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(d.value / max) * 100}%`, minWidth: d.value > 0 ? 4 : 0, background: ACCENT, borderRadius: 6 }} />
+                </div>
+                <span style={{ width: 74, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: INK, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  {d.value}{total ? <span style={{ color: SUB, fontWeight: 600 }}> ({pct}%)</span> : null}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 통계 탭 ──
+function StatsView({ users, feedback, loading }) {
+  const s = useMemo(() => {
+    const total = users.length;
+    const notif = users.filter(u => u.app_notification).length;
+    const done = users.filter(u => u.bmti_type).length;
+    return {
+      total, notif, done, feedbackCount: feedback.length,
+      gender: tally(users, u => normGender(u.kakao_gender)),
+      age: tally(users, u => u.kakao_age, AGE_ORDER),
+      type: tally(users, u => (u.bmti_type ? String(u.bmti_type).split('-')[0] : null)),
+      source: tally(feedback, f => SOURCE_LABEL[f.source] || f.source),
+    };
+  }, [users, feedback]);
+
+  if (loading) return <div style={{ ...CARD, padding: 28, textAlign: 'center', color: SUB, fontSize: 14 }}>불러오는 중…</div>;
+
+  const pct = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        <StatTile label="총 회원 수" value={s.total.toLocaleString()} />
+        <StatTile label="🔔 알림 동의" value={s.notif.toLocaleString()} sub={`전체의 ${pct(s.notif)}%`} />
+        <StatTile label="BMTI 검사 완료" value={s.done.toLocaleString()} sub={`전체의 ${pct(s.done)}%`} />
+        <StatTile label="💬 개선 의견" value={s.feedbackCount.toLocaleString()} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+        <BarGroup title="성별 분포" data={s.gender} total={s.total} />
+        <BarGroup title="연령대 분포" data={s.age} total={s.total} />
+        <BarGroup title="BMTI 유형 분포" data={s.type} total={s.done} />
+        <BarGroup title="개선 의견 · 기능별" data={s.source} total={s.feedbackCount} />
+      </div>
+    </div>
+  );
+}
 
 // ── 로그인 화면 ──────────────────────────────
 function Login() {
@@ -128,7 +219,7 @@ function DataTable({ title, columns, rows, loading, error }) {
 
 // ── 대시보드 ────────────────────────────────
 function Dashboard({ session }) {
-  const [tab, setTab] = useState('feedback');
+  const [tab, setTab] = useState('stats');
   const [feedback, setFeedback] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -175,13 +266,14 @@ function Dashboard({ session }) {
       </header>
 
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: '22px 18px 60px' }}>
-        <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
+        <div style={{ display: 'flex', gap: 9, marginBottom: 18, flexWrap: 'wrap' }}>
+          {tabBtn('stats', '📊 통계')}
           {tabBtn('feedback', '💬 개선 의견')}
           {tabBtn('users', '👤 사용자')}
         </div>
-        {tab === 'feedback'
-          ? <DataTable title="개선 의견" columns={feedbackCols} rows={feedback} loading={loading} error={fbErr} />
-          : <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
+        {tab === 'stats' && <StatsView users={users} feedback={feedback} loading={loading} />}
+        {tab === 'feedback' && <DataTable title="개선 의견" columns={feedbackCols} rows={feedback} loading={loading} error={fbErr} />}
+        {tab === 'users' && <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
       </main>
     </div>
   );
