@@ -372,8 +372,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
       {/* 미래 날짜 안내 토스트 — 2초 후 사라짐 */}
       {futureToast && (
-        <div style={{ position: "fixed", left: "50%", bottom: 118, transform: "translateX(-50%)", zIndex: 80, maxWidth: "calc(100% - 48px)", background: "rgba(28,26,23,0.92)", color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: 1.45, padding: "12px 18px", borderRadius: 14, textAlign: "center", boxShadow: "0 6px 22px rgba(0,0,0,0.22)", animation: "calToastUp .26s cubic-bezier(.22,.9,.32,1)" }}>
-          지금은 기록할 수 없지만, 나중엔 무슨 일이 있을까요?
+        <div style={{ position: "fixed", left: "50%", bottom: 118, transform: "translateX(-50%)", zIndex: 80, maxWidth: "calc(100% - 48px)", background: "rgba(28,26,23,0.92)", color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: 1.5, padding: "12px 18px", borderRadius: 14, textAlign: "center", whiteSpace: "pre-line", boxShadow: "0 6px 22px rgba(0,0,0,0.22)", animation: "calToastUp .26s cubic-bezier(.22,.9,.32,1)" }}>
+          {"지금은 기록할 수 없지만,\n미래엔 무슨 일이 있을까요?"}
           <style>{`@keyframes calToastUp{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}`}</style>
         </div>
       )}

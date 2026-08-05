@@ -144,7 +144,7 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
           )}
           <button onClick={next} disabled={saving}
             style={{ width: "100%", padding: 16, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
-            {saving ? "저장하는 중..." : "여기까지만 기록할래요"}
+            {saving ? "저장하는 중..." : "이렇게 기록할래요"}
           </button>
           <p style={{ textAlign: "center", fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "12px 0 0" }}>
             마이페이지에서 한달에 2번 수정가능합니다.

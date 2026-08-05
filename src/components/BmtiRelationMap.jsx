@@ -24,6 +24,12 @@ const BAD = '#7C8BA5';    // 조금 다른 템포 (차분한 슬레이트)
 const charOf = (code) => CHARACTERS.find((c) => c.id === code);
 const nickOf = (code) => (CHARACTER_NAMES[code] || code).replace(/\n/g, ' ');
 
+// 관계도 원 안에서 유독 작게 보이는 누끼들 — 유형별로 살짝 키운다.
+const RELATION_BOOST = {
+  ACDM: 1.18, ACQZ: 1.18, ACQM: 1.18, ALDM: 1.18, ALQM: 1.18, OLDM: 1.18, ALDZ: 1.18,
+};
+const boostOf = (code) => RELATION_BOOST[code] || 1;
+
 // 결과지 문구에서 대상 코드와 설명을 뽑는다. 예:
 // "💖 환상의 짝꿍 (OCDM): [다정한 마사지건]\n\n운동 후엔 …"
 function parseMatch(str) {
@@ -40,7 +46,7 @@ function MiniChar({ code, size = 56, ring, bg }) {
       className="rounded-full flex items-center justify-center overflow-hidden shrink-0"
       style={{ width: size, height: size, background: bg || `${(BMTI_INFO[code] || {}).color || '#999'}18`, border: `2px solid ${ring || 'transparent'}` }}
     >
-      {ch && <img src={ch.image} alt="" className={ch.imgClass || ''} style={{ width: '84%', height: '84%', objectFit: 'contain' }} />}
+      {ch && <img src={ch.image} alt="" className={ch.imgClass || ''} style={{ width: `${84 * boostOf(code)}%`, height: `${84 * boostOf(code)}%`, objectFit: 'contain' }} />}
     </div>
   );
 }
@@ -139,7 +145,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
                 className="relative w-full aspect-square rounded-2xl overflow-hidden flex items-center justify-center"
                 style={{ background: `${(BMTI_INFO[code] || {}).color || '#999'}14`, border: `2px solid ${ring}`, boxShadow: active ? `0 4px 12px ${ring}44` : 'none' }}
               >
-                {charOf(code) && <img src={charOf(code).image} alt="" className={charOf(code).imgClass || ''} style={{ width: '86%', height: '86%', objectFit: 'contain' }} />}
+                {charOf(code) && <img src={charOf(code).image} alt="" className={charOf(code).imgClass || ''} style={{ width: `${86 * boostOf(code)}%`, height: `${86 * boostOf(code)}%`, objectFit: 'contain' }} />}
                 {isSel && <span className="absolute top-1 left-1 text-[8px] font-extrabold text-white px-1.5 py-0.5 rounded-md" style={{ background: selColor }}>나</span>}
                 {isGood && <span className="absolute top-1 right-1 text-[10px]">💖</span>}
                 {isBad && <span className="absolute top-1 right-1 text-[10px]">🤔</span>}
