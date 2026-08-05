@@ -9,7 +9,7 @@ import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
-import zTypeImage from '../assets/Z 유형.jpg';
+import zTypeImage from '../assets/Z 유형.png';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
@@ -259,7 +259,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
         </div>
-        <div className="relative w-full aspect-[2304/1840] overflow-hidden">
+        <div className="relative w-full aspect-[2304/1838] overflow-hidden">
           <img src={zTypeImage} alt="Z 유형" className="absolute inset-0 w-full h-full object-cover" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
