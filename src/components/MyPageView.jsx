@@ -245,7 +245,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         </div>
 
         <div className="flex items-center gap-4 md:gap-5">
-          <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 ring-4 ${typeAccent.ring} overflow-hidden flex-shrink-0 relative shadow-sm`}>
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-50 ring-4 ring-[#C9BEF0] overflow-hidden flex-shrink-0 relative shadow-sm">
             {charInfo ? (
               <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
             ) : (
