@@ -10,7 +10,7 @@ import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
-import heroBanner1 from '../assets/가로 광고 베너/Gemini_Generated_Image_ng7rkang7rkang7r.png';
+import heroBanner1 from '../assets/가로 광고 베너/hero_banner_1.webp';
 
 // 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀로 노출한다.
 // img가 있으면 이미지 배너(문구가 이미지에 포함), 없으면 그라데이션+문구 배너.
@@ -185,8 +185,9 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀 + 하단 점 인디케이터 */}
-      <div className="pt-24 md:pt-28 px-3">
+      {/* 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀 + 하단 점 인디케이터.
+          데스크톱에선 폭을 제한(max-w)해 세로가 과하게 커지지 않게 한다. */}
+      <div className="pt-24 md:pt-28 px-3 max-w-[440px] mx-auto">
         <div
           ref={bannerTrackRef}
           className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)] aspect-[3840/1118]"
