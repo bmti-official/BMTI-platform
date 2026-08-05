@@ -10,10 +10,12 @@ import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
+import heroBanner1 from '../assets/가로 광고 베너/Gemini_Generated_Image_ng7rkang7rkang7r.png';
 
 // 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀로 노출한다.
+// img가 있으면 이미지 배너(문구가 이미지에 포함), 없으면 그라데이션+문구 배너.
 const HERO_BANNERS = [
-  { emoji: '🧬', title: "내 몸에도 ‘유형’이 있다고?", sub: '2분이면 끝 · 로그인 없이 BMTI 검사', bg: 'linear-gradient(100deg,#8B7BD8,#6B5BB5)', dark: false, action: 'quiz' },
+  { img: heroBanner1, title: "내 몸에도 ‘유형’이 있다고?", bg: '#EAF0F6', action: 'quiz' },
   { emoji: '🌿', title: '오늘 내 몸 컨디션, 말랑이에게', sub: '하루 1분 기록 습관 · 다이어리 시작', bg: 'linear-gradient(100deg,#F6C453,#E8A33D)', dark: true, action: 'aichat' },
   { emoji: '📈', title: '쌓인 기록이 내 몸 패턴을 알려줘요', sub: '주간 리포트 · 파트너의 편지', bg: 'linear-gradient(100deg,#5B4B8A,#3E3266)', dark: false, action: 'aichat' },
   { emoji: '❄️', title: '겨울, 앱으로 더 편하게 만나요', sub: '출시 · 혜택 소식 먼저 받기', bg: 'linear-gradient(100deg,#F7D000,#F0C400)', dark: true, action: 'signup' },
@@ -187,7 +189,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       <div className="pt-24 md:pt-28 px-3">
         <div
           ref={bannerTrackRef}
-          className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)]"
+          className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)] aspect-[3840/1118]"
           onPointerDown={onBannerDown}
           onPointerMove={onBannerMove}
           onPointerUp={onBannerUp}
@@ -196,7 +198,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           style={{ touchAction: 'pan-y' }}
         >
           <div
-            className="flex"
+            className="flex h-full"
             style={{
               transform: `translateX(calc(-${bannerIdx * 100}% + ${bannerDragX}px))`,
               transition: bannerDragRef.current.dragging ? 'none' : 'transform .45s ease-out',
@@ -211,15 +213,19 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
                 else setView('aichat');
               };
               return (
-                <button key={i} onClick={onClick} className="shrink-0 w-full text-left select-none" style={{ background: b.bg }}>
-                  <div className="flex items-center gap-3 px-5 h-[112px]" style={{ color: ink }}>
-                    <span className="text-3xl md:text-4xl shrink-0">{b.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-[min(4.3vw,17px)] md:text-lg leading-snug break-keep">{b.title}</div>
-                      <div className="text-[min(3.2vw,12.5px)] md:text-sm font-medium mt-1 break-keep" style={{ opacity: 0.85 }}>{b.sub}</div>
+                <button key={i} onClick={onClick} className="shrink-0 w-full h-full text-left select-none" style={{ background: b.bg }}>
+                  {b.img ? (
+                    <img src={b.img} alt={b.title} draggable="false" className="w-full h-full object-cover pointer-events-none" />
+                  ) : (
+                    <div className="flex items-center gap-3 px-5 h-full" style={{ color: ink }}>
+                      <span className="text-3xl md:text-4xl shrink-0">{b.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-[min(4.3vw,17px)] md:text-lg leading-snug break-keep">{b.title}</div>
+                        <div className="text-[min(3.2vw,12.5px)] md:text-sm font-medium mt-1 break-keep" style={{ opacity: 0.85 }}>{b.sub}</div>
+                      </div>
+                      <svg className="w-5 h-5 md:w-6 md:h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" /></svg>
                     </div>
-                    <svg className="w-5 h-5 md:w-6 md:h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" /></svg>
-                  </div>
+                  )}
                 </button>
               );
             })}
