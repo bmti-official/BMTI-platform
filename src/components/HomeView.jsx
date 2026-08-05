@@ -15,7 +15,7 @@ import heroBanner1 from '../assets/가로 광고 베너/hero_banner_1.webp';
 // 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀로 노출한다.
 // img가 있으면 이미지 배너(문구가 이미지에 포함), 없으면 그라데이션+문구 배너.
 const HERO_BANNERS = [
-  { img: heroBanner1, title: "내 몸에도 ‘유형’이 있다면?", bg: '#EAF0F6', action: 'quiz' },
+  { img: heroBanner1, title: "나의 BMTI 파트너는?", bg: '#EAF0F6', action: 'quiz' },
   { emoji: '🌿', title: '오늘 내 몸 컨디션, 말랑이에게', sub: '하루 1분 기록 습관 · 다이어리 시작', bg: 'linear-gradient(100deg,#F6C453,#E8A33D)', dark: true, action: 'aichat' },
   { emoji: '📈', title: '쌓인 기록이 내 몸 패턴을 알려줘요', sub: '주간 리포트 · 파트너의 편지', bg: 'linear-gradient(100deg,#5B4B8A,#3E3266)', dark: false, action: 'aichat' },
   { emoji: '❄️', title: '겨울, 앱으로 더 편하게 만나요', sub: '출시 · 혜택 소식 먼저 받기', bg: 'linear-gradient(100deg,#F7D000,#F0C400)', dark: true, action: 'signup' },
