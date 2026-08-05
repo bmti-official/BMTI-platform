@@ -41,10 +41,13 @@ function parseMatch(str) {
 
 function MiniChar({ code, size = 56, ring, bg }) {
   const ch = charOf(code);
+  // 원 배경을 흰색 위 옅은 틴트로 '불투명'하게 만든다 — 뒤에 깔린 연결선이 원과 겹치는
+  // 부분에서 비쳐 보이지 않고(원이 가리고), 원 사이 여백에서만 선이 보이게 한다.
+  const tint = bg || `${(BMTI_INFO[code] || {}).color || '#999'}18`;
   return (
     <div
       className="rounded-full flex items-center justify-center overflow-hidden shrink-0"
-      style={{ width: size, height: size, background: bg || `${(BMTI_INFO[code] || {}).color || '#999'}18`, border: `2px solid ${ring || 'transparent'}` }}
+      style={{ width: size, height: size, backgroundColor: '#fff', backgroundImage: `linear-gradient(${tint}, ${tint})`, border: `2px solid ${ring || 'transparent'}` }}
     >
       {ch && <img src={ch.image} alt="" className={ch.imgClass || ''} style={{ width: `${84 * boostOf(code)}%`, height: `${84 * boostOf(code)}%`, objectFit: 'contain' }} />}
     </div>
