@@ -9,16 +9,8 @@ import m2d3 from "../assets/2d_malang/malang_2D_그냥저냥.png";
 import m2d4 from "../assets/2d_malang/malang_2D_괜찮았어요.png";
 import m2d5 from "../assets/2d_malang/malang_2D_좋았어요.png";
 
-// 3D 말랑이 — 스트레스 해소 팝업용
-import m3d1 from "../assets/3d_malang/malang_3D_힘들었어요.PNG";
-import m3d2 from "../assets/3d_malang/malang_3D_지쳤어요.png";
-import m3d3 from "../assets/3d_malang/malang_3D_그냥저냥.png";
-import m3d4 from "../assets/3d_malang/malang_3D_괜찮았어요.PNG";
-import m3d5 from "../assets/3d_malang/malang_3D_좋았어요.png";
-
 export const MALLANG_SKINS = {
   malang2d: { label: "말랑이", images: { 1: m2d1, 2: m2d2, 3: m2d3, 4: m2d4, 5: m2d5 } },
-  malang3d: { label: "3D 말랑이", images: { 1: m3d1, 2: m3d2, 3: m3d3, 4: m3d4, 5: m3d5 } },
   default: { label: "기본 말랑이", images: null }, // SVG 폴백(현재 미사용, 안전용)
 };
 
@@ -26,10 +18,8 @@ export const MALLANG_SKINS = {
 export const MALLANG_IMG_RADIUS = {};
 
 // 스킨별 전체 표시 크기 보정.
-// malang3d의 '그냥저냥'만 캔버스를 꽉 채워 그려져 다른 무드보다 커 보이므로, 그 무드만 줄여 맞춘다.
 export const MALLANG_SIZE_ADJUST = {
   malang2d: { base: 1.18 }, // 400x400 정사각형으로 통일 — 얼굴이 캔버스의 ~80%
-  malang3d: { base: 1.12, moods: { 3: 0.68 } },
 };
 
 // 무드별 눈 위치(캔버스 대비 비율) — 기본 말랑이처럼 감았다 뜨는 깜빡임을 위해
@@ -52,11 +42,10 @@ export const MALLANG_MOOD_FILTER = {
 };
 
 const NO_FILTER = { 1: "none", 2: "none", 3: "none", 4: "none", 5: "none" };
-// 2D·3D 말랑이는 무드별로 이미 색이 다르게 그려져 있어 추가 필터를 걸지 않는다.
+// 2D 말랑이는 무드별로 이미 색이 다르게 그려져 있어 추가 필터를 걸지 않는다.
 // 단, 2D '지쳤어요'는 채도를 낮춰 조금 더 연한 연분홍으로 보이게 한다.
 export const MALLANG_MOOD_FILTER_OVERRIDE = {
   malang2d: { ...NO_FILTER, 2: "saturate(0.5) brightness(1.05)" },
-  malang3d: NO_FILTER,
 };
 
 const SKIN_KEY = "bmti_mallang_skin";
