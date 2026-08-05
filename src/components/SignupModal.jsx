@@ -20,7 +20,7 @@ const AGE_RANGES = [
 // ⚠️ 카카오톡 채널 '공개 ID'로 교체하세요.
 // 카카오톡 채널 관리자홈 → [채널 정보] → 'URL' 또는 '검색용 아이디'의 '_'로 시작하는 값
 // (예: 채널 URL이 http://pf.kakao.com/_abcdEF 이면 여기에 '_abcdEF' 입력)
-const KAKAO_CHANNEL_PUBLIC_ID = '_YOUR_CHANNEL_ID';
+const KAKAO_CHANNEL_PUBLIC_ID = '_xasxgZX';
 
 // 카카오톡 채널 추가창을 띄운다 — 추가하면 앞으로 이 채널로 알림톡/메시지 발송이 가능해진다.
 // silent=true(가입 완료 시 자동 호출)면 설정 전이라도 조용히 넘어간다.
