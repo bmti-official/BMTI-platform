@@ -22,6 +22,10 @@ const HERO_BANNERS = [
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [bannerDragX, setBannerDragX] = useState(0);   // 드래그 중 손가락 따라가는 오프셋(px)
+  const bannerTrackRef = useRef(null);
+  const bannerPausedRef = useRef(false);               // 터치 중이면 자동전환 멈춤
+  const bannerDragRef = useRef({ startX: 0, dragging: false, moved: false });
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -30,11 +34,37 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const dragStartOffsetRef = useRef(0);
   const dragDistRef = useRef(0);
 
-  // 상단 배너 자동 전환 (4.5초마다 다음 배너로)
+  // 상단 배너 자동 전환 (4.5초마다 다음 배너로) — 터치 중(bannerPausedRef)이면 건너뛴다
   useEffect(() => {
-    const t = setInterval(() => setBannerIdx(i => (i + 1) % HERO_BANNERS.length), 4500);
+    const t = setInterval(() => { if (!bannerPausedRef.current) setBannerIdx(i => (i + 1) % HERO_BANNERS.length); }, 4500);
     return () => clearInterval(t);
   }, []);
+
+  // 배너 스와이프 — 누르면 자동전환 멈추고 손가락 따라 이동, 떼면 임계치 넘었을 때 앞/뒤로 넘긴다
+  const onBannerDown = (e) => {
+    bannerDragRef.current = { startX: e.clientX, dragging: true, moved: false };
+    bannerPausedRef.current = true;
+    setBannerDragX(0);
+  };
+  const onBannerMove = (e) => {
+    const d = bannerDragRef.current;
+    if (!d.dragging) return;
+    const dx = e.clientX - d.startX;
+    if (Math.abs(dx) > 8) d.moved = true;
+    setBannerDragX(dx);
+  };
+  const onBannerUp = (e) => {
+    const d = bannerDragRef.current;
+    if (!d.dragging) return;
+    d.dragging = false;
+    const dx = (e.clientX ?? d.startX) - d.startX;
+    const w = bannerTrackRef.current?.clientWidth || 320;
+    const threshold = Math.min(60, w * 0.2);
+    if (dx <= -threshold) setBannerIdx(i => (i + 1) % HERO_BANNERS.length);
+    else if (dx >= threshold) setBannerIdx(i => (i - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
+    setBannerDragX(0);
+    bannerPausedRef.current = false; // 자동전환 재개
+  };
 
   const handleRetakeQuiz = async () => {
     if (!isLoggedIn) {
@@ -155,17 +185,33 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
 
       {/* 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀 + 하단 점 인디케이터 */}
       <div className="pt-24 md:pt-28 px-3">
-        <div className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)]">
-          <div className="flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${bannerIdx * 100}%)` }}>
+        <div
+          ref={bannerTrackRef}
+          className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)]"
+          onPointerDown={onBannerDown}
+          onPointerMove={onBannerMove}
+          onPointerUp={onBannerUp}
+          onPointerLeave={onBannerUp}
+          onPointerCancel={onBannerUp}
+          style={{ touchAction: 'pan-y' }}
+        >
+          <div
+            className="flex"
+            style={{
+              transform: `translateX(calc(-${bannerIdx * 100}% + ${bannerDragX}px))`,
+              transition: bannerDragRef.current.dragging ? 'none' : 'transform .45s ease-out',
+            }}
+          >
             {HERO_BANNERS.map((b, i) => {
               const ink = b.dark ? '#3B2E12' : '#FFFFFF';
               const onClick = () => {
+                if (bannerDragRef.current.moved) { bannerDragRef.current.moved = false; return; } // 스와이프였으면 이동 무시
                 if (b.action === 'quiz') setView('quiz');
                 else if (b.action === 'signup') { isLoggedIn ? setView('mypage') : (onRequireLogin && onRequireLogin()); }
                 else setView('aichat');
               };
               return (
-                <button key={i} onClick={onClick} className="shrink-0 w-full text-left" style={{ background: b.bg }}>
+                <button key={i} onClick={onClick} className="shrink-0 w-full text-left select-none" style={{ background: b.bg }}>
                   <div className="flex items-center gap-3 px-5 h-[112px]" style={{ color: ink }}>
                     <span className="text-3xl md:text-4xl shrink-0">{b.emoji}</span>
                     <div className="flex-1 min-w-0">
