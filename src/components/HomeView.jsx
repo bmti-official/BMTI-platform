@@ -11,8 +11,17 @@ import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
 
+// 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀로 노출한다.
+const HERO_BANNERS = [
+  { emoji: '🧬', title: "내 몸에도 ‘유형’이 있다고?", sub: '2분이면 끝 · 로그인 없이 BMTI 검사', bg: 'linear-gradient(100deg,#8B7BD8,#6B5BB5)', dark: false, action: 'quiz' },
+  { emoji: '🌿', title: '오늘 내 몸 컨디션, 말랑이에게', sub: '하루 1분 기록 습관 · 다이어리 시작', bg: 'linear-gradient(100deg,#F6C453,#E8A33D)', dark: true, action: 'aichat' },
+  { emoji: '📈', title: '쌓인 기록이 내 몸 패턴을 알려줘요', sub: '주간 리포트 · 파트너의 편지', bg: 'linear-gradient(100deg,#5B4B8A,#3E3266)', dark: false, action: 'aichat' },
+  { emoji: '❄️', title: '겨울, 앱으로 더 편하게 만나요', sub: '출시 · 혜택 소식 먼저 받기', bg: 'linear-gradient(100deg,#F7D000,#F0C400)', dark: true, action: 'signup' },
+];
+
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
+  const [bannerIdx, setBannerIdx] = useState(0);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -20,6 +29,12 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const dragStartXRef = useRef(0);
   const dragStartOffsetRef = useRef(0);
   const dragDistRef = useRef(0);
+
+  // 상단 배너 자동 전환 (4.5초마다 다음 배너로)
+  useEffect(() => {
+    const t = setInterval(() => setBannerIdx(i => (i + 1) % HERO_BANNERS.length), 4500);
+    return () => clearInterval(t);
+  }, []);
 
   const handleRetakeQuiz = async () => {
     if (!isLoggedIn) {
@@ -138,44 +153,48 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 상단 광고 배너 — 반 폭·세로로 큰 카드 4개를 가로 스크롤로 넘겨본다 */}
-      <div className="pt-24 md:pt-28">
-        <div className="flex gap-3 overflow-x-auto px-3 pb-1 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {[
-            { emoji: '🧬', title: '내 몸에도\n‘유형’이 있다고?', sub: '2분이면 끝 · 로그인 없이', cta: 'BMTI 검사 시작', bg: 'linear-gradient(160deg,#8B7BD8,#6B5BB5)', dark: false, onClick: () => setView('quiz') },
-            { emoji: '🌿', title: '오늘 내 몸 컨디션,\n말랑이에게', sub: '하루 1분 기록 습관', cta: '다이어리 시작', bg: 'linear-gradient(160deg,#F6C453,#E8A33D)', dark: true, onClick: () => setView('aichat') },
-            { emoji: '📈', title: '쌓인 기록이\n내 몸 패턴을 알려줘요', sub: '주간 리포트 · 파트너의 편지', cta: '발견 살펴보기', bg: 'linear-gradient(160deg,#5B4B8A,#3E3266)', dark: false, onClick: () => setView('aichat') },
-            { emoji: '❄️', title: '겨울, 앱으로\n더 편하게 만나요', sub: '출시 · 혜택 소식 먼저 받기', cta: '사전 알림 신청', bg: 'linear-gradient(160deg,#FEE500,#F5D200)', dark: true, onClick: () => (isLoggedIn ? setView('mypage') : (onRequireLogin && onRequireLogin())) },
-          ].map((b, i) => {
-            const ink = b.dark ? '#3B2E12' : '#FFFFFF';
-            return (
-              <button
-                key={i}
-                onClick={b.onClick}
-                className="snap-start shrink-0 w-[46%] max-w-[210px] h-[224px] rounded-2xl overflow-hidden text-left shadow-[0_8px_22px_-10px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform relative"
-                style={{ background: b.bg }}
-              >
-                {/* 장식 원 */}
-                <span className="absolute -top-6 -right-5 w-24 h-24 rounded-full" style={{ background: 'rgba(255,255,255,0.14)' }} />
-                <div className="relative flex flex-col h-full p-4" style={{ color: ink }}>
-                  <span className="text-3xl">{b.emoji}</span>
-                  <div className="mt-2 font-black text-[15px] leading-snug whitespace-pre-line break-keep">{b.title}</div>
-                  <div className="mt-auto">
-                    <div className="text-[11px] font-semibold mb-2 break-keep" style={{ opacity: 0.82 }}>{b.sub}</div>
-                    <span className="inline-flex items-center gap-1 text-[12.5px] font-extrabold">
-                      {b.cta}
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.6" d="M9 5l7 7-7 7" /></svg>
-                    </span>
+      {/* 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀 + 하단 점 인디케이터 */}
+      <div className="pt-24 md:pt-28 px-3">
+        <div className="relative overflow-hidden rounded-2xl shadow-[0_8px_24px_-10px_rgba(0,0,0,0.4)]">
+          <div className="flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${bannerIdx * 100}%)` }}>
+            {HERO_BANNERS.map((b, i) => {
+              const ink = b.dark ? '#3B2E12' : '#FFFFFF';
+              const onClick = () => {
+                if (b.action === 'quiz') setView('quiz');
+                else if (b.action === 'signup') { isLoggedIn ? setView('mypage') : (onRequireLogin && onRequireLogin()); }
+                else setView('aichat');
+              };
+              return (
+                <button key={i} onClick={onClick} className="shrink-0 w-full text-left" style={{ background: b.bg }}>
+                  <div className="flex items-center gap-3 px-5 h-[112px]" style={{ color: ink }}>
+                    <span className="text-3xl md:text-4xl shrink-0">{b.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-[min(4.3vw,17px)] md:text-lg leading-snug break-keep">{b.title}</div>
+                      <div className="text-[min(3.2vw,12.5px)] md:text-sm font-medium mt-1 break-keep" style={{ opacity: 0.85 }}>{b.sub}</div>
+                    </div>
+                    <svg className="w-5 h-5 md:w-6 md:h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" /></svg>
                   </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {/* 점 인디케이터 */}
+        <div className="flex justify-center items-center gap-1.5 mt-2.5">
+          {HERO_BANNERS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setBannerIdx(i)}
+              aria-label={`${i + 1}번 배너 보기`}
+              className="rounded-full transition-all duration-300"
+              style={{ width: i === bannerIdx ? 18 : 6, height: 6, background: i === bannerIdx ? '#8B7BD8' : '#D8D3E6' }}
+            />
+          ))}
         </div>
       </div>
 
       {/* Hero Section */}
-      <section className="pt-10 md:pt-12 pb-3 px-6 max-w-5xl mx-auto text-center">
+      <section className="pt-10 md:pt-12 pb-24 md:pb-28 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-0">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>
