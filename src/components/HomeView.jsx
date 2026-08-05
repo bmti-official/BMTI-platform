@@ -138,33 +138,45 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 상단 가로형 CTA 광고판 — 모바일 화면 가로를 가득 채우고 모서리는 살짝 둥글게 */}
-      <div className="pt-24 md:pt-28 px-3">
-        <button
-          onClick={() => setView('aichat')}
-          className="group block w-full rounded-2xl overflow-hidden text-left shadow-[0_8px_24px_-10px_rgba(139,123,216,0.55)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
-          style={{ background: 'linear-gradient(100deg, #8B7BD8 0%, #A99BE6 52%, #CFC4F2 100%)' }}
-        >
-          <div className="flex items-center gap-3 px-5 py-4 md:py-5">
-            <span className="text-3xl md:text-4xl shrink-0">🌿</span>
-            <div className="flex-1 min-w-0">
-              <div className="text-white font-bold text-[min(4.2vw,17px)] md:text-lg leading-snug break-keep">
-                오늘 내 몸의 컨디션, 말랑 다이어리에 기록해요
-              </div>
-              <div className="text-white/85 text-[min(3.2vw,12.5px)] md:text-sm font-medium mt-0.5 break-keep">
-                하루 1분이면 충분해요 · 지금 바로 시작하기
-              </div>
-            </div>
-            <svg className="w-5 h-5 md:w-6 md:h-6 text-white shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </button>
+      {/* 상단 광고 배너 — 반 폭·세로로 큰 카드 4개를 가로 스크롤로 넘겨본다 */}
+      <div className="pt-24 md:pt-28">
+        <div className="flex gap-3 overflow-x-auto px-3 pb-1 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {[
+            { emoji: '🧬', title: '내 몸에도\n‘유형’이 있다고?', sub: '2분이면 끝 · 로그인 없이', cta: 'BMTI 검사 시작', bg: 'linear-gradient(160deg,#8B7BD8,#6B5BB5)', dark: false, onClick: () => setView('quiz') },
+            { emoji: '🌿', title: '오늘 내 몸 컨디션,\n말랑이에게', sub: '하루 1분 기록 습관', cta: '다이어리 시작', bg: 'linear-gradient(160deg,#F6C453,#E8A33D)', dark: true, onClick: () => setView('aichat') },
+            { emoji: '📈', title: '쌓인 기록이\n내 몸 패턴을 알려줘요', sub: '주간 리포트 · 파트너의 편지', cta: '발견 살펴보기', bg: 'linear-gradient(160deg,#5B4B8A,#3E3266)', dark: false, onClick: () => setView('aichat') },
+            { emoji: '❄️', title: '겨울, 앱으로\n더 편하게 만나요', sub: '출시 · 혜택 소식 먼저 받기', cta: '사전 알림 신청', bg: 'linear-gradient(160deg,#FEE500,#F5D200)', dark: true, onClick: () => (isLoggedIn ? setView('mypage') : (onRequireLogin && onRequireLogin())) },
+          ].map((b, i) => {
+            const ink = b.dark ? '#3B2E12' : '#FFFFFF';
+            return (
+              <button
+                key={i}
+                onClick={b.onClick}
+                className="snap-start shrink-0 w-[46%] max-w-[210px] h-[224px] rounded-2xl overflow-hidden text-left shadow-[0_8px_22px_-10px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform relative"
+                style={{ background: b.bg }}
+              >
+                {/* 장식 원 */}
+                <span className="absolute -top-6 -right-5 w-24 h-24 rounded-full" style={{ background: 'rgba(255,255,255,0.14)' }} />
+                <div className="relative flex flex-col h-full p-4" style={{ color: ink }}>
+                  <span className="text-3xl">{b.emoji}</span>
+                  <div className="mt-2 font-black text-[15px] leading-snug whitespace-pre-line break-keep">{b.title}</div>
+                  <div className="mt-auto">
+                    <div className="text-[11px] font-semibold mb-2 break-keep" style={{ opacity: 0.82 }}>{b.sub}</div>
+                    <span className="inline-flex items-center gap-1 text-[12.5px] font-extrabold">
+                      {b.cta}
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.6" d="M9 5l7 7-7 7" /></svg>
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Hero Section */}
-      <section className="pt-10 md:pt-12 pb-12 px-6 max-w-5xl mx-auto text-center">
-        <h1 className="font-serif leading-tight mb-8">
+      <section className="pt-10 md:pt-12 pb-3 px-6 max-w-5xl mx-auto text-center">
+        <h1 className="font-serif leading-tight mb-0">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>
             <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>
@@ -173,15 +185,6 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             BODY MANAGEMENT TYPE INDICATOR
           </span>
         </h1>
-        {/* 눌러서 다이어리로 이동 */}
-        <button
-          onClick={() => setView('aichat')}
-          className="group text-[min(3.5vw,16px)] md:text-xl whitespace-nowrap text-gray-600 mb-8 mx-auto leading-relaxed break-keep inline-flex items-center gap-1.5 hover:text-gray-900 transition-colors"
-        >
-          내 몸과 마음을 챙기는 가장 귀여운 건강 다이어리
-          <span className="font-bold" style={{ color: '#8B7BD8' }}>시작하기</span>
-          <svg className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:translate-x-0.5" style={{ color: '#8B7BD8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" /></svg>
-        </button>
       </section>
 
       {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는
