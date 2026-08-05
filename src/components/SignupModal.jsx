@@ -17,6 +17,29 @@ const AGE_RANGES = [
   { id: '50s+', label: '50대 이상' },
 ];
 
+// ⚠️ 카카오톡 채널 '공개 ID'로 교체하세요.
+// 카카오톡 채널 관리자홈 → [채널 정보] → 'URL' 또는 '검색용 아이디'의 '_'로 시작하는 값
+// (예: 채널 URL이 http://pf.kakao.com/_abcdEF 이면 여기에 '_abcdEF' 입력)
+const KAKAO_CHANNEL_PUBLIC_ID = '_YOUR_CHANNEL_ID';
+
+// 카카오톡 채널 추가창을 띄운다 — 추가하면 앞으로 이 채널로 알림톡/메시지 발송이 가능해진다.
+// silent=true(가입 완료 시 자동 호출)면 설정 전이라도 조용히 넘어간다.
+const addKakaoChannel = (silent = false) => {
+  if (!KAKAO_CHANNEL_PUBLIC_ID || KAKAO_CHANNEL_PUBLIC_ID.startsWith('_YOUR')) {
+    if (!silent) alert('카카오톡 채널 공개 ID가 아직 설정되지 않았어요.');
+    return false;
+  }
+  const ch = window.Kakao?.Channel || window.Kakao?.PlusFriend; // v2 Channel / v1 PlusFriend
+  try {
+    if (ch?.addChannel) { ch.addChannel({ channelPublicId: KAKAO_CHANNEL_PUBLIC_ID }); }
+    else { window.open(`http://pf.kakao.com/${KAKAO_CHANNEL_PUBLIC_ID}`, '_blank'); } // 폴백: 채널 홈 새창
+    return true;
+  } catch (e) {
+    if (!silent) { console.error('채널 추가 실패:', e); window.open(`http://pf.kakao.com/${KAKAO_CHANNEL_PUBLIC_ID}`, '_blank'); }
+    return false;
+  }
+};
+
 
 
 const SignupModal = ({ isOpen, onClose, onComplete }) => {
@@ -31,6 +54,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
     privacyConsent: false
   });
   const [errors, setErrors] = useState({});
+  const [channelAdded, setChannelAdded] = useState(false);
 
   if (!isOpen) return null;
 
@@ -181,6 +205,8 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
       setErrors({ privacyConsent: true });
       return;
     }
+    // 알림을 원했는데 아직 채널을 안 더했다면, 완료 클릭 시 채널 추가창을 띄워 발송 기반을 마련한다.
+    if (formData.appNotification && !channelAdded) addKakaoChannel(true);
     console.log('📊 Collected user data:', formData);
     onComplete(formData);
   };
@@ -340,6 +366,28 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                     <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${
                       formData.appNotification ? 'left-6' : 'left-1'
                     }`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* 카카오톡 채널 추가 — 출시·혜택 소식을 카카오톡으로 발송하기 위한 기반 */}
+              <div className="bg-[#FEE500]/20 border border-[#FEE500]/60 rounded-2xl p-5 mb-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-sm text-gray-900 mb-1">📣 카카오톡 채널 추가하고 소식 받기</p>
+                    <p className="text-xs text-gray-500 break-keep leading-relaxed">
+                      채널을 추가하면 앱 출시·사전등록 혜택 소식을 카카오톡으로 가장 먼저 받아볼 수 있어요.
+                    </p>
+                  </div>
+                  <button
+                    id="add-kakao-channel"
+                    onClick={() => { if (addKakaoChannel(false)) setChannelAdded(true); }}
+                    disabled={channelAdded}
+                    className={`flex-shrink-0 text-xs font-bold px-3.5 py-2 rounded-full transition-all ${
+                      channelAdded ? 'bg-gray-100 text-gray-400 cursor-default' : 'bg-[#FEE500] text-[#3C1E1E] hover:brightness-95 active:scale-95'
+                    }`}
+                  >
+                    {channelAdded ? '추가됨 ✓' : '채널 추가'}
                   </button>
                 </div>
               </div>
