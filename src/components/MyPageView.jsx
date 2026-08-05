@@ -25,13 +25,12 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   });
   
   const [isEditing, setIsEditing] = useState(false);
-  const [showBmtiDetails, setShowBmtiDetails] = useState(false);
   const [isEditingExercise, setIsEditingExercise] = useState(false);
   const [savingExercise, setSavingExercise] = useState(false);
   const [posturePick, setPosturePick] = useState(null);
   const [postureOther, setPostureOther] = useState('');
   const [soreEdit, setSoreEdit] = useState([]); // 수정 모드 불편한 부위 [{part, when, whenOther}]
-  const [mallangHistory, setMallangHistory] = useState([]); // 말랑 정보 스냅샷 박스
+  const [mallangHistory, setMallangHistory] = useState([]); // 일상 정보 스냅샷 박스
 
   // 수정 모드에서 부위 토글(최대 2) / when 지정
   const toggleSorePart = (part) => setSoreEdit(prev => {
@@ -127,7 +126,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const handleSaveMallangInfo = async () => {
     // 한 달 2회 수정 제한 — 이번 달 'edit' 스냅샷이 이미 2개면 막는다.
     if (editsThisMonth(mallangHistory) >= MONTHLY_EDIT_LIMIT) {
-      alert(`말랑 정보는 한 달에 ${MONTHLY_EDIT_LIMIT}번까지만 수정할 수 있어요. 다음 달에 다시 시도해주세요.`);
+      alert(`일상 정보는 한 달에 ${MONTHLY_EDIT_LIMIT}번까지만 수정할 수 있어요. 다음 달에 다시 시도해주세요.`);
       return;
     }
     const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
@@ -163,8 +162,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       localStorage.setItem('bmti_user', JSON.stringify(updated));
       setMallangHistory(prev => [snapshot, ...prev]);
     } catch (e) {
-      console.error('말랑 정보 저장 오류:', e);
-      alert('말랑 정보 저장 중 오류가 발생했습니다.');
+      console.error('일상 정보 저장 오류:', e);
+      alert('일상 정보 저장 중 오류가 발생했습니다.');
       setSavingExercise(false);
       return;
     }
@@ -199,7 +198,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     }
   }, [userData]);
 
-  // 말랑 정보 스냅샷 히스토리 — 로그인은 서버, 게스트는 로컬
+  // 일상 정보 스냅샷 히스토리 — 로그인은 서버, 게스트는 로컬
   useEffect(() => {
     if (userData?.id) {
       supabase.from('mallang_info_history')
@@ -220,8 +219,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       <div className="bg-white rounded-[28px] p-6 md:p-8 shadow-[0_2px_24px_rgba(0,0,0,0.05)] border border-gray-100 mb-8 relative overflow-hidden">
         <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${typeAccent.wash} to-transparent -z-10`}></div>
 
-        <div className="flex justify-between items-start mb-6">
-          <h3 className="font-bold text-lg text-gray-900">내 기본 정보</h3>
+        <div className="flex justify-end items-start mb-6">
           <div className="flex items-center gap-2">
             {onLogout && (
               <button
@@ -269,8 +267,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 {userData.hasEditedNickname && <div className="text-[10px] text-gray-400 font-medium mt-1">닉네임 수정 횟수 초과</div>}
               </div>
             ) : (
-              <h2 className="text-xl md:text-2xl font-black text-gray-900 flex flex-wrap items-center gap-1.5 mb-2">
+              <h2 className="text-xl md:text-2xl font-black text-gray-900 flex flex-wrap items-center gap-2 mb-2">
                 {userData.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md shadow-sm">관리자</span>}
+                {axisCode && <span className="text-sm md:text-base font-black text-white px-2.5 py-1 rounded-xl" style={{ background: '#8B7BD8' }}>{axisCode}</span>}
                 {userData.nickname}
               </h2>
             )}
@@ -278,15 +277,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             {!isEditing && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1 text-xs font-bold text-gray-600">{userData.kakaoAge} · {userData.kakaoGender}</span>
-                {charInfo && (
-                  <button
-                    onClick={() => setShowBmtiDetails(!showBmtiDetails)}
-                    className={`inline-flex items-center gap-1 ${typeAccent.badgeBg} border ${typeAccent.badgeBorder} rounded-full pl-3 pr-2 py-1 text-xs font-black ${typeAccent.badgeText} hover:opacity-80 transition-opacity`}
-                  >
-                    {axisCode}
-                    <svg className={`w-3 h-3 opacity-60 transition-transform ${showBmtiDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </button>
-                )}
               </div>
             )}
 
@@ -325,32 +315,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           </button>
         )}
 
-        {charInfo && !isEditing && showBmtiDetails && (
-          <div className="bg-gray-50 p-3.5 md:p-4 rounded-xl border border-gray-200 mt-4 fade-in">
-            <div className="flex flex-wrap items-center gap-y-2 text-xs md:text-sm">
-              {(() => {
-                const percentages = calculateBMTIPercentages(bmtiAnswers);
-                const chars = (axisCode || '').split('');
-                return chars.map((char, index) => {
-                  let isConfident = false;
-                  if (percentages && percentages[char] !== undefined) {
-                    isConfident = percentages[char] >= 80;
-                  }
-
-                  return (
-                    <div key={index} className="flex items-center gap-1.5 whitespace-nowrap">
-                      {index > 0 && <span className="text-gray-300 mx-1 md:mx-1.5">/</span>}
-                      <span className={`w-1.5 h-1.5 rounded-full ${isConfident ? 'bg-black' : 'bg-gray-300'}`}></span>
-                      <span className="font-bold text-gray-600">{isConfident ? '확신의' : '유연한'}</span>
-                      <span className="font-black text-gray-800 text-sm">{char}</span>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          </div>
-        )}
-
         {/* App Notification Toggle — 이 페이지에서만 신청 여부를 확인/변경 가능 */}
         {!isEditing && (
           <div className="flex justify-between items-center gap-3 mt-5 fade-in bg-gray-50 border border-gray-100 rounded-2xl p-4">
@@ -359,7 +323,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 {userData.appNotification ? '✅' : '🔔'}
               </span>
               <span className="text-xs font-bold text-gray-700 leading-snug">
-                {userData.appNotification ? "'BMTI: 말랑 다이어리' 사전 알림 신청 완료" : "'BMTI: 말랑 다이어리' 앱 출시 알림 받기"}
+                {userData.appNotification ? "'BMTI: 건강 다이어리' 사전 알림 신청 완료" : "'BMTI: 건강 다이어리' 앱 출시 알림 받기"}
               </span>
             </div>
             <button
@@ -391,7 +355,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         )}
       </div>
 
-      {/* 2. BMTI 히스토리 — 아래 블록. (말랑 정보는 그 다음으로 이동) */}
+      {/* 2. BMTI 히스토리 — 아래 블록. (일상 정보는 그 다음으로 이동) */}
 
       <div className="mb-4 px-1 mt-6 flex justify-between items-center border-b border-gray-200 pb-3">
         <h3 className="font-bold text-lg text-gray-900">BMTI 히스토리</h3>
@@ -446,6 +410,24 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                   )}
                 </div>
                 <h4 className="font-black text-gray-900 text-lg mb-1">{shortCode}</h4>
+                {/* 확신의/유연한 축 분석 — 답변이 있는 현재 유형 카드에만 반영 */}
+                {item.isCurrent && bmtiAnswers && (() => {
+                  const percentages = calculateBMTIPercentages(bmtiAnswers);
+                  return (
+                    <div className="w-full flex flex-col gap-1 my-2 py-2 border-y border-gray-100">
+                      {shortCode.split('').map((char, i) => {
+                        const conf = percentages && percentages[char] !== undefined && percentages[char] >= 80;
+                        return (
+                          <div key={i} className="flex items-center justify-center gap-1.5 text-[11px] whitespace-nowrap">
+                            <span className={`w-1.5 h-1.5 rounded-full ${conf ? 'bg-black' : 'bg-gray-300'}`}></span>
+                            <span className="font-bold text-gray-500">{conf ? '확신의' : '유연한'}</span>
+                            <span className="font-black text-gray-800">{char}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <span className="text-[10px] text-gray-400 font-medium">{item.displayDate}</span>
               </div>
             );
@@ -455,9 +437,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         })()}
       </div>
 
-      {/* 3. 말랑 정보 — 온보딩에서 자동으로 채워지고, 여기서 한 달 2번까지 수정 가능 */}
+      {/* 3. 일상 정보 — 온보딩에서 자동으로 채워지고, 여기서 한 달 2번까지 수정 가능 */}
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
-        <h3 className="font-bold text-lg text-gray-900">말랑 정보</h3>
+        <h3 className="font-bold text-lg text-gray-900">일상 정보</h3>
         <button
           onClick={() => {
             if (isEditingExercise) {
@@ -567,28 +549,32 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             <p className="text-[11px] text-gray-400 font-medium">이번 달 수정 {editsThisMonth(mallangHistory)}/{MONTHLY_EDIT_LIMIT}회</p>
           </div>
         ) : (userData.mallang_sore?.length || userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
-          <div className="space-y-3">
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0 md:mt-0.5">불편한 부위</span>
-              <span className="text-sm">{soreSummary(userData.mallang_sore) || '아직 입력 전이에요'}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* 불편한 부위 */}
+            <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
+              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold mb-2">🩹 불편한 부위</div>
+              <div className="text-base font-bold text-gray-800 break-keep">{soreSummary(userData.mallang_sore) || '아직 입력 전이에요'}</div>
             </div>
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">운동 빈도</span>
-              <span className="text-sm">{EXERCISE_FREQ_LABELS[userData.exercise_frequency] || '아직 입력 전이에요'}</span>
+            {/* 운동 빈도 */}
+            <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
+              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold mb-2">🏃 운동 빈도</div>
+              <div className="text-base font-bold text-gray-800 break-keep">{EXERCISE_FREQ_LABELS[userData.exercise_frequency] || '아직 입력 전이에요'}</div>
             </div>
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-start gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0 md:mt-0.5">운동 목적</span>
-              <div className="flex-1 flex flex-wrap gap-1.5">
-                {(userData.exercise_goals && userData.exercise_goals.length > 0) ? (
-                  userData.exercise_goals.map((id) => (
-                    <span key={id} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-[11px] whitespace-nowrap font-bold">{EXERCISE_GOAL_LABELS[id] || id}</span>
-                  ))
-                ) : (<span className="text-sm">아직 입력 전이에요</span>)}
-              </div>
+            {/* 운동 목적 */}
+            <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
+              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold mb-2">🎯 운동 목적</div>
+              {(userData.exercise_goals && userData.exercise_goals.length > 0) ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {userData.exercise_goals.map((id) => (
+                    <span key={id} className="bg-white border border-gray-200 text-gray-700 px-2.5 py-1 rounded-lg text-xs whitespace-nowrap font-bold">{EXERCISE_GOAL_LABELS[id] || id}</span>
+                  ))}
+                </div>
+              ) : (<div className="text-base font-bold text-gray-800">아직 입력 전이에요</div>)}
             </div>
-            <div className="text-sm font-medium text-gray-600 flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="w-full md:w-20 text-gray-400 text-xs shrink-0">자주 하는 자세</span>
-              <span className="text-sm">{POSTURE_LABELS[userData.common_posture] || userData.common_posture || '아직 입력 전이에요'}</span>
+            {/* 자주 하는 자세 */}
+            <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
+              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold mb-2">🪑 자주 하는 자세</div>
+              <div className="text-base font-bold text-gray-800 break-keep">{POSTURE_LABELS[userData.common_posture] || userData.common_posture || '아직 입력 전이에요'}</div>
             </div>
           </div>
         ) : (
@@ -596,23 +582,39 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         )}
       </div>
 
-      {/* 4. 말랑 정보 히스토리 — 수정할 때마다 스냅샷을 BMTI 히스토리와 같은 박스로 남긴다 */}
+      {/* 4. 일상 정보 히스토리 — 수정할 때마다 스냅샷을 BMTI 히스토리와 같은 박스로 남긴다 */}
       <div className="mb-4 px-1 mt-8 flex justify-between items-center border-b border-gray-200 pb-3">
-        <h3 className="font-bold text-lg text-gray-900">말랑 정보 히스토리</h3>
+        <h3 className="font-bold text-lg text-gray-900">일상 정보 히스토리</h3>
       </div>
       <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {mallangHistory.length > 0 ? (
-          mallangHistory.map((item, idx) => (
-            <div key={idx} className={`min-w-[150px] md:min-w-[170px] bg-white border p-4 rounded-2xl flex flex-col items-center relative overflow-hidden shadow-sm snap-start ${idx === 0 ? 'border-[#C9975A]' : 'border-gray-200'}`}>
-              {idx === 0 && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#C9975A]"></div>}
-              <div className="w-14 h-14 mb-2 bg-gray-50 rounded-full flex items-center justify-center text-2xl">🩹</div>
-              <h4 className="font-bold text-gray-900 text-xs text-center mb-1 leading-snug">{soreSummary(item.sore) || '부위 미입력'}</h4>
-              <span className="text-[10px] text-gray-500 font-medium text-center">{EXERCISE_FREQ_LABELS[item.exercise_frequency] || '운동 미입력'}</span>
-              <span className="text-[10px] text-gray-400 font-medium mt-1">{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span>
-            </div>
-          ))
+          mallangHistory.map((item, idx) => {
+            const goals = (item.exercise_goals || []).map(g => EXERCISE_GOAL_LABELS[g] || g).join(', ');
+            const postureLabel = POSTURE_LABELS[item.common_posture] || item.common_posture;
+            const HRow = ({ label, value }) => (
+              <div className="flex gap-2 text-[11px] leading-snug">
+                <span className="text-gray-400 font-bold w-[52px] shrink-0">{label}</span>
+                <span className="text-gray-700 font-bold flex-1 break-keep">{value}</span>
+              </div>
+            );
+            return (
+              <div key={idx} className={`min-w-[220px] md:min-w-[240px] bg-white border p-4 rounded-2xl flex flex-col relative overflow-hidden shadow-sm snap-start ${idx === 0 ? 'border-[#C9975A]' : 'border-gray-200'}`}>
+                {idx === 0 && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#C9975A]"></div>}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-9 h-9 bg-gray-50 rounded-full flex items-center justify-center text-lg shrink-0">🩹</span>
+                  <span className="text-[10px] text-gray-400 font-medium">{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <HRow label="불편한 부위" value={soreSummary(item.sore) || '없음'} />
+                  <HRow label="운동 빈도" value={EXERCISE_FREQ_LABELS[item.exercise_frequency] || '미입력'} />
+                  <HRow label="운동 목적" value={goals || '미입력'} />
+                  <HRow label="자주 하는 자세" value={postureLabel || '미입력'} />
+                </div>
+              </div>
+            );
+          })
         ) : (
-          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 말랑 정보가 없습니다.</div>
+          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 일상 정보가 없습니다.</div>
         )}
       </div>
 

@@ -164,9 +164,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             className={`flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border transition-colors active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
           >
             {userProfile && (
-              <span className="font-bold text-gray-800 text-sm flex items-center max-w-[110px] truncate">
-                {userProfile.nickname === 'BMTI' && <span className="mr-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
-                {userProfile.nickname}
+              <span className="flex items-center gap-1.5">
+                {userProfile.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+                {axisCode && <span className="text-[11px] font-black text-white px-2 py-0.5 rounded-lg" style={{ background: '#8B7BD8' }}>{axisCode}</span>}
+                <span className="font-bold text-gray-800 text-sm max-w-[90px] truncate">{userProfile.nickname}</span>
               </span>
             )}
             <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${currentView === 'mypage' ? 'bg-black' : 'bg-gray-100'}`}>
