@@ -122,6 +122,19 @@ const TermsModal = ({ isOpen, onClose }) => {
                   <li><strong>전화번호:</strong> 070-8027-8648</li>
                 </ul>
               </div>
+
+              <div>
+                <h5 className="font-bold text-gray-900 mb-1">제6조 (쿠키 및 제3자 광고)</h5>
+                <p className="text-gray-600 break-keep mb-2">
+                  본 사이트는 서비스 개선과 광고 게재를 위해 쿠키(cookie)를 사용합니다. 쿠키는 이용자의 브라우저에 저장되는 작은 텍스트 파일로, 이용자를 식별하거나 방문 정보를 저장하는 데 사용됩니다.
+                </p>
+                <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                  <li>Google을 포함한 제3자 광고 사업자는 쿠키를 사용하여 이용자의 이 사이트 및 다른 사이트 방문 기록을 바탕으로 맞춤형 광고를 게재합니다.</li>
+                  <li>Google은 광고 쿠키를 사용해 이용자에게 관련성 높은 광고를 제공하며, 자세한 내용은 <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">Google 광고 정책</a>에서 확인할 수 있습니다.</li>
+                  <li>이용자는 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">Google 광고 설정</a>에서 맞춤 광고를 해제하거나, <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">www.aboutads.info</a>에서 제3자 쿠키를 차단할 수 있습니다.</li>
+                  <li>브라우저 설정을 통해 쿠키 저장을 거부할 수 있으나, 이 경우 일부 서비스 이용이 제한될 수 있습니다.</li>
+                </ul>
+              </div>
             </div>
           </section>
 

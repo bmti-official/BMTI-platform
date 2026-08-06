@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import TermsModal from './TermsModal';
 import AdInquiryModal from './AdInquiryModal';
+import AboutModal from './AboutModal';
+import ContactModal from './ContactModal';
 import { recordVisit, fetchVisitorCounts } from '../lib/visitorTracker';
 
 const Footer = () => {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isAdInquiryOpen, setIsAdInquiryOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [visitors, setVisitors] = useState({ today: 0, total: 0 });
 
   useEffect(() => {
@@ -31,6 +35,8 @@ const Footer = () => {
 
         {/* Links */}
         <div className="flex flex-row flex-wrap items-center justify-center gap-1.5 md:gap-3 text-[10px] md:text-xs font-bold text-gray-500">
+          <button onClick={() => setIsAboutOpen(true)} className="hover:text-black transition-colors break-keep">[서비스 소개]</button>
+          <button onClick={() => setIsContactOpen(true)} className="hover:text-black transition-colors break-keep">[문의하기]</button>
           <button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors break-keep">[이용약관]</button>
           <button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors break-keep">[개인정보처리방침]</button>
           <a href="http://www.ftc.go.kr/bizCommPop.do?wrkr_no=8770403614" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors break-keep">[사업자정보확인]</a>
@@ -78,6 +84,8 @@ const Footer = () => {
 
       <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
       <AdInquiryModal isOpen={isAdInquiryOpen} onClose={() => setIsAdInquiryOpen(false)} />
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
     </footer>
   );
 };
