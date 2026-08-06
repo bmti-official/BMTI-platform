@@ -31,7 +31,7 @@ const AboutModal = ({ isOpen, onClose }) => {
               <li><strong>말랑 다이어리</strong> — 하루 1분, 기분·수면·불편한 부위·운동을 귀엽게 기록</li>
               <li><strong>발견 리포트</strong> — 쌓인 기록으로 내 몸의 월간 패턴과 인사이트를 발견</li>
               <li><strong>큐레이션</strong> — 자세 교정·회복·스트레칭 등 몸 관리 콘텐츠를 큐레이션</li>
-              <li><strong>말랑 클래스</strong> — 물리치료사와 함께하는 그룹 운동 수업(출시 예정)</li>
+              <li><strong>예약</strong> — 전문가 세션·소그룹 클래스 예약(준비 중)</li>
             </ul>
           </section>
 
