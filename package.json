@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "gen:magazine": "node scripts/gen-magazine.mjs",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "build:domain": "BUILD_TARGET=domain vite build",
+    "deploy:domain": "npm run build:domain && echo bmti-official.co.kr > dist/CNAME && gh-pages -d dist"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

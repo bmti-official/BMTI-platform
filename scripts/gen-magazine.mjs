@@ -4,7 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { writeFileSync, mkdirSync } from 'fs';
 
-const SITE = 'https://bmti-official.github.io/BMTI-platform';
+const SITE = 'https://bmti-official.co.kr';
 const s = createClient('https://fiesnznufryrkxcpwuja.supabase.co', 'sb_publishable_eJEbt-Raw_UTFDDghG9nqQ_x32PXONo');
 
 const esc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
