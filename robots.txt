@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bmti-official.github.io/BMTI-platform/sitemap.xml
+Sitemap: https://bmti-official.co.kr/sitemap.xml
