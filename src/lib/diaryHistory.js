@@ -37,6 +37,29 @@ export const hasDiaryHistory = () => getDiaryHistory().length > 0;
 
 export const getEntryForDate = (dateISO) => getDiaryHistory().find(e => e.date === dateISO);
 
+// 한 기록을 서버(diary_entries)에 upsert. tags·sleep_time·weather·created_at 컬럼이
+// 아직 없으면 upsert 전체가 실패하므로, 실패 시 '핵심 컬럼만'으로 한 번 더 시도해서
+// 최소한 그날 기록이 서버에서 지워진 것처럼 되지 않게 한다. (fire-and-forget)
+function pushEntryToServer(userId, e) {
+  const full = {
+    user_id: userId, date: e.date, mood: e.mood,
+    sleep: e.sleep ?? null, overwork: e.overwork ?? null, exercise: e.exercise ?? null,
+    soreness: e.soreness ?? null, note: e.note ?? null, tags: e.tags ?? null,
+    sleep_time: e.sleepTime ?? null, weather: e.weather ?? null,
+    created_at: e.created_at ?? new Date().toISOString(), updated_at: new Date().toISOString(),
+  };
+  return supabase.from('diary_entries').upsert(full, { onConflict: 'user_id,date' }).then(({ error }) => {
+    if (!error) return;
+    const minimal = {
+      user_id: userId, date: e.date, mood: e.mood,
+      sleep: e.sleep ?? null, overwork: e.overwork ?? null, exercise: e.exercise ?? null,
+      soreness: e.soreness ?? null, note: e.note ?? null,
+    };
+    return supabase.from('diary_entries').upsert(minimal, { onConflict: 'user_id,date' })
+      .then(({ error: e2 }) => { if (e2) console.error('일기 기록 서버 저장 실패', e2); });
+  });
+}
+
 // 같은 날짜에 다시 기록하면 그날 것을 덮어쓴다 (하루 1건).
 // extra에는 말랑이의 발견(월간 리포트)이 쓰는 sleep/overwork/exercise/soreness/note를 담을 수 있다 —
 // 캘린더의 '오늘은 여기까지 할게요' 같은 간단 기록은 extra 없이 mood만 넘기면 된다.
@@ -55,28 +78,9 @@ export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
     window.dispatchEvent(new Event('chat_updated'));
   }
 
-  // 로그인한 유저면 서버에도 같이 저장해서 다른 기기에서도 같은 기록을 보게 한다.
-  // 화면을 막지 않도록 결과를 기다리지 않고(fire-and-forget), 실패해도 로컬 기록은 남아있다.
+  // 로그인한 유저면 서버에도 같이 저장한다(fire-and-forget, 실패해도 로컬 기록은 남는다).
   const userId = getCurrentUserId();
-  if (userId) {
-    supabase.from('diary_entries').upsert({
-      user_id: userId,
-      date: dateISO,
-      mood,
-      sleep: extra.sleep ?? null,
-      overwork: extra.overwork ?? null,
-      exercise: extra.exercise ?? null,
-      soreness: extra.soreness ?? null,
-      note: extra.note ?? null,
-      tags: extra.tags ?? null,
-      sleep_time: extra.sleepTime ?? null,
-      created_at: createdAt,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,date' }).then(({ error }) => {
-      // tags·sleep_time·created_at 컬럼이 아직 없으면 이 저장만 실패한다(로컬 기록은 유지됨).
-      if (error) console.error('일기 기록 서버 저장 실패', error);
-    });
-  }
+  if (userId) pushEntryToServer(userId, { date: dateISO, mood, ...extra, created_at: createdAt });
 
   return history;
 };
@@ -112,7 +116,8 @@ export async function syncDiaryHistoryFromServer() {
     if (error) throw error;
     // 서버에 아직 컬럼이 없는 새 신호(tags·sleepTime)는 로컬에 저장된 값을 날짜 기준으로
     // 이어붙여, 다른 기기 동기화가 이 기기의 선택 태그·잠든 시간대를 지우지 않게 한다.
-    const localByDate = Object.fromEntries(getDiaryHistory().map((e) => [e.date, e]));
+    const localHistory = getDiaryHistory();
+    const localByDate = Object.fromEntries(localHistory.map((e) => [e.date, e]));
     const mapped = (data || []).map((row) => {
       const local = localByDate[row.date] || {};
       return {
@@ -124,8 +129,15 @@ export async function syncDiaryHistoryFromServer() {
         weather: row.weather ?? local.weather ?? null,
       };
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
-    return mapped;
+    // ⚠️ 서버 결과로 로컬을 '덮어쓰지' 않는다 — 서버 저장이 실패했던 날의 로컬 기록이
+    // 동기화 때 사라지던 문제(기록 1~2개 유실)를 막기 위해, 서버에 없는 로컬 기록은 그대로 유지하고
+    // 다시 서버로 밀어 올린다(merge).
+    const serverDates = new Set(mapped.map((e) => e.date));
+    const localOnly = localHistory.filter((e) => e.date && !serverDates.has(e.date));
+    const merged = [...mapped, ...localOnly];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    for (const e of localOnly) pushEntryToServer(userId, e); // 유실됐던 로컬 기록 재업로드
+    return merged;
   } catch (e) {
     console.error('일기 기록 서버 동기화 실패', e);
     return getDiaryHistory();

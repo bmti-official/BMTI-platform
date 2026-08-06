@@ -36,7 +36,8 @@ const C = {
 };
 // 현재 2D 말랑이 몸통 색과 맞춘 무드 색(힘들었어요→좋았어요)
 const MOOD_COLOR = { 1: "#8A6E7E", 2: "#C9C09E", 3: "#E8E8EB", 4: "#D0BFEB", 5: "#BF8FE9" };
-const CARD_SHADOW = "0 1px 2px rgba(28,26,23,0.03), 0 8px 20px rgba(28,26,23,0.05)";
+// 박스 그림자를 연한 옐로우 톤으로 통일.
+const CARD_SHADOW = "0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)";
 
 // 섹션 제목 옆 아이콘 — 기기마다 다르게 보이는 유니코드 이모지 대신, 사이트의 다른 하단
 // 네비 아이콘(Navbar.jsx)과 같은 currentColor 라인 아이콘으로 통일한다.

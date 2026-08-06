@@ -500,7 +500,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     }
     if (id === "exercise") {
       return (
-        <AccordionCard question="오늘 운동 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
+        <AccordionCard question="오늘 운동·스트레칭·산책 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
           expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
           {exerciseDidIt === null && (
             <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>

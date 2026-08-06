@@ -10,24 +10,10 @@ import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
-import heroBanner1 from '../assets/가로 광고 베너/hero_banner_1.webp';
-
-// 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀로 노출한다.
-// img가 있으면 이미지 배너(문구가 이미지에 포함), 없으면 그라데이션+문구 배너.
-const HERO_BANNERS = [
-  { img: heroBanner1, title: "나의 BMTI 파트너는?", bg: '#EAF0F6', action: 'quiz' },
-  { emoji: '🌿', title: '오늘 내 몸 컨디션, 말랑이에게', sub: '하루 1분 기록 습관 · 다이어리 시작', bg: 'linear-gradient(100deg,#F6C453,#E8A33D)', dark: true, action: 'aichat' },
-  { emoji: '📈', title: '쌓인 기록이 내 몸 패턴을 알려줘요', sub: '주간 리포트 · 파트너의 편지', bg: 'linear-gradient(100deg,#5B4B8A,#3E3266)', dark: false, action: 'aichat' },
-  { emoji: '❄️', title: '겨울, 앱으로 더 편하게 만나요', sub: '출시 · 혜택 소식 먼저 받기', bg: 'linear-gradient(100deg,#F7D000,#F0C400)', dark: true, action: 'signup' },
-];
+import ocdzVideo from '../assets/가로 광고 베너/OCDZ 반복재생.mp4';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
-  const [bannerIdx, setBannerIdx] = useState(0);
-  const [bannerDragX, setBannerDragX] = useState(0);   // 드래그 중 손가락 따라가는 오프셋(px)
-  const bannerTrackRef = useRef(null);
-  const bannerPausedRef = useRef(false);               // 터치 중이면 자동전환 멈춤
-  const bannerDragRef = useRef({ startX: 0, dragging: false, moved: false });
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -35,38 +21,6 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const dragStartXRef = useRef(0);
   const dragStartOffsetRef = useRef(0);
   const dragDistRef = useRef(0);
-
-  // 상단 배너 자동 전환 (4.5초마다 다음 배너로) — 터치 중(bannerPausedRef)이면 건너뛴다
-  useEffect(() => {
-    const t = setInterval(() => { if (!bannerPausedRef.current) setBannerIdx(i => (i + 1) % HERO_BANNERS.length); }, 4500);
-    return () => clearInterval(t);
-  }, []);
-
-  // 배너 스와이프 — 누르면 자동전환 멈추고 손가락 따라 이동, 떼면 임계치 넘었을 때 앞/뒤로 넘긴다
-  const onBannerDown = (e) => {
-    bannerDragRef.current = { startX: e.clientX, dragging: true, moved: false };
-    bannerPausedRef.current = true;
-    setBannerDragX(0);
-  };
-  const onBannerMove = (e) => {
-    const d = bannerDragRef.current;
-    if (!d.dragging) return;
-    const dx = e.clientX - d.startX;
-    if (Math.abs(dx) > 8) d.moved = true;
-    setBannerDragX(dx);
-  };
-  const onBannerUp = (e) => {
-    const d = bannerDragRef.current;
-    if (!d.dragging) return;
-    d.dragging = false;
-    const dx = (e.clientX ?? d.startX) - d.startX;
-    const w = bannerTrackRef.current?.clientWidth || 320;
-    const threshold = Math.min(60, w * 0.2);
-    if (dx <= -threshold) setBannerIdx(i => (i + 1) % HERO_BANNERS.length);
-    else if (dx >= threshold) setBannerIdx(i => (i - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
-    setBannerDragX(0);
-    bannerPausedRef.current = false; // 자동전환 재개
-  };
 
   const handleRetakeQuiz = async () => {
     if (!isLoggedIn) {
@@ -185,65 +139,22 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 상단 가로형 광고 배너 — 4.5초마다 자동 전환되는 캐러셀 + 하단 점 인디케이터.
-          데스크톱에선 폭을 제한(max-w)해 세로가 과하게 커지지 않게 한다. */}
+      {/* 상단 광고 배너 — OCDZ 반복재생 영상(자동재생·무음·루프). 데스크톱은 폭 제한. */}
       <div className="pt-24 md:pt-28 px-3 max-w-[440px] mx-auto">
-        <div
-          ref={bannerTrackRef}
-          className="relative overflow-hidden rounded-2xl aspect-[3840/1118]"
-          onPointerDown={onBannerDown}
-          onPointerMove={onBannerMove}
-          onPointerUp={onBannerUp}
-          onPointerLeave={onBannerUp}
-          onPointerCancel={onBannerUp}
-          style={{ touchAction: 'pan-y' }}
+        <button
+          onClick={() => setView('quiz')}
+          className="block w-full rounded-2xl overflow-hidden"
+          aria-label="BMTI 검사 시작"
         >
-          <div
-            className="flex h-full"
-            style={{
-              transform: `translateX(calc(-${bannerIdx * 100}% + ${bannerDragX}px))`,
-              transition: bannerDragRef.current.dragging ? 'none' : 'transform .45s ease-out',
-            }}
-          >
-            {HERO_BANNERS.map((b, i) => {
-              const ink = b.dark ? '#3B2E12' : '#FFFFFF';
-              const onClick = () => {
-                if (bannerDragRef.current.moved) { bannerDragRef.current.moved = false; return; } // 스와이프였으면 이동 무시
-                if (b.action === 'quiz') setView('quiz');
-                else if (b.action === 'signup') { isLoggedIn ? setView('mypage') : (onRequireLogin && onRequireLogin()); }
-                else setView('aichat');
-              };
-              return (
-                <button key={i} onClick={onClick} className="shrink-0 w-full h-full text-left select-none" style={{ background: b.bg }}>
-                  {b.img ? (
-                    <img src={b.img} alt={b.title} draggable="false" className="w-full h-full object-cover pointer-events-none" />
-                  ) : (
-                    <div className="flex items-center gap-3 px-5 h-full" style={{ color: ink }}>
-                      <span className="text-3xl md:text-4xl shrink-0">{b.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[min(4.3vw,17px)] md:text-lg leading-snug break-keep">{b.title}</div>
-                        <div className="text-[min(3.2vw,12.5px)] md:text-sm font-medium mt-1 break-keep" style={{ opacity: 0.85 }}>{b.sub}</div>
-                      </div>
-                      <svg className="w-5 h-5 md:w-6 md:h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M9 5l7 7-7 7" /></svg>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        {/* 점 인디케이터 */}
-        <div className="flex justify-center items-center gap-1.5 mt-2.5">
-          {HERO_BANNERS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setBannerIdx(i)}
-              aria-label={`${i + 1}번 배너 보기`}
-              className="rounded-full transition-all duration-300"
-              style={{ width: i === bannerIdx ? 18 : 6, height: 6, background: i === bannerIdx ? '#8B7BD8' : '#D8D3E6' }}
-            />
-          ))}
-        </div>
+          <video
+            src={ocdzVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full block"
+          />
+        </button>
       </div>
 
       {/* Hero Section */}
