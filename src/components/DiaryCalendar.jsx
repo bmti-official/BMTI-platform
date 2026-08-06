@@ -438,13 +438,15 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
       <div style={{ maxWidth: 460, position: "relative", padding: "26px 18px 32px", ...(isCurrent ? { width: "calc(100% - 28px)", margin: "6px auto 16px", ...CUR_CARD } : { margin: "0 auto" }) }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: "#8A857D" }}>{year}년 {month + 1}월</h1>
           <p style={{ fontSize: 13, color: t.accent, fontWeight: 700, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
         </div>
 
+        {/* 요일 위 가로 긴 줄 — 연한 옐로우 */}
+        <div style={{ height: 2, background: C.yellowLine, borderRadius: 2, margin: "0 2px 8px" }} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
           {WEEKDAYS.map((w, i) => (
-            <div key={w} style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: weekdayColor(i) || C.sub, padding: "6px 0" }}>{w}</div>
+            <div key={w} style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: i === 0 ? "#E79A95" : i === 6 ? "#93B2E6" : "#B8B3AA", padding: "6px 0" }}>{w}</div>
           ))}
         </div>
 
@@ -526,7 +528,7 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
       <div style={{ maxWidth: 460, position: "relative", padding: "26px 18px 30px", ...(isCurrent ? { width: "calc(100% - 28px)", margin: "6px auto 16px", ...CUR_CARD } : { margin: "0 auto" }) }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{title}</h1>
+          <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: "#8A857D" }}>{title}</h1>
           <p style={{ fontSize: 13, color: t.accent, fontWeight: 700, margin: "7px 0 0" }}>{count > 0 ? getRecordMessage(count, isM) : "아직 기록이 없어요"}</p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
