@@ -28,8 +28,6 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n) => String(n).padStart(2, "0");
 const weekdayColor = (dow) => (dow === 0 ? SUN_RED : dow === 6 ? SAT_BLUE : null);
 
-// 오늘에 해당하는 달/주만 좌우 전체를 덮는 연한 옐로우, 나머지는 흰색.
-const YELLOW_BG = "#FFFBEA";
 const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const startOfMonth = (d) => new Date(d.getFullYear(), d.getMonth(), 1);
 const startOfWeek = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - x.getDay()); return x; };
@@ -423,8 +421,11 @@ function CalControls({ calView, onHelp, onToggleView, t }) {
   );
 }
 
-// 현재(오늘) 달·주 카드의 연옐로우 배경 — 위아래 끝부분만 흰색으로 살짝 페이드.
-const CUR_BG = `linear-gradient(180deg, #FFFFFF 0px, ${YELLOW_BG} 22px, ${YELLOW_BG} calc(100% - 22px), #FFFFFF 100%)`;
+// 오늘이 든 달·주 카드 — 흰 배경 + 연한 옐로우 그림자 박스('기분 달력' 박스와 같은 형태).
+const CUR_CARD = {
+  background: "#fff", borderRadius: 24, border: "1px solid #F3ECCE",
+  boxShadow: "0 2px 6px rgba(220,188,86,0.20), 0 12px 30px rgba(233,203,110,0.48)",
+};
 function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, onDayPreview, onEditDay, onToday, onFuture, calView, onHelp, onToggleView, onFeedback }) {
   const year = monthDate.getFullYear(), month = monthDate.getMonth();
   const monthKey = `${year}-${pad(month + 1)}`;
@@ -433,8 +434,8 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   return (
-    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? CUR_BG : "#fff", width: "100%" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 32px", position: "relative" }}>
+    <div data-current={isCurrent ? "true" : undefined} style={{ background: "#fff", width: "100%" }}>
+      <div style={{ maxWidth: 460, position: "relative", padding: "26px 18px 32px", ...(isCurrent ? { width: "calc(100% - 28px)", margin: "6px auto 16px", ...CUR_CARD } : { margin: "0 auto" }) }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{year}년 {month + 1}월</h1>
@@ -521,8 +522,8 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
   const monthKey = `${monthRef.getFullYear()}-${pad(monthRef.getMonth() + 1)}`;
   const count = history.filter(e => e.date.startsWith(monthKey)).length;
   return (
-    <div data-current={isCurrent ? "true" : undefined} style={{ background: isCurrent ? CUR_BG : "#fff", width: "100%" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "26px 18px 30px", position: "relative" }}>
+    <div data-current={isCurrent ? "true" : undefined} style={{ background: "#fff", width: "100%" }}>
+      <div style={{ maxWidth: 460, position: "relative", padding: "26px 18px 30px", ...(isCurrent ? { width: "calc(100% - 28px)", margin: "6px auto 16px", ...CUR_CARD } : { margin: "0 auto" }) }}>
         {isCurrent && <CalControls calView={calView} onHelp={onHelp} onToggleView={onToggleView} t={t} />}
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h1 style={{ fontSize: 21, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: C.ink }}>{title}</h1>
