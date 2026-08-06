@@ -36,6 +36,7 @@ const Footer = () => {
         {/* Links */}
         <div className="flex flex-row flex-wrap items-center justify-center gap-1.5 md:gap-3 text-[10px] md:text-xs font-bold text-gray-500">
           <button onClick={() => setIsAboutOpen(true)} className="hover:text-black transition-colors break-keep">[서비스 소개]</button>
+          <a href={`${import.meta.env.BASE_URL}magazine.html`} className="hover:text-black transition-colors break-keep">[건강 매거진]</a>
           <button onClick={() => setIsContactOpen(true)} className="hover:text-black transition-colors break-keep">[문의하기]</button>
           <button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors break-keep">[이용약관]</button>
           <button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors break-keep">[개인정보처리방침]</button>
