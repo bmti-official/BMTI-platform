@@ -10,7 +10,6 @@ import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
-import ocdzVideo from '../assets/가로 광고 베너/OCDZ 반복재생.mp4';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
@@ -139,26 +138,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 상단 광고 배너 — OCDZ 반복재생 영상(자동재생·무음·루프). 데스크톱은 폭 제한. */}
-      <div className="pt-24 md:pt-28 px-3 max-w-[440px] mx-auto">
-        <button
-          onClick={() => setView('quiz')}
-          className="block w-full rounded-2xl overflow-hidden"
-          aria-label="BMTI 검사 시작"
-        >
-          <video
-            src={ocdzVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full block"
-          />
-        </button>
-      </div>
-
       {/* Hero Section */}
-      <section className="pt-10 md:pt-12 pb-24 md:pb-28 px-6 max-w-5xl mx-auto text-center">
+      <section className="pt-24 md:pt-28 pb-24 md:pb-28 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-0">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
             <span className="text-6xl md:text-8xl font-bold">BMTI</span>

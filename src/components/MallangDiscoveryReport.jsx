@@ -404,7 +404,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           >
             ‹
           </button>
-          <span style={{ fontWeight: 800, fontSize: 22, letterSpacing: "-0.02em", minWidth: 130, textAlign: "center", color: "#8A857D" }}>{year}년 {month}월</span>
+          <span style={{ fontWeight: 800, fontSize: 22, letterSpacing: "-0.02em", minWidth: 130, textAlign: "center", color: "#5E594F" }}>{year}년 {month}월</span>
           <button
             onClick={() => changeMonth(1)}
             disabled={!canGoNext}
