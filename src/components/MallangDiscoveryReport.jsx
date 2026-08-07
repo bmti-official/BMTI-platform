@@ -473,7 +473,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 22, padding: "12px 14px", background: "#FFFFFF", border: `1px solid ${C.line}`, borderRadius: 14 }}>
           <span style={{ display: "flex", color: C.sub, marginTop: 1 }}><IconInfo size={14} /></span>
-          <p style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.6, margin: 0 }}>{report.disclaimer}</p>
+          <p style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.6, margin: 0 }}>{report.disclaimer}<br />🤖 이 리포트는 입력하신 기록을 바탕으로 자동 생성된 참고 정보예요.</p>
         </div>
 
         {/* 이번 달 기록·발견을 하나의 PDF로 카카오톡으로 받기 — 20일 이상 기록해야 활성화 */}

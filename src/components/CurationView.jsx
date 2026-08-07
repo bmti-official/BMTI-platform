@@ -212,6 +212,7 @@ export default function CurationView({ bmtiCode }) {
                 ) : (
                   <p style={{ fontSize: 14, color: SUB, lineHeight: 1.7, margin: 0 }}>본문이 아직 없어요.</p>
                 )}
+                <p style={{ fontSize: 11.5, color: MUTE, lineHeight: 1.6, marginTop: 20, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>✍️ 이 글은 AI의 도움을 받아 작성되었어요.</p>
               </div>
             </div>
           </div>

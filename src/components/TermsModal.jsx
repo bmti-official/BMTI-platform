@@ -66,6 +66,13 @@ const TermsModal = ({ isOpen, onClose }) => {
                   <li>서비스 내에서 타인을 비방·괴롭히거나 불쾌감을 주는 행위, 또는 서비스의 정상적인 운영을 방해하는 행위</li>
                 </ul>
               </div>
+
+              <div>
+                <h5 className="font-bold text-gray-900 mb-1">제6조 (AI 이용 안내)</h5>
+                <p className="text-gray-600 break-keep">
+                  본 서비스의 일부 캐릭터·이미지와 콘텐츠는 생성형 AI를 활용해 제작되었으며, BMTI 검사 결과지와 발견 리포트는 이용자가 입력한 기록을 바탕으로 자동으로 생성됩니다. 자동 생성된 결과물은 참고용 정보이며, 오류나 부정확한 내용이 포함될 수 있습니다.
+                </p>
+              </div>
             </div>
           </section>
 

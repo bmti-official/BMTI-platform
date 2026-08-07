@@ -48,6 +48,9 @@ const AboutModal = ({ isOpen, onClose }) => {
               ※ BMTI가 제공하는 검사 결과·리포트·가이드는 신체 기능 향상과 웰니스를 위한 참고용 정보이며,
               의학적 진단·처방·치료를 대신하는 의료 행위가 아닙니다. 통증이나 질환이 있는 경우 반드시 전문의의 진료를 받아주세요.
             </p>
+            <p className="text-gray-500 break-keep text-[13px] leading-relaxed mt-2">
+              ※ 일부 캐릭터·이미지와 콘텐츠는 생성형 AI로 제작되었으며, 결과지·리포트는 입력하신 기록을 바탕으로 자동 생성됩니다.
+            </p>
           </section>
         </div>
 
