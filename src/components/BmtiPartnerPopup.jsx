@@ -1,4 +1,4 @@
-import { CHARACTERS, CHARACTER_NAMES } from '../data';
+import { CHARACTERS, CHARACTER_NAMES, CODE_KO } from '../data';
 import { BMTI_INFO } from './ResultView';
 import { getTypeAccent } from '../lib/typeAccent';
 
@@ -38,7 +38,7 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-2xl font-black tracking-tight">{axisCode}</span>
+                    <span className="text-2xl font-black tracking-tight">{axisCode} <span className="text-lg font-bold text-gray-400">{CODE_KO[axisCode]}</span></span>
                     <span className="bg-pink-100 text-pink-600 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">{CHARACTER_NAMES[axisCode]}</span>
                   </div>
                   <p className="text-gray-500 text-sm leading-snug whitespace-pre-line break-keep">{charInfo?.catchphrase}</p>

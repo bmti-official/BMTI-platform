@@ -182,10 +182,11 @@ export const CHARACTER_NAMES = {
 };
 
 // 4글자 코드의 한글 읽기 (예: OLQM → 올큐엠)
+// AC=애씨 · AL=앨 · OC=오씨 · OL=올 / D=디 · Q=큐 / Z=지 · M=엠
 export const CODE_KO = {
-  ACDZ: '악디지', ACDM: '악디엠', ACQZ: '악큐지', ACQM: '악큐엠',
-  ALDZ: '알디지', ALDM: '알디엠', ALQZ: '알큐지', ALQM: '알큐엠',
-  OCDZ: '옥디지', OCDM: '옥디엠', OCQZ: '옥큐지', OCQM: '옥큐엠',
+  ACDZ: '애씨디지', ACDM: '애씨디엠', ACQZ: '애씨큐지', ACQM: '애씨큐엠',
+  ALDZ: '앨디지', ALDM: '앨디엠', ALQZ: '앨큐지', ALQM: '앨큐엠',
+  OCDZ: '오씨디지', OCDM: '오씨디엠', OCQZ: '오씨큐지', OCQM: '오씨큐엠',
   OLDZ: '올디지', OLDM: '올디엠', OLQZ: '올큐지', OLQM: '올큐엠',
 };
 
