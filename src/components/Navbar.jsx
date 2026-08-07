@@ -178,9 +178,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           <button
             onClick={() => setIsLoggedIn(true)}
             aria-label="카카오 로그인"
-            className="w-11 h-11 bg-[#FEE500] rounded-full flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:bg-[#F4DC00] transition-colors active:scale-95"
+            className="flex items-center gap-1.5 bg-[#FEE500] rounded-full pl-2.5 pr-3.5 h-11 shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:bg-[#F4DC00] transition-colors active:scale-95"
           >
             <KakaoIcon className="w-5 h-5 fill-black" />
+            <span className="text-[13px] font-bold text-[#3C1E1E] whitespace-nowrap">3초 로그인/회원가입</span>
           </button>
         )}
       </div>

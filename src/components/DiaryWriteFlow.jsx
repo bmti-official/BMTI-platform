@@ -187,6 +187,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const selDate = targetDate ? new Date(`${targetDate}T00:00:00`) : new Date();
 
   // 블럭 순서·숨김·편집 모드
+  // 일상 정보에서 불러온(profile) 부위의 '언제'를 이 화면에서 직접 고칠 수 있게 하는 편집 대상 목록
+  const [whenEditParts, setWhenEditParts] = useState([]);
+
   const [blockOrder, setBlockOrder] = useState(["sore", "sleep", "tags", "exercise", "sitting", "oneLine"]);
   const [hiddenBlocks, setHiddenBlocks] = useState([]);
   const [editMode, setEditMode] = useState(false);
@@ -623,9 +626,13 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                   <button onClick={() => setSore(s => ({ ...s, levels: { ...s.levels, [p]: Math.min(10, lvl + 1) } }))} aria-label="늘리기"
                     style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 10, border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 20, fontWeight: 800, lineHeight: 1, cursor: "pointer" }}>+</button>
                 </div>
-                {/* 언제 — 말랑 정보 부위는 표시만, 추가한 부위는 중복 선택 */}
-                {fromProfile ? (
-                  <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginTop: 8 }}>언제: {whenText(p) || "—"}</div>
+                {/* 언제 — 일상 정보에서 불러온 부위는 표시만 하되 '수정' 버튼으로 직접 고칠 수 있게, 추가한 부위는 중복 선택 */}
+                {fromProfile && !whenEditParts.includes(p) ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                    <div style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>언제: {whenText(p) || "—"}</div>
+                    <button onClick={() => setWhenEditParts(a => [...a, p])}
+                      style={{ border: `1px solid ${C.line}`, background: "#fff", color: t.accentDeep, fontSize: 11, fontWeight: 800, cursor: "pointer", borderRadius: 999, padding: "3px 10px" }}>수정</button>
+                  </div>
                 ) : (
                   <>
                     <div style={{ fontSize: 12, color: C.sub, fontWeight: 700, margin: "12px 0 8px" }}>{partDisplay(p)}{hasBatchim(partDisplay(p)) ? "은" : "는"} 언제 그러셨어요? <span style={{ color: C.tileOffText, fontWeight: 600 }}>중복 선택</span></div>
@@ -639,6 +646,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                       <input value={sore.whenOthers[p] || ""} onChange={e => setSore(s => ({ ...s, whenOthers: { ...s.whenOthers, [p]: e.target.value } }))}
                         placeholder="예: 계단 오를 때"
                         style={{ width: "100%", marginTop: 8, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
+                    )}
+                    {fromProfile && (
+                      <button onClick={() => setWhenEditParts(a => a.filter(x => x !== p))}
+                        style={{ marginTop: 10, border: "none", background: "transparent", color: t.accentDeep, fontSize: 12.5, fontWeight: 800, cursor: "pointer", padding: "2px 0" }}>완료</button>
                     )}
                   </>
                 )}

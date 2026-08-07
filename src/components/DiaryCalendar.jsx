@@ -172,7 +172,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   };
 
   const quickSaveMood = () => { saveDiaryEntry(todayStr, poppedMood); setStressMood(poppedMood); setShowMoodPopup(false); setPoppedMood(null); setShowStressPopup(true); };
-  const continueToFullForm = () => { setShowMoodPopup(false); const v = poppedMood; setPoppedMood(null); onPickMood && onPickMood(v); };
+  // 기분을 고르고 '네, 조금 더 기록할게요'를 누르면, 상세 입력을 완료하지 않고 나가더라도
+  // 최소한 오늘의 기분(말랑이)은 남도록 먼저 저장해둔다. (상세 완료 시 같은 날짜로 덮어써짐)
+  const continueToFullForm = () => { saveDiaryEntry(todayStr, poppedMood); setShowMoodPopup(false); const v = poppedMood; setPoppedMood(null); onPickMood && onPickMood(v); };
 
   // 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
   const buildEntrySummary = (entry) => {
@@ -242,6 +244,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               maskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
             }}
           />
+          {/* 가운데 누끼 캐릭터를 감싸는 연옐로우 글로우 링 — 하단 네비게이션바 위(z-index)로 떠 보이게 */}
+          <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", width: 84, height: 84, borderRadius: "50%", background: "transparent", boxShadow: "0 0 0 3px rgba(253,246,220,0.95), 0 0 26px 9px rgba(240,224,120,0.6)", zIndex: 56, pointerEvents: "none" }} />
           <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
             <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button
