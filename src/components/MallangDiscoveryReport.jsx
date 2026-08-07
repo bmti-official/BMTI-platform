@@ -1932,22 +1932,67 @@ function computeInsights(entries, userData, report) {
   })();
 
   // ── 2. 수면 나비효과 ──
+  // ── 2. 나비 효과 — 불편함이 강했던 날을, 그 3일 안(-1~-3일)의 무리함·수면과 이어본다 ──
+  const shiftDay = (ds, delta) => { const dt = new Date(ds + "T00:00:00"); dt.setDate(dt.getDate() + delta); const iso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`; return byDate[iso]; };
   const butterfly = (() => {
-    const poor = days.filter(d => d.sleep != null && d.sleep <= 1);
-    if (poor.length < 3) return null;
-    const nexts = poor.map(d => nextOf(d.date)).filter(Boolean);
-    if (nexts.length < 3) return null;
-    const overRate = nexts.filter(n => n.overwork?.yes).length / nexts.length;
-    const soreParts = {}; nexts.forEach(n => (n.soreness || []).forEach(s => { soreParts[s.part] = (soreParts[s.part] || 0) + 1; }));
+    // 하루 최고 불편 강도가 5점 이상이었던 '강한 불편' 날
+    const strong = days.map(d => {
+      const xs = (d.soreness || []).map(s => s.level).filter(v => typeof v === "number");
+      return { d, max: xs.length ? Math.max(...xs) : null };
+    }).filter(x => x.max != null && x.max >= 5);
+    if (strong.length < 3) return null;
+    const WIN = 3;
+    let overBefore = 0, poorBefore = 0;
+    strong.forEach(({ d }) => {
+      let hasOver = false, hasPoor = false;
+      for (let k = 1; k <= WIN; k++) { const pv = shiftDay(d.date, -k); if (!pv) continue; if (pv.overwork?.yes) hasOver = true; if (pv.sleep != null && pv.sleep <= 1) hasPoor = true; }
+      if (hasOver) overBefore++;
+      if (hasPoor) poorBefore++;
+    });
+    if (overBefore === 0 && poorBefore === 0) return null;
+    const soreParts = {}; strong.forEach(({ d }) => (d.soreness || []).forEach(s => { if (s.level >= 5) soreParts[s.part] = (soreParts[s.part] || 0) + 1; }));
     const topSore = topOf(soreParts);
-    const tagCnt = {}; nexts.forEach(n => (n.tags || []).forEach(tg => { tagCnt[tg] = (tagCnt[tg] || 0) + 1; }));
-    const topTags = Object.entries(tagCnt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([t]) => t);
+    const topLabel = topSore ? (PARTS[topSore.key] || topSore.key) : null;
+    const partTxt = topLabel ? `${topLabel} ` : "";
     let message;
-    if (topSore && overRate >= 0.4) message = `'뒤척였어요·밤을 새웠어요'로 기록한 다음 날엔 유독 오래 앉아 무리하고, ${PARTS[topSore.key] || topSore.key}이(가) 뻐근하다는 기록이 많았어요. 피곤할수록 자세가 쉽게 무너지나 봐요.`;
-    else if (topTags.length) message = `수면의 질이 좋지 않았던 다음 날엔 어김없이 ${topTags.map(t => `#${t}`).join("과 ")} 태그를 찾으셨네요!`;
-    else if (topSore) message = `잘 못 잔 다음 날엔 ${PARTS[topSore.key] || topSore.key} 불편함을 더 자주 느끼셨어요.`;
-    else return null;
-    return { poorN: poor.length, topSore: topSore ? (PARTS[topSore.key] || topSore.key) : null, topTags, overRate, message };
+    if (overBefore && poorBefore) message = `${partTxt}불편함이 강했던 ${strong.length}일을 되짚어보니, 그 3일 안에 무리한 날이 ${overBefore}번, 잘 못 잔 날이 ${poorBefore}번 있었어요. 며칠 전의 무리함과 수면이 나비처럼 몸에 돌아오나 봐요.`;
+    else if (overBefore) message = `${partTxt}불편함이 강했던 ${strong.length}일 중 ${overBefore}일은, 그 3일 안에 '무리했다'는 기록이 먼저 있었어요. 무리한 날의 여파가 며칠 뒤에 오나 봐요.`;
+    else message = `${partTxt}불편함이 강했던 ${strong.length}일 중 ${poorBefore}일은, 그 3일 안에 잘 못 잔 밤이 먼저 있었어요. 수면의 흔적이 며칠 뒤 몸에 남나 봐요.`;
+    return { strongN: strong.length, overBefore, poorBefore, topSore: topLabel, message };
+  })();
+
+  // ── 요일별 방전 패턴 — 요일마다 불편함 강도 평균, 가장 높은 요일 강조 ──
+  const weekdaySore = (() => {
+    const byWd = {};
+    days.forEach(d => { const wd = new Date(d.date + "T00:00:00").getDay(); (d.soreness || []).forEach(s => { if (typeof s.level === "number") (byWd[wd] ||= []).push(s.level); }); });
+    const wdAvg = [];
+    for (let wd = 0; wd < 7; wd++) { const arr = byWd[wd] || []; wdAvg.push({ wd, avg: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0, n: arr.length }); }
+    const withData = wdAvg.filter(x => x.n > 0);
+    if (withData.length < 2) return null;
+    const peak = withData.reduce((m, x) => (x.avg > m.avg ? x : m), withData[0]);
+    const maxAvg = Math.max(...wdAvg.map(x => x.avg), 1);
+    const peakLabel = WD_FULL[peak.wd], prevLabel = WD_FULL[(peak.wd + 6) % 7];
+    const comment = `${prevLabel}요일까지 누적된 피로가 ${peakLabel}요일에 한꺼번에 몰려오나 봐요. ${peakLabel}요일 오후엔 꼭 스트레칭으로 몸을 풀어볼까요?`;
+    return { wdAvg, peak, maxAvg, comment };
+  })();
+
+  // ── 마음과 몸의 연결고리 — '무리했어요'(신체) vs '스트레스·짜증'(감정) 날의 불편 강도 비교 ──
+  const mindBody = (() => {
+    const NEG = new Set(["스트레스", "긴장함", "방전됨"]);
+    const dayAvg = (d) => { const xs = (d.soreness || []).map(s => s.level).filter(v => typeof v === "number"); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
+    const physDays = days.filter(d => d.overwork?.yes);
+    const emoDays = days.filter(d => (d.tags || []).some(tg => NEG.has(tg)));
+    if (physDays.length < 2 || emoDays.length < 2) return null;
+    const avgOf = (arr) => { const xs = arr.map(dayAvg).filter(v => v != null); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
+    const physAvg = avgOf(physDays), emoAvg = avgOf(emoDays);
+    if (physAvg == null || emoAvg == null) return null;
+    const emoParts = {}; emoDays.forEach(d => (d.soreness || []).forEach(s => { emoParts[s.part] = (emoParts[s.part] || 0) + 1; }));
+    const topEmoParts = Object.entries(emoParts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => PARTS[k] || k);
+    const emoHigher = emoAvg > physAvg + 0.3;
+    const comment = emoHigher
+      ? `몸을 많이 움직인 날보다, 스트레스를 강하게 받은 날에 ${topEmoParts.length ? topEmoParts.join("와 ") : "몸"}의 불편함이 훨씬 높게 치솟았어요. 긴장해서 몸이 굳었나 봐요.`
+      : `이번 달은 무리한 날과 스트레스받은 날의 불편함이 비슷하게 나타났어요. 몸과 마음을 함께 살펴봐요.`;
+    return { physAvg, emoAvg, physN: physDays.length, emoN: emoDays.length, topEmoParts, emoHigher, comment };
   })();
 
   // ── 3. 기록의 정성 ──
@@ -2122,7 +2167,7 @@ function computeInsights(entries, userData, report) {
     return { cards };
   })();
 
-  return { soreReport, slots, butterfly, effort, logged, recovery, streak, factcheck, dday, letter, recordedDays: days.length };
+  return { soreReport, weekdaySore, mindBody, slots, butterfly, effort, logged, recovery, streak, factcheck, dday, letter, recordedDays: days.length };
 }
 
 // ── 인사이트 카드 공통 껍데기 ──
@@ -2130,14 +2175,14 @@ function InsCard({ badge, title, sub, children, bg }) {
   return (
     <div style={{ background: bg || C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: getTypeAccent().accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>{badge}</div>
-      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>{title}</div>
-      {sub && <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0" }}>{sub}</p>}
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em", wordBreak: "keep-all", textWrap: "balance" }}>{title}</div>
+      {sub && <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{sub}</p>}
       <div style={{ marginTop: 14 }}>{children}</div>
     </div>
   );
 }
 function Insight({ children }) {
-  return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all" }}>{children}</p>;
+  return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{children}</p>;
 }
 
 function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, onWeatherUpdated }) {
@@ -2153,7 +2198,8 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const exProfile = buildProfileSummary(EXAMPLE_USER);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {ins.soreReport ? <SoreReportCard data={ins.soreReport} /> : lock(<SoreReportCard data={exIns.soreReport} />)}
+      {ins.weekdaySore ? <WeekdayDrainCard data={ins.weekdaySore} /> : (exIns.weekdaySore && lock(<WeekdayDrainCard data={exIns.weekdaySore} />))}
+      {ins.mindBody ? <MindBodyLinkCard data={ins.mindBody} /> : (exIns.mindBody && lock(<MindBodyLinkCard data={exIns.mindBody} />))}
       {ins.butterfly ? <ButterflyCard data={ins.butterfly} /> : (exIns.butterfly && lock(<ButterflyCard data={exIns.butterfly} />))}
       {ins.recovery ? <RecoveryCard data={ins.recovery} /> : (exIns.recovery && lock(<RecoveryCard data={exIns.recovery} />))}
       {ins.streak ? <StreakCard data={ins.streak} /> : (exIns.streak && lock(<StreakCard data={exIns.streak} />))}
@@ -2274,36 +2320,117 @@ function SlotCard({ slots }) {
 // 2. 밤낮 연결 고리 — '잘 못 잔 밤'이 '다음날'에 남긴 흔적을 위→아래 흐름으로 보여준다
 function ButterflyCard({ data }) {
   const t = getTypeAccent();
-  const dayResult = data.topSore ? `${data.topSore}이 뻐근했어요` : (data.topTags?.[0] ? `#${data.topTags[0]} 태그가 많았어요` : "컨디션이 가라앉았어요");
-  const dayEmoji = data.topSore ? "😣" : (data.topTags?.[0] ? "🏷️" : "🥱");
   return (
-    <InsCard badge="수면 나비효과" title="오늘의 잠 → 내일의 나" sub="잘 못 잔 밤이 다음날 몸에 남긴 흔적이에요">
+    <InsCard badge="나비 효과" title="며칠 전의 나 → 오늘의 몸" sub="불편함이 강했던 날, 그 3일 안의 무리함·수면을 되짚어봤어요">
       <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 10 }}>
-        {/* 밤 패널 */}
-        <div style={{ background: "linear-gradient(135deg,#37325C,#4B4477)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 26, lineHeight: 1 }}>🌙</span>
-          <div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.62)", marginBottom: 2 }}>뒤척이거나 밤을 새운 밤</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>잘 못 잔 밤이 <b style={{ color: "#FFD98A", fontSize: 17 }}>{data.poorN}번</b></div>
+        {/* 원인 패널 — 강한 불편 3일 이내의 무리함/수면 */}
+        <div style={{ background: "linear-gradient(135deg,#37325C,#4B4477)", borderRadius: 16, padding: "14px 16px" }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.62)", marginBottom: 9 }}>불편이 강했던 날의 3일 안에</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1, background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 12px" }}>
+              <div style={{ fontSize: 21, lineHeight: 1 }}>💦</div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", marginTop: 5 }}>무리한 날 <b style={{ color: "#FFD98A", fontSize: 15 }}>{data.overBefore}번</b></div>
+            </div>
+            <div style={{ flex: 1, background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 12px" }}>
+              <div style={{ fontSize: 21, lineHeight: 1 }}>🌙</div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", marginTop: 5 }}>잘 못 잔 밤 <b style={{ color: "#FFD98A", fontSize: 15 }}>{data.poorBefore}번</b></div>
+            </div>
           </div>
         </div>
-        {/* 연결 화살표 + '다음날' 라벨 */}
+        {/* 연결 화살표 + '며칠 뒤' 라벨 */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: "-4px 0" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: t.accentSoft, color: t.accentDeep, fontSize: 11, fontWeight: 800, padding: "4px 12px", borderRadius: 999 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            그 다음날
+            며칠 뒤
           </span>
         </div>
-        {/* 다음날 패널 */}
-        <div style={{ background: "linear-gradient(135deg,#FFF3DC,#FCE8C6)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 26, lineHeight: 1 }}>{dayEmoji}</span>
+        {/* 결과 패널 — 강한 불편 */}
+        <div style={{ background: "linear-gradient(135deg,#FDECEC,#FADCDC)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 26, lineHeight: 1 }}>😣</span>
           <div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: "#B08A48", marginBottom: 2 }}>다음날 자주 남긴 기록</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#7A5A22" }}>{dayResult}</div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: "#B23B36", marginBottom: 2 }}>{data.topSore ? `${data.topSore} 불편이 강했던 날` : "불편이 강했던 날"}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#8E2E2A" }}>강한 불편이 <b style={{ fontSize: 17 }}>{data.strongN}일</b></div>
           </div>
         </div>
       </div>
       <Insight>{data.message}</Insight>
+    </InsCard>
+  );
+}
+
+// 요일별 방전 패턴 — 미니 막대그래프 + 최고 요일 강조 + 팩트 체크 코멘트
+function WeekdayDrainCard({ data }) {
+  const t = getTypeAccent();
+  const WD = ["일", "월", "화", "수", "목", "금", "토"];
+  const order = [1, 2, 3, 4, 5, 6, 0]; // 월~일
+  const peakWd = data.peak.wd;
+  return (
+    <InsCard badge="요일별 방전 패턴" title="🗓️ 나의 요일별 방전 패턴" sub="일주일 중 몸이 가장 많이 방전되는 요일을 짚어봤어요">
+      <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 16px", lineHeight: 1.5, wordBreak: "keep-all" }}>
+        이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 몸이 가장 많이 불편했어요.
+      </p>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: 96, padding: "0 2px" }}>
+        {order.map((wd) => {
+          const rec = data.wdAvg[wd];
+          const h = data.maxAvg ? Math.max(6, Math.round((rec.avg / data.maxAvg) * 74)) : 6;
+          const isPeak = wd === peakWd && rec.n > 0;
+          return (
+            <div key={wd} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+              {isPeak && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#E0554F" }}>최고조!</span>}
+              {isPeak && <span style={{ fontSize: 12, marginBottom: -3 }}>🔴</span>}
+              <div style={{ width: "66%", maxWidth: 22, height: h, borderRadius: 6, background: isPeak ? "linear-gradient(180deg,#F0655F,#E0554F)" : "#E7E1D5", boxShadow: isPeak ? "0 3px 8px rgba(224,85,79,0.35)" : "none", transition: "height .3s" }} />
+              <span style={{ fontSize: 11, fontWeight: isPeak ? 800 : 600, color: isPeak ? "#E0554F" : C.sub }}>{WD[wd]}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 16, background: t.accentSoft, borderRadius: 14, padding: "13px 15px", display: "flex", gap: 9, alignItems: "flex-start" }}>
+        <span style={{ fontSize: 15, flexShrink: 0 }}>💡</span>
+        <p style={{ fontSize: 12.5, color: t.accentDeep, fontWeight: 700, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{data.comment}</p>
+      </div>
+    </InsCard>
+  );
+}
+
+// 마음과 몸의 연결고리 — 무리한 날 vs 스트레스받은 날의 불편 강도 비교
+function MindBodyLinkCard({ data }) {
+  const dots = (avg, color) => {
+    const filled = Math.max(0, Math.min(5, Math.round(avg / 2)));
+    return (
+      <span style={{ display: "inline-flex", gap: 3 }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span key={i} style={{ width: 11, height: 11, borderRadius: "50%", background: i < filled ? color : "#E7E1D5" }} />
+        ))}
+      </span>
+    );
+  };
+  return (
+    <InsCard badge="마음과 몸의 연결고리" title="🔗 마음과 몸의 연결고리" sub="몸의 무리함과 마음의 힘듦, 어느 쪽이 더 아프게 남았을까요">
+      {data.emoHigher && (
+        <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 14px", lineHeight: 1.5, wordBreak: "keep-all" }}>
+          몸보다 마음이 힘들 때, 내 몸은 더 크게 아파했어요.
+        </p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 14, padding: "13px 15px" }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, marginBottom: 8 }}>🏃 '무리했어요' 기록한 날 <span style={{ color: C.sub, fontWeight: 700 }}>({data.physN}일)</span></div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontSize: 12.5, color: C.sub, fontWeight: 700 }}>불편함 평균 ➔ <b style={{ color: "#C9973A", fontSize: 15 }}>{data.physAvg.toFixed(1)}점</b></span>
+            {dots(data.physAvg, "#EEC24A")}
+          </div>
+        </div>
+        <div style={{ background: "#FDF3F2", border: "1px solid #F3DDDD", borderRadius: 14, padding: "13px 15px" }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#B23B36", marginBottom: 8 }}>🌩️ '스트레스·짜증' 기록한 날 <span style={{ color: "#C6928F", fontWeight: 700 }}>({data.emoN}일)</span></div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontSize: 12.5, color: "#B0736E", fontWeight: 700 }}>불편함 평균 ➔ <b style={{ color: "#E0554F", fontSize: 15 }}>{data.emoAvg.toFixed(1)}점</b></span>
+            {dots(data.emoAvg, "#E0554F")}
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 14, background: "#FDF3F2", borderRadius: 14, padding: "13px 15px", display: "flex", gap: 9, alignItems: "flex-start" }}>
+        <span style={{ fontSize: 15, flexShrink: 0 }}>💡</span>
+        <p style={{ fontSize: 12.5, color: "#8E2E2A", fontWeight: 700, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{data.comment}</p>
+      </div>
     </InsCard>
   );
 }
@@ -2381,6 +2508,7 @@ function LampClockCard({ data, nickname }) {
 }
 
 // 7. 초심 저울(프로필 팩트체크) — 최근 저장한 '일상 정보' 선택을 보여주고, 그대로 이번 달이 어땠는지 이어본다
+const FACT_CAT_ICON = { "운동 빈도": "🔁", "운동 목적": "🎯", "자주 하는 자세": "🧍", "불편한 부위": "📍" };
 function FactCheckCard({ rows = [], profile }) {
   const t = getTypeAccent();
   const p = profile || {};
@@ -2391,26 +2519,33 @@ function FactCheckCard({ rows = [], profile }) {
   if (p.sore?.length) chips.push({ label: "불편한 부위", val: p.sore.join(" · ") });
   return (
     <InsCard badge="처음의 다짐 · 팩트 체크" title="내가 정한 것, 이번 달은 어땠을까" sub="가장 최근에 정한 일상 정보와 이번 달 기록을 이어봤어요">
+      {/* 내가 정한 일상 정보 — 카테고리 아이콘 + 값 카드 2열 */}
       {chips.length > 0 && (
-        <div style={{ background: t.accentSoft, borderRadius: 14, padding: "13px 15px", marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, marginBottom: 9 }}>📌 내가 정한 일상 정보</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        <div style={{ background: t.accentSoft, borderRadius: 16, padding: "14px 14px 15px", marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 11 }}>📌 내가 정한 일상 정보</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {chips.map((c, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 9 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.sub, width: 68, flexShrink: 0 }}>{c.label}</span>
-                <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, lineHeight: 1.4, wordBreak: "keep-all" }}>{c.val}</span>
+              <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "10px 11px", display: "flex", flexDirection: "column", gap: 3, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: C.sub, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 11 }}>{FACT_CAT_ICON[c.label]}</span>{c.label}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.35, wordBreak: "keep-all" }}>{c.val}</span>
               </div>
             ))}
           </div>
         </div>
       )}
-      <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, margin: "0 2px 8px" }}>→ 그래서 이번 달은</div>
+      {/* 화살표 라벨 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7, margin: "0 2px 10px" }}>
+        <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, borderRadius: 999, padding: "4px 11px" }}>→ 그래서 이번 달은</span>
+        <span style={{ flex: 1, height: 1, background: C.line }} />
+      </div>
       {rows.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {rows.map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 12, padding: "12px 13px" }}>
-              <span style={{ fontSize: 15, marginTop: 1, flexShrink: 0 }}>{typeof r === "string" ? "⚖️" : r.icon}</span>
-              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{typeof r === "string" ? r : r.text}</p>
+            <div key={i} style={{ display: "flex", gap: 11, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 13, padding: "13px 14px", borderLeft: `3px solid ${t.accent}` }}>
+              <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>{typeof r === "string" ? "⚖️" : r.icon}</span>
+              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all", paddingTop: 2 }}>{typeof r === "string" ? r : r.text}</p>
             </div>
           ))}
         </div>
@@ -2476,7 +2611,7 @@ function LetterCard({ data, isM, bmtiCode }) {
   return (
     <div style={{ background: "linear-gradient(180deg,#FFFDF7,#FBF4E6)", borderRadius: 20, padding: "20px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #EEE4CE", position: "relative", overflow: "hidden" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>이번 달의 피날레</div>
-      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink }}>내 BMTI 파트너의 편지</div>
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, wordBreak: "keep-all", textWrap: "balance" }}>내 BMTI 파트너의 편지</div>
 
       {/* 누끼 파트너 캐릭터 — 박스 안에 담는다 */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, margin: "16px 0 4px" }}>
@@ -2494,7 +2629,7 @@ function LetterCard({ data, isM, bmtiCode }) {
         </button>
       ) : (
         <div style={{ marginTop: 12, animation: "letterOpen .4s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: "16px 15px", border: "1px dashed #E3D6B4", lineHeight: 1.7, fontSize: 13.5, color: "#3F3A31", fontWeight: 600, wordBreak: "keep-all" }}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: "16px 15px", border: "1px dashed #E3D6B4", lineHeight: 1.7, fontSize: 13.5, color: "#3F3A31", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty" }}>
             {data.body}
           </div>
           <div style={{ textAlign: "right", fontSize: 12, fontWeight: 800, color: t.accentDeep, marginTop: 10 }}>— 당신의 BMTI 파트너, {charName} 드림</div>
