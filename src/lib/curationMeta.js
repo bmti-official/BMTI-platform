@@ -12,5 +12,16 @@ export const CURATION_THEME = {
 
 export const CURATION_CATEGORIES = Object.keys(CURATION_THEME);
 
+// 큐레이션 태그 축 — 부위 × 유형 × 성격(글 종류). 한 글에 여러 개를 달 수 있다.
+export const CURATION_BODY_PARTS = ["목·어깨", "허리·골반", "무릎", "손목"];
+export const CURATION_TYPES = ["AZ", "AM", "OZ", "OM"];
+export const CURATION_KINDS = ["구별해주는 글", "경계 알려주는 글", "속설"];
+
+// BMTI 4글자 코드 → 큐레이션 2글자 유형(첫 글자 A/O + 끝 글자 Z/M). 예: OLQM → OM
+export const toCurationType = (bmtiCode) => {
+  const c = (bmtiCode ? String(bmtiCode).split("-")[0] : "").toUpperCase();
+  return c.length >= 2 ? c[0] + c[c.length - 1] : "";
+};
+
 export const curationTheme = (cat) =>
   CURATION_THEME[cat] || { grad: "linear-gradient(135deg,#F1EEE8,#E4DECF)", emoji: "✨" };

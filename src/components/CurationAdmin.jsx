@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { CURATION_CATEGORIES, curationTheme } from "../lib/curationMeta";
+import { CURATION_CATEGORIES, curationTheme, CURATION_BODY_PARTS, CURATION_TYPES, CURATION_KINDS } from "../lib/curationMeta";
 
 // 관리자(닉네임 BMTI)만 여는 큐레이션 콘텐츠 관리 화면 — 등록/수정/삭제.
 // 저장하면 큐레이션 피드에 바로 반영된다(= 화이트보드 메뉴판).
@@ -9,6 +9,7 @@ const INK = "#1C1A17", SUB = "#8A8378", LINE = "#EEEAE2";
 const EMPTY = {
   title: "", body: "", category: CURATION_CATEGORIES[0], emoji: "",
   author: "말랑 연구소", featured: false, published: true, sort_order: 0,
+  body_parts: [], bmti_types: [], kind: "", pinned: false,
 };
 
 export default function CurationAdmin({ accent, onClose, onChanged }) {
@@ -42,6 +43,9 @@ export default function CurationAdmin({ accent, onClose, onChanged }) {
       title: r.title || "", body: r.body || "", category: r.category || CURATION_CATEGORIES[0],
       emoji: r.emoji || "", author: r.author || "말랑 연구소",
       featured: !!r.featured, published: r.published !== false, sort_order: r.sort_order || 0,
+      body_parts: Array.isArray(r.body_parts) ? r.body_parts : [],
+      bmti_types: Array.isArray(r.bmti_types) ? r.bmti_types : [],
+      kind: r.kind || "", pinned: !!r.pinned,
     });
     window.scrollTo?.({ top: 0 });
   };
@@ -53,6 +57,8 @@ export default function CurationAdmin({ accent, onClose, onChanged }) {
       title: form.title.trim(), body: form.body.trim() || null, category: form.category,
       emoji: form.emoji.trim() || null, author: form.author.trim() || "말랑 연구소",
       featured: form.featured, published: form.published, sort_order: Number(form.sort_order) || 0,
+      body_parts: form.body_parts, bmti_types: form.bmti_types,
+      kind: form.kind || null, pinned: form.pinned,
       updated_at: new Date().toISOString(),
     };
     const q = editId
@@ -109,6 +115,38 @@ export default function CurationAdmin({ accent, onClose, onChanged }) {
                 <input style={{ ...inputStyle, textAlign: "center" }} value={form.emoji} onChange={e => set("emoji", e.target.value)} placeholder={curationTheme(form.category).emoji} />
               </div>
             </div>
+            {/* 태그 축 — 부위 × 유형 × 성격 (한 글에 여러 개 선택 가능) */}
+            <div>
+              <label style={labelStyle}>부위 (여러 개 가능)</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {CURATION_BODY_PARTS.map(bp => {
+                  const on = form.body_parts.includes(bp);
+                  return (
+                    <button key={bp} type="button" onClick={() => set("body_parts", on ? form.body_parts.filter(x => x !== bp) : [...form.body_parts, bp])}
+                      style={{ border: on ? "none" : `1.5px solid ${LINE}`, cursor: "pointer", borderRadius: 999, padding: "8px 13px", fontSize: 13, fontWeight: 800, fontFamily: "inherit", background: on ? accent.accentDeep : "#fff", color: on ? "#fff" : SUB }}>{bp}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>유형 (여러 개 가능)</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {CURATION_TYPES.map(ty => {
+                  const on = form.bmti_types.includes(ty);
+                  return (
+                    <button key={ty} type="button" onClick={() => set("bmti_types", on ? form.bmti_types.filter(x => x !== ty) : [...form.bmti_types, ty])}
+                      style={{ border: on ? "none" : `1.5px solid ${LINE}`, cursor: "pointer", borderRadius: 999, padding: "8px 14px", fontSize: 13, fontWeight: 800, fontFamily: "inherit", background: on ? accent.accentDeep : "#fff", color: on ? "#fff" : SUB }}>{ty}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>글 종류(성격)</label>
+              <select style={{ ...inputStyle, appearance: "none" }} value={form.kind} onChange={e => set("kind", e.target.value)}>
+                <option value="">(선택 안 함)</option>
+                {CURATION_KINDS.map(k => <option key={k} value={k}>{k}</option>)}
+              </select>
+            </div>
             <div>
               <label style={labelStyle}>본문</label>
               <textarea style={{ ...inputStyle, minHeight: 120, resize: "vertical", lineHeight: 1.6 }} value={form.body} onChange={e => set("body", e.target.value)} placeholder="콘텐츠 내용을 적어주세요. 줄바꿈 그대로 보여져요." />
@@ -123,9 +161,12 @@ export default function CurationAdmin({ accent, onClose, onChanged }) {
                 <input type="number" style={inputStyle} value={form.sort_order} onChange={e => set("sort_order", e.target.value)} />
               </div>
             </div>
-            <div style={{ display: "flex", gap: 18, marginTop: 2 }}>
+            <div style={{ display: "flex", gap: 16, marginTop: 2, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13.5, fontWeight: 700, color: INK, cursor: "pointer" }}>
-                <input type="checkbox" checked={form.featured} onChange={e => set("featured", e.target.checked)} /> 이달의 추천(히어로)
+                <input type="checkbox" checked={form.pinned} onChange={e => set("pinned", e.target.checked)} /> 📌 꼭 알아두면 좋은 것(고정)
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13.5, fontWeight: 700, color: INK, cursor: "pointer" }}>
+                <input type="checkbox" checked={form.featured} onChange={e => set("featured", e.target.checked)} /> ⭐ 추천
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13.5, fontWeight: 700, color: INK, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.published} onChange={e => set("published", e.target.checked)} /> 공개
