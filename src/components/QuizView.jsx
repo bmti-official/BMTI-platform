@@ -19,6 +19,12 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) =>
   const currentStep = phase === 'quiz' ? step + 1 : shuffledQuestions.length;
   const progress = (currentStep / totalSteps) * 100;
 
+  // 고정 높이 박스에 맞춰, 현재 질문의 글자 수가 많을수록 제목 폰트를 자동으로 줄인다.
+  const _q = shuffledQuestions[step] || {};
+  const _qLen = ((_q.prefix || '') + (_q.text || '')).replace(/\s/g, '').length;
+  const titlePx = _qLen <= 22 ? 26 : _qLen <= 34 ? 23 : _qLen <= 48 ? 20 : _qLen <= 66 ? 18 : 16;
+  const prefixPx = Math.max(13, Math.round(titlePx * 0.68));
+
   const handleAnswer = (score) => {
     const currentQuestion = shuffledQuestions[step];
     const newAnswers = [...answers, { id: currentQuestion.id, score }];
@@ -97,13 +103,13 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) =>
     <div className="min-h-screen pt-20 pb-24 px-6 max-w-3xl mx-auto fade-in">
       {/* Progress bar */}
       <div className="mb-12">
-        <div className="flex items-center mb-2">
+        <div className="flex items-center mb-2 h-8">
           {(step > 0) && (
             <button
               onClick={handleBack}
-              className="bg-white border border-gray-200 rounded-full flex items-center justify-center mr-4 flex-shrink-0 hover:bg-gray-50 transition-colors shadow-sm px-4 py-2 text-sm font-bold gap-1 text-gray-600"
+              className="bg-white border border-gray-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0 hover:bg-gray-50 transition-colors shadow-sm px-2.5 py-1 text-xs font-bold gap-0.5 text-gray-600"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
               이전
@@ -126,16 +132,16 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) =>
       {phase === 'quiz' && (
         <>
           {/* Question */}
-          <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-8 md:p-12 shadow-sm text-center mb-8 min-h-[300px] flex flex-col justify-center items-center fade-in overflow-hidden w-full max-w-full">
-            <p className="text-sm text-gray-400 font-bold mb-4 tracking-wider">Q{step + 1}</p>
-            <div className="text-5xl md:text-6xl mb-6">{shuffledQuestions[step].emoji}</div>
+          <div key={step} className="bg-white border border-gray-200 rounded-[2rem] p-6 md:p-8 shadow-sm text-center mb-8 h-[248px] flex flex-col justify-center items-center fade-in overflow-hidden w-full max-w-full">
+            <p className="text-xs text-gray-400 font-bold mb-2.5 tracking-wider">Q{step + 1}</p>
+            <div className="text-4xl md:text-5xl mb-4">{shuffledQuestions[step].emoji}</div>
             <div className="w-full flex flex-col items-center">
               {shuffledQuestions[step].prefix && (
-                <span ref={prefixRef} className="text-black block mb-2 font-normal whitespace-pre-line break-keep text-base md:text-lg">
+                <span ref={prefixRef} className="text-black block mb-1.5 font-normal whitespace-pre-line break-keep" style={{ fontSize: `${prefixPx}px`, lineHeight: 1.4 }}>
                   {shuffledQuestions[step].prefix}
                 </span>
               )}
-              <h2 ref={textRef} className="text-black text-xl md:text-2xl font-serif font-bold whitespace-pre-line break-keep leading-relaxed">
+              <h2 ref={textRef} className="text-black font-serif font-bold whitespace-pre-line break-keep" style={{ fontSize: `${titlePx}px`, lineHeight: 1.4 }}>
                 {shuffledQuestions[step].text}
               </h2>
             </div>

@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES } from '../data';
+import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES, CODE_KO } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
 
@@ -316,7 +316,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
               </h1>
             )}
             <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400 tracking-tight mt-3">
-              {axisCode}
+              {axisCode} <span className="text-gray-300">{CODE_KO[axisCode]}</span>
             </span>
             <p className="text-gray-500 text-sm md:text-base font-medium whitespace-pre-line break-keep text-center mt-4 leading-relaxed">
               {info.catchphrase}
@@ -638,7 +638,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           {/* Header */}
           <div ref={printHeaderRef} style={{ textAlign: 'center', padding: '8px 8px 24px' }}>
             <p style={{ fontSize: '13px', letterSpacing: '0.3em', color: '#9ca3af', fontWeight: 700, marginBottom: '10px' }}>MY BMTI RESULT</p>
-            <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 18px' }}>{axisCode}</h1>
+            <h1 style={{ fontSize: '40px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 18px' }}>{axisCode} <span style={{ color: '#B7B2A9' }}>{CODE_KO[axisCode]}</span></h1>
             {charData && (
               <img src={charData.originalImage} alt={axisCode} style={{ width: '280px', height: 'auto', margin: '0 auto 18px', display: 'block', borderRadius: '20px' }} crossOrigin="anonymous" />
             )}

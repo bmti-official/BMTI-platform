@@ -181,6 +181,14 @@ export const CHARACTER_NAMES = {
   OLDZ: '실용주의 요가링', OLDM: '포근포근 운동매트', OLQZ: '깐깐한 거꾸리', OLQM: '키다리 폼롤러'
 };
 
+// 4글자 코드의 한글 읽기 (예: OLQM → 올큐엠)
+export const CODE_KO = {
+  ACDZ: '악디지', ACDM: '악디엠', ACQZ: '악큐지', ACQM: '악큐엠',
+  ALDZ: '알디지', ALDM: '알디엠', ALQZ: '알큐지', ALQM: '알큐엠',
+  OCDZ: '옥디지', OCDM: '옥디엠', OCQZ: '옥큐지', OCQM: '옥큐엠',
+  OLDZ: '올디지', OLDM: '올디엠', OLQZ: '올큐지', OLQM: '올큐엠',
+};
+
 // 사람 유저가 BMTI 유형 코드(ACDZ 등) 자체를 닉네임으로 쓰지 못하게 막는 데 씀 —
 // 게시판의 AI 페르소나 닉네임이 "AI ACDZ" 형식이라, 코드만 딱 따와서 헷갈리게 하는 걸 방지.
 // 'BMTI'도 함께 막는다 — BoardView의 관리자 삭제 권한이 닉네임이 정확히 'BMTI'인지만으로

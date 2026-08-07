@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { useState } from 'react';
-import { CHARACTERS, CHARACTER_NAMES, BMTI_INFO } from '../data';
+import { CHARACTERS, CHARACTER_NAMES, BMTI_INFO, CODE_KO } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 
 // ─────────────────────────────────────────────
@@ -93,7 +93,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
             {good.code
               ? <><MiniChar code={good.code} size={56} ring={GOOD} />
                   <div className="text-[11px] font-bold text-gray-900 leading-tight break-keep">{nickOf(good.code)}</div>
-                  <div className="text-[9.5px] font-extrabold text-gray-400">{good.code}</div></>
+                  <div className="text-[9.5px] font-extrabold text-gray-400">{good.code} {CODE_KO[good.code]}</div></>
               : <span className="text-[11px] text-gray-400">—</span>}
           </div>
 
@@ -102,7 +102,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
             <span className="text-[10px] font-extrabold text-white px-2 py-0.5 rounded-full" style={{ background: selColor }}>나</span>
             <MiniChar code={sel} size={66} ring={selColor} />
             <div className="text-[12px] font-extrabold text-gray-900 leading-tight break-keep">{nickOf(sel)}</div>
-            <div className="text-[9.5px] font-extrabold text-gray-400">{sel}</div>
+            <div className="text-[9.5px] font-extrabold text-gray-400">{sel} {CODE_KO[sel]}</div>
           </div>
 
           {/* 조금 다른 템포 */}
@@ -111,21 +111,9 @@ export default function BmtiRelationMap({ bmtiCode }) {
             {bad.code
               ? <><MiniChar code={bad.code} size={56} ring={BAD} />
                   <div className="text-[11px] font-bold text-gray-900 leading-tight break-keep">{nickOf(bad.code)}</div>
-                  <div className="text-[9.5px] font-extrabold text-gray-400">{bad.code}</div></>
+                  <div className="text-[9.5px] font-extrabold text-gray-400">{bad.code} {CODE_KO[bad.code]}</div></>
               : <span className="text-[11px] text-gray-400">—</span>}
           </div>
-        </div>
-      </div>
-
-      {/* 이유 카드 — 두 박스의 높이를 동일하게 고정해 유형을 바꿔도 페이지가 흔들리지 않게 한다 */}
-      <div className="flex flex-col gap-2.5 mb-6">
-        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 132 }}>
-          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {good.code ? `${nickOf(good.code)}와 잘 맞는 이유` : '환상의 짝꿍'}</div>
-          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{good.reason || '아직 소개할 짝꿍이 없어요.'}</p>
-        </div>
-        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#F4F6F9', borderColor: '#DFE5EC', height: 132 }}>
-          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: BAD }}>🤔 {bad.code ? `${nickOf(bad.code)}와 살짝 어긋나는 이유` : '조금 다른 템포'}</div>
-          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{bad.reason || '아직 소개할 유형이 없어요.'}</p>
         </div>
       </div>
 
@@ -153,13 +141,28 @@ export default function BmtiRelationMap({ bmtiCode }) {
                 {isGood && <span className="absolute top-1 right-1 text-[10px]">💖</span>}
                 {isBad && <span className="absolute top-1 right-1 text-[10px]">🤔</span>}
               </div>
-              <span className="text-[9.5px] md:text-[10px] font-extrabold tracking-tight" style={{ color: active ? '#1C1A17' : '#9B9489' }}>{code}</span>
+              <span className="flex flex-col items-center leading-tight" style={{ color: active ? '#1C1A17' : '#9B9489' }}>
+                <span className="text-[9.5px] md:text-[10px] font-extrabold tracking-tight">{code}</span>
+                <span className="text-[8px] font-bold text-gray-400">{CODE_KO[code]}</span>
+              </span>
             </button>
           );
         })}
       </div>
 
-      <p className="text-[11px] text-gray-400 text-center mt-4 leading-relaxed break-keep">
+      {/* 이유 카드 — 두 박스의 높이를 동일하게 고정해 유형을 바꿔도 페이지가 흔들리지 않게 한다 */}
+      <div className="flex flex-col gap-2.5 mt-6 mb-3">
+        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 132 }}>
+          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {good.code ? `${nickOf(good.code)}와 잘 맞는 이유` : '환상의 짝꿍'}</div>
+          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{good.reason || '아직 소개할 짝꿍이 없어요.'}</p>
+        </div>
+        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#F4F6F9', borderColor: '#DFE5EC', height: 132 }}>
+          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: BAD }}>🤔 {bad.code ? `${nickOf(bad.code)}와 살짝 어긋나는 이유` : '조금 다른 템포'}</div>
+          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{bad.reason || '아직 소개할 유형이 없어요.'}</p>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-gray-400 text-center mt-2 leading-relaxed break-keep">
         관계는 각 유형의 결과지 기준이에요. 서로를 꼭 짝꿍으로 꼽지 않을 수도 있어요.
       </p>
     </section>

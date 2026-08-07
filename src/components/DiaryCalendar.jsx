@@ -484,7 +484,7 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
               ? (dow === 0 ? "#EBB6B2" : dow === 6 ? "#AEC4EE" : "#C9C4BB")
               : (weekdayColor(dow) || C.ink);
             const dateLabel = (
-              <span style={{ fontSize: 10.5, fontWeight: isToday ? 800 : 600, color: isToday ? t.accentDeep : numColor, marginTop: 5, lineHeight: 1 }}>{d}</span>
+              <span style={{ fontSize: isToday ? 8.5 : 10.5, fontWeight: 800, letterSpacing: isToday ? "0.03em" : 0, color: isToday ? t.accentDeep : numColor, marginTop: 5, lineHeight: 1 }}>{isToday ? "today" : d}</span>
             );
             return (
               <div key={idx} style={{ display: "flex", justifyContent: "center" }}>
@@ -578,7 +578,7 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
         {/* 날짜 */}
         <div style={{ width: 34, flexShrink: 0, textAlign: "center" }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: weekdayColor(dow) || C.sub }}>{WEEKDAYS[dow]}</div>
-          <div style={{ fontSize: 19, fontWeight: 800, color: dayColor, marginTop: 1 }}>{date.getDate()}</div>
+          <div style={{ fontSize: isToday ? 12 : 19, fontWeight: 800, letterSpacing: isToday ? "0.03em" : 0, color: isToday ? t.accentDeep : dayColor, marginTop: isToday ? 3 : 1 }}>{isToday ? "today" : date.getDate()}</div>
         </div>
         {/* 무드 */}
         <div style={{ width: 40, flexShrink: 0, display: "flex", justifyContent: "center" }}>

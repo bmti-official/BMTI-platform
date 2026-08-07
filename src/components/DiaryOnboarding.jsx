@@ -72,7 +72,7 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
   const chooseNoSore = () => { setSore([]); setStep(1); };
 
   // 페이지별 보라색 안내 문구(고정)
-  const REMAIN_TEXT = ["2개 남았어요", "1개 남았어요", "마지막이에요!"];
+  const REMAIN_TEXT = ["이제 2번만 입력해줘요", "이제 1번만 입력해줘요", "마지막이에요!"];
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
@@ -96,7 +96,7 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
         {/* 독려 문구 */}
         <p style={{ fontSize: 13, color: C.sub, fontWeight: 700, margin: "2px 0 4px", lineHeight: 1.5 }}>
           {ENCOURAGE[step]}
-          <b style={{ color: t.accent }}> · {REMAIN_TEXT[step]}</b>
+          <br /><b style={{ color: t.accent }}>{REMAIN_TEXT[step]}</b>
         </p>
 
         <div key={step} style={{ flex: 1, animation: "fadeUp .3s ease-out" }}>
