@@ -78,7 +78,7 @@ const NO_EXERCISE_REASONS = [
 // ── 기타 상수 ──
 // 인체 위 → 아래 순서로 나열 (기타는 항상 마지막)
 const PARTS = ["머리", "목", "어깨", "팔꿈치", "손목", "등", "복부", "허리", "골반", "무릎", "발목", "기타"];
-const WHEN_OPTS = ["오늘 아침 일어날 때", "움직일 때", "오래 앉아있을 때", "오래 서있을 때", "하루 종일"];
+const WHEN_OPTS = ["오늘 아침 일어날 때", "움직일 때", "오래 앉아있을 때", "오래 서있을 때", "일할 때", "하루 종일"];
 
 // ── 받침 유무로 이/가 조사 고르는 헬퍼 ──
 function hasBatchim(word) {
@@ -630,8 +630,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 {fromProfile && !whenEditParts.includes(p) ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                     <div style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>언제: {whenText(p) || "—"}</div>
-                    <button onClick={() => setWhenEditParts(a => [...a, p])}
-                      style={{ border: `1px solid ${C.line}`, background: "#fff", color: t.accentDeep, fontSize: 11, fontWeight: 800, cursor: "pointer", borderRadius: 999, padding: "3px 10px" }}>수정</button>
+                    <button onClick={() => setWhenEditParts(a => [...a, p])} aria-label="언제 수정"
+                      style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2, display: "inline-flex", alignItems: "center", color: C.sub }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 3v5h-5" /><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+                      </svg>
+                    </button>
                   </div>
                 ) : (
                   <>

@@ -1,4 +1,5 @@
 import { useState, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
@@ -244,10 +245,14 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               maskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
             }}
           />
-          {/* 가운데 누끼 캐릭터를 감싸는 연옐로우 글로우 링 — 하단 네비게이션바 위(z-index)로 떠 보이게 */}
-          <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", width: 84, height: 84, borderRadius: "50%", background: "transparent", boxShadow: "0 0 0 3px rgba(253,246,220,0.95), 0 0 26px 9px rgba(240,224,120,0.6)", zIndex: 56, pointerEvents: "none" }} />
+          {/* 가운데 누끼 캐릭터를 감싸는 연옐로우 글로우 링 — DiaryCalendar 고정 컨테이너는
+              하단 네비(z-40)보다 아래 스택이라, body로 포탈해 네비 위(z-90)에 그린다. */}
+          {createPortal(
+            <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", width: 84, height: 84, borderRadius: "50%", background: "transparent", boxShadow: "0 0 0 3px rgba(253,246,220,0.98), 0 0 30px 11px rgba(240,224,120,0.75)", zIndex: 90, pointerEvents: "none" }} />,
+            document.body
+          )}
           <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
-            <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
+            <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 8px 30px rgba(240,224,120,0.5), 0 3px 14px rgba(220,190,80,0.32), 0 2px 8px rgba(0,0,0,0.10)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button
                 onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
                 style={{ position: "absolute", top: 10, right: 12, width: 26, height: 26, border: "none", background: "transparent", color: C.sub, fontSize: 15, cursor: "pointer" }}

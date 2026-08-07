@@ -134,7 +134,7 @@ function BabyMallang({ index, tapKey }) {
         animation: `babyPopIn .3s ease-out ${popDelay}s both, babyBounce ${bounceDuration}s ease-in-out ${popDelay + 0.3}s infinite`,
       }}
     >
-      <Mallang v={5} size={48} tapKey={tapKey} skinOverride="malang2d" />
+      <Mallang v={5} size={48} tapKey={tapKey} skinOverride="malang2d" noBlink />
     </div>
   );
 }

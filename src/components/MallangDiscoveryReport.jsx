@@ -1411,7 +1411,6 @@ function SoreMap({ data, gender, moments }) {
   const imgBack = isMale ? bodyMaleBack : bodyFemaleBack;
   const top = [...data.parts].sort((a, b) => b.count - a.count)[0];
   const maxCount = data.maxCount || 1;
-  const momentItems = moments?.items || [];
 
   const Figure = ({ src, view, label }) => (
     <div style={{ position: "relative", flex: 1, aspectRatio: "1 / 2", maxWidth: 150 }}>
@@ -1445,15 +1444,33 @@ function SoreMap({ data, gender, moments }) {
         </p>
       )}
 
-      {/* 불편했던 순간 — 바디 스캔에 함께 포함 */}
-      {momentItems.length > 0 && (
+      {/* 부위별 상세 — 평균 불편 강도 + 부위마다 언제 불편했는지를 나눠서 */}
+      {data.parts.length > 0 && (
         <div style={{ width: "100%", marginTop: 4, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
-          <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10, textAlign: "center" }}>언제 불편했나요?</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-            {momentItems.map((it) => (
-              <span key={it.situation} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 5 }}>
-                {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
-              </span>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10, textAlign: "center" }}>부위별 불편함 · 언제 그랬나요?</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {data.parts.map((p) => (
+              <div key={p.part} style={{ border: `1px solid ${C.line}`, borderRadius: 14, padding: "11px 13px", background: "#fff" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>{p.label}</span>
+                  {/* 불편함 강도 평균 박스 — 따로 표시 */}
+                  <span style={{ fontSize: 11.5, fontWeight: 800, color: "#E63C37", background: "rgba(230,60,55,0.10)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap" }}>
+                    평균 강도 {p.avgLevel.toFixed(1)}<span style={{ color: C.sub, fontWeight: 700 }}>/10</span>
+                  </span>
+                </div>
+                {p.situations && p.situations.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    <span style={{ fontSize: 11, color: C.sub, fontWeight: 700, alignSelf: "center", marginRight: 2 }}>언제:</span>
+                    {p.situations.map((it) => (
+                      <span key={it.situation} style={{ fontSize: 11.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 600 }}>언제인지 기록이 아직 없어요</span>
+                )}
+              </div>
             ))}
           </div>
         </div>
