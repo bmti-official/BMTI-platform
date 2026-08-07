@@ -1687,6 +1687,16 @@ function BarRow({ label, count, max, color }) {
 const WD_FULL = ["일", "월", "화", "수", "목", "금", "토"];
 const ONB_FREQ_LABEL = { none: "거의 안 해요", sometimes: "가끔 생각날 때", weekly: "일주일에 몇 번", daily: "거의 매일" };
 const ONB_POSTURE_LABEL = { sitting: "주로 앉아 있어요", standing: "주로 서 있어요", moving: "계속 움직여요", mixed: "앉았다 섰다 해요", heavy: "무거운 물건을 자주 들어요" };
+const ONB_GOAL_LABEL = { flexibility: "뻐근함 줄이기", posture: "자세 바로잡기", health: "체력 기르기", stress: "스트레스 풀기" };
+// 마이페이지 '일상 정보'(가장 최근 저장값)를 발견 리포트에서 칩으로 보여주기 위한 요약.
+function buildProfileSummary(u) {
+  return {
+    freq: u?.exercise_frequency ? ONB_FREQ_LABEL[u.exercise_frequency] : null,
+    goals: (u?.exercise_goals || []).map((g) => ONB_GOAL_LABEL[g] || g),
+    posture: u?.common_posture ? (ONB_POSTURE_LABEL[u.common_posture] || u.common_posture) : null,
+    sore: (u?.mallang_sore || []).map((s) => s?.part).filter(Boolean),
+  };
+}
 const RAIN_CODES2 = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]);
 
 function topOf(map) { let k = null, n = 0; for (const [key, v] of Object.entries(map)) if (v > n) { n = v; k = key; } return k == null ? null : { key: k, n }; }
@@ -1695,7 +1705,42 @@ function computeInsights(entries, userData, report) {
   const days = [...(entries || [])].filter(e => e && typeof e.mood === "number").sort((a, b) => a.date.localeCompare(b.date));
   const byDate = Object.fromEntries(days.map(d => [d.date, d]));
   const nextOf = (ds) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() + 1); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; return byDate[iso]; };
+  const prevOf = (ds) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() - 1); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; return byDate[iso]; };
   const wd = (ds) => new Date(ds + "T00:00:00").getDay();
+
+  // ── 0. 내 몸 불편 신호 (앱 정체성: 불편함 기록 기반 발견) ──
+  const soreReport = (() => {
+    const partArr = {}; // partKey -> [{level, date}]
+    days.forEach(d => (d.soreness || []).forEach(s => {
+      if (!s || s.part == null) return;
+      (partArr[s.part] ||= []).push({ level: typeof s.level === "number" ? s.level : null, date: d.date });
+    }));
+    const parts = Object.entries(partArr).map(([part, arr]) => ({ part, label: PARTS[part] || part, count: arr.length, arr }));
+    if (!parts.length) return null;
+    parts.sort((a, b) => b.count - a.count);
+    const top = parts[0];
+    const totalSoreDays = new Set(days.filter(d => (d.soreness || []).length).map(d => d.date)).size;
+    const topDates = new Set(top.arr.map(x => x.date));
+    const topEntries = days.filter(d => topDates.has(d.date));
+    const overN = topEntries.filter(d => d.overwork?.yes).length;
+    const prevPoorN = topEntries.filter(d => { const pv = prevOf(d.date); return pv && pv.sleep != null && pv.sleep <= 1; }).length;
+    // 강도 추세(전반부 vs 후반부 평균)
+    const lv = (arr) => { const xs = arr.map(x => x.level).filter(v => typeof v === "number"); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
+    const mid = days[Math.floor(days.length / 2)]?.date;
+    const early = lv(top.arr.filter(x => mid && x.date < mid));
+    const late = lv(top.arr.filter(x => mid && x.date >= mid));
+    let trend = null;
+    if (early != null && late != null && top.count >= 3) {
+      if (early - late >= 0.6) trend = { dir: "down", msg: `다행히 후반부로 갈수록 ${top.label} 불편함이 옅어지고 있어요. 관리가 통하고 있나 봐요!` };
+      else if (late - early >= 0.6) trend = { dir: "up", msg: `후반부로 갈수록 ${top.label} 불편함이 짙어지고 있어요. 조금 더 신경 써봐요.` };
+    }
+    let insight;
+    if (top.count >= 2 && overN >= 2 && overN / top.count >= 0.4) insight = `그중 ${overN}일은 '무리했다'고 기록한 날과 겹쳤어요. 무리가 ${top.label} 쪽으로 오나 봐요.`;
+    else if (prevPoorN >= 2) insight = `잘 못 잔 다음 날 ${top.label} 불편함이 ${prevPoorN}번 나타났어요. 잠이 ${top.label}에 영향을 주나 봐요.`;
+    else if (trend) insight = trend.msg;
+    else insight = `이번 달 ${top.label}을(를) 가장 자주 신경 쓰셨어요. 자주 뻐근한 곳이니 틈틈이 부드럽게 풀어줘요.`;
+    return { top, second: parts[1] || null, totalSoreDays, insight, trend };
+  })();
 
   // ── 1. 기분 연결고리 (슬롯) ──
   // 5가지 분석 기준(요일·날씨·수면·태그·활동)별로 [상세 기록]→[기분] 슬롯 인사이트
@@ -1906,7 +1951,7 @@ function computeInsights(entries, userData, report) {
     return { cards };
   })();
 
-  return { slots, butterfly, effort, logged, recovery, streak, factcheck, dday, letter, recordedDays: days.length };
+  return { soreReport, slots, butterfly, effort, logged, recovery, streak, factcheck, dday, letter, recordedDays: days.length };
 }
 
 // ── 인사이트 카드 공통 껍데기 ──
@@ -1932,23 +1977,55 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   // 기록이 부족해 아직 못 찾은 발견은 하드 유저 예시를 블러로 보여주고, 커서를 올리면 풀린다.
   const LK = "이렇게 채워질 거예요 · 클릭해보세요";
   const lock = (node) => <LockedPreview label={LK}>{node}</LockedPreview>;
-  const slotFound = (ins.slots || []).some(s => s.detail);
+  const profileSummary = buildProfileSummary(userData);
+  const hasProfile = !!(profileSummary.freq || profileSummary.goals.length || profileSummary.posture || profileSummary.sore.length);
+  const exProfile = buildProfileSummary(EXAMPLE_USER);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {slotFound ? <SlotCard slots={ins.slots} /> : lock(<SlotCard slots={exIns.slots} />)}
+      {ins.soreReport ? <SoreReportCard data={ins.soreReport} /> : lock(<SoreReportCard data={exIns.soreReport} />)}
       {ins.butterfly ? <ButterflyCard data={ins.butterfly} /> : (exIns.butterfly && lock(<ButterflyCard data={exIns.butterfly} />))}
       {ins.recovery ? <RecoveryCard data={ins.recovery} /> : (exIns.recovery && lock(<RecoveryCard data={exIns.recovery} />))}
       {ins.streak ? <StreakCard data={ins.streak} /> : (exIns.streak && lock(<StreakCard data={exIns.streak} />))}
       {ins.effort ? <EffortCard data={ins.effort} /> : (exIns.effort && lock(<EffortCard data={exIns.effort} />))}
       {ins.logged ? <LampClockCard data={ins.logged} nickname={nickname} /> : (exIns.logged && lock(<LampClockCard data={exIns.logged} nickname={nickname} />))}
       {female && (ins.dday ? <DdayCard data={ins.dday} /> : (exIns.dday && lock(<DdayCard data={exIns.dday} />)))}
-      {ins.factcheck ? <FactCheckCard rows={ins.factcheck} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} />))}
+      {(ins.factcheck || hasProfile) ? <FactCheckCard rows={ins.factcheck || []} profile={profileSummary} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />))}
       <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} />
     </div>
   );
 }
 
-// 1. 기분 자판기(슬롯)
+// 0. 내 몸 불편 신호 — 앱의 정체성인 '불편함 기록'에서 뽑은 대표 발견
+function SoreReportCard({ data }) {
+  const t = getTypeAccent();
+  const { top, second, totalSoreDays, trend } = data;
+  const trendBadge = trend ? (trend.dir === "down"
+    ? { txt: "좋아지는 중", bg: "#E7F5EC", fg: "#2E8B57", arrow: "↓" }
+    : { txt: "심해지는 중", bg: "#FDECEC", fg: "#D0544E", arrow: "↑" }) : null;
+  return (
+    <InsCard badge="내 몸 불편 신호" title="이번 달, 내 몸이 보낸 신호" sub="가장 자주 불편했던 곳과 그 이유를 찾아봤어요">
+      <div style={{ display: "flex", gap: 10, alignItems: "stretch", marginBottom: 2 }}>
+        {/* 가장 자주 불편했던 곳 */}
+        <div style={{ flex: second ? 1.35 : 1, background: "linear-gradient(140deg,#FDECEC,#FADCDC)", borderRadius: 16, padding: "16px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, position: "relative" }}>
+          {trendBadge && <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9.5, fontWeight: 800, color: trendBadge.fg, background: trendBadge.bg, borderRadius: 999, padding: "3px 7px" }}>{trendBadge.arrow} {trendBadge.txt}</span>}
+          <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#E0554F", boxShadow: "0 0 0 5px rgba(224,85,79,0.16)" }} />
+          <div style={{ fontSize: 21, fontWeight: 900, color: "#B23B36", letterSpacing: "-0.02em" }}>{top.label}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#C4726C" }}>총 <b style={{ fontSize: 15 }}>{top.count}</b>일 불편</div>
+        </div>
+        {second && (
+          <div style={{ flex: 1, background: "#FCF4F4", border: "1px solid #F3DDDD", borderRadius: 16, padding: "16px 10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E89A96" }} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#B0736E" }}>{second.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#C6A19D" }}>{second.count}일</div>
+          </div>
+        )}
+      </div>
+      <Insight>{data.insight}</Insight>
+    </InsCard>
+  );
+}
+
+// 1. 기분 자판기(슬롯) — 현재 미사용(불편 신호 카드로 대체)
 function SlotCard({ slots }) {
   const [idx, setIdx] = useState(0);
   const [pulls, setPulls] = useState(0);
@@ -2131,18 +2208,45 @@ function LampClockCard({ data, nickname }) {
   );
 }
 
-// 7. 초심 저울(프로필 팩트체크)
-function FactCheckCard({ rows }) {
+// 7. 초심 저울(프로필 팩트체크) — 최근 저장한 '일상 정보' 선택을 보여주고, 그대로 이번 달이 어땠는지 이어본다
+function FactCheckCard({ rows = [], profile }) {
+  const t = getTypeAccent();
+  const p = profile || {};
+  const chips = [];
+  if (p.freq) chips.push({ label: "운동 빈도", val: p.freq });
+  if (p.goals?.length) chips.push({ label: "운동 목적", val: p.goals.join(" · ") });
+  if (p.posture) chips.push({ label: "자주 하는 자세", val: p.posture });
+  if (p.sore?.length) chips.push({ label: "불편한 부위", val: p.sore.join(" · ") });
   return (
-    <InsCard badge="처음의 다짐 · 팩트 체크" title="프로필과 이어보기">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {rows.map((r, i) => (
-          <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 12, padding: "12px 13px" }}>
-            <span style={{ fontSize: 15, marginTop: 1 }}>⚖️</span>
-            <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{r}</p>
+    <InsCard badge="처음의 다짐 · 팩트 체크" title="내가 정한 것, 이번 달은 어땠을까" sub="가장 최근에 정한 일상 정보와 이번 달 기록을 이어봤어요">
+      {chips.length > 0 && (
+        <div style={{ background: t.accentSoft, borderRadius: 14, padding: "13px 15px", marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, marginBottom: 9 }}>📌 내가 정한 일상 정보</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {chips.map((c, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 9 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: C.sub, width: 68, flexShrink: 0 }}>{c.label}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, lineHeight: 1.4, wordBreak: "keep-all" }}>{c.val}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+      <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, margin: "0 2px 8px" }}>→ 그래서 이번 달은</div>
+      {rows.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {rows.map((r, i) => (
+            <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 12, padding: "12px 13px" }}>
+              <span style={{ fontSize: 15, marginTop: 1 }}>⚖️</span>
+              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{r}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, lineHeight: 1.55, margin: 0, background: "#FBFAF6", borderRadius: 12, padding: "12px 13px", wordBreak: "keep-all" }}>
+          기록이 조금 더 쌓이면, 내가 정한 목표와 실제 이번 달 기록을 비교해서 알려드릴게요.
+        </p>
+      )}
     </InsCard>
   );
 }
