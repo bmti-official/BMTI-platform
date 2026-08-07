@@ -248,7 +248,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           {/* 가운데 누끼 캐릭터를 감싸는 연옐로우 글로우 링 — DiaryCalendar 고정 컨테이너는
               하단 네비(z-40)보다 아래 스택이라, body로 포탈해 네비 위(z-90)에 그린다. */}
           {createPortal(
-            <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", width: 84, height: 84, borderRadius: "50%", background: "transparent", boxShadow: "0 0 0 3px rgba(253,246,220,0.98), 0 0 30px 11px rgba(240,224,120,0.75)", zIndex: 90, pointerEvents: "none" }} />,
+            <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", width: 84, height: 84, borderRadius: "50%", background: "transparent", boxShadow: "0 0 0 2px rgba(253,246,220,0.7), 0 0 20px 6px rgba(240,224,120,0.4)", zIndex: 90, pointerEvents: "none" }} />,
             document.body
           )}
           <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>

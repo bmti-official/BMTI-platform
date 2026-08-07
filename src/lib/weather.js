@@ -52,5 +52,33 @@ export async function fetchWeatherRange(lat, lon, startISO, endISO) {
       if (map[date] && arr.length) map[date].humidity = Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
     }
   }
+
+  // 미세먼지(PM2.5·PM10) — 별도 무료 엔드포인트(키 불필요). 실패해도 날씨는 그대로 쓴다.
+  try {
+    const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
+      `&hourly=pm2_5,pm10&timezone=auto&start_date=${startISO}&end_date=${endISO}`;
+    const aqRes = await fetch(aqUrl);
+    if (aqRes.ok) {
+      const aq = await aqRes.json();
+      const ah = aq.hourly;
+      if (ah && ah.time) {
+        const byDate = {};
+        for (let i = 0; i < ah.time.length; i++) {
+          const date = ah.time[i].slice(0, 10);
+          (byDate[date] ||= { pm25: [], pm10: [] });
+          if (ah.pm2_5?.[i] != null) byDate[date].pm25.push(ah.pm2_5[i]);
+          if (ah.pm10?.[i] != null) byDate[date].pm10.push(ah.pm10[i]);
+        }
+        const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+        for (const [date, v] of Object.entries(byDate)) {
+          if (!map[date]) continue;
+          const p25 = mean(v.pm25), p10 = mean(v.pm10);
+          if (p25 != null) map[date].pm25 = Math.round(p25);
+          if (p10 != null) map[date].pm10 = Math.round(p10);
+        }
+      }
+    }
+  } catch { /* 미세먼지는 없어도 됨 */ }
+
   return map;
 }

@@ -466,7 +466,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
         )}
         </div>
         </div>
@@ -863,18 +863,21 @@ function NoteEffortCard({ report }) {
   );
 }
 
-// ── 날씨와 겹쳐보기 — 위치 1회 허용 → Open-Meteo로 날짜별 날씨 첨부 ──
-function WeatherCard({ report, entries, onWeatherUpdated }) {
+// ── 이번 달 발견: 날씨 × 신체 불편함 / 기분 ──
+// 위치를 한 번 허용받아 날짜별 날씨(비·기온·습도·미세먼지)를 붙이고,
+// [신체적 불편함] 2장 + [기분 상태] 3장을 각각 가로 스와이프 카드로 겹쳐 보여준다.
+function WeatherFindingCards({ entries, onWeatherUpdated }) {
   const t = getTypeAccent();
-  const w = report.weather;
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+  const days = (entries || []).filter((e) => e && typeof e.mood === "number");
+  const wDays = days.filter((d) => d.weather && typeof d.weather.code === "number");
 
   const enable = async () => {
     setLoading(true); setErr(null);
     try {
       const geo = getSavedGeo() || (await requestGeo());
-      const dates = entries.map((e) => e.date).sort();
+      const dates = days.map((e) => e.date).sort();
       if (!dates.length) throw new Error("no-dates");
       const map = await fetchWeatherRange(geo.lat, geo.lon, dates[0], dates[dates.length - 1]);
       mergeWeatherIntoHistory(map);
@@ -885,38 +888,162 @@ function WeatherCard({ report, entries, onWeatherUpdated }) {
     setLoading(false);
   };
 
-  if (w) {
+  // 아직 날씨를 안 붙였으면(위치 미허용) 안내 + 동의 버튼
+  if (wDays.length === 0) {
     return (
-      <InfoCard icon={<IconCloud size={17} />} title="날씨와 겹쳐보기" hint="비·습도·기온과 불편함을 함께 봤어요.">
-        <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 12px", lineHeight: 1.5, wordBreak: "keep-all" }}>
-          {w.rainMoreSore ? "🌧️ 비 오는 날, 유독 불편했어요." : "날씨에 따른 불편함 차이는 크지 않았어요."}
+      <InsCard badge="이번 달 발견 · 날씨" title="날씨와 내 몸·마음을 겹쳐볼까요?" sub="위치를 한 번만 허용하면 비·기온·습도·미세먼지와 이번 달 기록을 이어봐요">
+        <button onClick={enable} disabled={loading}
+          style={{ width: "100%", padding: "14px 0", borderRadius: 13, border: "none", background: loading ? "#E7E2D8" : GOLD, color: loading ? "#B7B2A9" : "#fff", fontSize: 14.5, fontWeight: 800, cursor: loading ? "default" : "pointer", fontFamily: "inherit" }}>
+          {loading ? "날씨 불러오는 중…" : "📍 날씨 위치 정보 동의하기"}
+        </button>
+        {err && <p style={{ fontSize: 12, color: "#B85450", fontWeight: 700, margin: "10px 0 0", textAlign: "center" }}>{err}</p>}
+        <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, margin: "10px 0 0", lineHeight: 1.5, textAlign: "center" }}>
+          위치는 날씨 조회에만 쓰고, 대략 좌표만 기기에 보관해요.
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {[
-            { e: "🌧️", label: "비 온 날 불편", n: w.rainSore },
-            { e: "☀️", label: "맑은 날 불편", n: w.clearSore },
-            { e: "💧", label: "습한 날 불편", n: w.humidSore },
-          ].map((it) => (
-            <span key={it.label} style={{ fontSize: 12.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "8px 13px", display: "inline-flex", alignItems: "center", gap: 5 }}>
-              {it.e} {it.label}<b style={{ fontWeight: 800 }}>{it.n}번</b>
-            </span>
-          ))}
-        </div>
-      </InfoCard>
+      </InsCard>
     );
   }
 
+  // ── 날씨 분류 헬퍼 ──
+  const isRainCloud = (w) => (w.precip != null && w.precip >= 1) || RAIN_CODES2.has(w.code) || (w.code != null && w.code >= 3);
+  const dayRange = (w) => (w.tmax != null && w.tmin != null ? w.tmax - w.tmin : null);
+  const isColdSwing = (w, prevMax) => {
+    const r = dayRange(w);
+    const bigSwing = r != null && r >= 10;
+    const drop = prevMax != null && w.tmax != null && prevMax - w.tmax >= 5;
+    return bigSwing || drop;
+  };
+  const isHotHumid = (w) => w.tmax != null && w.tmax >= 28 && w.humidity != null && w.humidity >= 70;
+  const isBadAir = (w) => (w.pm25 != null && w.pm25 >= 36) || (w.pm10 != null && w.pm10 >= 81);
+
+  const avgSoreOf = (list, partSet) => {
+    const xs = [];
+    list.forEach((d) => (d.soreness || []).forEach((s) => { if (partSet.has(s.part)) xs.push(s.level); }));
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  };
+  const soreCountOf = (list, partSet) => {
+    let n = 0; list.forEach((d) => (d.soreness || []).forEach((s) => { if (partSet.has(s.part)) n++; })); return n;
+  };
+  const lowMoodCount = (list) => list.filter((d) => d.mood <= 2).length;
+
+  // 전날 최고기온 참조(기온 저하 판정용)
+  const sorted = [...wDays].sort((a, b) => a.date.localeCompare(b.date));
+  const prevMax = {};
+  for (let i = 0; i < sorted.length; i++) prevMax[sorted[i].date] = i > 0 ? sorted[i - 1].weather.tmax : null;
+
+  const rainDays = wDays.filter((d) => isRainCloud(d.weather));
+  const coldDays = wDays.filter((d) => isColdSwing(d.weather, prevMax[d.date]));
+  const hotHumidDays = wDays.filter((d) => isHotHumid(d.weather));
+  const badAirDays = wDays.filter((d) => isBadAir(d.weather));
+
+  const kneeWaist = new Set(["knee", "waist"]);
+  const neckShoulder = new Set(["neck", "shoulder"]);
+  const rainSore = avgSoreOf(rainDays, kneeWaist);
+  const coldSore = soreCountOf(coldDays, neckShoulder);
+
+  const bodyCards = [
+    {
+      key: "rain", emoji: "🌧️", title: "비·흐린 날 (저기압)",
+      text: rainSore != null
+        ? `비가 오거나 흐린 날, 무릎과 허리의 뻐근함이 평균 ${rainSore.toFixed(1)}점으로 기록되었어요.`
+        : `비가 오거나 흐린 날이 ${rainDays.length}일 있었지만, 아직 무릎·허리 불편함 기록이 겹치진 않았어요.`,
+      parts: [{ e: "🦵", label: "무릎" }, { e: "🌀", label: "허리" }],
+      bar: rainSore, barMax: 10,
+    },
+    {
+      key: "cold", emoji: "🌡️", title: "기온 저하 · 큰 일교차",
+      text: coldDays.length
+        ? `기온이 크게 떨어지거나 일교차가 컸던 날(${coldDays.length}일), 목·어깨 결림과 두통이 ${coldSore > 0 ? `${coldSore}번 ` : ""}자주 기록되었어요.`
+        : `이번 달은 기온이 크게 떨어지거나 일교차가 큰 날이 뚜렷하게 잡히진 않았어요.`,
+      parts: [{ e: "🧣", label: "목" }, { e: "💢", label: "어깨" }],
+      bar: null,
+    },
+  ];
+
+  const moodCards = [
+    {
+      key: "lowsun", emoji: "☁️", title: "일조량 부족 (긴 장마 · 잦은 흐림)",
+      text: rainDays.length
+        ? `장마나 흐린 날이 이어졌을 때(${rainDays.length}일), 그중 ${lowMoodCount(rainDays)}일은 우울감·무기력함을 느낀 상태로 기록했어요.`
+        : `흐리거나 비 온 날의 기록이 아직 많지 않아요.`,
+      icon: "🌧️",
+    },
+    {
+      key: "hothumid", emoji: "🔥", title: "고온 다습 (폭염)",
+      text: hotHumidDays.length
+        ? `기온과 습도가 모두 높았던 날(${hotHumidDays.length}일), 그중 ${lowMoodCount(hotHumidDays)}일은 불쾌지수와 함께 짜증·분노에 가까운 감정을 기록했어요.`
+        : `기온과 습도가 모두 높았던 날은 아직 많지 않아요.`,
+      icon: "🌡️",
+    },
+    {
+      key: "dust", emoji: "🌫️", title: "미세먼지 나쁨 지속",
+      text: badAirDays.length
+        ? `미세먼지 '나쁨'이 있던 날(${badAirDays.length}일), 그중 ${lowMoodCount(badAirDays)}일은 심리적 답답함·스트레스가 높게 기록되었어요.`
+        : `이번 달은 미세먼지 '나쁨'이 지속된 날이 많지 않았어요.`,
+      icon: "😷",
+    },
+  ];
+
   return (
-    <InfoCard icon={<IconCloud size={17} />} title="날씨와 겹쳐보기" hint="위치를 한 번만 허용하면 비·습도와 불편함을 함께 볼 수 있어요.">
-      <button onClick={enable} disabled={loading}
-        style={{ width: "100%", padding: "13px 0", borderRadius: 13, border: "none", background: loading ? "#E7E2D8" : GOLD, color: loading ? "#B7B2A9" : "#fff", fontSize: 14, fontWeight: 800, cursor: loading ? "default" : "pointer", fontFamily: "inherit" }}>
-        {loading ? "날씨 불러오는 중…" : "📍 위치 한 번만 허용하기"}
-      </button>
-      {err && <p style={{ fontSize: 12, color: "#B85450", fontWeight: 700, margin: "10px 0 0", textAlign: "center" }}>{err}</p>}
-      <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, margin: "10px 0 0", lineHeight: 1.5, textAlign: "center" }}>
-        위치는 날씨 조회에만 쓰고, 대략 좌표만 기기에 보관해요.
-      </p>
-    </InfoCard>
+    <InsCard badge="이번 달 발견 · 날씨" title="날씨에 따라, 내 몸과 마음은" sub="비·기온·습도·미세먼지와 이번 달 기록을 겹쳐봤어요">
+      <WeatherSwipeRow heading="1. 신체적 불편함" cards={bodyCards} kind="body" t={t} />
+      <div style={{ height: 18 }} />
+      <WeatherSwipeRow heading="2. 기분 상태" cards={moodCards} kind="mood" t={t} />
+    </InsCard>
+  );
+}
+
+function WeatherSwipeRow({ heading, cards, kind, t }) {
+  const ref = useRef(null);
+  const [idx, setIdx] = useState(0);
+  const N = cards.length;
+  const onScroll = () => { const el = ref.current; if (!el) return; setIdx(Math.round(el.scrollLeft / (el.clientWidth * 0.9))); };
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: C.sub, margin: "0 2px 9px" }}>{heading}</div>
+      <div ref={ref} onScroll={onScroll}
+        style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", margin: "0 -2px", padding: "0 2px 2px" }}>
+        {cards.map((c) => (
+          <div key={c.key} style={{ flex: "0 0 88%", scrollSnapAlign: "start", boxSizing: "border-box", background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "15px 16px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>{c.emoji}</span>
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, lineHeight: 1.3, wordBreak: "keep-all" }}>{c.title}</span>
+            </div>
+            <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all", minHeight: 58 }}>{c.text}</p>
+            {kind === "body" && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.line}`, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  {c.parts.map((p, i) => (
+                    <span key={i} style={{ fontSize: 11.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "5px 11px" }}>{p.e} {p.label}</span>
+                  ))}
+                </div>
+                {c.bar != null && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ flex: 1, height: 10, borderRadius: 999, background: "#EFEBE3", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.min(100, (c.bar / (c.barMax || 10)) * 100)}%`, background: t.accent, borderRadius: 999 }} />
+                    </div>
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, whiteSpace: "nowrap" }}>{c.bar.toFixed(1)}점</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {kind === "mood" && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.line}`, display: "flex", alignItems: "center", gap: 9 }}>
+                <span style={{ fontSize: 26 }}>{c.icon}</span>
+                <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 700 }}>기분 기록과 겹쳐본 신호예요</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {N > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
+          {cards.map((_, i) => (
+            <span key={i} style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 999, background: i === idx ? t.accent : "#DCD6CB", transition: "width .2s" }} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1870,27 +1997,54 @@ function computeInsights(entries, userData, report) {
   })();
 
   // ── 7. 프로필 팩트체크 ──
+  // 내가 정한 일상 정보(빈도·목적·자세·부위) 4항목에, 이번 달 실제 기록을 이어 붙인 공감형 코멘트.
+  // 각 코멘트 앞에 어울리는 이모지(📌 프로필 되짚기 / ⚖️ 팩트 체크)를 하나씩 붙인다.
   const factcheck = (() => {
     const rows = [];
+    const bat = (w) => { const s = String(w || ""); const c = s.charCodeAt(s.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
+    const iga = (w) => (bat(w) ? "이" : "가");
+    const eulreul = (w) => (bat(w) ? "을" : "를");
+
+    // 1) 운동 빈도 ↔ 이번 달 실제 운동 횟수
     const moveN = days.filter(d => d.exercise?.did === true).length;
     const freq = userData?.exercise_frequency;
-    if (freq && moveN > 0) {
+    if (freq && ONB_FREQ_LABEL[freq]) {
       const expect = { none: 0, sometimes: 4, weekly: 10, daily: 22 }[freq] ?? 8;
-      if (moveN >= expect + 4) rows.push(`처음엔 운동을 '${ONB_FREQ_LABEL[freq]}' 하겠다고 하셨는데, 이번 달 실제로는 ${moveN}일이나 몸을 움직이셨네요! 엄청난 발전이에요.`);
-      else rows.push(`이번 달엔 ${moveN}일 몸을 움직이셨어요. 처음 목표 '${ONB_FREQ_LABEL[freq]}'와 나란히 가고 있어요.`);
+      if (moveN >= expect + 4) rows.push({ icon: "📌", text: `운동을 '${ONB_FREQ_LABEL[freq]}' 하겠다고 하셨던 프로필처럼 시작했는데, 이번 달은 ${moveN}번이나 몸을 움직이셨어요. 목표보다 훨씬 잘하고 계세요!` });
+      else if (moveN > 0) rows.push({ icon: "📌", text: `'${ONB_FREQ_LABEL[freq]}' 운동하겠다고 하셨죠. 이번 달은 ${moveN}번 몸을 움직이며 그 다짐과 나란히 걸었어요.` });
+      else rows.push({ icon: "📌", text: `'${ONB_FREQ_LABEL[freq]}' 운동이 목표였어요. 이번 달은 운동 기록이 아직 없지만, 다음 달 첫 기록을 응원할게요!` });
     }
-    const loadC = {}; days.forEach(d => (d.overwork?.loads || []).forEach(l => { loadC[l] = (loadC[l] || 0) + 1; }));
-    const tl = topOf(loadC);
-    const posture = userData?.common_posture;
-    if (tl && posture && ONB_POSTURE_LABEL[posture]) rows.push(`'${ONB_POSTURE_LABEL[posture]}'라고 하셨던 프로필처럼, 이번 달도 '${LOADS[tl.key] || tl.key}'으로 무리한 날이 가장 많았어요. 그 부담을 덜어주는 관리가 필요해요.`);
+    // 2) 운동 목적 ↔ 불편함 강도 변화(월초→월말)
     const goals = userData?.exercise_goals || [];
-    if (goals.includes("flexibility")) {
+    if (goals.length) {
+      const goalLabel = ONB_GOAL_LABEL[goals[0]] || goals[0];
       const half = Math.floor(days.length / 2);
       const lv = (arr) => { const xs = arr.flatMap(d => (d.soreness || []).map(s => s.level)); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
       const a = lv(days.slice(0, half)), b = lv(days.slice(half));
-      if (a != null && b != null && a - b >= 0.6) rows.push(`건강 목표가 '뻐근함 줄이기'였죠! 다행히 이번 달 후반부로 갈수록 불편함 강도가 평균 ${a.toFixed(1)}점에서 ${b.toFixed(1)}점으로 줄어들고 있어요.`);
+      if (a != null && b != null && a - b >= 0.6) rows.push({ icon: "⚖️", text: `목표가 '${goalLabel}'였죠! 다행히 불편함 강도가 월초 평균 ${a.toFixed(1)}점에서 월말 ${b.toFixed(1)}점으로 줄어들었어요.` });
+      else if (a != null && b != null) rows.push({ icon: "⚖️", text: `'${goalLabel}'${eulreul(goalLabel)} 목표로 하셨어요. 이번 달 불편함 강도는 월초 ${a.toFixed(1)}점, 월말 ${b.toFixed(1)}점으로 꾸준히 지켜보는 중이에요.` });
+      else rows.push({ icon: "⚖️", text: `'${goalLabel}'${eulreul(goalLabel)} 목표로 하셨죠. 불편함 기록이 조금 더 쌓이면 강도 변화를 짚어드릴게요.` });
     }
-    return rows.length ? rows.slice(0, 2) : null;
+    // 3) 자주 하는 자세 ↔ 활동량(무리하게 부담이 실린 날)
+    const loadC = {}; days.forEach(d => (d.overwork?.loads || []).forEach(l => { loadC[l] = (loadC[l] || 0) + 1; }));
+    const tl = topOf(loadC);
+    const posture = userData?.common_posture;
+    if (posture && ONB_POSTURE_LABEL[posture]) {
+      if (tl) rows.push({ icon: "📌", text: `'${ONB_POSTURE_LABEL[posture]}'라고 하셨던 자세대로, 이번 달은 '${LOADS[tl.key] || tl.key}'으로 무리한 날이 ${tl.n}일로 가장 많았어요. 그 부담을 덜어주는 관리가 필요해요.` });
+      else rows.push({ icon: "📌", text: `'${ONB_POSTURE_LABEL[posture]}'라고 하셨죠. 이번 달은 무리하게 부담이 실린 날이 많지 않아 몸을 잘 아껴주셨어요.` });
+    }
+    // 4) 불편한 부위 ↔ 그 부위의 이번 달 기록
+    const soreProfile = (userData?.mallang_sore || []).map(s => s?.part).filter(Boolean);
+    if (soreProfile.length) {
+      const labelToKey = {}; for (const [k, v] of Object.entries(PARTS)) labelToKey[v] = k;
+      const soreC = {}; days.forEach(d => (d.soreness || []).forEach(s => { soreC[s.part] = (soreC[s.part] || 0) + 1; }));
+      const profLabel = soreProfile[0];
+      const key = labelToKey[profLabel] || profLabel;
+      const cnt = soreC[key] || 0;
+      if (cnt > 0) rows.push({ icon: "⚖️", text: `평소 '${profLabel}'${iga(profLabel)} 불편하다고 하셨는데, 이번 달도 ${cnt}번 신호를 보냈어요. 그 부위를 조금만 더 아껴주기로 해요.` });
+      else rows.push({ icon: "⚖️", text: `평소 '${profLabel}'${iga(profLabel)} 불편하다고 하셨죠. 다행히 이번 달은 '${profLabel}' 불편함 기록이 많지 않았어요!` });
+    }
+    return rows.length ? rows.slice(0, 4) : null;
   })();
 
   // ── 8. 파트너의 편지 — 이번 달 실제 기록 신호(기분·부위·수면·운동·태그·일기)를 엮어 개인 맞춤으로 ──
@@ -1986,7 +2140,7 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, onWeatherUpdated }) {
   const ins = computeInsights(entries, userData, report);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
@@ -2006,6 +2160,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
       {ins.effort ? <EffortCard data={ins.effort} /> : (exIns.effort && lock(<EffortCard data={exIns.effort} />))}
       {ins.logged ? <LampClockCard data={ins.logged} nickname={nickname} /> : (exIns.logged && lock(<LampClockCard data={exIns.logged} nickname={nickname} />))}
       {female && (ins.dday ? <DdayCard data={ins.dday} /> : (exIns.dday && lock(<DdayCard data={exIns.dday} />)))}
+      <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />
       {(ins.factcheck || hasProfile) ? <FactCheckCard rows={ins.factcheck || []} profile={profileSummary} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />))}
       <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} />
     </div>
@@ -2254,8 +2409,8 @@ function FactCheckCard({ rows = [], profile }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {rows.map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 12, padding: "12px 13px" }}>
-              <span style={{ fontSize: 15, marginTop: 1 }}>⚖️</span>
-              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{r}</p>
+              <span style={{ fontSize: 15, marginTop: 1, flexShrink: 0 }}>{typeof r === "string" ? "⚖️" : r.icon}</span>
+              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.55, margin: 0, wordBreak: "keep-all" }}>{typeof r === "string" ? r : r.text}</p>
             </div>
           ))}
         </div>
