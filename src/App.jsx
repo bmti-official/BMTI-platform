@@ -290,7 +290,7 @@ function App() {
           />
         )}
         {currentView === 'curation' && (
-          <CurationView bmtiCode={bmtiCode} />
+          <CurationView bmtiCode={bmtiCode} onGoDiary={() => handleViewChange('aichat')} />
         )}
         {currentView === 'reservation' && (
           <ServicePrep kind="reservation" bmtiCode={bmtiCode} />
