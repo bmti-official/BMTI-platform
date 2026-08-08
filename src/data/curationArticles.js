@@ -37,8 +37,10 @@ export const AUTHOR = { name: "물리치료사 유정", note: "근골격계를 �
 export const CURATION_ARTICLES = [
   {
     id: "neck-shoulder-sitting",
-    title: "오래 앉아 있으면 목·어깨가 무거워질 때",
+    title: { Z: "오래 앉아 있을 때 목·어깨가 무거워지는 이유", M: "오후만 되면 어깨가 묵직해지는 날엔" },
     parts: ["목·어깨"],
+    audience: "common", // common | A | O
+    image: null,        // 썸네일 사진(있으면 이모지 대신)
     media: { article: true, video: null },
     views: 4120,
     pinned: false,
@@ -71,8 +73,10 @@ export const CURATION_ARTICLES = [
   },
   {
     id: "essential-when-to-see-a-pro",
-    title: "이 뻐근함, 전문가에게 가야 할까",
+    title: { Z: "이 뻐근함, 언제 전문가에게 가야 할까", M: "'병원까지 가야 하나' 망설여질 때" },
     parts: ["목·어깨", "허리·골반", "무릎·발목", "팔꿈치·손목", "두통"],
+    audience: "common",
+    image: null,
     media: { article: true, video: null },
     views: 5230,
     pinned: true,
@@ -105,8 +109,10 @@ export const CURATION_ARTICLES = [
   },
   {
     id: "low-back-sitting",
-    title: "앉았다 일어설 때 허리가 뻣뻣할 때",
+    title: { Z: "오래 앉으면 허리가 뻣뻣해지는 이유", M: "일어설 때 허리가 '억' 하고 굳는다면" },
     parts: ["허리·골반"],
+    audience: "O",
+    image: null,
     media: { article: true, video: null },
     views: 3110,
     pinned: false,
@@ -139,8 +145,10 @@ export const CURATION_ARTICLES = [
   },
   {
     id: "knee-stairs",
-    title: "계단을 오르내릴 때 무릎이 시큰할 때",
+    title: { Z: "계단을 내려갈 때 무릎이 시큰한 이유", M: "계단 내려갈 때 무릎이 신경 쓰인다면" },
     parts: ["무릎·발목"],
+    audience: "A",
+    image: null,
     media: { article: true, video: null },
     views: 1980,
     pinned: false,
@@ -173,8 +181,10 @@ export const CURATION_ARTICLES = [
   },
   {
     id: "wrist-mouse",
-    title: "마우스를 오래 쓰면 손목이 저릿할 때",
+    title: { Z: "마우스를 오래 쓸 때 손목이 저릿한 이유", M: "손목이 얼얼해서 자꾸 털게 된다면" },
     parts: ["팔꿈치·손목"],
+    audience: "common",
+    image: null,
     media: { article: true, video: null },
     views: 1540,
     pinned: false,
@@ -207,8 +217,10 @@ export const CURATION_ARTICLES = [
   },
   {
     id: "headache-screen",
-    title: "화면을 오래 보면 머리가 지끈하고 무거울 때",
+    title: { Z: "화면을 오래 볼 때 머리가 무거워지는 이유", M: "모니터를 한참 보면 머리가 띵할 때" },
     parts: ["두통"],
+    audience: "O",
+    image: null,
     media: { article: true, video: null },
     views: 1360,
     pinned: false,

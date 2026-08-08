@@ -111,6 +111,29 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const t = getTypeAccent(bmtiCode);
   const hasLoggedToday = !!getEntryForDate(todayISO());
 
+  // 카카오톡 친구 공유 — 결과를 받은 이용자용 CTA. Kakao SDK가 있으면 공유 카드, 없으면 OS 공유/링크 복사로 폴백.
+  const shareToFriend = () => {
+    const siteUrl = 'https://bmti-official.co.kr/';
+    const shareUrl = `${siteUrl}#${axisCode}`;
+    if (window.Kakao && window.Kakao.Share) {
+      const imageUrl = charData ? new URL(charData.originalImage || charData.image, window.location.href).href : undefined;
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `나의 BMTI는 ${axisCode}!`,
+          description: (charInfo?.catchphrase || '내 몸이 원하는 움직임 성향').replace(/\n/g, ' '),
+          imageUrl,
+          link: { webUrl: shareUrl, mobileWebUrl: shareUrl },
+        },
+        buttons: [{ title: '나도 BMTI 검사하기', link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } }],
+      });
+      return;
+    }
+    if (navigator.share) { navigator.share({ title: `나의 BMTI는 ${axisCode}`, text: '내 몸이 원하는 움직임 성향, BMTI', url: shareUrl }).catch(() => {}); return; }
+    navigator.clipboard?.writeText(shareUrl);
+    alert('공유 링크를 복사했어요. 카카오톡에 붙여넣어 친구에게 보내보세요!');
+  };
+
   return (
     <div className="fade-in pb-32">
       {/* Full-screen Modal */}
@@ -209,6 +232,20 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           >
             다시 검사하기
           </button>
+        </div>
+      )}
+
+      {/* 카카오톡 친구 공유 CTA — 결과를 받은 이용자에게만 */}
+      {bmtiCode && (
+        <div className="px-6 mb-12">
+          <button
+            onClick={shareToFriend}
+            className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] font-extrabold text-sm md:text-base rounded-2xl py-4 shadow-[0_4px_16px_rgba(254,229,0,0.4)] hover:bg-[#F4DC00] active:scale-[0.99] transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
+            카카오톡 친구에게 공유하기
+          </button>
+          <p className="text-center text-gray-400 text-xs mt-2.5 font-medium">내 BMTI 결과를 친구에게 보여주세요</p>
         </div>
       )}
 
