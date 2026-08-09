@@ -148,7 +148,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
         <SlideToggle
           options={[{ k: "Z", label: "Z" }, { k: "M", label: "M" }]}
           value={titleMode} onChange={setTitleMode}
-          containerBg="#F2EFEA" pillBg={titleMode === "Z" ? "#7EC8F2" : "#F4A6C6"} activeColor="#fff" inactiveColor={SUB}
+          containerBg="#FBF3D6" pillBg={t.accentSoft} activeColor={t.accentDeep} inactiveColor="#A8925A"
           radius={999} pad={3} itemPad="6px 0" fontSize={13} style={{ flexShrink: 0, width: 66 }} />
       </div>
 
@@ -167,12 +167,12 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
       <div style={{ marginBottom: 24 }}>
         <SlideToggle
           options={[
-            { k: "article", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>Q 유형</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>왜 아픈 걸까?</span></span>) },
-            { k: "video", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>D 유형의</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>당장 따라 해보자!</span></span>) },
+            { k: "article", label: (<span><span style={{ fontSize: 15.5, fontWeight: 900 }}>Q</span> <span style={{ fontSize: 12.5, fontWeight: 700 }}>왜 아픈 걸까?</span></span>) },
+            { k: "video", label: (<span><span style={{ fontSize: 15.5, fontWeight: 900 }}>D</span> <span style={{ fontSize: 12.5, fontWeight: 700 }}>당장 따라 해보자!</span></span>) },
           ]}
           value={media} onChange={setMedia}
           containerBg="#FBF3D6" pillBg="#fff" activeColor={INK} inactiveColor="#A8925A"
-          radius={999} itemPad="10px 0" fontSize={13.5} />
+          radius={999} itemPad="12px 0" fontSize={13.5} />
       </div>
 
       {media === "video" && pool.length === 0 ? (
