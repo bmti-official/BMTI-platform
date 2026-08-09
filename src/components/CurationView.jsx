@@ -25,6 +25,17 @@ const getAxes = (code) => {
 const titleOf = (a, mode) => (a.title && typeof a.title === "object" ? (a.title[mode] || a.title.M || a.title.Z) : a.title);
 const AUDIENCE_LABEL = { common: "공통 추천", A: "A유형 추천", O: "O유형 추천" };
 
+// 선택된 부위 칩 — 골드
+const GOLD_BG = "#F7E9C0", GOLD_LINE = "#E7CF8A", GOLD_INK = "#8A6A1A";
+
+// 조회수 앞 눈 아이콘
+const EyeIcon = ({ size = 13, color = MUTE }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display: "inline-block", verticalAlign: "-2px" }}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+  </svg>
+);
+
 // 선택하면 알약이 옆으로 부드럽게 미끄러지는 세그먼트 토글.
 function SlideToggle({ options, value, onChange, containerBg, pillBg, activeColor, inactiveColor, radius = 14, pad = 4, itemPad = "11px 0", fontSize = 13.5, style }) {
   const n = options.length;
@@ -85,7 +96,7 @@ function Row({ a, t, mode, onOpen, rank, border }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ marginBottom: 6 }}><HashTags a={a} t={t} small /></div>
         <div style={{ fontSize: 14.5, fontWeight: 800, color: INK, lineHeight: 1.35, wordBreak: "keep-all", textWrap: "pretty" }}>{titleOf(a, mode)}</div>
-        <div style={{ fontSize: 11.5, color: MUTE, fontWeight: 600, marginTop: 5 }}>조회 {(a.views || 0).toLocaleString()}</div>
+        <div style={{ fontSize: 11.5, color: MUTE, fontWeight: 600, marginTop: 5, display: "inline-flex", alignItems: "center", gap: 4 }}><EyeIcon size={13} /> {(a.views || 0).toLocaleString()}</div>
       </div>
     </button>
   );
@@ -158,7 +169,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           const on = part === p;
           return (
             <button key={p} onClick={() => setPart(p)}
-              style={{ flexShrink: 0, border: on ? `1.5px solid ${t.accentSoft}` : `1.5px solid ${LINE}`, cursor: "pointer", borderRadius: 999, padding: "9px 15px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", whiteSpace: "nowrap", background: on ? t.accentSoft : "#fff", color: on ? t.accentDeep : SUB }}>{p}</button>
+              style={{ flexShrink: 0, border: `1.5px solid ${on ? GOLD_LINE : LINE}`, cursor: "pointer", borderRadius: 999, padding: "9px 15px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", whiteSpace: "nowrap", background: on ? GOLD_BG : "#fff", color: on ? GOLD_INK : SUB }}>{p}</button>
           );
         })}
       </div>
@@ -249,7 +260,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
                       <div style={{ padding: "14px 16px 16px" }}>
                         <div style={{ marginBottom: 8 }}><HashTags a={a} t={t} /></div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: INK, lineHeight: 1.4, letterSpacing: "-0.01em", wordBreak: "keep-all", textWrap: "pretty" }}>{titleOf(a, titleMode)}</div>
-                        <div style={{ fontSize: 12, color: MUTE, fontWeight: 600, marginTop: 10 }}>{a.createdAt} · 조회 {(a.views || 0).toLocaleString()}</div>
+                        <div style={{ fontSize: 12, color: MUTE, fontWeight: 600, marginTop: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>{a.createdAt} · <EyeIcon size={13} /> {(a.views || 0).toLocaleString()}</div>
                       </div>
                     </button>
                   );
