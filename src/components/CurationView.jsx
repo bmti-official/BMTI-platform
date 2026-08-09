@@ -25,8 +25,8 @@ const getAxes = (code) => {
 const titleOf = (a, mode) => (a.title && typeof a.title === "object" ? (a.title[mode] || a.title.M || a.title.Z) : a.title);
 const AUDIENCE_LABEL = { common: "공통 추천", A: "A유형 추천", O: "O유형 추천" };
 
-// 선택된 부위 칩 — 골드
-const GOLD_BG = "#F7E9C0", GOLD_LINE = "#E7CF8A", GOLD_INK = "#8A6A1A";
+// 골드 팔레트 — 진한 골드(선택 칩 배경) / 연한 골드 배경 / 진한 골드 글자·테두리
+const GOLD_DEEP = "#C4952F", GOLD_BG = "#F7E9C0", GOLD_INK = "#8A6A1A";
 
 // 조회수 앞 눈 아이콘
 const EyeIcon = ({ size = 13, color = MUTE }) => (
@@ -71,7 +71,7 @@ function HashTags({ a, t, small }) {
   const related = a.parts.slice(1);
   return (
     <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
-      <span style={{ fontSize: fs, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, borderRadius: 999, padding: "4px 9px" }}>#{core}</span>
+      <span style={{ fontSize: fs, fontWeight: 800, color: GOLD_INK, background: GOLD_BG, border: `1px solid ${GOLD_INK}`, borderRadius: 999, padding: "3px 8px" }}>#{core}</span>
       {related.slice(0, 2).map(p => (
         <span key={p} style={{ fontSize: fs, fontWeight: 800, color: SUB, background: "#F2EFEA", borderRadius: 999, padding: "4px 9px" }}>#{p}</span>
       ))}
@@ -169,7 +169,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           const on = part === p;
           return (
             <button key={p} onClick={() => setPart(p)}
-              style={{ flexShrink: 0, border: `1.5px solid ${on ? GOLD_LINE : LINE}`, cursor: "pointer", borderRadius: 999, padding: "9px 15px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", whiteSpace: "nowrap", background: on ? GOLD_BG : "#fff", color: on ? GOLD_INK : SUB }}>{p}</button>
+              style={{ flexShrink: 0, border: `1.5px solid ${on ? GOLD_DEEP : LINE}`, cursor: "pointer", borderRadius: 999, padding: "9px 15px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", whiteSpace: "nowrap", background: on ? GOLD_DEEP : "#fff", color: on ? "#fff" : SUB, boxShadow: on ? "0 4px 12px rgba(196,149,47,0.35)" : "none" }}>{p}</button>
           );
         })}
       </div>
