@@ -148,7 +148,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
         <SlideToggle
           options={[{ k: "Z", label: "Z" }, { k: "M", label: "M" }]}
           value={titleMode} onChange={setTitleMode}
-          containerBg="#FBF3D6" pillBg={t.accentSoft} activeColor={t.accentDeep} inactiveColor="#A8925A"
+          containerBg="#F2EFEA" pillBg={t.accentSoft} activeColor={t.accentDeep} inactiveColor={SUB}
           radius={999} pad={3} itemPad="6px 0" fontSize={13} style={{ flexShrink: 0, width: 66 }} />
       </div>
 
@@ -172,7 +172,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           ]}
           value={media} onChange={setMedia}
           containerBg="#FBF3D6" pillBg="#fff" activeColor={INK} inactiveColor="#A8925A"
-          radius={999} itemPad="12px 0" fontSize={13.5} />
+          radius={999} itemPad="9px 0" fontSize={13.5} />
       </div>
 
       {media === "video" && pool.length === 0 ? (
@@ -198,7 +198,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           {/* ③ 같은 유형이 많이 본 글/영상 — 전체는 3개씩 페이지 넘김 / 부위 선택 시 top3 */}
           <section style={{ marginBottom: 26 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
-              <h3 style={{ ...sectionTitle, margin: 0 }}>{axes.ao}{axes.zm} 유형인 분들이 많이 본 {media === "video" ? "영상" : "글"}</h3>
+              <h3 style={{ ...sectionTitle, margin: 0 }}>{axes.ao}{axes.cl} 유형인 분들이 많이 본 {media === "video" ? "영상" : "글"}</h3>
               {part === "전체" && typePages > 1 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                   <button onClick={() => setTypePage(p => Math.max(0, p - 1))} disabled={typePage === 0} aria-label="이전"

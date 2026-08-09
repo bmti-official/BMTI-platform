@@ -397,9 +397,8 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   return (
     <div ref={scrollerRef} data-scroll-top style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 18px 96px" }}>
-        {/* 날짜 · 기록수 · 탭을 하나로 묶어 상단에 고정. top:0 + paddingTop:60 으로
-            배경(C.page)이 홈/마이페이지 버튼 뒤 영역까지 덮어, 스크롤해도 위로 콘텐츠가 비치지 않게 한다. */}
-        <div style={{ position: "sticky", top: 0, zIndex: 20, background: C.page, paddingTop: 60, paddingBottom: 10, marginBottom: 6 }}>
+        {/* 날짜 · 기록수 · 탭 — 고정하지 않고 스크롤과 함께 위로 흘러가게 한다. */}
+        <div style={{ background: C.page, paddingTop: 60, paddingBottom: 10, marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "2px 0 2px" }}>
           <button
             onClick={() => changeMonth(-1)}
