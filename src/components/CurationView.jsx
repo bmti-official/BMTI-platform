@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { CHARACTERS } from "../data";
 import { getTypeAccent } from "../lib/typeAccent";
 import {
@@ -16,7 +16,6 @@ import {
 
 const INK = "#1C1A17", SUB = "#8A8378", MUTE = "#B7B2A9", LINE = "#EEEAE2";
 const CARD_SHADOW = "0 1px 2px rgba(28,26,23,0.03), 0 8px 20px rgba(28,26,23,0.05)";
-const YELLOW_SHADOW = "0 2px 6px rgba(220,188,86,0.18), 0 12px 30px rgba(233,203,110,0.4)"; // 기록 박스 강조
 
 // BMTI 4글자 → 4축. pos0 A/O · pos1 C/L · pos2 D/Q · pos3 Z/M
 const getAxes = (code) => {
@@ -25,6 +24,21 @@ const getAxes = (code) => {
 };
 const titleOf = (a, mode) => (a.title && typeof a.title === "object" ? (a.title[mode] || a.title.M || a.title.Z) : a.title);
 const AUDIENCE_LABEL = { common: "공통 추천", A: "A유형 추천", O: "O유형 추천" };
+
+// 선택하면 알약이 옆으로 부드럽게 미끄러지는 세그먼트 토글.
+function SlideToggle({ options, value, onChange, containerBg, pillBg, activeColor, inactiveColor, radius = 14, pad = 4, itemPad = "11px 0", fontSize = 13.5, style }) {
+  const n = options.length;
+  const idx = Math.max(0, options.findIndex(o => o.k === value));
+  return (
+    <div style={{ position: "relative", display: "flex", background: containerBg, borderRadius: radius, padding: pad, ...style }}>
+      <div style={{ position: "absolute", top: pad, bottom: pad, left: pad, width: `calc((100% - ${pad * 2}px) / ${n})`, transform: `translateX(${idx * 100}%)`, background: pillBg, borderRadius: Math.max(6, radius - 3), boxShadow: "0 2px 8px rgba(0,0,0,0.12)", transition: "transform .3s cubic-bezier(.34,1.45,.5,1)" }} />
+      {options.map(o => (
+        <button key={o.k} onClick={() => onChange(o.k)}
+          style={{ position: "relative", zIndex: 1, flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: itemPad, fontSize, fontWeight: 800, fontFamily: "inherit", color: value === o.k ? activeColor : inactiveColor, whiteSpace: "nowrap", transition: "color .2s" }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
 
 // 썸네일 — 사진(image)이 있으면 사진, 없으면 부위 색면 + 이모지. 크게.
 function ArticleThumb({ a, size, radius = 16 }) {
@@ -87,6 +101,8 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
   const [media, setMedia] = useState("article"); // 'article' | 'video'
   const [titleMode, setTitleMode] = useState(axes.zm); // 'Z' | 'M' — 제목 말투
   const [reading, setReading] = useState(null);
+  const [typePage, setTypePage] = useState(0); // 유형 인기 페이지네이션(전체일 때 3개씩)
+  useEffect(() => { setTypePage(0); }, [part, media]);
 
   // 기록 기반 — 이번 달 다이어리에서 가장 자주 적은 부위 (가장 강한 근거, §7.1)
   const record = useMemo(() => {
@@ -105,11 +121,15 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
   const partOk = (a) => part === "전체" || a.parts.includes(part);
   const pool = CURATION_ARTICLES.filter(a => mediaOk(a) && partOk(a));
 
-  // 섹션 구성 (기록 > 유형 > 고정 > 최신). 유형 인기: 전체=top10, 부위 선택 시 top3.
-  const recordPart = record && (part === "전체" || part === record.part) ? record.part : null;
+  // 섹션 구성 (기록 > 유형 > 고정 > 최신).
+  // 기록 박스는 '전체'일 때만. 유형 인기: 전체=3개씩 페이지 넘김 / 부위 선택 시 top3.
+  const recordPart = record && part === "전체" ? record.part : null;
   const recordList = recordPart ? pool.filter(a => a.parts.includes(recordPart)).slice(0, 3) : [];
-  const typeTopN = part === "전체" ? 10 : 3;
-  const typeList = [...pool].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, typeTopN);
+  const typeSorted = [...pool].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const TYPE_PAGE = 3;
+  const typeAll = part === "전체" ? typeSorted.slice(0, 12) : typeSorted.slice(0, 3);
+  const typePages = Math.max(1, Math.ceil(typeAll.length / TYPE_PAGE));
+  const typePaged = part === "전체" ? typeAll.slice(typePage * TYPE_PAGE, typePage * TYPE_PAGE + TYPE_PAGE) : typeAll;
   const pinned = pool.filter(a => a.pinned);
   const fresh = [...pool].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
@@ -124,13 +144,12 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
         <h2 style={{ flex: 1, margin: 0, fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.3, wordBreak: "keep-all", textWrap: "balance" }}>
           {nickname ? `${nickname}님, ` : ""}어디가 불편해요?
         </h2>
-        {/* 제목 말투 Z/M 알약 */}
-        <div style={{ display: "inline-flex", flexShrink: 0, background: "#F2EFEA", borderRadius: 999, padding: 3 }}>
-          {["Z", "M"].map(z => (
-            <button key={z} onClick={() => setTitleMode(z)} aria-label={z === "Z" ? "담백한 제목" : "공감형 제목"}
-              style={{ border: "none", cursor: "pointer", width: 30, height: 28, borderRadius: 999, fontSize: 13, fontWeight: 900, fontFamily: "inherit", background: titleMode === z ? t.accentDeep : "transparent", color: titleMode === z ? "#fff" : SUB }}>{z}</button>
-          ))}
-        </div>
+        {/* 제목 말투 Z/M 알약 — 부드럽게 미끄러짐 */}
+        <SlideToggle
+          options={[{ k: "Z", label: "Z" }, { k: "M", label: "M" }]}
+          value={titleMode} onChange={setTitleMode}
+          containerBg="#F2EFEA" pillBg={t.accentDeep} activeColor="#fff" inactiveColor={SUB}
+          radius={999} pad={3} itemPad="6px 0" fontSize={13} style={{ flexShrink: 0, width: 66 }} />
       </div>
 
       {/* 부위 6칩 — 가로 스크롤 */}
@@ -144,12 +163,13 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
         })}
       </div>
 
-      {/* 매체 토글 — 가로로 길게(세그먼트), '이번달 기록/발견' 스타일 */}
-      <div style={{ display: "flex", background: "#F2EFEA", borderRadius: 14, padding: 4, marginBottom: 24 }}>
-        {[["article", "📖 글로 읽기"], ["video", "▶ 영상으로 보기"]].map(([k, label]) => (
-          <button key={k} onClick={() => setMedia(k)}
-            style={{ flex: 1, border: "none", cursor: "pointer", borderRadius: 11, padding: "11px 0", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", background: media === k ? "#fff" : "transparent", color: media === k ? INK : SUB, boxShadow: media === k ? "0 2px 8px rgba(0,0,0,0.08)" : "none", transition: "background .15s" }}>{label}</button>
-        ))}
+      {/* 매체 토글 — 연옐로우 배경 + 알약이 옆으로 미끄러짐 */}
+      <div style={{ marginBottom: 24 }}>
+        <SlideToggle
+          options={[{ k: "article", label: "🤔 왜 아픈 걸까?" }, { k: "video", label: "🏃‍♂️ 당장 따라 해보자!" }]}
+          value={media} onChange={setMedia}
+          containerBg="#FBF3D6" pillBg="#fff" activeColor={INK} inactiveColor="#A8925A"
+          radius={14} itemPad="12px 0" fontSize={13.5} />
       </div>
 
       {media === "video" && pool.length === 0 ? (
@@ -161,7 +181,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           {/* ② 기록에서 시작한 글 — 흰 배경 + 연한 옐로 그림자 */}
           {recordPart && recordList.length > 0 && (
             <section style={{ marginBottom: 26 }}>
-              <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 20, padding: "16px 16px 6px", boxShadow: YELLOW_SHADOW }}>
+              <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 20, padding: "16px 16px 6px", boxShadow: "0 2px 6px rgba(160,132,232,0.22), 0 12px 30px rgba(160,132,232,0.42)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 17 }}>💜</span>
                   <span style={{ fontSize: 15, fontWeight: 900, color: INK }}>{nickname ? `${nickname}님 ` : ""}기록에서 시작한 글</span>
@@ -172,11 +192,22 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
             </section>
           )}
 
-          {/* ③ 같은 유형이 많이 본 글/영상 — 전체 top10 / 부위 top3 */}
+          {/* ③ 같은 유형이 많이 본 글/영상 — 전체는 3개씩 페이지 넘김 / 부위 선택 시 top3 */}
           <section style={{ marginBottom: 26 }}>
-            <h3 style={sectionTitle}>{axes.ao}{axes.zm} 유형인 분들이 많이 본 {media === "video" ? "영상" : "글"}</h3>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+              <h3 style={{ ...sectionTitle, margin: 0 }}>{axes.ao}{axes.zm} 유형인 분들이 많이 본 {media === "video" ? "영상" : "글"}</h3>
+              {part === "전체" && typePages > 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => setTypePage(p => Math.max(0, p - 1))} disabled={typePage === 0} aria-label="이전"
+                    style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${LINE}`, background: "#fff", color: typePage === 0 ? MUTE : INK, cursor: typePage === 0 ? "default" : "pointer", fontSize: 15, fontWeight: 900, lineHeight: 1 }}>‹</button>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: SUB, minWidth: 30, textAlign: "center" }}>{typePage + 1}/{typePages}</span>
+                  <button onClick={() => setTypePage(p => Math.min(typePages - 1, p + 1))} disabled={typePage >= typePages - 1} aria-label="다음"
+                    style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${LINE}`, background: "#fff", color: typePage >= typePages - 1 ? MUTE : INK, cursor: typePage >= typePages - 1 ? "default" : "pointer", fontSize: 15, fontWeight: 900, lineHeight: 1 }}>›</button>
+                </div>
+              )}
+            </div>
             <div style={listBox}>
-              {typeList.length ? typeList.map((a, i) => <Row key={a.id} a={a} t={t} mode={titleMode} onOpen={setReading} rank={i + 1} border={i > 0} />)
+              {typePaged.length ? typePaged.map((a, i) => <Row key={a.id} a={a} t={t} mode={titleMode} onOpen={setReading} rank={typePage * TYPE_PAGE + i + 1} border={i > 0} />)
                 : <div style={{ fontSize: 12.5, color: MUTE, fontWeight: 600, textAlign: "center", padding: "18px 8px" }}>이 부위의 글이 곧 추가돼요.</div>}
             </div>
           </section>

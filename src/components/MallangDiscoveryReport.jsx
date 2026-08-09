@@ -209,9 +209,10 @@ function LockedPreview({ children, label }) {
       </div>
       {/* 잠금 안내 배지 — 블러 상태에서만 보인다 */}
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: reveal ? 0 : 1, transition: "opacity .25s ease" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(28,26,23,0.74)", color: "#fff", fontSize: 12, fontWeight: 800, padding: "8px 14px", borderRadius: 999, boxShadow: "0 4px 14px rgba(0,0,0,0.22)", whiteSpace: "nowrap", backdropFilter: "blur(2px)" }}>
-          🔒 {label || "이렇게 채워질 거예요 · 클릭해보세요"}
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: "rgba(28,26,23,0.74)", color: "#fff", padding: "10px 16px", borderRadius: 16, boxShadow: "0 4px 14px rgba(0,0,0,0.22)", backdropFilter: "blur(2px)", textAlign: "center" }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800 }}>아직 발견된 내용이 없어요.</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.92, whiteSpace: "nowrap" }}>🔒 {label || "이렇게 채워질 거예요 · 클릭해보세요"}</span>
+        </div>
       </div>
     </div>
   );
@@ -396,6 +397,8 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   return (
     <div ref={scrollerRef} data-scroll-top style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 18px 96px" }}>
+        {/* 날짜 · 기록수 · 탭을 하나로 묶어 스크롤 시 상단에 함께 고정(sticky) */}
+        <div style={{ position: "sticky", top: 54, zIndex: 20, background: C.page, paddingBottom: 10, marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "2px 0 2px" }}>
           <button
             onClick={() => changeMonth(-1)}
@@ -417,8 +420,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
-        {/* 카테고리 탭 — 스크롤을 따라 상단에 고정(sticky). 누르면 맨 위로 올라간다 */}
-        <div style={{ position: "sticky", top: 54, zIndex: 20, background: C.page, paddingBottom: 12, marginBottom: 6 }}>
+        {/* 카테고리 탭 — 위 날짜·기록수와 함께 고정 */}
         <div style={{ display: "flex", background: YELLOW, borderRadius: 999, padding: 4 }}>
           {[["records", "이번달 기록"], ["discovery", "이번달 발견"]].map(([key, label]) => (
             <button
@@ -2366,18 +2368,20 @@ function WeekdayDrainCard({ data }) {
   const peakWd = data.peak.wd;
   return (
     <InsCard badge="요일별 방전 패턴" title="🗓️ 나의 요일별 방전 패턴" sub="일주일 중 몸이 가장 많이 방전되는 요일을 짚어봤어요">
-      <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 16px", lineHeight: 1.5, wordBreak: "keep-all" }}>
+      <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 18px", lineHeight: 1.5, wordBreak: "keep-all" }}>
         이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 몸이 가장 많이 불편했어요.
       </p>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: 96, padding: "0 2px" }}>
+      {/* 막대 위에 '최고조!'·🔴가 얹히므로, 최고 막대라도 그 라벨이 위 문구와 겹치지 않게
+          컨테이너 높이를 넉넉히(128) 잡고 막대 최대 높이는 낮춘다(56). */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: 128, padding: "0 2px" }}>
         {order.map((wd) => {
           const rec = data.wdAvg[wd];
-          const h = data.maxAvg ? Math.max(6, Math.round((rec.avg / data.maxAvg) * 74)) : 6;
+          const h = data.maxAvg ? Math.max(6, Math.round((rec.avg / data.maxAvg) * 56)) : 6;
           const isPeak = wd === peakWd && rec.n > 0;
           return (
-            <div key={wd} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-              {isPeak && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#E0554F" }}>최고조!</span>}
-              {isPeak && <span style={{ fontSize: 12, marginBottom: -3 }}>🔴</span>}
+            <div key={wd} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              {isPeak && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#E0554F", lineHeight: 1.1 }}>최고조!</span>}
+              {isPeak && <span style={{ fontSize: 11, marginBottom: -2 }}>🔴</span>}
               <div style={{ width: "66%", maxWidth: 22, height: h, borderRadius: 6, background: isPeak ? "linear-gradient(180deg,#F0655F,#E0554F)" : "#E7E1D5", boxShadow: isPeak ? "0 3px 8px rgba(224,85,79,0.35)" : "none", transition: "height .3s" }} />
               <span style={{ fontSize: 11, fontWeight: isPeak ? 800 : 600, color: isPeak ? "#E0554F" : C.sub }}>{WD[wd]}</span>
             </div>
