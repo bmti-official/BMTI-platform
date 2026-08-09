@@ -397,9 +397,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
   return (
     <div ref={scrollerRef} data-scroll-top style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 18px 96px" }}>
-        {/* 날짜 · 기록수 · 탭을 하나로 묶어 스크롤 시 화면 최상단까지 함께 고정(sticky).
-            기록·발견 뷰에선 상단 홈/마이페이지 버튼을 숨기므로 top:0으로 붙여 위쪽 빈공간을 없앤다. */}
-        <div style={{ position: "sticky", top: 0, zIndex: 20, background: C.page, paddingTop: 16, paddingBottom: 10, marginBottom: 6 }}>
+        {/* 날짜 · 기록수 · 탭을 하나로 묶어 상단에 고정. top:0 + paddingTop:60 으로
+            배경(C.page)이 홈/마이페이지 버튼 뒤 영역까지 덮어, 스크롤해도 위로 콘텐츠가 비치지 않게 한다. */}
+        <div style={{ position: "sticky", top: 0, zIndex: 20, background: C.page, paddingTop: 60, paddingBottom: 10, marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "2px 0 2px" }}>
           <button
             onClick={() => changeMonth(-1)}
@@ -1795,7 +1795,7 @@ function NotesBody({ data, entries }) {
           <div onClick={() => setOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
             <div onClick={e => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 300, maxHeight: "88vh", overflowY: "auto", background: "#fff", borderRadius: 6, padding: "12px 12px 0", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", animation: "polaroidPop .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button onClick={() => setOpen(null)} aria-label="닫기"
-                style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", color: C.sub, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 5px rgba(0,0,0,0.18)" }}>✕</button>
+                style={{ position: "absolute", top: 6, right: 9, zIndex: 2, border: "none", background: "transparent", color: "rgba(255,255,255,0.95)", fontSize: 21, fontWeight: 700, lineHeight: 1, cursor: "pointer", padding: 4, textShadow: "0 1px 3px rgba(0,0,0,0.45)" }}>✕</button>
               <div style={{ aspectRatio: "1 / 1", borderRadius: 2, background: cat.tint, display: "flex", alignItems: "center", justifyContent: "center" }}><PhotoInner tags={tags} cat={cat} big /></div>
               <div style={{ padding: "14px 6px 18px" }}>
                 <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginBottom: 7 }}>{open.date} · {open.category}</div>

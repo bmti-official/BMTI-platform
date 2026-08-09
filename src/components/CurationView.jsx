@@ -148,7 +148,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
         <SlideToggle
           options={[{ k: "Z", label: "Z" }, { k: "M", label: "M" }]}
           value={titleMode} onChange={setTitleMode}
-          containerBg="#F2EFEA" pillBg={t.accentDeep} activeColor="#fff" inactiveColor={SUB}
+          containerBg="#F2EFEA" pillBg={titleMode === "Z" ? "#7EC8F2" : "#F4A6C6"} activeColor="#fff" inactiveColor={SUB}
           radius={999} pad={3} itemPad="6px 0" fontSize={13} style={{ flexShrink: 0, width: 66 }} />
       </div>
 
@@ -158,7 +158,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           const on = part === p;
           return (
             <button key={p} onClick={() => setPart(p)}
-              style={{ flexShrink: 0, border: on ? "none" : `1.5px solid ${LINE}`, cursor: "pointer", borderRadius: 999, padding: "9px 15px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", whiteSpace: "nowrap", background: on ? t.accentDeep : "#fff", color: on ? "#fff" : SUB, boxShadow: on ? `0 4px 12px ${t.accentSoft}` : "none" }}>{p}</button>
+              style={{ flexShrink: 0, border: on ? `1.5px solid ${t.accentSoft}` : `1.5px solid ${LINE}`, cursor: "pointer", borderRadius: 999, padding: "9px 15px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", whiteSpace: "nowrap", background: on ? t.accentSoft : "#fff", color: on ? t.accentDeep : SUB }}>{p}</button>
           );
         })}
       </div>
@@ -167,12 +167,12 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
       <div style={{ marginBottom: 24 }}>
         <SlideToggle
           options={[
-            { k: "article", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>Q 유형의</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>🤔 왜 아픈 걸까?</span></span>) },
-            { k: "video", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>D 유형의</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>🏃‍♂️ 당장 따라 해보자!</span></span>) },
+            { k: "article", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>Q 유형</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>왜 아픈 걸까?</span></span>) },
+            { k: "video", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>D 유형의</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>당장 따라 해보자!</span></span>) },
           ]}
           value={media} onChange={setMedia}
           containerBg="#FBF3D6" pillBg="#fff" activeColor={INK} inactiveColor="#A8925A"
-          radius={14} itemPad="10px 0" fontSize={13.5} />
+          radius={999} itemPad="10px 0" fontSize={13.5} />
       </div>
 
       {media === "video" && pool.length === 0 ? (
