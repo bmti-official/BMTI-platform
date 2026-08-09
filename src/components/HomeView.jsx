@@ -142,6 +142,13 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-lg cursor-pointer"
           onClick={() => setActiveChar(null)}
         >
+          <button
+            onClick={() => setActiveChar(null)}
+            aria-label="닫기"
+            className="fixed top-4 right-4 z-[101] w-10 h-10 rounded-full bg-white/25 backdrop-blur-md border border-white/30 text-white text-xl font-bold flex items-center justify-center active:scale-95 transition-transform"
+          >
+            ✕
+          </button>
           <div className="flex flex-col items-center animate-[fadeIn_0.3s_ease-out] px-6 max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className={`w-72 h-72 md:w-96 md:h-96 rounded-full ${activeChar.color} flex items-center justify-center overflow-hidden shadow-2xl border-2 border-white/30`}>
               <img src={activeChar.image} alt={activeChar.id} className={`w-full h-full object-contain drop-shadow-2xl ${activeChar.id === 'OLQM' ? 'scale-90' : ['OCDZ', 'OCQM'].includes(activeChar.id) ? 'scale-100' : 'scale-125'}`} />

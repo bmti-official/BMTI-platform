@@ -396,9 +396,10 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 
   return (
     <div ref={scrollerRef} data-scroll-top style={{ position: "fixed", inset: 0, zIndex: 30, background: C.page, overflowY: "auto", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "76px 18px 96px" }}>
-        {/* 날짜 · 기록수 · 탭을 하나로 묶어 스크롤 시 상단에 함께 고정(sticky) */}
-        <div style={{ position: "sticky", top: 54, zIndex: 20, background: C.page, paddingBottom: 10, marginBottom: 6 }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 18px 96px" }}>
+        {/* 날짜 · 기록수 · 탭을 하나로 묶어 스크롤 시 화면 최상단까지 함께 고정(sticky).
+            기록·발견 뷰에선 상단 홈/마이페이지 버튼을 숨기므로 top:0으로 붙여 위쪽 빈공간을 없앤다. */}
+        <div style={{ position: "sticky", top: 0, zIndex: 20, background: C.page, paddingTop: 16, paddingBottom: 10, marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, margin: "2px 0 2px" }}>
           <button
             onClick={() => changeMonth(-1)}
@@ -420,19 +421,18 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           이번 달 {report.meta.recordedDays}일 기록했어요
         </p>
 
-        {/* 카테고리 탭 — 위 날짜·기록수와 함께 고정 */}
-        <div style={{ display: "flex", background: YELLOW, borderRadius: 999, padding: 4 }}>
+        {/* 카테고리 탭 — 위 날짜·기록수와 함께 고정. 선택 시 흰 알약이 옆으로 미끄러진다 */}
+        <div style={{ position: "relative", display: "flex", background: YELLOW, borderRadius: 999, padding: 4 }}>
+          <div style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: "calc((100% - 8px) / 2)", transform: `translateX(${tab === "discovery" ? 100 : 0}%)`, background: "#fff", borderRadius: 999, boxShadow: "0 1px 3px rgba(28,26,23,0.12)", transition: "transform .3s cubic-bezier(.34,1.45,.5,1)" }} />
           {[["records", "이번달 기록"], ["discovery", "이번달 발견"]].map(([key, label]) => (
             <button
               key={key}
               onClick={() => goTab(key)}
               style={{
+                position: "relative", zIndex: 1,
                 flex: 1, border: "none", cursor: "pointer", borderRadius: 999, padding: "9px 0",
-                fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
-                background: tab === key ? "#fff" : "transparent",
-                color: tab === key ? C.ink : C.sub,
-                boxShadow: tab === key ? "0 1px 3px rgba(28,26,23,0.12)" : "none",
-                transition: "color .2s, background .2s",
+                fontSize: 13.5, fontWeight: 800, fontFamily: "inherit", background: "transparent",
+                color: tab === key ? C.ink : C.sub, transition: "color .2s",
               }}
             >
               {label}
@@ -1793,7 +1793,9 @@ function NotesBody({ data, entries }) {
         const tags = tagLabels(open);
         return (
           <div onClick={() => setOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 300, background: "#fff", borderRadius: 6, padding: "12px 12px 0", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", animation: "polaroidPop .28s cubic-bezier(.22,.9,.32,1)" }}>
+            <div onClick={e => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 300, maxHeight: "88vh", overflowY: "auto", background: "#fff", borderRadius: 6, padding: "12px 12px 0", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", animation: "polaroidPop .28s cubic-bezier(.22,.9,.32,1)" }}>
+              <button onClick={() => setOpen(null)} aria-label="닫기"
+                style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", color: C.sub, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 5px rgba(0,0,0,0.18)" }}>✕</button>
               <div style={{ aspectRatio: "1 / 1", borderRadius: 2, background: cat.tint, display: "flex", alignItems: "center", justifyContent: "center" }}><PhotoInner tags={tags} cat={cat} big /></div>
               <div style={{ padding: "14px 6px 18px" }}>
                 <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginBottom: 7 }}>{open.date} · {open.category}</div>

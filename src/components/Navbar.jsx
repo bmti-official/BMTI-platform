@@ -145,7 +145,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       {/* 모든 페이지: 위로 한번에 올리기 버튼 */}
       <AppScrollTop />
 
-      {/* 상단: 홈(집) 원형 버튼 — 항상 떠 있음 */}
+      {/* 상단: 홈(집) 원형 버튼 — 기록·발견 뷰에선 숨겨서 리포트가 상단까지 올라오게 한다 */}
+      {!showDiscovery && (
       <div className="fixed top-3 left-3 z-40">
         <button
           onClick={() => { setShowDiscovery(false); setView('home'); }}
@@ -155,8 +156,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           <HomeIcon className={`w-6 h-6 ${currentView === 'home' ? 'text-black' : 'text-gray-500'}`} />
         </button>
       </div>
+      )}
 
-      {/* 상단: 닉네임 + 마이페이지(사람) 알약 / 미로그인 시 카카오 로그인 — 항상 떠 있음 */}
+      {/* 상단: 닉네임 + 마이페이지(사람) 알약 / 미로그인 시 카카오 로그인 — 기록·발견 뷰에선 숨김 */}
+      {!showDiscovery && (
       <div id="login-button" className="fixed top-3 right-3 z-40">
         {isLoggedIn ? (
           <button
@@ -185,6 +188,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           </button>
         )}
       </div>
+      )}
 
       {/* 하단: 하나의 기다란 떠 있는 알약(가운데 캐릭터 자리) — BMTI 설문 중에는 숨긴다 */}
       {currentView !== 'quiz' && (

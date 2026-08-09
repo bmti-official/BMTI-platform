@@ -252,7 +252,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
             document.body
           )}
           <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
-            <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 8px 30px rgba(240,224,120,0.5), 0 3px 14px rgba(220,190,80,0.32), 0 2px 8px rgba(0,0,0,0.10)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
+            <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button
                 onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
                 style={{ position: "absolute", top: 10, right: 12, width: 26, height: 26, border: "none", background: "transparent", color: C.sub, fontSize: 15, cursor: "pointer" }}

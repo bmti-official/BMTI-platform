@@ -166,10 +166,13 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
       {/* 매체 토글 — 연옐로우 배경 + 알약이 옆으로 미끄러짐 */}
       <div style={{ marginBottom: 24 }}>
         <SlideToggle
-          options={[{ k: "article", label: "🤔 왜 아픈 걸까?" }, { k: "video", label: "🏃‍♂️ 당장 따라 해보자!" }]}
+          options={[
+            { k: "article", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>Q 유형의</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>🤔 왜 아픈 걸까?</span></span>) },
+            { k: "video", label: (<span style={{ display: "block", lineHeight: 1.25 }}><span style={{ fontSize: 14.5, fontWeight: 900 }}>D 유형의</span><br /><span style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>🏃‍♂️ 당장 따라 해보자!</span></span>) },
+          ]}
           value={media} onChange={setMedia}
           containerBg="#FBF3D6" pillBg="#fff" activeColor={INK} inactiveColor="#A8925A"
-          radius={14} itemPad="12px 0" fontSize={13.5} />
+          radius={14} itemPad="10px 0" fontSize={13.5} />
       </div>
 
       {media === "video" && pool.length === 0 ? (
@@ -181,7 +184,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
           {/* ② 기록에서 시작한 글 — 흰 배경 + 연한 옐로 그림자 */}
           {recordPart && recordList.length > 0 && (
             <section style={{ marginBottom: 26 }}>
-              <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 20, padding: "16px 16px 6px", boxShadow: "0 2px 6px rgba(160,132,232,0.22), 0 12px 30px rgba(160,132,232,0.42)" }}>
+              <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 20, padding: "16px 16px 6px", boxShadow: "0 2px 6px rgba(220,188,86,0.2), 0 12px 30px rgba(233,203,110,0.45)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 17 }}>💜</span>
                   <span style={{ fontSize: 15, fontWeight: 900, color: INK }}>{nickname ? `${nickname}님 ` : ""}기록에서 시작한 글</span>
