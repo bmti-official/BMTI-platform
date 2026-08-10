@@ -128,15 +128,19 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
   const partOk = (a) => part === "전체" || a.parts.includes(part);
   const pool = CURATION_ARTICLES.filter(partOk);
 
+  // 상단 히어로 배너 — 내 기록 부위 우선(개인화), 없으면 조회수 top. 아래 리스트에선 중복 제외.
   const recordPart = record && part === "전체" ? record.part : null;
-  const recordList = recordPart ? pool.filter(a => a.parts.includes(recordPart)).slice(0, 3) : [];
-  const typeSorted = [...pool].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const recordTop = recordPart ? [...pool].filter(a => a.parts.includes(recordPart)).sort((a, b) => (b.views || 0) - (a.views || 0))[0] : null;
+  const heroArticle = recordTop || [...pool].sort((a, b) => (b.views || 0) - (a.views || 0))[0] || null;
+  const heroIsRecord = !!recordTop;
+  const rest = pool.filter(a => a.id !== heroArticle?.id);
+  const typeSorted = [...rest].sort((a, b) => (b.views || 0) - (a.views || 0));
   const TYPE_PAGE = 3;
   const typeAll = part === "전체" ? typeSorted.slice(0, 12) : typeSorted.slice(0, 3);
   const typePages = Math.max(1, Math.ceil(typeAll.length / TYPE_PAGE));
   const typePaged = part === "전체" ? typeAll.slice(typePage * TYPE_PAGE, typePage * TYPE_PAGE + TYPE_PAGE) : typeAll;
   const pinned = pool.filter(a => a.pinned);
-  const fresh = [...pool].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const fresh = [...rest].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
   const sectionTitle = { fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", margin: "0 0 12px", wordBreak: "keep-all", color: INK };
   const listBox = { background: "#FCFBF9", border: `1px solid ${LINE}`, borderRadius: 20, padding: "4px 15px" };
@@ -170,18 +174,25 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
         })}
       </div>
 
-      {/* ② 기록에서 시작한 글 — 흰 배경 + 연한 옐로 그림자 */}
-      {recordPart && recordList.length > 0 && (
-        <section style={{ marginBottom: 26 }}>
-          <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 20, padding: "16px 16px 6px", boxShadow: "0 2px 6px rgba(220,188,86,0.2), 0 12px 30px rgba(233,203,110,0.45)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 17 }}>💜</span>
-              <span style={{ fontSize: 15, fontWeight: 900, color: INK }}>{nickname ? `${nickname}님 ` : ""}기록에서 시작한 글</span>
-            </div>
-            <p style={{ fontSize: 12.5, color: t.accentDeep, fontWeight: 800, margin: "0 0 4px 25px" }}>이번 달 {recordPart}를 {record.n}번 적으셨어요.</p>
-            <div>{recordList.map((a, i) => <Row key={a.id} a={a} t={t} mode={titleMode} onOpen={setReading} border={i > 0} />)}</div>
+      {/* 상단 히어로 배너 — 큰 이미지 + 하단 제목 (화면 절반 정도) */}
+      {heroArticle && (
+        <button onClick={() => setReading(heroArticle)}
+          style={{ position: "relative", width: "100%", height: 440, border: "none", padding: 0, cursor: "pointer", borderRadius: 24, overflow: "hidden", display: "block", textAlign: "left", marginBottom: 26, boxShadow: CARD_SHADOW }}>
+          {heroArticle.image
+            ? <img src={heroArticle.image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            : <div style={{ position: "absolute", inset: 0, background: partTheme(heroArticle.parts[0]).grad, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 128, opacity: 0.92, filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.14))" }}>{partTheme(heroArticle.parts[0]).emoji}</span></div>}
+          {/* 하단 어둠 그라데이션 */}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.16) 42%, rgba(0,0,0,0) 64%)" }} />
+          {/* 개인화 배지 */}
+          {heroIsRecord && (
+            <span style={{ position: "absolute", top: 16, left: 16, background: "rgba(255,255,255,0.92)", color: t.accentDeep, fontSize: 12, fontWeight: 800, borderRadius: 999, padding: "6px 12px", boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}>💜 {nickname ? `${nickname}님 ` : ""}기록 추천 · {recordPart} {record.n}번</span>
+          )}
+          {/* 하단 제목 */}
+          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 22px 24px" }}>
+            <span style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: "#fff", background: "rgba(255,255,255,0.22)", borderRadius: 999, padding: "5px 11px", marginBottom: 12, backdropFilter: "blur(4px)" }}>#{heroArticle.parts[0]}</span>
+            <h2 style={{ margin: 0, fontSize: 25, fontWeight: 900, lineHeight: 1.3, letterSpacing: "-0.02em", color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.4)", wordBreak: "keep-all", textWrap: "balance" }}>{titleOf(heroArticle, titleMode)}</h2>
           </div>
-        </section>
+        </button>
       )}
 
       {/* ③ 같은 유형이 많이 본 글 — 전체는 3개씩 페이지 넘김 / 부위 선택 시 top3 */}
@@ -198,7 +209,7 @@ export default function CurationView({ bmtiCode, onGoDiary }) {
             </div>
           )}
         </div>
-        <div style={listBox}>
+        <div style={{ ...listBox, boxShadow: "0 2px 6px rgba(220,188,86,0.2), 0 12px 30px rgba(233,203,110,0.4)" }}>
           {typePaged.length ? typePaged.map((a, i) => <Row key={a.id} a={a} t={t} mode={titleMode} onOpen={setReading} rank={typePage * TYPE_PAGE + i + 1} border={i > 0} />)
             : <div style={{ fontSize: 12.5, color: MUTE, fontWeight: 600, textAlign: "center", padding: "18px 8px" }}>이 부위의 글이 곧 추가돼요.</div>}
         </div>
