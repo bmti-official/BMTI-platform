@@ -11,7 +11,7 @@ const Footer = () => {
   const [isAdInquiryOpen, setIsAdInquiryOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const [visitors, setVisitors] = useState({ today: 0, total: 0 });
+  const [visitors, setVisitors] = useState({ today: 0, monthly: 0, total: 0 });
 
   useEffect(() => {
     // 방문 기록 후 카운트 조회
@@ -79,6 +79,8 @@ const Footer = () => {
         fontSize: 11, fontWeight: 600, color: '#B0AAA0', letterSpacing: '-0.01em',
       }}>
         <span>오늘 방문자 : {fmt(visitors.today)}명</span>
+        <span style={{ color: '#D8D3C8' }}>|</span>
+        <span>월간 방문자 : {fmt(visitors.monthly || 0)}명</span>
         <span style={{ color: '#D8D3C8' }}>|</span>
         <span>누적 방문자 : {fmt(visitors.total)}명</span>
       </div>

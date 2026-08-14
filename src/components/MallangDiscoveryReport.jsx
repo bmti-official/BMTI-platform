@@ -942,111 +942,37 @@ function WeatherFindingCards({ entries, onWeatherUpdated }) {
   const rainSore = avgSoreOf(rainDays, kneeWaist);
   const coldSore = soreCountOf(coldDays, neckShoulder);
 
-  const bodyCards = [
-    {
-      key: "rain", emoji: "🌧️", title: "비·흐린 날 (저기압)",
-      text: rainSore != null
-        ? `비가 오거나 흐린 날, 무릎과 허리의 뻐근함이 평균 ${rainSore.toFixed(1)}점으로 기록되었어요.`
-        : `비가 오거나 흐린 날이 ${rainDays.length}일 있었지만, 아직 무릎·허리 불편함 기록이 겹치진 않았어요.`,
-      parts: [{ e: "🦵", label: "무릎" }, { e: "🌀", label: "허리" }],
-      bar: rainSore, barMax: 10,
-    },
-    {
-      key: "cold", emoji: "🌡️", title: "기온 저하 · 큰 일교차",
-      text: coldDays.length
-        ? `기온이 크게 떨어지거나 일교차가 컸던 날(${coldDays.length}일), 목·어깨 결림과 두통이 ${coldSore > 0 ? `${coldSore}번 ` : ""}자주 기록되었어요.`
-        : `이번 달은 기온이 크게 떨어지거나 일교차가 큰 날이 뚜렷하게 잡히진 않았어요.`,
-      parts: [{ e: "🧣", label: "목" }, { e: "💢", label: "어깨" }],
-      bar: null,
-    },
-  ];
-
-  const moodCards = [
-    {
-      key: "lowsun", emoji: "☁️", title: "일조량 부족 (긴 장마 · 잦은 흐림)",
-      text: rainDays.length
-        ? `장마나 흐린 날이 이어졌을 때(${rainDays.length}일), 그중 ${lowMoodCount(rainDays)}일은 우울감·무기력함을 느낀 상태로 기록했어요.`
-        : `흐리거나 비 온 날의 기록이 아직 많지 않아요.`,
-      icon: "🌧️",
-    },
-    {
-      key: "hothumid", emoji: "🔥", title: "고온 다습 (폭염)",
-      text: hotHumidDays.length
-        ? `기온과 습도가 모두 높았던 날(${hotHumidDays.length}일), 그중 ${lowMoodCount(hotHumidDays)}일은 불쾌지수와 함께 짜증·분노에 가까운 감정을 기록했어요.`
-        : `기온과 습도가 모두 높았던 날은 아직 많지 않아요.`,
-      icon: "🌡️",
-    },
-    {
-      key: "dust", emoji: "🌫️", title: "미세먼지 나쁨 지속",
-      text: badAirDays.length
-        ? `미세먼지 '나쁨'이 있던 날(${badAirDays.length}일), 그중 ${lowMoodCount(badAirDays)}일은 심리적 답답함·스트레스가 높게 기록되었어요.`
-        : `이번 달은 미세먼지 '나쁨'이 지속된 날이 많지 않았어요.`,
-      icon: "😷",
-    },
-  ];
+  // 거창한 스와이프 카드 대신 — 이런 날이 며칠이었고, 몸·기분 기록이 어땠는지 한 박스에 간단히.
+  const rows = [
+    { emoji: "🌧️", label: "비·흐린 날", days: rainDays.length, sub: [rainSore != null ? `무릎·허리 평균 ${rainSore.toFixed(1)}점` : null, lowMoodCount(rainDays) ? `기분 저조 ${lowMoodCount(rainDays)}일` : null].filter(Boolean).join(" · ") },
+    { emoji: "🌡️", label: "기온 낮음·큰 일교차", days: coldDays.length, sub: coldSore ? `목·어깨 기록 ${coldSore}번` : "" },
+    { emoji: "🔥", label: "고온 다습", days: hotHumidDays.length, sub: lowMoodCount(hotHumidDays) ? `기분 저조 ${lowMoodCount(hotHumidDays)}일` : "" },
+    { emoji: "🌫️", label: "미세먼지 나쁨", days: badAirDays.length, sub: lowMoodCount(badAirDays) ? `기분 저조 ${lowMoodCount(badAirDays)}일` : "" },
+  ].filter((r) => r.days > 0);
 
   return (
-    <InsCard badge="이번 달 발견 · 날씨" title="날씨에 따라, 내 몸과 마음은" sub="비·기온·습도·미세먼지와 이번 달 기록을 겹쳐봤어요">
-      <WeatherSwipeRow heading="1. 신체적 불편함" cards={bodyCards} kind="body" t={t} />
-      <div style={{ height: 18 }} />
-      <WeatherSwipeRow heading="2. 기분 상태" cards={moodCards} kind="mood" t={t} />
+    <InsCard badge="이번 달 발견 · 날씨" title="날씨와 겹쳐 본 기록" sub="이런 날이 며칠이었고, 그날 몸·기분 기록이 어땠는지 한눈에">
+      {rows.length ? (
+        <div style={{ background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "4px 15px" }}>
+          {rows.map((r, i) => (
+            <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderTop: i ? `1px solid ${C.line}` : "none" }}>
+              <span style={{ fontSize: 22, width: 28, textAlign: "center", flexShrink: 0 }}>{r.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{r.label} <b style={{ color: t.accentDeep }}>{r.days}일</b></div>
+                {r.sub && <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginTop: 2, wordBreak: "keep-all" }}>{r.sub}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontSize: 13, color: C.sub, fontWeight: 600, lineHeight: 1.6, margin: 0, background: "#FBFAF6", borderRadius: 14, padding: "16px 15px", textAlign: "center" }}>
+          이번 달은 특별한 날씨 패턴이 많지 않았어요.
+        </p>
+      )}
     </InsCard>
   );
 }
 
-function WeatherSwipeRow({ heading, cards, kind, t }) {
-  const ref = useRef(null);
-  const [idx, setIdx] = useState(0);
-  const N = cards.length;
-  const onScroll = () => { const el = ref.current; if (!el) return; setIdx(Math.round(el.scrollLeft / (el.clientWidth * 0.9))); };
-  return (
-    <div>
-      <div style={{ fontSize: 12, fontWeight: 800, color: C.sub, margin: "0 2px 9px" }}>{heading}</div>
-      <div ref={ref} onScroll={onScroll}
-        style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", margin: "0 -2px", padding: "0 2px 2px" }}>
-        {cards.map((c) => (
-          <div key={c.key} style={{ flex: "0 0 88%", scrollSnapAlign: "start", boxSizing: "border-box", background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "15px 16px 16px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
-              <span style={{ fontSize: 22, flexShrink: 0 }}>{c.emoji}</span>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: C.ink, lineHeight: 1.3, wordBreak: "keep-all" }}>{c.title}</span>
-            </div>
-            <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all", minHeight: 58 }}>{c.text}</p>
-            {kind === "body" && (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.line}`, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                  {c.parts.map((p, i) => (
-                    <span key={i} style={{ fontSize: 11.5, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "5px 11px" }}>{p.e} {p.label}</span>
-                  ))}
-                </div>
-                {c.bar != null && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ flex: 1, height: 10, borderRadius: 999, background: "#EFEBE3", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${Math.min(100, (c.bar / (c.barMax || 10)) * 100)}%`, background: t.accent, borderRadius: 999 }} />
-                    </div>
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, whiteSpace: "nowrap" }}>{c.bar.toFixed(1)}점</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {kind === "mood" && (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.line}`, display: "flex", alignItems: "center", gap: 9 }}>
-                <span style={{ fontSize: 26 }}>{c.icon}</span>
-                <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 700 }}>기분 기록과 겹쳐본 신호예요</span>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      {N > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
-          {cards.map((_, i) => (
-            <span key={i} style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 999, background: i === idx ? t.accent : "#DCD6CB", transition: "width .2s" }} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── 내 프로필과 이어보기 — 온보딩(운동 빈도·목적·자주 하는 자세)을 이번 달 기록과 연결 ──
 const FREQ_LABEL = { rarely: "거의 안 함", sometimes: "가끔", weekly: "주 1회 정도", daily: "거의 매일" };

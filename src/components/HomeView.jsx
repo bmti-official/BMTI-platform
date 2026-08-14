@@ -168,17 +168,26 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="pt-24 md:pt-28 pb-24 md:pb-28 px-6 max-w-5xl mx-auto text-center">
-        <h1 className="font-serif leading-tight mb-0">
-          <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
-            <span className="text-6xl md:text-8xl font-bold">BMTI</span>
-            <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>
+      {/* Hero Section — 좌: BMTI 테스트 / 우: 건강 다이어리 (같은 크기·색) */}
+      <section className="pt-24 md:pt-28 pb-24 md:pb-28 px-5 max-w-5xl mx-auto">
+        <div className="flex items-start justify-between gap-3 md:gap-8">
+          {/* 좌측 — BMTI 움직임 성향 테스트 */}
+          <div className="flex-1 min-w-0 text-left font-serif">
+            <div className="text-[34px] md:text-7xl font-bold leading-none">BMTI</div>
+            <div className="text-base md:text-2xl font-medium mt-2 md:mt-3 text-gray-400 break-keep">움직임 성향 테스트</div>
+            <div className="text-[8px] md:text-xs text-gray-400 font-sans tracking-widest font-medium mt-3 md:mt-5 uppercase leading-relaxed">
+              BODY MANAGEMENT<br className="md:hidden" /> TYPE INDICATOR
+            </div>
           </div>
-          <span className="text-[min(3vw,11px)] md:text-lg whitespace-nowrap text-gray-400 font-sans tracking-widest md:tracking-[0.3em] font-medium mt-6 block uppercase">
-            BODY MANAGEMENT TYPE INDICATOR
-          </span>
-        </h1>
+          {/* 우측 — 건강 다이어리 (다이어리로 이동) */}
+          <button onClick={() => setView('aichat')} className="flex-1 min-w-0 text-right font-serif cursor-pointer active:scale-[0.98] transition-transform">
+            <div className="text-[34px] md:text-7xl font-bold leading-none break-keep">건강<br />다이어리</div>
+            <div className="text-base md:text-2xl font-medium mt-2 md:mt-3 text-gray-400 break-keep">이번달 기록·발견</div>
+            <div className="text-[8px] md:text-xs text-gray-400 font-sans tracking-widest font-medium mt-3 md:mt-5 uppercase leading-relaxed">
+              WELLNESS<br className="md:hidden" /> DIARY
+            </div>
+          </button>
+        </div>
       </section>
 
       {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는

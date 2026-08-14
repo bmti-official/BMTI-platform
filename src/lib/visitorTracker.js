@@ -81,9 +81,15 @@ export async function recordVisit() {
 // { today, total } 를 반환한다.
 export async function fetchVisitorCounts() {
   const date = todayKST();
+  // 월간 = 오늘 포함 최근 30일(오늘부터 한 달 전까지) 방문자 합계
+  const monthStart = (() => {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    kst.setDate(kst.getDate() - 29);
+    return kst.toISOString().slice(0, 10);
+  })();
 
   try {
-    const [{ data: todayRow }, { data: totalRow }] = await Promise.all([
+    const [{ data: todayRow }, { data: totalRow }, { data: monthRows }] = await Promise.all([
       supabase
         .from("visitor_counts")
         .select("today_count")
@@ -94,14 +100,21 @@ export async function fetchVisitorCounts() {
         .select("total_count")
         .eq("id", 1)
         .single(),
+      supabase
+        .from("visitor_counts")
+        .select("today_count")
+        .gte("date_kst", monthStart),
     ]);
+
+    const monthly = (monthRows || []).reduce((s, r) => s + (r.today_count || 0), 0);
 
     return {
       today: todayRow?.today_count ?? 0,
+      monthly,
       total: totalRow?.total_count ?? 0,
     };
   } catch (err) {
     console.error("[visitorTracker] fetchVisitorCounts error:", err);
-    return { today: 0, total: 0 };
+    return { today: 0, monthly: 0, total: 0 };
   }
 }

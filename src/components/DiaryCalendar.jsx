@@ -1,5 +1,4 @@
 import { useState, useRef, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
@@ -236,21 +235,14 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
       {showMoodPopup && (
         <>
-          {/* 배경은 하단 네비 바까지 포함해서 전부 톤다운하되, 캐릭터가 떠 있는 자리만 원형으로 뚫는다. */}
+          {/* 배경 — 캐릭터 스포트라이트/글로우 없이, 뒤의 캘린더가 약하게 블러 처리되어 비치게 한다. */}
           <div
             onClick={() => { setShowMoodPopup(false); setPoppedMood(null); }}
             style={{
-              position: "fixed", inset: 0, zIndex: 55, background: "rgba(28,26,23,0.4)",
-              WebkitMaskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
-              maskImage: "radial-gradient(circle 42px at 50% calc(100% - 58px), transparent 98%, black 100%)",
+              position: "fixed", inset: 0, zIndex: 55, background: "rgba(255,255,255,0.22)",
+              backdropFilter: "blur(5px)", WebkitBackdropFilter: "blur(5px)",
             }}
           />
-          {/* 가운데 누끼 캐릭터를 감싸는 연옐로우 글로우 링 — DiaryCalendar 고정 컨테이너는
-              하단 네비(z-40)보다 아래 스택이라, body로 포탈해 네비 위(z-90)에 그린다. */}
-          {createPortal(
-            <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", width: 84, height: 84, borderRadius: "50%", background: "transparent", boxShadow: "0 0 0 2px rgba(253,246,220,0.7), 0 0 20px 6px rgba(240,224,120,0.4)", zIndex: 90, pointerEvents: "none" }} />,
-            document.body
-          )}
           <div style={{ position: "fixed", left: "50%", bottom: 108, transform: "translateX(-50%)", width: "calc(100% - 48px)", maxWidth: 340, zIndex: 60 }}>
             <div style={{ background: "#fff", borderRadius: 22, padding: "18px 20px 20px", position: "relative", boxShadow: "0 10px 34px rgba(0,0,0,0.16)", animation: "diaryPopupUp .28s cubic-bezier(.22,.9,.32,1)" }}>
               <button
@@ -263,7 +255,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               {poppedMood === null ? (
                 <>
                   <div style={{ fontSize: 16, fontWeight: 800, textAlign: "center", margin: "2px 0 4px", lineHeight: 1.4 }}>{moodQuestionTitle}</div>
-                  <div style={{ fontSize: 12.5, color: C.sub, textAlign: "center", fontWeight: 600, marginBottom: 18 }}>{moodQuestionSub}</div>
+                  <div style={{ fontSize: 12.5, color: "#9585D0", textAlign: "center", fontWeight: 700, marginBottom: 18 }}>{moodQuestionSub}</div>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                     {MOODS.map(m => (
                       <button key={m.v} onClick={() => setPoppedMood(m.v)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
