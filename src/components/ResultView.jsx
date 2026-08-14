@@ -432,16 +432,18 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
         </div>
       </div>
-        {/* CTA 줄 — 기록 CTA는 좌측으로, 우측엔 '다른 유형 구경하기'. '실패 없는 운동 강사 고르는 방법' 박스 위 */}
-        <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-8">
+        {/* CTA 줄 — 기록 CTA와 '다른 유형 구경하기'(둘 다 동일한 글씨·화살표 동그란 버튼 스타일). '실패 없는 운동 강사 고르는 방법' 박스 위 */}
+        <div className="w-full flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mb-8">
           <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
           <button
             onClick={() => setShowGallery(true)}
-            className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3.5 py-2 text-[12px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 active:scale-95 transition"
+            className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
           >
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-            다른 유형 구경하기
-            <span className="text-gray-400">→</span>
+            <span className="w-8 h-8 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+            </span>
+            <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">다른 유형 구경하기</span>
+            <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
           </button>
         </div>
         {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
