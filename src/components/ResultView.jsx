@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES, CODE_KO } from '../data';
 import DiaryCta from './DiaryCta';
+import TypeGallery from './TypeGallery';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
@@ -106,6 +107,7 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
 
 const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, onRequireLogin, bmtiCode, bmtiAnswers, userProfile }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   // 오늘 건강 다이어리 기록 완료 여부 — CTA 문구(기록하기 vs 기록·발견)를 가른다
   const hasLoggedToday = !!getEntryForDate(todayISO());
   const printHeaderRef = useRef(null);
@@ -430,10 +432,19 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
         </div>
       </div>
-        {/* CTA — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기'. '실패 없는 운동 강사 고르는 방법' 박스 위 */}
-        <div className="w-full flex justify-center mb-8">
+        {/* CTA 줄 — 기록 CTA는 좌측으로, 우측엔 '다른 유형 구경하기'. '실패 없는 운동 강사 고르는 방법' 박스 위 */}
+        <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-8">
           <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
+          <button
+            onClick={() => setShowGallery(true)}
+            className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3.5 py-2 text-[12px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 active:scale-95 transition"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+            다른 유형 구경하기
+            <span className="text-gray-400">→</span>
+          </button>
         </div>
+        {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
         <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
           {/* Custom Instructor Guide Section */}
           <div className="border-b border-gray-100 pb-12 text-left">

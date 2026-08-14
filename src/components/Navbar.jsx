@@ -11,6 +11,7 @@ import { Mallang } from './Mallang';
 import { todayISO, getEntryForDate } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
 import BmtiPartnerPopup from './BmtiPartnerPopup';
+import TypeGallery from './TypeGallery';
 
 // 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양.
 // 활성 상태(말랑이의 발견을 보고 있을 때)엔 막대 3개가 분홍/초록/회색을 돌아가며
@@ -154,6 +155,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 파트너' 팝업.
   const [showPartner, setShowPartner] = useState(false);
+  // 검사 전 유저가 '나의유형'을 누르면 뜨는 16유형 구경 갤러리.
+  const [showTypeGallery, setShowTypeGallery] = useState(false);
   const hasLoggedToday = !!getEntryForDate(todayISO());
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
@@ -224,7 +227,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
               <PillTab active={currentView === 'home' && !showDiscovery} onClick={() => { setShowDiscovery(false); setView('home'); }}
                 icon={<OpenBookIcon active={currentView === 'home' && !showDiscovery} />} label="BMTI" />
-              <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowPartner(true); }}
+              <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowTypeGallery(true); }}
                 icon={<CheckIcon active={currentView === 'result'} />} label="나의유형" />
               {/* 가운데 캐릭터 자리 */}
               <span className="w-14 shrink-0" aria-hidden="true" />
@@ -264,6 +267,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
       {showDiscovery && (
         <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} />
+      )}
+
+      {showTypeGallery && (
+        <TypeGallery onClose={() => setShowTypeGallery(false)} />
       )}
 
     </>

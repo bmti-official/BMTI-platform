@@ -13,19 +13,36 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
   const go = (v) => { onClose(); setView(v); };
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(28,26,23,0.45)' }}>
+    <div onClick={onClose} className="fixed inset-0 z-[80] flex items-center justify-center p-5 backdrop-blur-md" style={{ background: 'rgba(28,26,23,0.45)' }}>
       <div onClick={e => e.stopPropagation()} className="w-full max-w-md relative animate-[fadeIn_.25s_ease-out]" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
         <button onClick={onClose} aria-label="닫기" className="absolute -top-9 right-1 text-white/80 hover:text-white text-2xl leading-none z-10">✕</button>
 
         {!bmtiCode ? (
-          // 아직 검사 전 — 테스트 유도
-          <div className="bg-white rounded-[2rem] p-7 text-center shadow-2xl">
-            <div className="text-[40px] mb-2">⭐️</div>
-            <h3 className="text-lg font-black text-gray-900 mb-1.5">아직 내 BMTI를 몰라요</h3>
-            <p className="text-sm text-gray-500 mb-6 break-keep">2분이면 끝나요 · 로그인 없이 가능해요</p>
-            <button onClick={() => go('quiz')} className="w-full bg-black text-white font-bold py-4 rounded-2xl text-[15px] hover:bg-gray-900 transition-all flex items-center justify-center gap-2">
-              BMTI 테스트 하기
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          // 아직 검사 전 — 테스트 유도 + (코드 있는 화면과 동일하게) 기록 CTA·메인 이동
+          <div className="flex flex-col gap-3">
+            <div className="bg-white rounded-[2rem] p-7 text-center shadow-2xl">
+              <div className="text-[40px] mb-2">⭐️</div>
+              <h3 className="text-lg font-black text-gray-900 mb-1.5">아직 내 BMTI를 몰라요</h3>
+              <p className="text-sm text-gray-500 mb-6 break-keep">2분이면 끝나요 · 로그인 없이 가능해요</p>
+              <button onClick={() => go('quiz')} className="w-full bg-black text-white font-bold py-4 rounded-2xl text-[15px] hover:bg-gray-900 transition-all flex items-center justify-center gap-2">
+                BMTI 테스트 하기
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </button>
+            </div>
+
+            {/* 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (배경 없음) */}
+            <div className="w-full flex items-center justify-center py-1">
+              <DiaryCta
+                loggedToday={hasLoggedToday}
+                onGoDiary={() => go('aichat')}
+                onGoDiscovery={() => { onClose(); window.dispatchEvent(new Event('bmti:open-discovery')); }}
+              />
+            </div>
+
+            {/* 메인 페이지로 이동 */}
+            <button onClick={() => go('home')} className="w-full bg-white rounded-[1.6rem] py-4 text-[14px] font-bold text-gray-700 shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M4 11.2 12 4l8 7.2V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1v-8.8Z" fill="currentColor" /></svg>
+              메인 페이지로 이동
             </button>
           </div>
         ) : (
