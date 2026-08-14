@@ -2,6 +2,15 @@ import { supabase } from './supabaseClient';
 
 export const CONSENT_VERSION = 'v1.0';
 
+// 빠른 게이팅용 로컬 플래그(게스트·로그인 공통). 서버 저장과 별개로, 첫 기록 전 강제 게이트에 쓴다.
+const LOCAL_KEY = 'bmti_health_consent';
+export function hasLocalHealthConsent() {
+  try { return (localStorage.getItem(LOCAL_KEY) || '').startsWith(CONSENT_VERSION); } catch { return false; }
+}
+export function setLocalHealthConsent(optional) {
+  try { localStorage.setItem(LOCAL_KEY, `${CONSENT_VERSION}${optional ? ':opt' : ''}`); } catch {}
+}
+
 /**
  * 서버에 저장된 유저의 건강 기록 동의 상태를 가져옵니다.
  * @param {string} userId 

@@ -180,10 +180,10 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             <div className="text-xl md:text-3xl font-medium mt-3 text-gray-400 break-keep">움직임 성향 테스트</div>
             <div className="text-[10px] md:text-base text-gray-400 font-sans tracking-widest font-medium mt-5 uppercase leading-relaxed">BODY MANAGEMENT<br />TYPE INDICATOR</div>
           </div>
-          {/* 우 — 건강 다이어리 이번달 기록·발견 (하단 네비 글씨체=sans, 한 줄에 들어가는 크기) */}
+          {/* 우 — 건강 다이어리 이번달 기록·발견 (하단 네비 글씨체=sans, 크게 + 각 문장 한 줄) */}
           <div className="text-center px-1 flex flex-col justify-center">
-            <div className="text-2xl md:text-4xl font-extrabold leading-tight whitespace-nowrap">건강 다이어리</div>
-            <div className="text-sm md:text-lg font-semibold mt-2 text-gray-400 break-keep">이번달 기록·발견</div>
+            <div className="text-[30px] md:text-6xl font-extrabold leading-tight whitespace-nowrap">건강 다이어리</div>
+            <div className="text-base md:text-2xl font-semibold mt-2 text-gray-400 whitespace-nowrap">이번달 기록·발견</div>
             <div className="text-[10px] md:text-base text-gray-400 tracking-widest font-medium mt-4 uppercase leading-relaxed">WELLNESS<br />DIARY</div>
           </div>
         </div>

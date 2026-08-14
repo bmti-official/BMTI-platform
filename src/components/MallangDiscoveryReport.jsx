@@ -2585,10 +2585,10 @@ function LetterCard({ data, isM, bmtiCode }) {
             boxShadow: "0 3px 12px rgba(180,150,80,0.16), inset 0 0 0 1px rgba(255,255,255,0.5)",
           }}>
             {/* 좌측 여백선 */}
-            <div style={{ position: "absolute", top: 0, bottom: 0, left: 34, width: 1, background: "rgba(206,120,110,0.32)" }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: 26, width: 1, background: "rgba(206,120,110,0.32)" }} />
             {/* 가운데 접힘선 */}
             <div style={{ position: "absolute", left: 0, right: 0, top: "50%", height: 10, background: "linear-gradient(180deg, rgba(150,120,60,0.12), rgba(150,120,60,0) 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "relative", paddingLeft: 14 }}>
+            <div style={{ position: "relative", paddingLeft: 26 }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>To. {data.nickname || "회원"}님</div>
               <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{data.body}</p>
               <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, marginTop: 4, lineHeight: "28px" }}>— 당신의 BMTI 파트너, {charName} 드림</div>

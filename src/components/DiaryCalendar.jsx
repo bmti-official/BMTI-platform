@@ -14,6 +14,8 @@ import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { readMallangProfile } from "../lib/mallangProfile";
 import MallangInfoPopup, { soreConfirmedThisMonth } from "./MallangInfoPopup";
+import { hasLocalHealthConsent } from "../lib/healthConsentSystem";
+import HealthConsentGate from "./HealthConsentGate";
 
 // 색상 통일: 핵심 버튼 골드 / 박스 연옐로우 / 강조 요소는 유형별(M 연분홍·Z 연보라).
 // 단, 기분(말랑이)·요일 색 등 '데이터 색'은 의미가 있어 그대로 둔다.
@@ -171,6 +173,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
   // 온보딩1 대체 — 불편 부위(말랑 정보) 입력/월 1회 재확인 팝업. 값이 있고 이번 달 미확인이면
   // (기분 팝업과 겹치지 않도록 오늘 기록이 이미 있을 때) 자동으로 '바뀌었어요/비슷해요'를 띄운다.
+  // 첫 기록 전 민감정보 동의 게이트 — 동의 전엔 게이트가 모든 기록 UI 위를 덮는다.
+  const [consentDone, setConsentDone] = useState(() => hasLocalHealthConsent());
+
   const [sorePopup, setSorePopup] = useState(null); // null | { askReconfirm }
   useLayoutEffect(() => {
     try {
@@ -253,6 +258,11 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
       {sorePopup && (
         <MallangInfoPopup mode="sore" userInfo={userInfo} isLoggedIn={isLoggedIn} gender={gender} setUserProfile={setUserProfile}
           askReconfirm={sorePopup.askReconfirm} onClose={() => setSorePopup(null)} />
+      )}
+
+      {/* 첫 기록 전 민감정보 동의 게이트 (PIPA §23) — 동의 전엔 기록 UI를 덮어 강제한다 */}
+      {!consentDone && (
+        <HealthConsentGate userId={userInfo?.id} isLoggedIn={isLoggedIn} onAgree={() => setConsentDone(true)} />
       )}
 
       {showHelp && (

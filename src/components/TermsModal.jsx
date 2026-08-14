@@ -120,6 +120,33 @@ const TermsModal = ({ isOpen, onClose }) => {
                 </p>
               </div>
 
+              <div>
+                <h5 className="font-bold text-gray-900 mb-1">제4-1조 (민감정보의 처리)</h5>
+                <p className="text-gray-600 break-keep">
+                  "회사"는 다이어리 기능에서 이용자의 <strong>기분·불편함(통증)·수면</strong> 등 건강에 관한 정보(개인정보 보호법 제23조의 민감정보)를 처리합니다. 이 정보는 <strong>이용자 본인의 개인 리포트 제공</strong> 목적으로만 수집·이용하며, 첫 기록 전 <strong>별도의 동의</strong>를 받습니다. 동의는 마이페이지에서 언제든 철회할 수 있고, 철회 시 관련 기록은 지체 없이 파기합니다.
+                </p>
+              </div>
+
+              <div>
+                <h5 className="font-bold text-gray-900 mb-1">제4-2조 (개인정보 처리위탁 및 국외이전)</h5>
+                <p className="text-gray-600 break-keep mb-2">
+                  "회사"는 서비스 제공을 위해 아래와 같이 개인정보 처리를 위탁하며, 일부는 국외에 저장·처리될 수 있습니다.
+                </p>
+                <ul className="text-gray-600 space-y-1 text-sm">
+                  <li><strong>수탁자:</strong> Supabase Inc. (데이터베이스·인증 인프라)</li>
+                  <li><strong>위탁 업무:</strong> 회원·기록 데이터의 저장 및 관리</li>
+                  <li><strong>이전 국가/시점:</strong> 미국 등 (서비스 이용 시 수시 이전), 전송 방법: 암호화된 네트워크(HTTPS)</li>
+                  <li><strong>보유·이용기간:</strong> 위탁계약 종료 또는 회원 탈퇴 시까지</li>
+                </ul>
+              </div>
+
+              <div>
+                <h5 className="font-bold text-gray-900 mb-1">제4-3조 (가명정보의 처리)</h5>
+                <p className="text-gray-600 break-keep">
+                  이용자가 <strong>선택 동의</strong>한 경우에 한하여, "회사"는 개인정보 보호법 제28조의2에 따라 식별정보를 분리·가명처리한 정보를 <strong>통계 작성, 과학적 연구, 서비스 개선(B2B 제공 포함)</strong>에 활용할 수 있습니다. 가명처리 시 매핑키는 분리 보관하고, <strong>재식별을 금지</strong>하며, 외부에는 개인을 알아볼 수 없는 <strong>집계 결과</strong>만 제공합니다.
+                </p>
+              </div>
+
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <h5 className="font-bold text-gray-900 mb-2">제5조 (개인정보 보호책임자)</h5>
                 <p className="text-gray-600 break-keep mb-2">이용자의 개인정보를 보호하고 개인정보와 관련한 불만을 처리하기 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
