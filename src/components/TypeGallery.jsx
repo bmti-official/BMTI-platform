@@ -57,6 +57,10 @@ function TypePreview({ code, onBack, onClose }) {
   const charData = CHARACTERS.find(c => c.id === code);
   const info = BMTI_INFO[code] || {};
   const resultData = BMTI_RESULTS[code] || {};
+  // 확신의 ↔ 유연한 성향을 좌우로 넘겨보는 미리보기.
+  const [level, setLevel] = useState('confident');
+  const toggleLevel = () => setLevel(l => (l === 'confident' ? 'flexible' : 'confident'));
+  const percent = level === 'confident' ? 85 : 60;
 
   return (
     <div className="max-w-md mx-auto pb-28">
@@ -73,8 +77,8 @@ function TypePreview({ code, onBack, onClose }) {
       <div className="px-5 pt-4">
         <div className="rounded-[1.2rem] bg-[#FBF4EA] border border-[#EBD8B8] px-4 py-3 mb-5 text-center">
           <p className="text-[13px] font-bold text-[#8A6A34] break-keep leading-relaxed">
-            내 실제 유형이 아니라, <b>{code} {CODE_KO[code]}</b> 유형을 골랐을 때 보이는 <b>예시</b>예요.
-            <br />('확신의' 성향 기준으로 보여드려요)
+            내 실제 유형이 아니라,
+            <br /><b>{code} {CODE_KO[code]}</b> 유형을 골랐을 때 보이는 <b>예시</b>예요.
           </p>
         </div>
 
@@ -99,25 +103,37 @@ function TypePreview({ code, onBack, onClose }) {
             )}
           </div>
 
-          {/* 🔍 나를 움직이게 하는 4가지 성향 — '확신의' 기준, 아코디언 없이 대표 문장까지만 */}
+          {/* 🔍 나를 움직이게 하는 4가지 성향 — 확신의 ↔ 유연한 좌우로 넘겨보기, 아코디언 없이 대표 문장까지만 */}
           <div className="w-full mt-10">
-            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
               <span>🔍 나를 움직이게 하는 4가지 성향</span>
             </h3>
+            {/* 확신의/유연한 성향 스와이프 토글 */}
+            <div className="flex items-center justify-center gap-3 mb-7">
+              <button onClick={toggleLevel} aria-label="다른 성향 보기" className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 active:scale-90 transition">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              </button>
+              <span className="min-w-[92px] text-center px-4 py-1.5 rounded-full bg-gray-900 text-white text-sm font-extrabold">
+                {level === 'confident' ? '확신의 성향' : '유연한 성향'}
+              </span>
+              <button onClick={toggleLevel} aria-label="다른 성향 보기" className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 active:scale-90 transition">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+            </div>
             <div className="flex flex-col gap-1 w-full">
               {PAIRS.map(([l1, l2], i) => {
                 const active = code[i];
                 const data = TENDENCY_DATA[active];
                 if (!data) return null;
-                const v = data.confident;
+                const v = data[level];
                 const color = CARD_COLOR[l1];
                 return (
                   <div key={l1} className="p-0 mb-8 w-full text-left">
                     <div className="flex items-center justify-between mb-5">
                       <div className="w-full bg-gray-100 rounded-full h-3 flex-1 mr-4 overflow-hidden">
-                        <div className="h-3 rounded-full" style={{ width: '85%', background: color }}></div>
+                        <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${percent}%`, background: color }}></div>
                       </div>
-                      <span className="font-bold text-sm min-w-[40px] text-right" style={{ color }}>85%</span>
+                      <span className="font-bold text-sm min-w-[40px] text-right" style={{ color }}>{percent}%</span>
                     </div>
                     <h4 className="text-[17px] font-bold text-gray-800 mb-4 flex items-center gap-2">
                       <span className="text-xl">{v.emoji}</span>
