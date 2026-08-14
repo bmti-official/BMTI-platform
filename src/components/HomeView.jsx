@@ -190,14 +190,14 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         <div className="relative inline-block mt-9">
           <button
             onClick={() => setView('aichat')}
-            className="inline-flex items-center gap-2.5 bg-transparent border-none active:scale-[0.98] transition-transform"
+            className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
           >
-            <span className="w-10 h-10 flex items-center justify-center shrink-0"><Mallang v={ctaMood} size={38} noBlink /></span>
-            <span className="text-[15px] md:text-lg font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기</span>
-            <span className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+            <span className="w-8 h-8 flex items-center justify-center shrink-0"><Mallang v={ctaMood} size={31} noBlink /></span>
+            <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기</span>
+            <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
           </button>
           {!hasLoggedToday && (
-            <span className="absolute -top-1 right-8 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+            <span className="absolute -top-1 right-7 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
           )}
         </div>
       </section>
