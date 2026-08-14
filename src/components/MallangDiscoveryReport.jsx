@@ -2536,6 +2536,8 @@ function DdayCard({ data }) {
   );
 }
 
+// 편지 본문 — '기록을 보니/이번 달/다음 달/OO 말랑이' 처럼 시작하는 문장 앞에서 줄바꿈해 읽기 쉽게.
+const letterBreaks = (s) => (s || "").replace(/\s+(기록을 보|이번 달|다음\s?달|'[^']+' 말랑이)/g, "\n$1");
 function LetterCard({ data, isM, bmtiCode }) {
   const [open, setOpen] = useState(false);
   const t = getTypeAccent();
@@ -2576,7 +2578,7 @@ function LetterCard({ data, isM, bmtiCode }) {
             {/* 괘선을 본문과 같은 줄높이(28px)에 맞춰 '각 줄 아래 밑줄'로 그려, 글자를 가리지 않게 한다 */}
             <div style={{ position: "relative", paddingLeft: 26, backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #EBDCB6 27px, #EBDCB6 28px)" }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>To. {data.nickname || "회원"}님</div>
-              <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{data.body}</p>
+              <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{letterBreaks(data.body)}</p>
               <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>— 당신의 BMTI 파트너, {charName} 드림</div>
             </div>
           </div>

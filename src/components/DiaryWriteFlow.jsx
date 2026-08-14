@@ -605,12 +605,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         return { ...s, whens: { ...s.whens, [p]: cur.includes(w) ? cur.filter(x => x !== w) : [...cur, w] } };
       });
       return (
-        <Card title="불편한 부위">
-          {/* 온보딩1 — 요즘 계속 불편했던 곳(프로필) 입력/수정 버튼 */}
+        <Card title="불편한 부위" action={
           <button onClick={() => setSorePopup({ askReconfirm: false })}
-            style={{ width: "100%", marginBottom: 10, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: t.accentDeep, cursor: "pointer", borderRadius: 12, padding: "10px 0", fontSize: 12.5, fontWeight: 800, fontFamily: F }}>
-            🩹 요즘 계속 불편했던 곳 기억해두기
+            style={{ flexShrink: 0, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: t.accentDeep, cursor: "pointer", borderRadius: 999, padding: "6px 11px", fontSize: 11.5, fontWeight: 800, fontFamily: F, whiteSpace: "nowrap" }}>
+            🩹 불편했던 곳 수정하기
           </button>
+        }>
           {/* 일상 정보에서 불러온 부위로 만든 질문 */}
           {soreQuestion && (
             <div style={{ padding: "12px 14px", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, fontSize: 14, color: C.ink, fontWeight: 800, lineHeight: 1.5, marginBottom: 4 }}>
@@ -905,10 +905,13 @@ function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, d
   );
 }
 
-function Card({ title, children }) {
+function Card({ title, action, children }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: "0 0 16px" }}>{title}</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 0 16px" }}>
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>{title}</h2>
+        {action}
+      </div>
       {children}
     </div>
   );

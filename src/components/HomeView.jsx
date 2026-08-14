@@ -14,6 +14,9 @@ import zTypeImage from '../assets/Z 유형.png';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
+  // CTA 말랑이 — 하단 네비처럼 표정이 순서대로 바뀐다
+  const [ctaMood, setCtaMood] = useState(0);
+  useEffect(() => { const id = setInterval(() => setCtaMood(m => (m + 1) % 5), 1100); return () => clearInterval(id); }, []);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -183,14 +186,20 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             BODY MANAGEMENT TYPE INDICATOR
           </span>
         </h1>
-        {/* 건강 다이어리 10초 기록하기 CTA — 하단 네비 말랑이 캐릭터를 동일하게 배치 */}
-        <button
-          onClick={() => setView('aichat')}
-          className="mt-9 inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full pl-2 pr-5 py-2 shadow-[0_6px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.14)] active:scale-[0.98] transition-shadow"
-        >
-          <span className="w-10 h-10 flex items-center justify-center shrink-0"><Mallang v={4} size={38} /></span>
-          <span className="text-[15px] md:text-lg font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기 →</span>
-        </button>
+        {/* 건강 다이어리 10초 기록하기 CTA — 말랑이 표정이 순서대로, 우측 '→'는 동그란 버튼, 미기록 시 빨강 점 */}
+        <div className="relative inline-block mt-9">
+          <button
+            onClick={() => setView('aichat')}
+            className="inline-flex items-center gap-2.5 bg-white border border-gray-200 rounded-full pl-2 pr-2 py-2 shadow-[0_6px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.14)] active:scale-[0.98] transition-shadow"
+          >
+            <span className="w-10 h-10 flex items-center justify-center shrink-0"><Mallang v={ctaMood} size={38} /></span>
+            <span className="text-[15px] md:text-lg font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기</span>
+            <span className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center text-lg font-bold shrink-0">→</span>
+          </button>
+          {!hasLoggedToday && (
+            <span className="absolute -top-0.5 right-8 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+          )}
+        </div>
       </section>
 
       {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는

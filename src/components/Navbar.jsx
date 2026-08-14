@@ -64,11 +64,19 @@ const PersonIcon = ({ className }) => (
     <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8Z" fill="currentColor" />
   </svg>
 );
-// BMTI 탭 — 체크리스트(검사) 아이콘
-const TestIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="5" y="4" width="14" height="17" rx="2.5" />
-    <path d="M9 4V3h6v1M8.5 12l2 2 4-4" />
+// 나의유형 탭 — 체크 아이콘(활성 시 색 순환 + 내려갔다 올라오며 색 변경)
+const CheckIcon = ({ active }) => (
+  <svg viewBox="0 0 24 24" className={`w-6 h-6 ${active ? 'nav-check-anim' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 13l4 4L19 7" />
+  </svg>
+);
+// BMTI 탭 — 펼친 책 아이콘(활성 시 페이지 넘김 + 넘길 때마다 색 변경)
+const OpenBookIcon = ({ active }) => (
+  <svg viewBox="0 0 24 24" className={`w-6 h-6 ${active ? 'nav-book-anim' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 6.2C10.3 5 7.4 4.5 4.3 5v12.6C7.4 17.1 10.3 17.6 12 18.8" />
+    <path d="M12 6.2C13.7 5 16.6 4.5 19.7 5v12.6C16.6 17.1 13.7 17.6 12 18.8" />
+    <path d="M12 6.2V18.8" />
+    <path className="book-page" d="M12 6.4C13.6 5.3 16 4.9 18.4 5.2v10.9C16 15.8 13.6 16.2 12 17.3Z" fill="currentColor" stroke="none" opacity="0.22" />
   </svg>
 );
 
@@ -149,6 +157,22 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   return (
     <>
+      <style>{`
+        @keyframes navCheckCycle {
+          0%,100% { color:#C9B8F0; transform: translateY(0); }
+          11% { transform: translateY(4px); }
+          22% { color:#C9975A; transform: translateY(0); }
+          44% { transform: translateY(4px); }
+          55% { color:#EBCF6A; transform: translateY(0); }
+          77% { transform: translateY(4px); }
+          88% { color:#C9B8F0; transform: translateY(0); }
+        }
+        .nav-check-anim { animation: navCheckCycle 2.4s ease-in-out infinite; }
+        @keyframes navBookColor { 0%,100%{color:#C9B8F0;} 33%{color:#C9975A;} 66%{color:#EBCF6A;} }
+        @keyframes navPageFlip { 0%{transform:scaleX(1);} 50%{transform:scaleX(0.06);} 100%{transform:scaleX(1);} }
+        .nav-book-anim { animation: navBookColor 2.7s steps(1) infinite; }
+        .nav-book-anim .book-page { transform-box: fill-box; transform-origin: left center; animation: navPageFlip 0.9s ease-in-out infinite; }
+      `}</style>
       {/* 모든 페이지: 위로 한번에 올리기 버튼 */}
       <AppScrollTop />
 
@@ -199,9 +223,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           <div className="fixed bottom-3 left-2 right-2 z-40">
             <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
               <PillTab active={currentView === 'home' && !showDiscovery} onClick={() => { setShowDiscovery(false); setView('home'); }}
-                icon={<TestIcon className="w-5 h-5 text-gray-500" />} label="BMTI" />
+                icon={<OpenBookIcon active={currentView === 'home' && !showDiscovery} />} label="BMTI" />
               <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowPartner(true); }}
-                icon={<PersonIcon className="w-5 h-5 text-gray-500" />} label="나의유형" />
+                icon={<CheckIcon active={currentView === 'result'} />} label="나의유형" />
               {/* 가운데 캐릭터 자리 */}
               <span className="w-14 shrink-0" aria-hidden="true" />
               <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); }}

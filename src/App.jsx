@@ -6,8 +6,6 @@ import QuizView from './components/QuizView';
 import ResultView from './components/ResultView';
 import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
-import ServicePrep from './components/ServicePrep';
-import CurationView from './components/CurationView';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
@@ -288,12 +286,6 @@ function App() {
             bmtiAnswers={bmtiAnswers}
             userProfile={userProfile}
           />
-        )}
-        {currentView === 'curation' && (
-          <CurationView bmtiCode={bmtiCode} onGoDiary={() => handleViewChange('aichat')} />
-        )}
-        {currentView === 'reservation' && (
-          <ServicePrep kind="reservation" bmtiCode={bmtiCode} />
         )}
         {currentView === 'aichat' && (
           <AiChatHub
