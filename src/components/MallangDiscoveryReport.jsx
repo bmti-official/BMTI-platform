@@ -23,6 +23,7 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
+import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
 import bodyFemaleBack from "../assets/3d_body/female_back.png";
 import bodyMaleFront from "../assets/3d_body/male_front.png";
@@ -2138,7 +2139,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
       {ins.logged ? <LampClockCard data={ins.logged} nickname={nickname} /> : (exIns.logged && lock(<LampClockCard data={exIns.logged} nickname={nickname} />))}
       {female && (ins.dday ? <DdayCard data={ins.dday} /> : (exIns.dday && lock(<DdayCard data={exIns.dday} />)))}
       <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />
-      {(ins.factcheck || hasProfile) ? <FactCheckCard rows={ins.factcheck || []} profile={profileSummary} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />))}
+      {(ins.factcheck || hasProfile) ? <FactCheckCard rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />))}
       <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} />
     </div>
   );
@@ -2442,9 +2443,12 @@ function LampClockCard({ data, nickname }) {
 
 // 7. 초심 저울(프로필 팩트체크) — 최근 저장한 '일상 정보' 선택을 보여주고, 그대로 이번 달이 어땠는지 이어본다
 const FACT_CAT_ICON = { "운동 빈도": "🔁", "운동 목적": "🎯", "자주 하는 자세": "🧍", "불편한 부위": "📍" };
-function FactCheckCard({ rows = [], profile }) {
+function FactCheckCard({ rows = [], profile, userInfo, isLoggedIn }) {
   const t = getTypeAccent();
   const p = profile || {};
+  const canEdit = isLoggedIn !== undefined; // 실제(잠금 아님) 카드에서만 입력 버튼 노출
+  const hasHabits = !!(p.freq || (p.goals && p.goals.length) || p.posture);
+  const [habitsPopup, setHabitsPopup] = useState(null); // 온보딩2·3 대체 팝업
   const chips = [];
   if (p.freq) chips.push({ label: "운동 빈도", val: p.freq });
   if (p.goals?.length) chips.push({ label: "운동 목적", val: p.goals.join(" · ") });
@@ -2468,6 +2472,13 @@ function FactCheckCard({ rows = [], profile }) {
           </div>
         </div>
       )}
+      {/* 온보딩2·3 대체 — 운동 습관·자세 입력/월 갱신 버튼 */}
+      {canEdit && (
+        <button onClick={() => setHabitsPopup({ askReconfirm: hasHabits && !habitConfirmedThisMonth() })}
+          style={{ width: "100%", marginBottom: 14, border: `1.5px solid ${t.accentSoft}`, background: hasHabits ? "#fff" : t.accentSoft, color: t.accentDeep, cursor: "pointer", borderRadius: 12, padding: "11px 0", fontSize: 12.5, fontWeight: 800, fontFamily: "inherit" }}>
+          {hasHabits ? (habitConfirmedThisMonth() ? "운동 습관·자세 수정하기" : "이번 달 운동 습관·자세 확인하기") : "＋ 운동 습관·자세 입력하고 더 많은 발견 받기"}
+        </button>
+      )}
       {/* 화살표 라벨 */}
       <div style={{ display: "flex", alignItems: "center", gap: 7, margin: "0 2px 10px" }}>
         <span style={{ fontSize: 11.5, fontWeight: 800, color: t.accentDeep, background: t.accentSoft, borderRadius: 999, padding: "4px 11px" }}>→ 그래서 이번 달은</span>
@@ -2486,6 +2497,10 @@ function FactCheckCard({ rows = [], profile }) {
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, lineHeight: 1.55, margin: 0, background: "#FBFAF6", borderRadius: 12, padding: "12px 13px", wordBreak: "keep-all" }}>
           기록이 조금 더 쌓이면, 내가 정한 목표와 실제 이번 달 기록을 비교해서 알려드릴게요.
         </p>
+      )}
+      {habitsPopup && (
+        <MallangInfoPopup mode="habits" userInfo={userInfo} isLoggedIn={isLoggedIn} setUserProfile={null}
+          askReconfirm={habitsPopup.askReconfirm} onClose={() => setHabitsPopup(null)} />
       )}
     </InsCard>
   );

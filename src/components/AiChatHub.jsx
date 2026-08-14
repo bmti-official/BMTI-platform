@@ -85,7 +85,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
 
   // 온보딩 3페이지 제거 — 처음 들어온 사용자도 바로 월간 캘린더로.
   // (일상 정보(불편 부위·운동 습관·자세)는 마이페이지 '말랑 정보'에서 입력·수정)
-  return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} />;
+  return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} userInfo={userInfo} setUserProfile={setUserProfile} gender={userInfo?.kakaoGender || userInfo?.kakao_gender} />;
 };
 
 export default AiChatHub;

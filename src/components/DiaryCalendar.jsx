@@ -12,6 +12,8 @@ import {
 } from "../lib/diaryHistory";
 import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON, TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
+import { readMallangProfile } from "../lib/mallangProfile";
+import MallangInfoPopup, { soreConfirmedThisMonth } from "./MallangInfoPopup";
 
 // 색상 통일: 핵심 버튼 골드 / 박스 연옐로우 / 강조 요소는 유형별(M 연분홍·Z 연보라).
 // 단, 기분(말랑이)·요일 색 등 '데이터 색'은 의미가 있어 그대로 둔다.
@@ -65,7 +67,7 @@ function getRecordMessage(count, isM) {
   return `총 ${count}일 기록했어요. ${msgs[idx]}`;
 }
 
-export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown }) {
+export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown, userInfo = null, setUserProfile, gender = null }) {
   // 기록 후 캘린더로 돌아왔을 때 같은 보기(월간/주간)로 오도록 보기 상태를 저장해둔다.
   const [view, setView] = useState(() => { try { return localStorage.getItem("bmti_diary_calview") === "week" ? "week" : "month"; } catch { return "month"; } });
   useLayoutEffect(() => { try { localStorage.setItem("bmti_diary_calview", view); } catch {} }, [view]);
@@ -166,6 +168,18 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [stressMood, setStressMood] = useState(initialStressMood);
   // 기록 완료 후 캘린더로 돌아오며 넘어온 무드가 있으면, 부모의 상태를 한 번만 비운다.
   useLayoutEffect(() => { if (initialStressMood != null) onStressShown && onStressShown(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 온보딩1 대체 — 불편 부위(말랑 정보) 입력/월 1회 재확인 팝업. 값이 있고 이번 달 미확인이면
+  // (기분 팝업과 겹치지 않도록 오늘 기록이 이미 있을 때) 자동으로 '바뀌었어요/비슷해요'를 띄운다.
+  const [sorePopup, setSorePopup] = useState(null); // null | { askReconfirm }
+  useLayoutEffect(() => {
+    try {
+      const sore = readMallangProfile(userInfo)?.sore;
+      if (initialStressMood == null && getEntryForDate(todayISO()) && Array.isArray(sore) && sore.length && !soreConfirmedThisMonth()) {
+        setSorePopup({ askReconfirm: true });
+      }
+    } catch {}
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
   const [futureToast, setFutureToast] = useState(false); // 미래 날짜를 눌렀을 때 2초 안내
@@ -228,6 +242,17 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
             <path d="M12 19V7M6 13l6-6 6 6" stroke="#6B6459" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
+      )}
+
+      {/* 온보딩1 대체 — '요즘 불편했던 곳' 입력/수정 버튼(누르면 부위 팝업) */}
+      <button onClick={() => setSorePopup({ askReconfirm: false })} aria-label="요즘 불편했던 곳 기억하기"
+        style={{ position: "fixed", left: 12, bottom: 100, zIndex: 40, display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 14px", borderRadius: 999, border: "1px solid #EDE9E2", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 3px 12px rgba(0,0,0,0.16)", cursor: "pointer", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, fontFamily: "inherit" }}>
+        🩹 요즘 불편했던 곳
+      </button>
+
+      {sorePopup && (
+        <MallangInfoPopup mode="sore" userInfo={userInfo} isLoggedIn={isLoggedIn} gender={gender} setUserProfile={setUserProfile}
+          askReconfirm={sorePopup.askReconfirm} onClose={() => setSorePopup(null)} />
       )}
 
       {showHelp && (
