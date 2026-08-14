@@ -158,16 +158,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   return (
     <>
       <style>{`
-        @keyframes navCheckCycle {
-          0%,100% { color:#C9B8F0; transform: translateY(0); }
-          11% { transform: translateY(4px); }
-          22% { color:#C9975A; transform: translateY(0); }
-          44% { transform: translateY(4px); }
-          55% { color:#EBCF6A; transform: translateY(0); }
-          77% { transform: translateY(4px); }
-          88% { color:#C9B8F0; transform: translateY(0); }
-        }
-        .nav-check-anim { animation: navCheckCycle 2.4s ease-in-out infinite; }
+        /* 색은 무한 순환, 위아래 바운스는 처음 3번만(=첫 한 바퀴) */
+        @keyframes navCheckColor { 0%{color:#C9B8F0;} 33%{color:#C9975A;} 66%{color:#EBCF6A;} 100%{color:#C9B8F0;} }
+        @keyframes navCheckBounce { 0%{transform:translateY(0);} 45%{transform:translateY(4px);} 100%{transform:translateY(0);} }
+        .nav-check-anim { animation: navCheckColor 2.4s steps(1) infinite, navCheckBounce 0.8s ease-in-out 3; }
         @keyframes navBookColor { 0%,100%{color:#C9B8F0;} 33%{color:#C9975A;} 66%{color:#EBCF6A;} }
         @keyframes navPageFlip { 0%{transform:scaleX(1);} 50%{transform:scaleX(0.06);} 100%{transform:scaleX(1);} }
         .nav-book-anim { animation: navBookColor 2.7s steps(1) infinite; }
