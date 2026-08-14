@@ -111,25 +111,27 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const t = getTypeAccent(bmtiCode);
   const hasLoggedToday = !!getEntryForDate(todayISO());
 
-  // 카카오톡 친구 공유 — 결과를 받은 이용자용 CTA. Kakao SDK가 있으면 공유 카드, 없으면 OS 공유/링크 복사로 폴백.
+  // 결과 공유 — 링크가 항상 현재 도메인(bmti-official.co.kr)이 되도록,
+  // 모바일에선 OS 네이티브 공유(카카오톡 선택 가능)를 우선 사용한다.
+  // (카카오 SDK 경로는 카카오 앱에 등록된 도메인/캐시에 따라 예전 주소로 갈 수 있어 폴백으로 둔다.)
   const shareToFriend = () => {
     const siteUrl = 'https://bmti-official.co.kr/';
     const shareUrl = `${siteUrl}#${axisCode}`;
+    const title = `나의 BMTI는 ${axisCode}!`;
+    const text = (charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ');
+    // 1) OS 공유 시트 (모바일: 카카오톡 등 선택 → 링크는 항상 co.kr)
+    if (navigator.share) { navigator.share({ title, text, url: shareUrl }).catch(() => {}); return; }
+    // 2) 카카오 SDK 공유 카드 (데스크톱 등 네이티브 공유가 없을 때)
     if (window.Kakao && window.Kakao.Share) {
       const imageUrl = charData ? new URL(charData.originalImage || charData.image, window.location.href).href : undefined;
       window.Kakao.Share.sendDefault({
         objectType: 'feed',
-        content: {
-          title: `나의 BMTI는 ${axisCode}!`,
-          description: (charInfo?.catchphrase || '내 몸이 원하는 움직임 성향').replace(/\n/g, ' '),
-          imageUrl,
-          link: { webUrl: shareUrl, mobileWebUrl: shareUrl },
-        },
+        content: { title, description: text, imageUrl, link: { webUrl: shareUrl, mobileWebUrl: shareUrl } },
         buttons: [{ title: '나도 BMTI 검사하기', link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } }],
       });
       return;
     }
-    if (navigator.share) { navigator.share({ title: `나의 BMTI는 ${axisCode}`, text: '내 몸이 원하는 움직임 성향, BMTI', url: shareUrl }).catch(() => {}); return; }
+    // 3) 링크 복사
     navigator.clipboard?.writeText(shareUrl);
     alert('공유 링크를 복사했어요. 카카오톡에 붙여넣어 친구에게 보내보세요!');
   };
