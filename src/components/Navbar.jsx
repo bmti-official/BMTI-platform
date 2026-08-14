@@ -139,7 +139,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   useEffect(() => {
     const id = setInterval(() => {
       setDiaryMoodTick(v => (v % 5) + 1);
-    }, 1400);
+    }, 2600);
     return () => clearInterval(id);
   }, []);
 
@@ -223,7 +223,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               {/* 가운데 캐릭터 자리 */}
               <span className="w-14 shrink-0" aria-hidden="true" />
               <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); }}
-                icon={<Mallang v={diaryMoodTick} size={24} />} label="다이어리" />
+                icon={<Mallang v={diaryMoodTick} size={24} noBlink />} label="다이어리" />
               <PillTab active={showDiscovery} onClick={() => { setShowDiscovery(true); setView('home'); }}
                 icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="기록·발견" />
             </div>
