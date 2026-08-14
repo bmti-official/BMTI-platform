@@ -1,8 +1,10 @@
 /* eslint-disable */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES, CODE_KO } from '../data';
+import DiaryCta from './DiaryCta';
+import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
 
@@ -104,6 +106,8 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
 
 const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, onRequireLogin, bmtiCode, bmtiAnswers, userProfile }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
+  // 오늘 건강 다이어리 기록 완료 여부 — CTA 문구(기록하기 vs 기록·발견)를 가른다
+  const hasLoggedToday = !!getEntryForDate(todayISO());
   const printHeaderRef = useRef(null);
   const printTendencyRefs = useRef([]);
   const printMatchesRef = useRef(null);
@@ -170,7 +174,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       const sections = [
         printHeaderRef.current,
         ...(percentages ? printTendencyRefs.current.filter(Boolean) : []),
-        printMatchesRef.current,
         printInstructorRef.current,
         printEscapeRef.current,
         printVibeRef.current,
@@ -323,6 +326,11 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             </p>
           </div>
 
+          {/* CTA — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기'. 첫번째(인트로)와 두번째(성향) 박스 사이 */}
+          <div className="w-full flex justify-center mb-10">
+            <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
+          </div>
+
           {/* 4 Tendencies Section */}
           <div className="w-full mb-10 fade-in">
             <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
@@ -394,24 +402,8 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             })()}
           </div>
 
-          {/* Chemistry section */}
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mt-2">
-            <ChemistryCard 
-              type="bestMatch" 
-              targetCode={info.bestMatch} 
-              resultData={resultData} 
-              isExpanded={expandBestMatch}
-              onToggle={() => setExpandBestMatch(!expandBestMatch)}
-            />
-            <ChemistryCard 
-              type="diffTempo" 
-              targetCode={info.diffTempo} 
-              resultData={resultData} 
-              isExpanded={expandDiffTempo}
-              onToggle={() => setExpandDiffTempo(!expandDiffTempo)}
-            />
-          </div>
-          
+          {/* Chemistry section 제거 — BMTI 관계도가 대신 보여준다 */}
+
           {/* CTA section: 4 buttons in priority order */}
           <div className="w-full mt-8 mb-4 flex flex-col gap-3">
             {/* 1. 카카오톡으로 내 결과지 저장하기 / 친구에게 자랑하기 */}
@@ -672,27 +664,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             );
           })}
 
-          {/* 궁합 */}
-          <div ref={printMatchesRef} style={{ display: 'flex', gap: '16px', padding: '8px' }}>
-            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px', textAlign: 'center' }}>
-              {bestMatchChar && (
-                <div style={{ width: '110px', height: '110px', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src={bestMatchChar.image} alt={info.bestMatch} style={{ maxWidth: '110px', maxHeight: '110px', width: 'auto', height: 'auto' }} crossOrigin="anonymous" />
-                </div>
-              )}
-              <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>💖 환상의 짝꿍 ({info.bestMatch})</p>
-              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0, textAlign: 'left' }}>{bestMatchBody}</p>
-            </div>
-            <div style={{ flex: 1, background: '#fafaf9', borderRadius: '14px', padding: '18px', textAlign: 'center' }}>
-              {diffTempoChar && (
-                <div style={{ width: '110px', height: '110px', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src={diffTempoChar.image} alt={info.diffTempo} style={{ maxWidth: '110px', maxHeight: '110px', width: 'auto', height: 'auto' }} crossOrigin="anonymous" />
-                </div>
-              )}
-              <p style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', marginBottom: '6px' }}>🤔 조금 다른 템포 ({info.diffTempo})</p>
-              <p style={{ fontSize: '13.5px', color: '#374151', lineHeight: 1.7, margin: 0, textAlign: 'left' }}>{diffTempoBody}</p>
-            </div>
-          </div>
+          {/* 궁합(환상의 짝꿍·다른 템포) 제거 — BMTI 관계도가 대신 보여준다 */}
 
           {/* 강사 가이드 */}
           <div ref={printInstructorRef} style={{ padding: '20px 8px' }}>

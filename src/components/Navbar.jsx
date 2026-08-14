@@ -145,6 +145,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   // 말랑이의 발견 — 기분 기록이 쌓인 달에서 패턴을 찾아 보여주는 월간 리포트.
   const [showDiscovery, setShowDiscovery] = useState(false);
+  // 홈·결과지·파트너 팝업의 '이번달 기록·발견 알아보기' CTA(DiaryCta)가 발행하는 이벤트로 기록·발견 오버레이를 연다.
+  useEffect(() => {
+    const open = () => { setShowDiscovery(true); setView('home'); };
+    window.addEventListener('bmti:open-discovery', open);
+    return () => window.removeEventListener('bmti:open-discovery', open);
+  }, [setView]);
 
   // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 파트너' 팝업.
   const [showPartner, setShowPartner] = useState(false);

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
 import { CHARACTERS, CHARACTER_NAMES, CODE_KO } from '../data';
 import { BMTI_INFO } from './ResultView';
 import { getTypeAccent } from '../lib/typeAccent';
-import { Mallang } from './Mallang';
+import DiaryCta from './DiaryCta';
 
 // 하단 네비 가운데 캐릭터를 누르면 뜨는 팝업 — 메인으로 바로 가지 않고
 // '내 BMTI 파트너'를 보여준다. 오늘 하루일기를 아직 안 남겼으면 위에 기록 유도 CTA도 함께.
@@ -12,9 +11,6 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
   const charInfo = BMTI_INFO[axisCode];
   const t = getTypeAccent(bmtiCode);
   const go = (v) => { onClose(); setView(v); };
-  // 오늘 기록 유도 CTA의 말랑이 표정 순환(주기 2.6초, 눈깜박임 없음) — 홈 CTA와 동일
-  const [ctaMood, setCtaMood] = useState(0);
-  useEffect(() => { const id = setInterval(() => setCtaMood(m => (m + 1) % 5), 2600); return () => clearInterval(id); }, []);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(28,26,23,0.45)' }}>
@@ -64,13 +60,15 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               )}
             </div>
 
-            {/* 파트너 박스 밑 — 오늘 하루일기 기록 유도(오늘 아직 안 남겼을 때만) : 홈 CTA와 동일한 버튼 */}
-            {(isLoggedIn && !hasLoggedToday) && (
-              <button onClick={() => go('aichat')} className="w-full bg-white rounded-[1.6rem] p-4 shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors active:scale-[0.99] flex items-center justify-center gap-2.5">
-                <span className="w-10 h-10 flex items-center justify-center shrink-0"><Mallang v={ctaMood} size={38} noBlink /></span>
-                <span className="text-[15px] font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기</span>
-                <span className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
-              </button>
+            {/* 파트너 박스 밑 — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (홈 CTA와 동일) */}
+            {isLoggedIn && (
+              <div className="w-full bg-white rounded-[1.6rem] p-4 shadow-lg border border-gray-100 flex items-center justify-center">
+                <DiaryCta
+                  loggedToday={hasLoggedToday}
+                  onGoDiary={() => go('aichat')}
+                  onGoDiscovery={() => { onClose(); window.dispatchEvent(new Event('bmti:open-discovery')); }}
+                />
+              </div>
             )}
 
             {/* 메인 페이지로 이동 */}

@@ -8,15 +8,12 @@ import { BMTI_RESULTS } from '../bmti_results';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
-import { Mallang } from './Mallang';
+import DiaryCta from './DiaryCta';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
-  // CTA 말랑이 — 하단 네비처럼 표정이 순서대로 바뀐다
-  const [ctaMood, setCtaMood] = useState(0);
-  useEffect(() => { const id = setInterval(() => setCtaMood(m => (m + 1) % 5), 2400); return () => clearInterval(id); }, []);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -186,20 +183,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             BODY MANAGEMENT TYPE INDICATOR
           </span>
         </h1>
-        {/* 건강 다이어리 10초 기록하기 CTA — 감싸는 긴 버튼 없이, '→'만 흰 동그란 버튼. 미기록 시 빨강 점 */}
-        <div className="relative inline-block mt-9">
-          <button
-            onClick={() => setView('aichat')}
-            className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
-          >
-            <span className="w-8 h-8 flex items-center justify-center shrink-0"><Mallang v={ctaMood} size={31} noBlink /></span>
-            <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기</span>
-            <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
-          </button>
-          {!hasLoggedToday && (
-            <span className="absolute -top-1 right-7 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-          )}
-        </div>
+        {/* CTA — 오늘 기록 전이면 '건강 다이어리 10초 기록하기'(미기록 빨강 점), 기록을 마쳤으면 '이번달 기록·발견 알아보기' */}
+        <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} className="mt-9" />
       </section>
 
       {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는
