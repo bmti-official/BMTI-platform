@@ -60,9 +60,9 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               )}
             </div>
 
-            {/* 파트너 박스 밑 — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (홈 CTA와 동일) */}
+            {/* 파트너 박스 밑 — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (홈 CTA와 동일, 배경 없음) */}
             {isLoggedIn && (
-              <div className="w-full bg-white rounded-[1.6rem] p-4 shadow-lg border border-gray-100 flex items-center justify-center">
+              <div className="w-full flex items-center justify-center py-1">
                 <DiaryCta
                   loggedToday={hasLoggedToday}
                   onGoDiary={() => go('aichat')}

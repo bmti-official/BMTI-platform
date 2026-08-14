@@ -326,11 +326,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             </p>
           </div>
 
-          {/* CTA — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기'. 첫번째(인트로)와 두번째(성향) 박스 사이 */}
-          <div className="w-full flex justify-center mb-10">
-            <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
-          </div>
-
           {/* 4 Tendencies Section */}
           <div className="w-full mb-10 fade-in">
             <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
@@ -435,6 +430,10 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
         </div>
       </div>
+        {/* CTA — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기'. '실패 없는 운동 강사 고르는 방법' 박스 위 */}
+        <div className="w-full flex justify-center mb-8">
+          <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
+        </div>
         <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
           {/* Custom Instructor Guide Section */}
           <div className="border-b border-gray-100 pb-12 text-left">
