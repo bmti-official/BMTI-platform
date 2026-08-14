@@ -1,4 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import MallangInfoPopup, { soreConfirmedThisMonth } from "./MallangInfoPopup";
+import { readMallangProfile } from "../lib/mallangProfile";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
@@ -109,13 +111,21 @@ const REORDERABLE_LABEL = {
 // ============================================
 // initialEntry: 캘린더에서 '이전 기록 수정하기'로 들어온 경우, 그날 저장돼있던 전체 기록
 // (mallangReportEngine.js가 쓰는 key 형태 그대로) — 이 화면의 라벨로 되돌려 폼을 미리 채운다.
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, mallangSore = null, isLoggedIn = true, onRequireLogin = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, mallangSore = null, isLoggedIn = true, onRequireLogin = null, userInfo = null, setUserProfile = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  // 온보딩1 — 다이어리 입력 시 '불편한 부위' 프로필 입력/월 1회 재확인 팝업
+  const [sorePopup, setSorePopup] = useState(null); // null | { askReconfirm }
+  useEffect(() => {
+    try {
+      const sore = readMallangProfile(userInfo)?.sore;
+      if (Array.isArray(sore) && sore.length && !soreConfirmedThisMonth()) setSorePopup({ askReconfirm: true });
+    } catch {}
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 평소보다 무리했는지
   const [overexertVal, setOverexertVal] = useState(() => (initialEntry?.overwork ? (initialEntry.overwork.yes ? "yes" : "no") : null));
@@ -596,7 +606,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       });
       return (
         <Card title="불편한 부위">
-          {/* 말랑 정보에서 불러온 부위로 만든 질문 */}
+          {/* 온보딩1 — 요즘 계속 불편했던 곳(프로필) 입력/수정 버튼 */}
+          <button onClick={() => setSorePopup({ askReconfirm: false })}
+            style={{ width: "100%", marginBottom: 10, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: t.accentDeep, cursor: "pointer", borderRadius: 12, padding: "10px 0", fontSize: 12.5, fontWeight: 800, fontFamily: F }}>
+            🩹 요즘 계속 불편했던 곳 기억해두기
+          </button>
+          {/* 일상 정보에서 불러온 부위로 만든 질문 */}
           {soreQuestion && (
             <div style={{ padding: "12px 14px", background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 14, fontSize: 14, color: C.ink, fontWeight: 800, lineHeight: 1.5, marginBottom: 4 }}>
               {soreQuestion}
@@ -816,6 +831,11 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
         {showFeedback && (
           <FeedbackModal source="diary" userId={(() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.id || null; } catch { return null; } })()} onClose={() => setShowFeedback(false)} />
+        )}
+
+        {sorePopup && (
+          <MallangInfoPopup mode="sore" userInfo={userInfo} isLoggedIn={isLoggedIn} gender={gender} setUserProfile={setUserProfile}
+            askReconfirm={sorePopup.askReconfirm} onClose={() => setSorePopup(null)} />
         )}
 
         {/* 로그인 안 한 게스트: 기록 후 카카오 저장 유도 */}

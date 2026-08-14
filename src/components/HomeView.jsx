@@ -8,6 +8,7 @@ import { BMTI_RESULTS } from '../bmti_results';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
+import { Mallang } from './Mallang';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
 
@@ -171,22 +172,25 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* Hero Section — 가운데를 반으로 나눠 좌: BMTI / 우: 건강 다이어리 (문구만, 각 칸 가운데 정렬·같은 크기·색) */}
-      <section className="pt-24 md:pt-28 pb-24 md:pb-28 px-4 max-w-5xl mx-auto">
-        <div className="grid grid-cols-2 divide-x divide-gray-200">
-          {/* 좌 — BMTI 움직임 성향 테스트 */}
-          <div className="text-center px-1 font-serif">
-            <div className="text-5xl md:text-8xl font-bold leading-none">BMTI</div>
-            <div className="text-xl md:text-3xl font-medium mt-3 text-gray-400 break-keep">움직임 성향 테스트</div>
-            <div className="text-[10px] md:text-base text-gray-400 font-sans tracking-widest font-medium mt-5 uppercase leading-relaxed">BODY MANAGEMENT<br />TYPE INDICATOR</div>
+      {/* Hero Section — 원래 중앙 정렬 단일 컬럼 + 건강 다이어리 CTA */}
+      <section className="pt-24 md:pt-28 pb-16 md:pb-20 px-6 max-w-5xl mx-auto text-center">
+        <h1 className="font-serif leading-tight mb-0">
+          <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
+            <span className="text-6xl md:text-8xl font-bold">BMTI</span>
+            <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>
           </div>
-          {/* 우 — 건강 다이어리 이번달 기록·발견 (하단 네비 글씨체=sans, 크게 + 각 문장 한 줄) */}
-          <div className="text-center px-1 flex flex-col justify-center">
-            <div className="text-[30px] md:text-6xl font-extrabold leading-tight whitespace-nowrap">건강 다이어리</div>
-            <div className="text-base md:text-2xl font-semibold mt-2 text-gray-400 whitespace-nowrap">이번달 기록·발견</div>
-            <div className="text-[10px] md:text-base text-gray-400 tracking-widest font-medium mt-4 uppercase leading-relaxed">WELLNESS<br />DIARY</div>
-          </div>
-        </div>
+          <span className="text-[min(3vw,11px)] md:text-lg whitespace-nowrap text-gray-400 font-sans tracking-widest md:tracking-[0.3em] font-medium mt-6 block uppercase">
+            BODY MANAGEMENT TYPE INDICATOR
+          </span>
+        </h1>
+        {/* 건강 다이어리 10초 기록하기 CTA — 하단 네비 말랑이 캐릭터를 동일하게 배치 */}
+        <button
+          onClick={() => setView('aichat')}
+          className="mt-9 inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full pl-2 pr-5 py-2 shadow-[0_6px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.14)] active:scale-[0.98] transition-shadow"
+        >
+          <span className="w-10 h-10 flex items-center justify-center shrink-0"><Mallang v={4} size={38} /></span>
+          <span className="text-[15px] md:text-lg font-extrabold text-gray-800 whitespace-nowrap">건강 다이어리 10초 기록하기 →</span>
+        </button>
       </section>
 
       {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는

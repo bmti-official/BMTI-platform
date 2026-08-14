@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../lib/supabaseClient";
 import { getTypeAccent, GOLD } from "../lib/typeAccent";
 import BodySelector3D from "./BodySelector3D";
@@ -64,8 +65,8 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
     ? (mode === "sore" ? "최근에는 어디가, 어느 상황에서 많이 불편했나요?" : "최근에는 운동 습관·자세가 어땠나요?")
     : (mode === "sore" ? "요즘 계속 불편했던 곳을 기억해둘게요." : "운동 습관·자세를 알려주면 발견이 더 풍부해져요.");
 
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 95, background: "rgba(28,26,23,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "'Pretendard',sans-serif" }}>
+  return createPortal(
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(28,26,23,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "'Pretendard',sans-serif" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "92vh", background: "#fff", borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column", color: C.ink }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 10px", borderBottom: `1px solid ${C.line}`, flexShrink: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 900 }}>{mode === "sore" ? "불편한 부위" : "운동 습관·자세"}</div>
@@ -102,7 +103,8 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

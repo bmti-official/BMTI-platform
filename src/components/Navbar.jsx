@@ -64,6 +64,13 @@ const PersonIcon = ({ className }) => (
     <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8Z" fill="currentColor" />
   </svg>
 );
+// BMTI 탭 — 체크리스트(검사) 아이콘
+const TestIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="4" width="14" height="17" rx="2.5" />
+    <path d="M9 4V3h6v1M8.5 12l2 2 4-4" />
+  </svg>
+);
 
 // 알약 안의 한 칸(아이콘 + 라벨). 여러 칸을 묶어 화면 가로를 꽉 채우는 알약을 만든다.
 const PillTab = ({ active, onClick, icon, label }) => (
@@ -191,16 +198,16 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
         <>
           <div className="fixed bottom-3 left-2 right-2 z-40">
             <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
+              <PillTab active={currentView === 'home' && !showDiscovery} onClick={() => { setShowDiscovery(false); setView('home'); }}
+                icon={<TestIcon className="w-5 h-5 text-gray-500" />} label="BMTI" />
+              <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowPartner(true); }}
+                icon={<PersonIcon className="w-5 h-5 text-gray-500" />} label="나의유형" />
+              {/* 가운데 캐릭터 자리 */}
+              <span className="w-14 shrink-0" aria-hidden="true" />
               <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); }}
                 icon={<Mallang v={diaryMoodTick} size={24} />} label="다이어리" />
               <PillTab active={showDiscovery} onClick={() => { setShowDiscovery(true); setView('home'); }}
                 icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="기록·발견" />
-              {/* 가운데 캐릭터 자리 */}
-              <span className="w-14 shrink-0" aria-hidden="true" />
-              <PillTab active={currentView === 'curation'} onClick={() => { setShowDiscovery(false); setView('curation'); }}
-                icon={<BookIcon className="w-5 h-5 text-gray-500" />} label="큐레이션" />
-              <PillTab active={currentView === 'reservation'} onClick={() => { setShowDiscovery(false); setView('reservation'); }}
-                icon={<TicketIcon className="w-5 h-5 text-gray-500" />} label="예약" />
             </div>
           </div>
 

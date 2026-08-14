@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { updateHealthRecordConsent, setLocalHealthConsent } from "../lib/healthConsentSystem";
 
 // 첫 다이어리 기록 전, 민감정보(기분·통증·수면=건강정보, PIPA §23) 별도 동의를 강제하는 게이트.
@@ -29,8 +30,8 @@ export default function HealthConsentGate({ userId, isLoggedIn, onAgree }) {
     </button>
   );
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "'Pretendard',sans-serif" }}>
+  return createPortal(
+    <div style={{ position: "fixed", inset: 0, zIndex: 130, background: "rgba(28,26,23,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "'Pretendard',sans-serif" }}>
       <div style={{ width: "100%", maxWidth: 460, maxHeight: "92vh", background: "#fff", borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column", color: C.ink }}>
         <div style={{ padding: "22px 20px 12px" }}>
           <div style={{ fontSize: 18, fontWeight: 900 }}>건강 기록, 시작하기 전에</div>
@@ -43,7 +44,8 @@ export default function HealthConsentGate({ userId, isLoggedIn, onAgree }) {
             기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
           </Row>
           <Row checked={optional} onToggle={() => setOptional(v => !v)} tag="선택">
-            <b>가명처리</b> 후 통계·연구·서비스 개선(B2B 포함)에 활용하는 것에 동의합니다. (미동의해도 기록은 가능해요)
+            <b>가명처리</b> 후 통계·연구·서비스 개선(B2B 포함)에 활용하는 것에 동의합니다.
+            <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 800, color: C.gold }}>✨ 선택 동의를 해야 <u>기록·발견의 분석</u>을 모두 확인할 수 있어요.</span>
           </Row>
           <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, lineHeight: 1.6, margin: "2px 2px 0", wordBreak: "keep-all" }}>
             동의는 마이페이지에서 언제든 철회할 수 있고, 철회 시 관련 기록은 파기돼요. 저장·처리는 위탁·국외이전 고지에 따릅니다.
@@ -56,6 +58,7 @@ export default function HealthConsentGate({ userId, isLoggedIn, onAgree }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

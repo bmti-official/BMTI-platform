@@ -79,6 +79,8 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
         mallangSore={userInfo?.mallang_sore}
         isLoggedIn={isLoggedIn}
         onRequireLogin={onRequireLogin}
+        userInfo={userInfo}
+        setUserProfile={setUserProfile}
       />
     );
   }

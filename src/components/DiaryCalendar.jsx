@@ -12,8 +12,6 @@ import {
 } from "../lib/diaryHistory";
 import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON, TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
-import { readMallangProfile } from "../lib/mallangProfile";
-import MallangInfoPopup, { soreConfirmedThisMonth } from "./MallangInfoPopup";
 import { hasLocalHealthConsent } from "../lib/healthConsentSystem";
 import HealthConsentGate from "./HealthConsentGate";
 
@@ -175,16 +173,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   // (기분 팝업과 겹치지 않도록 오늘 기록이 이미 있을 때) 자동으로 '바뀌었어요/비슷해요'를 띄운다.
   // 첫 기록 전 민감정보 동의 게이트 — 동의 전엔 게이트가 모든 기록 UI 위를 덮는다.
   const [consentDone, setConsentDone] = useState(() => hasLocalHealthConsent());
-
-  const [sorePopup, setSorePopup] = useState(null); // null | { askReconfirm }
-  useLayoutEffect(() => {
-    try {
-      const sore = readMallangProfile(userInfo)?.sore;
-      if (initialStressMood == null && getEntryForDate(todayISO()) && Array.isArray(sore) && sore.length && !soreConfirmedThisMonth()) {
-        setSorePopup({ askReconfirm: true });
-      }
-    } catch {}
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
   const [futureToast, setFutureToast] = useState(false); // 미래 날짜를 눌렀을 때 2초 안내
@@ -247,17 +235,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
             <path d="M12 19V7M6 13l6-6 6 6" stroke="#6B6459" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-      )}
-
-      {/* 온보딩1 대체 — '요즘 불편했던 곳' 입력/수정 버튼(누르면 부위 팝업) */}
-      <button onClick={() => setSorePopup({ askReconfirm: false })} aria-label="요즘 불편했던 곳 기억하기"
-        style={{ position: "fixed", left: 12, bottom: 100, zIndex: 40, display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 14px", borderRadius: 999, border: "1px solid #EDE9E2", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", boxShadow: "0 3px 12px rgba(0,0,0,0.16)", cursor: "pointer", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, fontFamily: "inherit" }}>
-        🩹 요즘 불편했던 곳
-      </button>
-
-      {sorePopup && (
-        <MallangInfoPopup mode="sore" userInfo={userInfo} isLoggedIn={isLoggedIn} gender={gender} setUserProfile={setUserProfile}
-          askReconfirm={sorePopup.askReconfirm} onClose={() => setSorePopup(null)} />
       )}
 
       {/* 첫 기록 전 민감정보 동의 게이트 (PIPA §23) — 동의 전엔 기록 UI를 덮어 강제한다 */}

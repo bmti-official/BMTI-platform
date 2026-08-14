@@ -1987,9 +1987,9 @@ function computeInsights(entries, userData, report) {
     const freq = userData?.exercise_frequency;
     if (freq && ONB_FREQ_LABEL[freq]) {
       const expect = { none: 0, sometimes: 4, weekly: 10, daily: 22 }[freq] ?? 8;
-      if (moveN >= expect + 4) rows.push({ icon: "📌", text: `운동을 '${ONB_FREQ_LABEL[freq]}' 하겠다고 하셨던 프로필처럼 시작했는데, 이번 달은 ${moveN}번이나 몸을 움직이셨어요. 목표보다 훨씬 잘하고 계세요!` });
-      else if (moveN > 0) rows.push({ icon: "📌", text: `'${ONB_FREQ_LABEL[freq]}' 운동하겠다고 하셨죠. 이번 달은 ${moveN}번 몸을 움직이며 그 다짐과 나란히 걸었어요.` });
-      else rows.push({ icon: "📌", text: `'${ONB_FREQ_LABEL[freq]}' 운동이 목표였어요. 이번 달은 운동 기록이 아직 없지만, 다음 달 첫 기록을 응원할게요!` });
+      if (moveN >= expect + 4) rows.push({ icon: "📌", text: `평소 운동은 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨는데, 이번 달은 ${moveN}번이나 몸을 움직이셨어요. 평소보다 훨씬 부지런했네요!` });
+      else if (moveN > 0) rows.push({ icon: "📌", text: `평소 운동을 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨죠. 이번 달은 ${moveN}번 몸을 움직이셨어요.` });
+      else rows.push({ icon: "📌", text: `평소 운동을 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨어요. 이번 달은 운동 기록이 아직 없지만, 다음 달 첫 기록을 응원할게요!` });
     }
     // 2) 운동 목적 ↔ 불편함 강도 변화(월초→월말)
     const goals = userData?.exercise_goals || [];
@@ -1998,9 +1998,9 @@ function computeInsights(entries, userData, report) {
       const half = Math.floor(days.length / 2);
       const lv = (arr) => { const xs = arr.flatMap(d => (d.soreness || []).map(s => s.level)); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
       const a = lv(days.slice(0, half)), b = lv(days.slice(half));
-      if (a != null && b != null && a - b >= 0.6) rows.push({ icon: "⚖️", text: `목표가 '${goalLabel}'였죠! 다행히 불편함 강도가 월초 평균 ${a.toFixed(1)}점에서 월말 ${b.toFixed(1)}점으로 줄어들었어요.` });
-      else if (a != null && b != null) rows.push({ icon: "⚖️", text: `'${goalLabel}'${eulreul(goalLabel)} 목표로 하셨어요. 이번 달 불편함 강도는 월초 ${a.toFixed(1)}점, 월말 ${b.toFixed(1)}점으로 꾸준히 지켜보는 중이에요.` });
-      else rows.push({ icon: "⚖️", text: `'${goalLabel}'${eulreul(goalLabel)} 목표로 하셨죠. 불편함 기록이 조금 더 쌓이면 강도 변화를 짚어드릴게요.` });
+      if (a != null && b != null && a - b >= 0.6) rows.push({ icon: "⚖️", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨죠. 다행히 불편함 강도가 월초 평균 ${a.toFixed(1)}점에서 월말 ${b.toFixed(1)}점으로 줄어들었어요.` });
+      else if (a != null && b != null) rows.push({ icon: "⚖️", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨어요. 이번 달 불편함 강도는 월초 ${a.toFixed(1)}점, 월말 ${b.toFixed(1)}점으로 꾸준히 지켜보는 중이에요.` });
+      else rows.push({ icon: "⚖️", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨죠. 불편함 기록이 조금 더 쌓이면 강도 변화를 짚어드릴게요.` });
     }
     // 3) 자주 하는 자세 ↔ 활동량(무리하게 부담이 실린 날)
     const loadC = {}; days.forEach(d => (d.overwork?.loads || []).forEach(l => { loadC[l] = (loadC[l] || 0) + 1; }));
@@ -2443,35 +2443,21 @@ function LampClockCard({ data, nickname }) {
 
 // 7. 초심 저울(프로필 팩트체크) — 최근 저장한 '일상 정보' 선택을 보여주고, 그대로 이번 달이 어땠는지 이어본다
 const FACT_CAT_ICON = { "운동 빈도": "🔁", "운동 목적": "🎯", "자주 하는 자세": "🧍", "불편한 부위": "📍" };
+// 팩트체크 코멘트에서 핵심 문구(숫자·따옴표로 감싼 내가 정한 내용)를 연보라로 강조.
+const FACT_HL = "#8B7BD8";
+function hlFact(text) {
+  if (typeof text !== "string") return text;
+  return text.split(/('[^']*'|\d+(?:\.\d+)?[일번점%]?)/g).map((s, i) =>
+    (/^'.*'$/.test(s) || /^\d/.test(s)) ? <b key={i} style={{ color: FACT_HL, fontWeight: 800 }}>{s}</b> : s);
+}
 function FactCheckCard({ rows = [], profile, userInfo, isLoggedIn }) {
   const t = getTypeAccent();
   const p = profile || {};
   const canEdit = isLoggedIn !== undefined; // 실제(잠금 아님) 카드에서만 입력 버튼 노출
   const hasHabits = !!(p.freq || (p.goals && p.goals.length) || p.posture);
   const [habitsPopup, setHabitsPopup] = useState(null); // 온보딩2·3 대체 팝업
-  const chips = [];
-  if (p.freq) chips.push({ label: "운동 빈도", val: p.freq });
-  if (p.goals?.length) chips.push({ label: "운동 목적", val: p.goals.join(" · ") });
-  if (p.posture) chips.push({ label: "자주 하는 자세", val: p.posture });
-  if (p.sore?.length) chips.push({ label: "불편한 부위", val: p.sore.join(" · ") });
   return (
-    <InsCard badge="처음의 다짐 · 팩트 체크" title="내가 정한 것, 이번 달은 어땠을까" sub="가장 최근에 정한 일상 정보와 이번 달 기록을 이어봤어요">
-      {/* 내가 정한 일상 정보 — 카테고리 아이콘 + 값 카드 2열 */}
-      {chips.length > 0 && (
-        <div style={{ background: t.accentSoft, borderRadius: 16, padding: "14px 14px 15px", marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 11 }}>📌 내가 정한 일상 정보</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {chips.map((c, i) => (
-              <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "10px 11px", display: "flex", flexDirection: "column", gap: 3, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: C.sub, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ fontSize: 11 }}>{FACT_CAT_ICON[c.label]}</span>{c.label}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.35, wordBreak: "keep-all" }}>{c.val}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <InsCard badge="처음의 다짐 · 팩트 체크" title="내가 정한 것, 이번 달은 어땠을까" sub="내가 신경 쓴다고 한 것과 이번 달 기록을 이어봤어요">
       {/* 온보딩2·3 대체 — 운동 습관·자세 입력/월 갱신 버튼 */}
       {canEdit && (
         <button onClick={() => setHabitsPopup({ askReconfirm: hasHabits && !habitConfirmedThisMonth() })}
@@ -2489,7 +2475,7 @@ function FactCheckCard({ rows = [], profile, userInfo, isLoggedIn }) {
           {rows.map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 11, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 13, padding: "13px 14px", borderLeft: `3px solid ${t.accent}` }}>
               <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>{typeof r === "string" ? "⚖️" : r.icon}</span>
-              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all", paddingTop: 2 }}>{typeof r === "string" ? r : r.text}</p>
+              <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all", paddingTop: 2 }}>{hlFact(typeof r === "string" ? r : r.text)}</p>
             </div>
           ))}
         </div>
@@ -2581,17 +2567,17 @@ function LetterCard({ data, isM, bmtiCode }) {
           <div style={{
             position: "relative", borderRadius: 10, padding: "16px 16px 18px", border: "1px solid #E7D8B0", overflow: "hidden",
             background: "#FFFDF5",
-            backgroundImage: "repeating-linear-gradient(#FFFDF5 0px, #FFFDF5 27px, #EBDCB6 28px)",
             boxShadow: "0 3px 12px rgba(180,150,80,0.16), inset 0 0 0 1px rgba(255,255,255,0.5)",
           }}>
             {/* 좌측 여백선 */}
             <div style={{ position: "absolute", top: 0, bottom: 0, left: 26, width: 1, background: "rgba(206,120,110,0.32)" }} />
             {/* 가운데 접힘선 */}
             <div style={{ position: "absolute", left: 0, right: 0, top: "50%", height: 10, background: "linear-gradient(180deg, rgba(150,120,60,0.12), rgba(150,120,60,0) 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "relative", paddingLeft: 26 }}>
+            {/* 괘선을 본문과 같은 줄높이(28px)에 맞춰 '각 줄 아래 밑줄'로 그려, 글자를 가리지 않게 한다 */}
+            <div style={{ position: "relative", paddingLeft: 26, backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #EBDCB6 27px, #EBDCB6 28px)" }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>To. {data.nickname || "회원"}님</div>
               <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{data.body}</p>
-              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, marginTop: 4, lineHeight: "28px" }}>— 당신의 BMTI 파트너, {charName} 드림</div>
+              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>— 당신의 BMTI 파트너, {charName} 드림</div>
             </div>
           </div>
         </div>
