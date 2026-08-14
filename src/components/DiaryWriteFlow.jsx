@@ -301,8 +301,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   };
 
   const finishFlow = () => {
+    // 저장은 부모(AiChatHub)에 맡기고, 완료 말랑이 팝업은 캘린더로 돌아가 그 위에서 띄운다.
+    // (onFinish가 상세 폼을 닫으므로 여기서 celebrate 단계를 띄우지 않는다.)
     if (onFinish) onFinish(dayMood, buildEntryExtra());
-    setPhase("celebrate");
   };
 
   // ── 운동 종목 토글 (최대 2) ──

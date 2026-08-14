@@ -65,8 +65,10 @@ function getRecordMessage(count, isM) {
   return `총 ${count}일 기록했어요. ${msgs[idx]}`;
 }
 
-export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin }) {
-  const [view, setView] = useState("month"); // "month" | "week"
+export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown }) {
+  // 기록 후 캘린더로 돌아왔을 때 같은 보기(월간/주간)로 오도록 보기 상태를 저장해둔다.
+  const [view, setView] = useState(() => { try { return localStorage.getItem("bmti_diary_calview") === "week" ? "week" : "month"; } catch { return "month"; } });
+  useLayoutEffect(() => { try { localStorage.setItem("bmti_diary_calview", view); } catch {} }, [view]);
   const [showHelp, setShowHelp] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const t = getTypeAccent(bmtiCode);
@@ -157,10 +159,13 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   };
 
   // 오늘 기분 팝업 — 오늘 기록이 없으면 탭에 들어오자마자 자동으로 뜬다.
-  const [showMoodPopup, setShowMoodPopup] = useState(() => !getEntryForDate(todayISO()));
+  // 단, 상세 기록을 막 완료하고 돌아온 경우(initialStressMood)엔 기분 팝업 대신 말랑이 팝업을 띄운다.
+  const [showMoodPopup, setShowMoodPopup] = useState(() => initialStressMood == null && !getEntryForDate(todayISO()));
   const [poppedMood, setPoppedMood] = useState(null);
-  const [showStressPopup, setShowStressPopup] = useState(false);
-  const [stressMood, setStressMood] = useState(null);
+  const [showStressPopup, setShowStressPopup] = useState(initialStressMood != null);
+  const [stressMood, setStressMood] = useState(initialStressMood);
+  // 기록 완료 후 캘린더로 돌아오며 넘어온 무드가 있으면, 부모의 상태를 한 번만 비운다.
+  useLayoutEffect(() => { if (initialStressMood != null) onStressShown && onStressShown(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
   const [futureToast, setFutureToast] = useState(false); // 미래 날짜를 눌렀을 때 2초 안내

@@ -59,7 +59,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
   const label = showBabies ? "꺄아, 다같이 신났어요!" : "말랑이를 눌러서\n스트레스를 풀어보세요";
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(28,26,23,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(255,255,255,0.24)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 380, background: "#fff", borderRadius: 28, padding: "26px 24px 24px", textAlign: "center", animation: "mallangPopIn .32s cubic-bezier(.22,.9,.32,1)" }}>
         {/* 캐릭터가 말풍선으로 안내 */}
         <div style={{ display: "flex", gap: 9, alignItems: "flex-end", justifyContent: "center", marginBottom: 24, textAlign: "left" }}>

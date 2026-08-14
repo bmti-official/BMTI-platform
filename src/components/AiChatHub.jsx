@@ -19,6 +19,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
   const [pendingEntry, setPendingEntry] = useState(null); // 수정하러 들어온 경우, 그날 기존 기록 전체
   const [editingDate, setEditingDate] = useState(null); // 캘린더에서 특정 날짜를 수정하러 들어온 경우 그 날짜
   const [syncTick, setSyncTick] = useState(0); // 서버 동기화가 끝나면 캘린더를 새로 읽도록 리마운트
+  const [postStressMood, setPostStressMood] = useState(null); // 상세 기록 완료 후, 캘린더로 돌아가 띄울 말랑이 팝업 무드
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const charName = charData ? CHARACTER_NAMES[charData.id] : undefined;
@@ -39,10 +40,14 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
     setHasHistory(true);
   };
 
-  // DiaryWriteFlow의 onFinish — 저장만 하고, 화면 전환은 3초짜리 완료 팝업이 끝난 뒤
-  // DiaryWriteFlow가 부르는 onClose에 맡긴다(여기서 바로 닫아버리면 팝업이 뜰 새도 없이 사라짐).
+  // DiaryWriteFlow의 onFinish — 저장 후 상세 폼을 닫고 캘린더로 돌아가, 그 위(블러 배경)에
+  // 말랑이 완료 팝업을 띄운다. (기존엔 상세 폼 위 흰 배경에서 팝업이 떴음)
   const handleWriteFlowFinish = (mood, extra) => {
     saveEntry(mood, extra);
+    setPostStressMood(mood);
+    setShowDiaryFlow(false);
+    setEditingDate(null);
+    setPendingEntry(null);
   };
 
   // 온보딩의 onComplete — 첫 기록 없이도 온보딩을 마치면 바로 말랑 다이어리(캘린더)로 이동한다.
@@ -90,7 +95,7 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
   // 게스트도 3D 온보딩을 한 번 보고(여성 캐릭터 기본), 완료하면 localStorage에 온보딩 완료 표시.
   // 온보딩을 마쳤거나 이미 기록이 있으면 캘린더로 바로 보낸다.
   if (hasHistory || onboarded) {
-    return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />;
+    return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} />;
   }
 
   return (
