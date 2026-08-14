@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { hasDiaryHistory, saveDiaryEntry, syncDiaryHistoryFromServer, todayISO } from '../lib/diaryHistory';
-import DiaryOnboarding from './DiaryOnboarding';
 import DiaryCalendar from './DiaryCalendar';
 import DiaryWriteFlow from './DiaryWriteFlow';
 
@@ -50,14 +49,6 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
     setPendingEntry(null);
   };
 
-  // 온보딩의 onComplete — 첫 기록 없이도 온보딩을 마치면 바로 말랑 다이어리(캘린더)로 이동한다.
-  const handleOnboardingComplete = () => {
-    localStorage.setItem(ONBOARDED_KEY, '1');
-    setOnboarded(true);
-    setShowDiaryFlow(false);
-    setEditingDate(null);
-  };
-
   // 캘린더의 '오늘 기분은...' 카드에서 무드를 고르면, 상세 기록(DiaryWriteFlow)으로 이어간다.
   const openDiaryFlow = (moodValue) => {
     setPendingDayMood(moodValue);
@@ -92,27 +83,9 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
     );
   }
 
-  // 게스트도 3D 온보딩을 한 번 보고(여성 캐릭터 기본), 완료하면 localStorage에 온보딩 완료 표시.
-  // 온보딩을 마쳤거나 이미 기록이 있으면 캘린더로 바로 보낸다.
-  if (hasHistory || onboarded) {
-    return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} />;
-  }
-
-  return (
-    <DiaryOnboarding
-      nickname={userInfo?.nickname || '회원'}
-      bmtiCode={bmtiCode}
-      charImage={charData?.image}
-      charName={charName}
-      gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
-      isLoggedIn={isLoggedIn}
-      onRequireLogin={onRequireLogin}
-      setView={setView}
-      onComplete={handleOnboardingComplete}
-      userId={userInfo?.id}
-      setUserProfile={setUserProfile}
-    />
-  );
+  // 온보딩 3페이지 제거 — 처음 들어온 사용자도 바로 월간 캘린더로.
+  // (일상 정보(불편 부위·운동 습관·자세)는 마이페이지 '말랑 정보'에서 입력·수정)
+  return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} />;
 };
 
 export default AiChatHub;
