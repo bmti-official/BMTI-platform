@@ -116,7 +116,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   // (카카오 SDK 경로는 카카오 앱에 등록된 도메인/캐시에 따라 예전 주소로 갈 수 있어 폴백으로 둔다.)
   const shareToFriend = () => {
     const siteUrl = 'https://bmti-official.co.kr/';
-    const shareUrl = `${siteUrl}#${axisCode}`;
+    // 받은 사람은 공유자의 결과지가 아니라 '설문(#quiz)'으로 보내 직접 검사하게 한다.
+    const shareUrl = `${siteUrl}#quiz`;
     const title = `나의 BMTI는 ${axisCode}!`;
     const text = (charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ');
     // 1) OS 공유 시트 (모바일: 카카오톡 등 선택 → 링크는 항상 co.kr)
@@ -179,11 +180,11 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             <div className="text-xl md:text-3xl font-medium mt-3 text-gray-400 break-keep">움직임 성향 테스트</div>
             <div className="text-[10px] md:text-base text-gray-400 font-sans tracking-widest font-medium mt-5 uppercase leading-relaxed">BODY MANAGEMENT<br />TYPE INDICATOR</div>
           </div>
-          {/* 우 — 건강 다이어리 이번달 기록·발견 */}
-          <div className="text-center px-1 font-serif">
-            <div className="text-5xl md:text-8xl font-bold leading-none break-keep">건강<br />다이어리</div>
-            <div className="text-xl md:text-3xl font-medium mt-3 text-gray-400 break-keep">이번달 기록·발견</div>
-            <div className="text-[10px] md:text-base text-gray-400 font-sans tracking-widest font-medium mt-5 uppercase leading-relaxed">WELLNESS<br />DIARY</div>
+          {/* 우 — 건강 다이어리 이번달 기록·발견 (하단 네비 글씨체=sans, 한 줄에 들어가는 크기) */}
+          <div className="text-center px-1 flex flex-col justify-center">
+            <div className="text-2xl md:text-4xl font-extrabold leading-tight whitespace-nowrap">건강 다이어리</div>
+            <div className="text-sm md:text-lg font-semibold mt-2 text-gray-400 break-keep">이번달 기록·발견</div>
+            <div className="text-[10px] md:text-base text-gray-400 tracking-widest font-medium mt-4 uppercase leading-relaxed">WELLNESS<br />DIARY</div>
           </div>
         </div>
       </section>

@@ -942,12 +942,14 @@ function WeatherFindingCards({ entries, onWeatherUpdated }) {
   const rainSore = avgSoreOf(rainDays, kneeWaist);
   const coldSore = soreCountOf(coldDays, neckShoulder);
 
-  // 거창한 스와이프 카드 대신 — 이런 날이 며칠이었고, 몸·기분 기록이 어땠는지 한 박스에 간단히.
+  // 거창한 스와이프 카드 대신 — 이런 날이 며칠이었고, 그날 기분 기록이 어땠는지 한 박스에 간단히.
+  // 기분 기록에서 특이점(저조한 날)이 없으면 '특이한 점 없음'을 명시한다.
+  const moodNote = (list) => (lowMoodCount(list) ? `기분 저조 ${lowMoodCount(list)}일` : "기분 기록엔 특이한 점 없음");
   const rows = [
-    { emoji: "🌧️", label: "비·흐린 날", days: rainDays.length, sub: [rainSore != null ? `무릎·허리 평균 ${rainSore.toFixed(1)}점` : null, lowMoodCount(rainDays) ? `기분 저조 ${lowMoodCount(rainDays)}일` : null].filter(Boolean).join(" · ") },
-    { emoji: "🌡️", label: "기온 낮음·큰 일교차", days: coldDays.length, sub: coldSore ? `목·어깨 기록 ${coldSore}번` : "" },
-    { emoji: "🔥", label: "고온 다습", days: hotHumidDays.length, sub: lowMoodCount(hotHumidDays) ? `기분 저조 ${lowMoodCount(hotHumidDays)}일` : "" },
-    { emoji: "🌫️", label: "미세먼지 나쁨", days: badAirDays.length, sub: lowMoodCount(badAirDays) ? `기분 저조 ${lowMoodCount(badAirDays)}일` : "" },
+    { emoji: "🌧️", label: "비·흐린 날", days: rainDays.length, sub: [rainSore != null ? `무릎·허리 평균 ${rainSore.toFixed(1)}점` : null, moodNote(rainDays)].filter(Boolean).join(" · ") },
+    { emoji: "🌡️", label: "기온 낮음·큰 일교차", days: coldDays.length, sub: [coldSore ? `목·어깨 기록 ${coldSore}번` : null, moodNote(coldDays)].filter(Boolean).join(" · ") },
+    { emoji: "🔥", label: "고온 다습", days: hotHumidDays.length, sub: moodNote(hotHumidDays) },
+    { emoji: "🌫️", label: "미세먼지 나쁨", days: badAirDays.length, sub: moodNote(badAirDays) },
   ].filter((r) => r.days > 0);
 
   return (
