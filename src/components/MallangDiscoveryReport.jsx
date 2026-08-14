@@ -2560,10 +2560,23 @@ function LetterCard({ data, isM, bmtiCode }) {
         </button>
       ) : (
         <div style={{ marginTop: 12, animation: "letterOpen .4s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: "16px 15px", border: "1px dashed #E3D6B4", lineHeight: 1.7, fontSize: 13.5, color: "#3F3A31", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty" }}>
-            {data.body}
+          {/* 편지지 — 가로 괘선 + 좌측 여백선 + 가운데 접힘선 */}
+          <div style={{
+            position: "relative", borderRadius: 10, padding: "16px 16px 18px", border: "1px solid #E7D8B0", overflow: "hidden",
+            background: "#FFFDF5",
+            backgroundImage: "repeating-linear-gradient(#FFFDF5 0px, #FFFDF5 27px, #EBDCB6 28px)",
+            boxShadow: "0 3px 12px rgba(180,150,80,0.16), inset 0 0 0 1px rgba(255,255,255,0.5)",
+          }}>
+            {/* 좌측 여백선 */}
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: 34, width: 1, background: "rgba(206,120,110,0.32)" }} />
+            {/* 가운데 접힘선 */}
+            <div style={{ position: "absolute", left: 0, right: 0, top: "50%", height: 10, background: "linear-gradient(180deg, rgba(150,120,60,0.12), rgba(150,120,60,0) 65%)", pointerEvents: "none" }} />
+            <div style={{ position: "relative", paddingLeft: 14 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>To. {data.nickname || "회원"}님</div>
+              <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{data.body}</p>
+              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, marginTop: 4, lineHeight: "28px" }}>— 당신의 BMTI 파트너, {charName} 드림</div>
+            </div>
           </div>
-          <div style={{ textAlign: "right", fontSize: 12, fontWeight: 800, color: t.accentDeep, marginTop: 10 }}>— 당신의 BMTI 파트너, {charName} 드림</div>
         </div>
       )}
       <style>{`@keyframes sealBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes letterOpen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>

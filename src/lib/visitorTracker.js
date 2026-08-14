@@ -89,30 +89,22 @@ export async function fetchVisitorCounts() {
   })();
 
   try {
-    const [{ data: todayRow }, { data: totalRow }, { data: monthRows }] = await Promise.all([
-      supabase
-        .from("visitor_counts")
-        .select("today_count")
-        .eq("date_kst", date)
-        .maybeSingle(),
-      supabase
-        .from("visitor_total")
-        .select("total_count")
-        .eq("id", 1)
-        .single(),
-      supabase
-        .from("visitor_counts")
-        .select("today_count")
-        .gte("date_kst", monthStart),
+    // 오늘·월간·누적 모두 visitor_counts(일별 순방문)에서 일관되게 계산한다.
+    // 누적 = 전체 기간의 일별 방문 합계이므로, 최근 30일 월간은 항상 누적의 부분집합(월간 ≤ 누적).
+    // (별도 visitor_total 카운터는 증가 누락 시 월간보다 작아질 수 있어 표시에서 제외)
+    const [{ data: todayRow }, { data: monthRows }, { data: allRows }, { data: totalRow }] = await Promise.all([
+      supabase.from("visitor_counts").select("today_count").eq("date_kst", date).maybeSingle(),
+      supabase.from("visitor_counts").select("today_count").gte("date_kst", monthStart),
+      supabase.from("visitor_counts").select("today_count"),
+      supabase.from("visitor_total").select("total_count").eq("id", 1).maybeSingle(),
     ]);
 
     const monthly = (monthRows || []).reduce((s, r) => s + (r.today_count || 0), 0);
+    const sumAll = (allRows || []).reduce((s, r) => s + (r.today_count || 0), 0);
+    // 혹시 수기로 더 크게 세팅해 둔 누적 카운터가 있으면 그 값을 존중하되, 최소 일별 합계 이상으로 보정.
+    const total = Math.max(sumAll, totalRow?.total_count ?? 0);
 
-    return {
-      today: todayRow?.today_count ?? 0,
-      monthly,
-      total: totalRow?.total_count ?? 0,
-    };
+    return { today: todayRow?.today_count ?? 0, monthly, total };
   } catch (err) {
     console.error("[visitorTracker] fetchVisitorCounts error:", err);
     return { today: 0, monthly: 0, total: 0 };
