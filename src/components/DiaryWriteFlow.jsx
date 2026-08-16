@@ -27,6 +27,7 @@ const C = {
   gold: GOLD, yellow: YELLOW, yellowLine: YELLOW_LINE,
   tileOff: "#F3F1EC", tileOffText: "#B7B2A9",
 };
+const YELLOW_SHADOW = '0 2px 6px rgba(220,188,86,0.18), 0 12px 28px rgba(233,203,110,0.34)';
 
 // ── 평소보다 무리한 이유 ──
 const OVEREXERT_REASONS = [
@@ -822,7 +823,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         {phase === "form" && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px", background: C.bg, flexShrink: 0, position: "relative" }}>
           <button onClick={goBack} style={{ position: "absolute", left: 6, width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: C.ink, fontSize: 24, cursor: "pointer" }}>‹</button>
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.tileOff, borderRadius: 999, padding: "8px 16px" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: C.ink, background: C.yellow, borderRadius: 999, padding: "8px 16px" }}>
             {selDate.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
           </span>
           <button onClick={() => setEditMode(v => !v)} style={{ position: "absolute", right: 10, border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 8px", color: editMode ? t.accentDeep : C.sub }}>
@@ -830,7 +831,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               <span style={{ fontSize: 13, fontWeight: 800 }}>완료</span>
             ) : (
               <>
-                <DiaryIcon name="gear" size={19} />
+                <DiaryIcon name="gear" size={19} color="#8B7BD8" />
                 <span style={{ fontSize: 11.5, fontWeight: 700 }}>편집</span>
               </>
             )}
@@ -844,7 +845,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             <>
               {/* ━━━ 오늘의 말랑이 기분 — 항상 맨 위 고정, 순서변경/숨기기 대상 아님 ━━━ */}
               <div
-                style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}
+                style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "20px 24px", boxShadow: YELLOW_SHADOW }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>오늘 {nickname || "말랑이"}의 기분은</h2>
@@ -991,7 +992,7 @@ function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, d
     // flexShrink:0 필수 — 부모가 flex-direction:column인데 이 div에 overflow:hidden이 걸려 있으면
     // 플렉스 아이템의 자동 최소 높이가 auto 대신 0이 되어 버려서, 브라우저가 이 카드를 통째로
     // height:0으로 찌그러뜨리는 문제가 있었다(앉은 시간/수면/운동/스트레칭 카드가 안 보이고 클릭도 안 되던 원인).
-    <div style={{ position: "relative", background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.02)", overflow: "hidden", flexShrink: 0 }}>
+    <div style={{ position: "relative", background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, boxShadow: YELLOW_SHADOW, overflow: "hidden", flexShrink: 0 }}>
       <button onClick={onToggle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
         <AccordionTitle question={question} answerIcon={answerIcon} answerText={answerText} />
         <span style={{ fontSize: 12, color: done ? getTypeAccent().accentDeep : C.sub, fontWeight: 700, flexShrink: 0, transition: "transform .2s", transform: expanded ? "rotate(180deg)" : "rotate(0)" }}>
@@ -1009,7 +1010,7 @@ function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, d
 
 function Card({ title, action, children }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.02)" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: 24, boxShadow: YELLOW_SHADOW }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 0 16px" }}>
         <h2 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>{title}</h2>
         {action}

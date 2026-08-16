@@ -2507,6 +2507,12 @@ function MallangNightCard({ entries, nickname }) {
   const H = 120, barH = 78;
   const xOf = (i) => ((i + 0.5) / N) * 100;
   const yOf = (q) => 14 + (1 - q / 3) * 72; // 수면 질 0~3, 높을수록 위
+  // 기준 시간(가운데 시간대) = bed 0.5 → 이 높이에 점선을 긋고, 그보다 높으면 더 늦게 잔 날.
+  const baseH = Math.round((0.18 + 0.5 * 0.82) * barH);
+  const baseLabel = irregular ? "자야 하는 시간" : (setting?.base || "밤 12시");
+  const barCaption = irregular
+    ? "자야 하는 시간보다 늦게 잠든 날일수록 막대가 높아져요"
+    : `기준 시간(${baseLabel})보다 늦게 잠든 날일수록 막대가 높아져요`;
   let dPath = "", prev = false;
   cats.forEach((c, i) => { if (c.qual == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.qual).toFixed(2)}`; prev = true; });
 
@@ -2545,6 +2551,10 @@ function MallangNightCard({ entries, nickname }) {
               );
             })}
           </div>
+          {/* 기준 시간 점선 — 이 선보다 막대가 높으면 그날 더 늦게 잠든 것 */}
+          <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }}>
+            <span style={{ position: "absolute", right: 0, top: -13, fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.75)", background: "rgba(46,42,68,0.7)", padding: "1px 6px", borderRadius: 6 }}>기준 {baseLabel}</span>
+          </div>
           {/* 수면의 질 꺾은선 */}
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
             {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
@@ -2567,6 +2577,9 @@ function MallangNightCard({ entries, nickname }) {
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 8, borderRadius: 2, background: "#F5C860" }} />잠든 시간대</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 2, borderRadius: 2, background: "#9CC6FF" }} />수면의 질</span>
         </div>
+        <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.6)", fontWeight: 600, textAlign: "center", margin: "8px 0 0", wordBreak: "keep-all" }}>
+          <span style={{ display: "inline-block", width: 14, borderTop: "1.5px dashed rgba(255,255,255,0.55)", verticalAlign: "middle", marginRight: 5 }} />{barCaption}
+        </p>
       </div>
     </div>
   );

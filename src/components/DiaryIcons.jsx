@@ -462,8 +462,8 @@ const ICONS = {
   period: IconPeriod, menstrual: IconMenstrual, medicine: IconMedicine,
 };
 
-export function DiaryIcon({ name, size = 28 }) {
+export function DiaryIcon({ name, size = 28, color }) {
   const Icon = ICONS[name];
   if (!Icon) return null;
-  return <Icon size={size} />;
+  return <Icon size={size} {...(color ? { color } : {})} />;
 }

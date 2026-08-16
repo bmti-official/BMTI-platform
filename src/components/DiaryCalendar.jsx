@@ -21,6 +21,7 @@ const C = {
   bg: "#FFFFFF", card: "#FFFFFF", ink: "#1C1A17", sub: "#9B9489", line: "#EDE9E2",
   gold: GOLD, yellow: YELLOW, yellowLine: YELLOW_LINE,
 };
+const YELLOW_SHADOW = '0 2px 6px rgba(220,188,86,0.18), 0 12px 28px rgba(233,203,110,0.34)';
 const SAT_BLUE = "#2F6FE0";
 const SUN_RED = "#E0554F";
 const MIN_YEAR = 2026;
@@ -316,7 +317,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         const moodInfo = MOODS.find(m => m.v === previewDay.entry.mood);
         return (
           <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 340, background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 24, position: "relative", maxHeight: "85vh", overflow: "hidden" }}>
+            {/* 월간 캘린더(maxWidth 460)와 같은 폭 · 흰 배경 · 일반 모바일 높이에 맞춰 세로로 스택 */}
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 24, position: "relative", maxHeight: "min(760px, 90vh)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
               {/* 우측 상단 X — 카드에 고정(스크롤돼도 항상 보임) */}
               <button
                 onClick={() => setPreviewDay(null)}
@@ -326,9 +328,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 ✕
               </button>
 
-              {/* 스크롤 영역 — 내용이 길어도 팝업 높이를 넘지 않게 */}
-              <div style={{ maxHeight: "85vh", overflowY: "auto", padding: "18px 20px 22px" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, marginBottom: 18 }}>
+              {/* 헤더 — 고정 */}
+              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "26px 20px 14px" }}>
                 <Mallang v={previewDay.entry.mood} size={60} />
                 <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, marginTop: 10 }}>
                   {previewDay.dateStr.slice(5, 7)}월 {previewDay.dateStr.slice(8, 10)}일
@@ -336,50 +337,57 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{moodInfo?.label}</div>
               </div>
 
-              {/* 오늘의 태그 — 아이콘으로 미리보기 */}
+              {/* 첫 번째 박스(오늘의 태그) — 고정 */}
               {(() => {
                 const tags = (previewDay.entry.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
                 if (!tags.length) return null;
                 return (
-                  <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "12px 14px", marginBottom: 12 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>오늘의 태그</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {tags.map(tg => (
-                        <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.yellow, borderRadius: 999, padding: "5px 11px 5px 7px" }}>
-                          <DiaryIcon name={TAG_LABEL_TO_ICON[tg]} size={18} />
-                          <span style={{ fontSize: 11.5, fontWeight: 700, color: C.ink }}>{tg}</span>
-                        </span>
-                      ))}
+                  <div style={{ flexShrink: 0, padding: "0 20px 12px" }}>
+                    <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "12px 14px", boxShadow: YELLOW_SHADOW }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>오늘의 태그</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {tags.map(tg => (
+                          <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.yellow, borderRadius: 999, padding: "5px 11px 5px 7px" }}>
+                            <DiaryIcon name={TAG_LABEL_TO_ICON[tg]} size={18} />
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: C.ink }}>{tg}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 );
               })()}
 
-              {items.length > 0 ? (
-                <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", marginBottom: 22 }}>
-                  {items.map((it, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
-                      <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={22} /></div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ textAlign: "center", fontSize: 13, color: C.sub, fontWeight: 600, marginBottom: 22 }}>기분만 짧게 남겨둔 날이에요.</p>
-              )}
+              {/* 두 번째 박스(기록 요약) — 길면 이 영역만 스크롤 */}
+              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "0 20px 4px" }}>
+                {items.length > 0 ? (
+                  <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", boxShadow: YELLOW_SHADOW }}>
+                    {items.map((it, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
+                        <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={22} /></div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ textAlign: "center", fontSize: 13, color: C.sub, fontWeight: 600, padding: "8px 0 12px" }}>기분만 짧게 남겨둔 날이에요.</p>
+                )}
+              </div>
 
-              <button
-                onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
-                style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}
-              >
-                이 기록 수정할래요
-              </button>
-              <button
-                onClick={() => setPreviewDay(null)}
-                style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
-              >
-                괜찮아요, 그냥 볼게요
-              </button>
+              {/* 하단 버튼 — 고정 */}
+              <div style={{ flexShrink: 0, padding: "12px 20px 20px" }}>
+                <button
+                  onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
+                  style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}
+                >
+                  이 기록 수정할래요
+                </button>
+                <button
+                  onClick={() => setPreviewDay(null)}
+                  style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+                >
+                  괜찮아요, 그냥 볼게요
+                </button>
               </div>
             </div>
           </div>
