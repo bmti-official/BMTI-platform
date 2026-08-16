@@ -57,17 +57,18 @@ function parseMatch(str) {
   return { code, reason };
 }
 
-function MiniChar({ code, size = 56, ring, bg }) {
+function MiniChar({ code, size = 56, ring, bg, plain = false }) {
   const ch = charOf(code);
   // 원 배경을 흰색 위 옅은 틴트로 '불투명'하게 만든다 — 뒤에 깔린 연결선이 원과 겹치는
   // 부분에서 비쳐 보이지 않고(원이 가리고), 원 사이 여백에서만 선이 보이게 한다.
   const tint = bg || `${(BMTI_INFO[code] || {}).color || '#999'}18`;
+  // plain: 작은 원(추가 짝꿍)에서는 유형별 imgClass(translate 등)를 빼서 캐릭터를 가운데로.
   return (
     <div
       className="rounded-full flex items-center justify-center overflow-hidden shrink-0"
       style={{ width: size, height: size, backgroundColor: '#fff', backgroundImage: `linear-gradient(${tint}, ${tint})`, border: `2px solid ${ring || 'transparent'}` }}
     >
-      {ch && <img src={ch.image} alt="" className={ch.imgClass || ''} style={{ width: `${84 * boostOf(code)}%`, height: `${84 * boostOf(code)}%`, objectFit: 'contain' }} />}
+      {ch && <img src={ch.image} alt="" className={plain ? '' : (ch.imgClass || '')} style={{ width: `${84 * boostOf(code)}%`, height: `${84 * boostOf(code)}%`, objectFit: 'contain' }} />}
     </div>
   );
 }
@@ -120,7 +121,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
                   <div className="flex justify-center gap-1.5 mt-1">
                     {goodCodes.slice(1).map((c) => (
                       <div key={c} className="flex flex-col items-center gap-0.5">
-                        <MiniChar code={c} size={34} ring={GOOD} />
+                        <MiniChar code={c} size={34} ring={GOOD} plain />
                         <span className="text-[8px] font-extrabold text-gray-400">{c}</span>
                       </div>
                     ))}

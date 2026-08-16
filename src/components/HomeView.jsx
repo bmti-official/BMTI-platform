@@ -10,6 +10,7 @@ import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import DiaryCta from './DiaryCta';
 import TypeGallery from './TypeGallery';
+import BingoGallery from './BingoGallery';
 import BmtiGuidePopup from './BmtiGuidePopup';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
@@ -17,6 +18,7 @@ import zTypeImage from '../assets/Z 유형.png';
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [showBingo, setShowBingo] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
@@ -277,8 +279,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 다른 유형 구경하기 — 관계도 위. 결과지 CTA와 동일한 스타일 */}
-      <div className="w-full flex justify-center mb-6">
+      {/* 다른 유형 구경하기 + BMTI 빙고판 — 관계도 위. 결과지 CTA와 동일한 스타일 */}
+      <div className="w-full flex flex-wrap justify-center items-center gap-x-6 gap-y-3 mb-6">
         <button
           onClick={() => setShowGallery(true)}
           className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
@@ -289,8 +291,17 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">다른 유형 구경하기</span>
           <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>
+        <button
+          onClick={() => setShowBingo(true)}
+          className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
+        >
+          <span className="w-8 h-8 flex items-center justify-center shrink-0 text-lg">🎉</span>
+          <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">BMTI 빙고판 하러가기</span>
+          <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+        </button>
       </div>
       {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
+      {showBingo && <BingoGallery onClose={() => setShowBingo(false)} />}
 
       {/* BMTI 유형 관계도 — 16가지 유형이 어떻게 이어지는지 보여주는 지도 */}
       <BmtiRelationMap bmtiCode={bmtiCode} />

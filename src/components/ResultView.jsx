@@ -11,14 +11,14 @@ import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } fr
 
 // 4가지 성향 대표 문장에서 항목 메인 색상으로 강조할 핵심 문구
 const TENDENCY_HL = {
-  A: { confident: '몸을 움직여야 오히려 개운해지는', flexible: '가볍게 몸을 움직이면 기분이 훨씬 나아져요' },
-  O: { confident: '조용히 있을 때 진짜 충전되는', flexible: '조용히 쉬는 게 더 잘 맞아요' },
-  C: { confident: "지금 뻐근한 '여기'가 뭔지부터", flexible: '오늘 집중할 부위가 명확해야' },
-  L: { confident: '전체적으로 봐줬으면 해요', flexible: '주변이랑 어떻게 연결됐는지 알면 더 시원해요' },
-  D: { confident: '일단 직접 움직여봐야', flexible: '직접 움직이면서 감을 잡고 싶어요' },
-  Q: { confident: '납득이 돼야 몸이 움직여요', flexible: '이게 왜 좋은지 정도는 알고 싶어요' },
-  Z: { confident: '팩트로 알려주세요', flexible: '지금 뭘 케어해야 하는지' },
-  M: { confident: '다정한 위로가 먼저였으면', flexible: '가벼운 칭찬이나 다정한 격려 한마디' },
+  A: { confident: '몸을 움직여야', flexible: '가볍게 몸을 움직이면' },
+  O: { confident: '조용히', flexible: '조용히 쉬는' },
+  C: { confident: "'여기'", flexible: '집중할 부위' },
+  L: { confident: '전체적으로', flexible: '연결' },
+  D: { confident: '직접 움직여', flexible: '직접 움직이면서' },
+  Q: { confident: '납득이 돼야', flexible: '왜 좋은지' },
+  Z: { confident: '팩트', flexible: '뭘 케어해야' },
+  M: { confident: '다정한 위로', flexible: '가벼운 칭찬이나 다정한 격려' },
 };
 // 각 성향 카드의 메인 색상(축 왼쪽 글자 기준)
 const TENDENCY_HEX = { A: '#FF6B6B', C: '#4ECDC4', D: '#60A5FA', Z: '#A78BFA' };
