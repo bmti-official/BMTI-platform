@@ -24,6 +24,24 @@ const BAD = '#7C8BA5';    // 조금 다른 템포 (차분한 슬레이트)
 const charOf = (code) => CHARACTERS.find((c) => c.id === code);
 const nickOf = (code) => (CHARACTER_NAMES[code] || code).replace(/\n/g, ' ');
 
+// '환상의 짝꿍' 추가 후보 점수 — 결과지의 대표 짝꿍 1개에 더해 2개를 더 고른다.
+// 잘 맞는 조합 = 서로의 에너지를 채워주는 상보성(활동↔안정) + 통하는 결(공감/팩트가 같음).
+// 코드 자리: 0=A/O(활동·안정) 1=C/L(집중·전신) 2=D/Q(실전·탐구) 3=Z/M(팩트·공감)
+function matchScore(a, b) {
+  let s = 0;
+  if (a[0] !== b[0]) s += 2; // 활동↔안정으로 에너지를 채워줌
+  if (a[3] === b[3]) s += 2; // 공감·팩트 같은 결이라 통함
+  if (a[1] === b[1]) s += 1; // 집중/전신 관점이 비슷
+  if (a[2] === b[2]) s += 1; // 실전/탐구 방식이 비슷
+  return s;
+}
+function extraGoodMatches(code, exclude, n = 2) {
+  const skip = new Set(['ACDZ', 'ACDM', 'ACQZ', 'ACQM', 'ALDZ', 'ALDM', 'ALQZ', 'ALQM', 'OCDZ', 'OCDM', 'OCQZ', 'OCQM', 'OLDZ', 'OLDM', 'OLQZ', 'OLQM']);
+  const all = [...skip].filter((c) => c !== code && !exclude.includes(c));
+  all.sort((x, y) => matchScore(code, y) - matchScore(code, x) || x.localeCompare(y));
+  return all.slice(0, n);
+}
+
 // 관계도 원 안에서 유독 작게 보이는 누끼들 — 유형별로 살짝 키운다.
 const RELATION_BOOST = {
   ACDM: 1.18, ACQZ: 1.18, ACQM: 1.18, ALDM: 1.18, ALQM: 1.18, OLDM: 1.18, ALDZ: 1.18,
@@ -61,6 +79,9 @@ export default function BmtiRelationMap({ bmtiCode }) {
   const res = BMTI_RESULTS[sel] || {};
   const good = parseMatch(res.goodMatch);
   const bad = parseMatch(res.badMatch);
+  // 환상의 짝꿍 3개: 결과지 대표 짝꿍(있으면) + 어울리는 유형 2개
+  const goodCodes = [good.code, ...extraGoodMatches(sel, [good.code, bad.code].filter(Boolean), good.code ? 2 : 3)].filter(Boolean);
+  const goodSet = new Set(goodCodes);
   const selColor = (BMTI_INFO[sel] || {}).color || '#C9975A';
 
   return (
@@ -87,14 +108,26 @@ export default function BmtiRelationMap({ bmtiCode }) {
         </div>
 
         <div className="relative grid grid-cols-3 gap-1.5 items-start" style={{ zIndex: 1 }}>
-          {/* 환상의 짝꿍 */}
-          <div className="flex flex-col items-center text-center gap-1.5">
+          {/* 환상의 짝꿍 — 대표 1 + 어울리는 2, 총 3 */}
+          <div className="flex flex-col items-center text-center gap-1">
             <span className="text-[10px] font-extrabold" style={{ color: GOOD }}>💖 환상의 짝꿍</span>
-            {good.code
-              ? <><MiniChar code={good.code} size={56} ring={GOOD} />
-                  <div className="text-[11px] font-bold text-gray-900 leading-tight break-keep">{nickOf(good.code)}</div>
-                  <div className="text-[9.5px] font-extrabold text-gray-400">{good.code} {CODE_KO[good.code]}</div></>
-              : <span className="text-[11px] text-gray-400">—</span>}
+            {goodCodes.length > 0 ? (
+              <>
+                <MiniChar code={goodCodes[0]} size={56} ring={GOOD} />
+                <div className="text-[10.5px] font-bold text-gray-900 leading-tight break-keep">{nickOf(goodCodes[0])}</div>
+                <div className="text-[9px] font-extrabold text-gray-400">{goodCodes[0]} {CODE_KO[goodCodes[0]]}</div>
+                {goodCodes.length > 1 && (
+                  <div className="flex justify-center gap-1.5 mt-1">
+                    {goodCodes.slice(1).map((c) => (
+                      <div key={c} className="flex flex-col items-center gap-0.5">
+                        <MiniChar code={c} size={34} ring={GOOD} />
+                        <span className="text-[8px] font-extrabold text-gray-400">{c}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : <span className="text-[11px] text-gray-400">—</span>}
           </div>
 
           {/* 나 */}
@@ -121,7 +154,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
       <p className="text-[11px] font-extrabold text-gray-400 mb-2.5 text-center tracking-wide">다른 유형도 눌러보세요</p>
       <div className="grid grid-cols-4 gap-2">
         {GRID.flat().map((code) => {
-          const isSel = code === sel, isGood = code === good.code, isBad = code === bad.code;
+          const isSel = code === sel, isGood = goodSet.has(code), isBad = code === bad.code;
           const ring = isSel ? selColor : isGood ? GOOD : isBad ? BAD : '#EDEBE6';
           const active = isSel || isGood || isBad;
           return (
@@ -155,6 +188,11 @@ export default function BmtiRelationMap({ bmtiCode }) {
         <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 132 }}>
           <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {good.code ? `${nickOf(good.code)}와 잘 맞는 이유` : '환상의 짝꿍'}</div>
           <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{good.reason || '아직 소개할 짝꿍이 없어요.'}</p>
+          {goodCodes.length > 1 && (
+            <p className="text-[11px] font-bold mt-1.5 break-keep" style={{ color: GOOD }}>
+              그 밖에 {goodCodes.slice(1).map(nickOf).join(', ')}도 잘 어울려요.
+            </p>
+          )}
         </div>
         <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#F4F6F9', borderColor: '#DFE5EC', height: 132 }}>
           <div className="text-[11.5px] font-extrabold mb-1" style={{ color: BAD }}>🤔 {bad.code ? `${nickOf(bad.code)}와 살짝 어긋나는 이유` : '조금 다른 템포'}</div>
