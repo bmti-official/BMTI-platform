@@ -295,7 +295,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           onClick={() => setShowBingo(true)}
           className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
         >
-          <span className="w-8 h-8 flex items-center justify-center shrink-0 text-lg">🎉</span>
+          <span className="w-8 h-8 flex items-center justify-center shrink-0 text-lg">⭐️</span>
           <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">BMTI 빙고판 하러가기</span>
           <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>

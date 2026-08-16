@@ -1,7 +1,7 @@
 import { CHARACTERS, CHARACTER_NAMES, CODE_KO } from '../data';
 import { BMTI_INFO } from './ResultView';
 import { getTypeAccent } from '../lib/typeAccent';
-import DiaryCta from './DiaryCta';
+import DiaryCta, { YELLOW_HL } from './DiaryCta';
 
 // 하단 네비 가운데 캐릭터를 누르면 뜨는 팝업 — 메인으로 바로 가지 않고
 // '내 BMTI 유형'를 보여준다. 오늘 하루일기를 아직 안 남겼으면 위에 기록 유도 CTA도 함께.
@@ -33,7 +33,7 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
             {/* 다른 유형 구경하기 — 버튼 배경 없음, 글자에만 검은 형광펜(흰 글자), 크게 */}
             <button onClick={() => { onClose(); onExploreTypes && onExploreTypes(); }} className="w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
               <span className="w-9 h-9 flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#374151" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>
-              <span className="text-[17px] font-extrabold text-white bg-black px-2.5 py-1 rounded-md whitespace-nowrap">다른 유형 구경하기</span>
+              <span className="text-[17px] font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
               <span className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
             </button>
 
