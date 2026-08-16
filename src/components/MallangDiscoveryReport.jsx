@@ -2130,6 +2130,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const exProfile = buildProfileSummary(EXAMPLE_USER);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <TrendChartsCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />
       {ins.weekdaySore ? <WeekdayDrainCard data={ins.weekdaySore} /> : (exIns.weekdaySore && lock(<WeekdayDrainCard data={exIns.weekdaySore} />))}
       {ins.mindBody ? <MindBodyLinkCard data={ins.mindBody} /> : (exIns.mindBody && lock(<MindBodyLinkCard data={exIns.mindBody} />))}
       {ins.butterfly ? <ButterflyCard data={ins.butterfly} /> : (exIns.butterfly && lock(<ButterflyCard data={exIns.butterfly} />))}
@@ -2288,6 +2289,143 @@ function ButterflyCard({ data }) {
       <Insight>{data.message}</Insight>
     </InsCard>
   );
+}
+
+// 기분·불편함 추이 — 불편함 막대그래프 + 기분 꺾은선(말랑이 표정). 주간/일간 스와이프 알약으로 전환.
+const trendPillBtn = (active, t) => ({ position: "relative", zIndex: 1, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "5px 13px", color: active ? t.accentDeep : C.sub, transition: "color .2s" });
+const trendArrow = (disabled) => ({ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: disabled ? "#CFC9BE" : C.ink, fontSize: 18, fontWeight: 800, lineHeight: 1, cursor: disabled ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 });
+
+function TrendSwitchPill({ mode, onWeekly, onDaily, t }) {
+  const isDaily = mode === "daily";
+  return (
+    <div style={{ position: "relative", display: "flex", background: "#F1EEE8", borderRadius: 999, padding: 3, flexShrink: 0 }}>
+      <span style={{ position: "absolute", top: 3, bottom: 3, left: 3, width: "calc(50% - 3px)", borderRadius: 999, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.16)", transform: isDaily ? "translateX(100%)" : "translateX(0)", transition: "transform .25s ease" }} />
+      <button onClick={onWeekly} style={trendPillBtn(!isDaily, t)}>주간</button>
+      <button onClick={onDaily} style={trendPillBtn(isDaily, t)}>일간</button>
+    </div>
+  );
+}
+
+function TrendChartsCard({ entries, exampleEntries }) {
+  const t = getTypeAccent();
+  const real = (entries || []).filter((e) => e && typeof e.mood === "number" && e.date);
+  const hasEnough = real.length >= 2;
+  const src = (hasEnough ? real : (exampleEntries || [])).filter((e) => e && typeof e.mood === "number" && e.date);
+
+  const base = src[0]?.date || new Date().toISOString().slice(0, 10);
+  const yy = Number(base.slice(0, 4)), mm = Number(base.slice(5, 7));
+  const lastDay = new Date(yy, mm, 0).getDate();
+  const weekRanges = [[1, 7], [8, 14], [15, 21], [22, lastDay]];
+
+  const dayData = {};
+  src.forEach((e) => {
+    const dom = Number(e.date.slice(8, 10));
+    const arr = (e.soreness || []).map((s) => s.level).filter((v) => typeof v === "number");
+    dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
+  });
+  const fw = weekRanges.findIndex(([a, b]) => { for (let d = a; d <= b; d++) if (dayData[d]) return true; return false; });
+  const firstDataWeek = fw < 0 ? 0 : fw;
+
+  const [mode, setMode] = useState("weekly");
+  const [weekIdx, setWeekIdx] = useState(firstDataWeek);
+
+  let cats;
+  if (mode === "weekly") {
+    cats = weekRanges.map(([a, b], i) => {
+      const moods = [], sores = [];
+      for (let d = a; d <= b; d++) if (dayData[d]) { moods.push(dayData[d].mood); sores.push(dayData[d].sore); }
+      const avg = (xs) => (xs.length ? xs.reduce((p, q) => p + q, 0) / xs.length : null);
+      return { label: `${i + 1}주`, mood: avg(moods), sore: avg(sores), n: moods.length };
+    });
+  } else {
+    const [a, b] = weekRanges[weekIdx];
+    cats = [];
+    for (let d = a; d <= b; d++) { const r = dayData[d]; cats.push({ label: String(d), mood: r ? r.mood : null, sore: r ? r.sore : null }); }
+  }
+  const N = cats.length || 1;
+  const soreVals = cats.map((c) => c.sore).filter((v) => v != null);
+  const maxSore = Math.max(4, ...soreVals.map((v) => Math.ceil(v)));
+  const faceSize = N <= 4 ? 26 : N <= 7 ? 22 : 18;
+  const hasAnyData = cats.some((c) => c.mood != null);
+  const gap = N > 7 ? 3 : 6;
+
+  const H = 116, barH = 84;
+  const xOf = (i) => ((i + 0.5) / N) * 100;
+  const yOf = (mood) => 15 + (1 - (Math.min(5, Math.max(1, mood)) - 1) / 4) * 70;
+  let dPath = "", prev = false;
+  cats.forEach((c, i) => { if (c.mood == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.mood).toFixed(2)}`; prev = true; });
+
+  const body = (
+    <div>
+      {/* 불편함 정도 막대그래프 */}
+      <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, marginBottom: 9, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 9, height: 9, borderRadius: 3, background: "#E0554F" }} /> 불편함 정도
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, height: barH + 16, padding: "0 2px" }}>
+        {cats.map((c, i) => {
+          const empty = c.sore == null;
+          const h = empty ? 3 : Math.max(4, Math.round((c.sore / maxSore) * barH));
+          return (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+              {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#C4726C" }}>{c.sore.toFixed(1)}</span>}
+              <div style={{ width: "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : "linear-gradient(180deg,#F0917C,#E0554F)", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ height: 1, background: C.line, margin: "16px 0 12px" }} />
+
+      {/* 기분 기록 꺾은선(말랑이 표정) */}
+      <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#BF8FE9" }} /> 기분 기록
+      </div>
+      <div style={{ position: "relative", height: H }}>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+          {dPath && <path d={dPath} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+        </svg>
+        {cats.map((c, i) => (c.mood != null ? (
+          <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)" }}>
+            <Mallang v={Math.round(c.mood)} size={faceSize} noBlink />
+          </div>
+        ) : null))}
+      </div>
+
+      {/* x축 라벨 */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap, marginTop: 6, padding: "0 2px" }}>
+        {cats.map((c, i) => (
+          <span key={i} style={{ flex: 1, textAlign: "center", fontSize: N > 7 ? 9.5 : 11, fontWeight: 700, color: C.sub }}>{c.label}</span>
+        ))}
+      </div>
+
+      {!hasAnyData && <p style={{ fontSize: 12, color: C.sub, fontWeight: 700, textAlign: "center", marginTop: 14 }}>이 주에는 기록이 없어요.</p>}
+    </div>
+  );
+
+  const card = (
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>기분·불편함 추이</div>
+          <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>📈 기분과 불편함 추이</div>
+          <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 기록을 한 주씩 봐요"}</p>
+        </div>
+        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => { setMode("daily"); setWeekIdx(firstDataWeek); }} t={t} />
+      </div>
+
+      {mode === "daily" && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "16px 0 4px" }}>
+          <button aria-label="이전 주" onClick={() => setWeekIdx((i) => Math.max(0, i - 1))} disabled={weekIdx === 0} style={trendArrow(weekIdx === 0)}>‹</button>
+          <span style={{ fontSize: 13, fontWeight: 800, color: C.ink, minWidth: 118, textAlign: "center" }}>{weekRanges[weekIdx][0]}~{weekRanges[weekIdx][1]}일 <span style={{ color: C.sub, fontWeight: 700 }}>({weekIdx + 1}주차)</span></span>
+          <button aria-label="다음 주" onClick={() => setWeekIdx((i) => Math.min(3, i + 1))} disabled={weekIdx === 3} style={trendArrow(weekIdx === 3)}>›</button>
+        </div>
+      )}
+
+      <div style={{ marginTop: mode === "daily" ? 8 : 16 }}>{body}</div>
+    </div>
+  );
+
+  return hasEnough ? card : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{card}</LockedPreview>;
 }
 
 // 요일별 방전 패턴 — 미니 막대그래프 + 최고 요일 강조 + 팩트 체크 코멘트

@@ -10,12 +10,14 @@ import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import DiaryCta from './DiaryCta';
 import TypeGallery from './TypeGallery';
+import BmtiGuidePopup from './BmtiGuidePopup';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -178,7 +180,17 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       <section className="pt-24 md:pt-28 pb-16 md:pb-20 px-6 max-w-5xl mx-auto text-center">
         <h1 className="font-serif leading-tight mb-0">
           <div className="flex flex-col items-center justify-center mb-2 md:mb-4">
-            <span className="text-6xl md:text-8xl font-bold">BMTI</span>
+            <span className="relative inline-flex items-center">
+              <span className="text-6xl md:text-8xl font-bold">BMTI</span>
+              <button
+                type="button"
+                onClick={() => setShowGuide(true)}
+                aria-label="BMTI 활용법 보기"
+                className="absolute left-full ml-2 md:ml-3 top-1.5 md:top-3 w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-500 font-sans font-bold text-base md:text-xl flex items-center justify-center shadow-sm transition"
+              >
+                ?
+              </button>
+            </span>
             <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>
           </div>
           <span className="text-[min(3vw,11px)] md:text-lg whitespace-nowrap text-gray-400 font-sans tracking-widest md:tracking-[0.3em] font-medium mt-6 block uppercase">
@@ -188,6 +200,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         {/* CTA — 오늘 기록 전이면 '건강 다이어리 10초 기록하기'(미기록 빨강 점), 기록을 마쳤으면 '이번달 기록·발견 알아보기' */}
         <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} className="mt-9" />
       </section>
+      {showGuide && <BmtiGuidePopup onClose={() => setShowGuide(false)} />}
 
       {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는
           하단 네비 가운데 캐릭터를 누르면 뜨는 팝업(BmtiPartnerPopup)으로 옮겼다. */}
