@@ -530,7 +530,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           </div>
           {sleepSetupOpen ? (
             /* 첫 진입/변경 — 기준 수면 설정 선택 화면 */
-            <div style={{ marginTop: 16, background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "16px 14px" }}>
+            <div style={{ marginTop: 16, background: "#fff", border: "none", borderRadius: 16, padding: "16px 14px" }}>
               {/* 현재 선택 문구(버튼 아님) */}
               <div style={{ textAlign: "center", fontSize: 14, fontWeight: 800, color: C.ink, marginBottom: 10 }}>
                 {setupMode === "irregular"
@@ -564,6 +564,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 style={{ width: "100%", marginTop: 14, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13.5, fontWeight: 800, cursor: "pointer", border: "2px solid #C9BEF0" }}>
                 이렇게 기억해줘요
               </button>
+              <div style={{ fontSize: 11, color: C.sub, fontWeight: 600, textAlign: "center", marginTop: 8 }}>이 기록은 한 달에 한 번 수정할 수 있어요</div>
             </div>
           ) : (
             <>

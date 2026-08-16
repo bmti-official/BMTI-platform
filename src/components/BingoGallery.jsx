@@ -145,7 +145,9 @@ function BingoBoard({ code, onBack, onClose }) {
                   boxShadow: isLit ? `0 0 0 2px ${BINGO_ON}, 0 2px 8px rgba(230,184,0,0.4)` : 'none',
                 }}
               >
-                <span className="text-[11px] font-extrabold leading-[1.2] break-keep text-gray-900">{text}</span>
+                <span className="flex flex-col items-center justify-center text-[13.5px] font-extrabold leading-[1.12] break-keep text-gray-900">
+                  {text.replace(/\+/g, ' + ').split(/\s+/).filter(Boolean).map((ln, k) => <span key={k}>{ln}</span>)}
+                </span>
               </button>
             );
           })}

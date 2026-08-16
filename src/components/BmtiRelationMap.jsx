@@ -193,7 +193,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
 
       {/* 이유 카드 — 두 박스의 높이를 동일하게 고정해 유형을 바꿔도 페이지가 흔들리지 않게 한다 */}
       <div className="flex flex-col gap-2.5 mt-6 mb-3">
-        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 132 }}>
+        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 176 }}>
           <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {nickOf(mainCode)}와 잘 맞는 이유</div>
           <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{mainReasonOf(sel)}</p>
           {goodCodes.length > 1 && (
@@ -202,7 +202,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
             </p>
           )}
         </div>
-        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#F4F6F9', borderColor: '#DFE5EC', height: 132 }}>
+        <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#F4F6F9', borderColor: '#DFE5EC', height: 176 }}>
           <div className="text-[11.5px] font-extrabold mb-1" style={{ color: BAD }}>🤔 {bad.code ? `${nickOf(bad.code)}와 살짝 어긋나는 이유` : '조금 다른 템포'}</div>
           <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{bad.reason || '아직 소개할 유형이 없어요.'}</p>
         </div>

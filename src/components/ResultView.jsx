@@ -644,7 +644,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                             <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.trait}</p>
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <h6 className="font-bold text-gray-900 text-[15px] md:text-base w-max mb-0.5">최악의 분위기:</h6>
+                            <h6 className="font-bold text-[#D6486D] text-[15px] md:text-base w-max mb-0.5">최악의 분위기:</h6>
                             <p className="text-[15px] md:text-base text-gray-700 leading-relaxed break-keep whitespace-pre-line">{vibeData.worst}</p>
                           </div>
                         </div>

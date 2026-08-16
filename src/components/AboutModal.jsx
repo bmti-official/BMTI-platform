@@ -31,6 +31,7 @@ const AboutModal = ({ isOpen, onClose }) => {
               <li><strong>건강 다이어리</strong> — 하루 1분, 기분·수면·불편한 부위·운동을 귀엽게 기록</li>
               <li><strong>기록·발견 리포트</strong> — 쌓인 기록으로 내 몸의 월간 패턴과 인사이트를 발견</li>
               <li><strong>BMTI 관계도·다른 유형 구경</strong> — 16가지 유형이 어떻게 이어지는지 살펴보고 예시 결과지 확인</li>
+              <li><strong>BMTI 빙고판</strong> — 유형별 성향·가이드 문구로 채우는 나만의 빙고판</li>
             </ul>
           </section>
 

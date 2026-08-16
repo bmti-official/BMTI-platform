@@ -2552,9 +2552,7 @@ function MallangNightCard({ entries, nickname }) {
             })}
           </div>
           {/* 기준 시간 점선 — 이 선보다 막대가 높으면 그날 더 늦게 잠든 것 */}
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }}>
-            <span style={{ position: "absolute", right: 0, top: -13, fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.75)", background: "rgba(46,42,68,0.7)", padding: "1px 6px", borderRadius: 6 }}>기준 {baseLabel}</span>
-          </div>
+          <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }} />
           {/* 수면의 질 꺾은선 */}
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
             {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
