@@ -1,26 +1,51 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CHARACTERS, CHARACTER_NAMES, CODE_KO, BMTI_INFO } from '../data';
 
-// 빙고 16칸 — 각 유형의 '4가지 성향' 유연한 설명 10개 + 강사/탈출법/최악의 분위기 6개에서 뽑은 핵심 단어(1~5자).
-const BINGO_CELLS = [
-  '움직임',   // A 유연한 — 가볍게라도 움직이면 개운
-  '휴식',     // O 유연한 — 조용히 쉴 때 충전
-  '집중',     // C 유연한 — 집중할 부위
-  '연결',     // L 유연한 — 부위 연결
-  '직접',     // D 유연한 — 직접 해보며
-  '이유',     // Q 유연한 — 왜 좋은지
-  '팩트',     // Z 유연한 — 방향 먼저
-  '공감',     // M 유연한 — 가벼운 칭찬
-  '찌뿌둥',   // 오래 앉으면
-  '혼자',     // 조용한 내 시간
-  '핵심만',   // 강사: 짧게 핵심만
-  '다정함',   // 강사: 다정한 설명
-  '직진',     // 탈출법: 바로 본운동
-  '마이웨이', // 탈출법: 혼자 루틴
-  '정숙',     // 최악: 시끄러운 텐션 수업
-  '비경쟁',   // 최악: 경쟁 분위기
-];
+// 유형별 빙고 문구 풀(각 32개) — 각 유형의 '4가지 성향' 유연한 + 강사/탈출법/최악의 분위기에서 뽑은 핵심 단어(1~5자).
+// 8개 성향축(유연한) × 5 + 강사/탈출법/최악의 분위기 각 4 = 유형마다 32개.
+const TENDENCY_KW = {
+  A: ['가볍게', '움직임', '산책', '개운함', '리프레시'],
+  O: ['휴식', '조용히', '충전', '쉼', '내 속도'],
+  C: ['집중', '한 곳', '부위', '명확', '콕 집기'],
+  L: ['연결', '전체', '흐름', '주변', '큰 그림'],
+  D: ['직접', '실전', '해보기', '감 잡기', '몸으로'],
+  Q: ['이유', '왜?', '원리', '납득', '알고'],
+  Z: ['팩트', '방향', '핵심', '정확', '간결'],
+  M: ['공감', '칭찬', '다정함', '격려', '위로'],
+};
+const INSTRUCTOR_KW = { // 실패 없는 운동 강사 (유연한)
+  DZ: ['짧게', '핵심만', '바로', '군더더기'],
+  DM: ['페이스', '컨디션', '다정', '응원'],
+  QZ: ['원리', '요약', '근거', '명쾌'],
+  QM: ['차근차근', '친절', '방향', '코치'],
+};
+const ESCAPE_KW = { // 헬스장 기부천사 탈출법 (유연한)
+  AD: ['강약조절', '열정', '서킷', '효율'],
+  AQ: ['활기', '자극점', '꼼꼼', '흥'],
+  OD: ['마이웨이', '루틴', '혼자', '묵묵'],
+  OQ: ['차분', '디테일', '섬세', '고요'],
+};
+const VIBE_KW = { // 멘탈 바사삭 최악의 운동 분위기 (유연한)
+  AZ: ['효율', '객관적', '강도', '스마트'],
+  AM: ['파이팅', '긍정', '으쌰', '웃음'],
+  OZ: ['실용', '깔끔', '담백', '정돈'],
+  OM: ['소확행', '혼운', '쾌적', '아늑'],
+};
+function poolForCode(code) {
+  const raw = [
+    ...[code[0], code[1], code[2], code[3]].flatMap((l) => TENDENCY_KW[l] || []),
+    ...(INSTRUCTOR_KW[code.slice(2, 4)] || []),
+    ...(ESCAPE_KW[code[0] + code[2]] || []),
+    ...(VIBE_KW[code[0] + code[3]] || []),
+  ];
+  return [...new Set(raw)];
+}
+function pickRandom(arr, n) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a.slice(0, n);
+}
 // 선택된 칸 통일 색상 — 연한 옐로우
 const BINGO_ON = '#F5DE6E';
 
@@ -32,17 +57,12 @@ const LINES = [
 
 const YELLOW_SHADOW = '0 2px 6px rgba(220,188,86,0.18), 0 12px 28px rgba(233,203,110,0.34)';
 
-function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
-function shuffleByCode(arr, code) {
-  return arr.map((v, i) => ({ v, k: hash(`${code}_${i}`) })).sort((a, b) => a.k - b.k).map((s) => s.v);
-}
-
 // 다른 유형 구경하기와 같은 오버레이 — 캐릭터를 고르면 그 유형의 4×4 빙고판.
 export default function BingoGallery({ onClose }) {
   const [selected, setSelected] = useState(null);
   const overlay = (
     <div className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
-      {selected ? <BingoBoard code={selected} onBack={() => setSelected(null)} onClose={onClose} /> : <BingoGrid onPick={setSelected} onClose={onClose} />}
+      {selected ? <BingoBoard key={selected} code={selected} onBack={() => setSelected(null)} onClose={onClose} /> : <BingoGrid onPick={setSelected} onClose={onClose} />}
     </div>
   );
   return createPortal(overlay, document.body);
@@ -75,8 +95,9 @@ function BingoGrid({ onPick, onClose }) {
 function BingoBoard({ code, onBack, onClose }) {
   const color = (BMTI_INFO[code] || {}).color || '#C9975A';
   const charData = CHARACTERS.find((c) => c.id === code);
-  const cells = useMemo(() => shuffleByCode(BINGO_CELLS, code), [code]);
+  const [cells, setCells] = useState(() => pickRandom(poolForCode(code), 16));
   const [marked, setMarked] = useState(() => new Set());
+  const reshuffle = () => { setMarked(new Set()); setCells(pickRandom(poolForCode(code), 16)); };
   const toggle = (i) => setMarked((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; });
 
   const completed = LINES.filter((l) => l.every((i) => marked.has(i)));
@@ -105,15 +126,9 @@ function BingoBoard({ code, onBack, onClose }) {
             <div className="text-[16px] font-black text-gray-900 leading-tight break-keep">{(CHARACTER_NAMES[code] || code).replace(/\n/g, ' ')}</div>
             <div className="text-[11px] font-extrabold text-gray-400">{code} {CODE_KO[code]} 빙고판</div>
           </div>
-          <button onClick={() => setMarked(new Set())} className="text-[11px] font-bold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1 shrink-0 ml-2">초기화</button>
+          <button onClick={reshuffle} className="text-[11px] font-bold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1 shrink-0 ml-2">초기화</button>
         </div>
         <p className="text-[12.5px] text-gray-500 font-bold break-keep mb-3">나에게 해당하는 칸을 눌러 빙고를 만들어보세요.</p>
-
-        {bingoCount > 0 && (
-          <div className="text-center mb-3 rounded-2xl py-2.5 font-black text-gray-900 text-[15px]" style={{ background: BINGO_ON }}>
-            ⭐️ 빙고 {bingoCount}줄!
-          </div>
-        )}
 
         <div className="grid grid-cols-4 gap-1.5">
           {cells.map((text, i) => {
@@ -136,7 +151,12 @@ function BingoBoard({ code, onBack, onClose }) {
           })}
         </div>
 
-        <p className="text-center text-[11.5px] text-gray-400 mt-5 break-keep">
+        {bingoCount > 0 && (
+          <div className="text-center mt-5 rounded-2xl py-2.5 font-black text-gray-900 text-[15px]" style={{ background: BINGO_ON }}>
+            ⭐️ 빙고 {bingoCount}줄!
+          </div>
+        )}
+        <p className="text-center text-[11.5px] text-gray-400 mt-4 break-keep">
           가로·세로·대각선 한 줄을 모두 채우면 빙고!<br />문장은 각 유형의 성향·강사 가이드 설명을 바탕으로 만들었어요.
         </p>
         <button onClick={onBack} className="w-full mt-4 bg-white border border-gray-200 rounded-[1.4rem] py-4 text-[14px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors">
