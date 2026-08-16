@@ -340,10 +340,10 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 </h1>
               );
             })()}
-            <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400 tracking-tight mt-3">
+            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-400 tracking-tight mt-2.5">
               {axisCode} <span className="text-gray-300">{CODE_KO[axisCode]}</span>
             </span>
-            <p className="text-gray-500 text-sm md:text-base font-medium whitespace-pre-line break-keep text-center mt-4 leading-relaxed">
+            <p className="text-gray-600 text-[15px] md:text-lg font-bold whitespace-pre-line break-keep text-center mt-4 leading-relaxed">
               {info.catchphrase}
             </p>
           </div>
@@ -385,9 +385,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
                 return (
                   <div key={letter1} className="md:bg-white md:border md:border-gray-100 md:shadow-[0_4px_20px_rgba(0,0,0,0.03)] md:rounded-3xl p-0 md:p-8 mb-7 md:mb-5 w-full text-left">
-                    {/* 유형명(작게, 줄바꿈 없음) + 게이지 — 게이지가 남은 폭을 채워 PC에선 문구 옆까지 길게, 모바일에선 짧게 */}
-                    <div className="flex items-center gap-3 mb-2.5">
-                      <h4 className="shrink-0 whitespace-nowrap text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
+                    {/* 유형명(작게, 줄바꿈 없음) + 게이지 — 가장 긴 유형명 폭(고정)으로 맞춰 게이지 시작점이 카드마다 동일하게, 남은 폭을 채워 PC는 길게·모바일은 짧게 */}
+                    <div className="flex items-center gap-2.5 mb-2.5">
+                      <h4 className="shrink-0 whitespace-nowrap w-[168px] md:w-[188px] text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
                         <span className="text-base md:text-lg">{data[level].emoji}</span>
                         <span>{data[level].modifier} {data.name}</span>
                       </h4>
@@ -509,7 +509,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <h3 className="text-2xl md:text-3xl font-black text-[#7C6FF0] leading-snug break-keep tracking-tight">
                       {guideData.title}
                     </h3>
-                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="grid grid-rows-[1fr] opacity-100">
                       <div className="overflow-hidden">
                         <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
                           <div>
@@ -527,14 +527,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setOpenDetailSections(prev => ({ ...prev, instructor: !prev.instructor }))}
-                      className="text-[#7C6FF0] text-sm font-bold mt-4 flex items-center gap-1"
-                    >
-                      {isOpen ? '접기' : '자세히 보기'}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </button>
                   </>
                 );
               })()}
@@ -569,7 +561,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <h3 className="text-2xl md:text-3xl font-black text-[#C9862A] leading-snug break-keep tracking-tight">
                       {escapeInfo.title}
                     </h3>
-                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="grid grid-rows-[1fr] opacity-100">
                       <div className="overflow-hidden">
                         <div className="md:bg-gray-50/80 md:rounded-2xl p-0 md:p-7 space-y-5 mt-4 md:mt-0">
                           <div>
@@ -595,14 +587,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setOpenDetailSections(prev => ({ ...prev, escape: !prev.escape }))}
-                      className="text-[#C9862A] text-sm font-bold mt-4 flex items-center gap-1"
-                    >
-                      {isOpen ? '접기' : '자세히 보기'}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </button>
                   </>
                 );
               })()}
@@ -637,7 +621,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     <h3 className="text-2xl md:text-3xl font-black text-[#D6486D] leading-snug break-keep tracking-tight">
                       {vibeData.name}
                     </h3>
-                    <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="grid grid-rows-[1fr] opacity-100">
                       <div className="overflow-hidden">
                         <div className="flex flex-col gap-5 mt-2">
                           <div className="flex flex-col gap-1.5">
@@ -651,14 +635,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setOpenDetailSections(prev => ({ ...prev, vibe: !prev.vibe }))}
-                      className="text-[#D6486D] text-sm font-bold mt-4 flex items-center gap-1"
-                    >
-                      {isOpen ? '접기' : '자세히 보기'}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </button>
                   </>
                 );
               })()}

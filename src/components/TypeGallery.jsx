@@ -110,11 +110,11 @@ function TypePreview({ code, onBack, onClose }) {
                 </h1>
               );
             })()}
-            <span className="text-lg sm:text-xl font-bold text-gray-400 tracking-tight mt-3">
+            <span className="text-base sm:text-lg font-bold text-gray-400 tracking-tight mt-2.5">
               {code} <span className="text-gray-300">{CODE_KO[code]}</span>
             </span>
             {info.catchphrase && (
-              <p className="text-gray-500 text-sm font-medium whitespace-pre-line break-keep mt-4 leading-relaxed">
+              <p className="text-gray-600 text-[15px] md:text-base font-bold whitespace-pre-line break-keep mt-4 leading-relaxed">
                 {info.catchphrase}
               </p>
             )}
@@ -146,8 +146,8 @@ function TypePreview({ code, onBack, onClose }) {
                 const color = CARD_COLOR[l1];
                 return (
                   <div key={l1} className="p-0 mb-7 w-full text-left">
-                    <div className="flex items-center gap-3 mb-2.5">
-                      <h4 className="shrink-0 whitespace-nowrap text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
+                    <div className="flex items-center gap-2.5 mb-2.5">
+                      <h4 className="shrink-0 whitespace-nowrap w-[168px] md:w-[188px] text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
                         <span className="text-base md:text-lg">{v.emoji}</span>
                         <span>{v.modifier} {data.name}</span>
                       </h4>

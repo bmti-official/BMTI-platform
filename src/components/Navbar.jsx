@@ -234,7 +234,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
               <PillTab active={currentView === 'home' && !showDiscovery} onClick={() => { setShowDiscovery(false); setView('home'); }}
                 icon={<OpenBookIcon active={currentView === 'home' && !showDiscovery} />} label="BMTI" />
-              <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowTypeGallery(true); }}
+              <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowPartner(true); }}
                 icon={<CheckIcon active={currentView === 'result'} />} label="나의유형" />
               {/* 가운데 캐릭터 자리 */}
               <span className="w-14 shrink-0" aria-hidden="true" />
@@ -269,6 +269,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           setView={(v) => { setShowDiscovery(false); setView(v); }}
           onRequireLogin={() => setIsLoggedIn(true)}
           onClose={() => setShowPartner(false)}
+          onExploreTypes={() => setShowTypeGallery(true)}
         />
       )}
 

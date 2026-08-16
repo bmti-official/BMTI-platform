@@ -5,7 +5,7 @@ import DiaryCta from './DiaryCta';
 
 // 하단 네비 가운데 캐릭터를 누르면 뜨는 팝업 — 메인으로 바로 가지 않고
 // '내 BMTI 유형'를 보여준다. 오늘 하루일기를 아직 안 남겼으면 위에 기록 유도 CTA도 함께.
-export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday, setView, onRequireLogin, onClose }) {
+export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday, setView, onRequireLogin, onClose, onExploreTypes }) {
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const charInfo = BMTI_INFO[axisCode];
@@ -30,14 +30,20 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               </button>
             </div>
 
-            {/* 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (배경 없음) */}
-            <div className="w-full flex items-center justify-center py-1">
-              <DiaryCta
-                loggedToday={hasLoggedToday}
-                onGoDiary={() => go('aichat')}
-                onGoDiscovery={() => { onClose(); window.dispatchEvent(new Event('bmti:open-discovery')); }}
-              />
-            </div>
+            {/* 다른 유형 구경하기 — 흰 글자, 가로 꽉 찬 버튼 */}
+            <button onClick={() => { onClose(); onExploreTypes && onExploreTypes(); }} className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl active:scale-[0.99] transition shadow-lg" style={{ background: '#8B7BD8' }}>
+              <span className="w-8 h-8 flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>
+              <span className="text-[15px] md:text-base font-extrabold text-white whitespace-nowrap">다른 유형 구경하기</span>
+              <span className="w-8 h-8 rounded-full bg-white/25 text-white flex items-center justify-center text-base font-bold shrink-0">→</span>
+            </button>
+
+            {/* 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (골드 채운 버튼) */}
+            <DiaryCta
+              filled
+              loggedToday={hasLoggedToday}
+              onGoDiary={() => go('aichat')}
+              onGoDiscovery={() => { onClose(); window.dispatchEvent(new Event('bmti:open-discovery')); }}
+            />
 
             {/* 메인 페이지로 이동 */}
             <button onClick={() => go('home')} className="w-full bg-white rounded-[1.6rem] py-4 text-[14px] font-bold text-gray-700 shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
@@ -77,15 +83,14 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               )}
             </div>
 
-            {/* 파트너 박스 밑 — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (홈 CTA와 동일, 배경 없음) */}
+            {/* 파트너 박스 밑 — 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (골드 채운 버튼) */}
             {isLoggedIn && (
-              <div className="w-full flex items-center justify-center py-1">
-                <DiaryCta
-                  loggedToday={hasLoggedToday}
-                  onGoDiary={() => go('aichat')}
-                  onGoDiscovery={() => { onClose(); window.dispatchEvent(new Event('bmti:open-discovery')); }}
-                />
-              </div>
+              <DiaryCta
+                filled
+                loggedToday={hasLoggedToday}
+                onGoDiary={() => go('aichat')}
+                onGoDiscovery={() => { onClose(); window.dispatchEvent(new Event('bmti:open-discovery')); }}
+              />
             )}
 
             {/* 메인 페이지로 이동 */}
