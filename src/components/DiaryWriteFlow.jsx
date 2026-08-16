@@ -12,7 +12,7 @@ import {
   LOAD_TO_OVEREXERT_LABEL, REASON_TO_EXERCISE_LABEL, KEY_TO_PART_LABEL, KEY_TO_WHEN_LABEL, KEY_TO_EXERCISE_TYPE_LABEL,
 } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
-import { getGuestMallang } from "../lib/mallangProfile";
+import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
 
 // ============================================
 // BMTI 하루일기 작성 플로우
@@ -138,6 +138,25 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 수면의 질 + 잠든 시간대
   const [sleepVal, setSleepVal] = useState(() => (initialEntry?.sleep != null ? SLEEP_LABELS[initialEntry.sleep] : null));
   const [sleepTime, setSleepTime] = useState(() => initialEntry?.sleepTime ?? null);
+  // 수면 기준 설정(수동 시간대 / 불규칙). 없으면 첫 진입 → 선택 화면부터 보여준다.
+  const [sleepSetting, setSleepSettingState] = useState(() => getSleepSetting());
+  const [sleepSetupOpen, setSleepSetupOpen] = useState(() => !getSleepSetting());
+  const [setupMode, setSetupMode] = useState("manual"); // 'manual' | 'irregular'
+  const [setupBaseIdx, setSetupBaseIdx] = useState(() => sleepBaseIdx(getSleepSetting()?.base));
+  const confirmSleepSetup = () => {
+    if (!canChangeSleepSetting() && sleepSetting) { alert("기본 수면시간은 한 달에 한 번만 바꿀 수 있어요. 다음 달에 다시 시도해주세요."); return; }
+    const base = setupMode === "manual" ? SLEEP_HOURS[setupBaseIdx] : null;
+    const v = setSleepSetting(setupMode, base);
+    setSleepSettingState(v);
+    setSleepTime(null); // 기준이 바뀌면 오늘 선택은 초기화
+    setSleepSetupOpen(false);
+  };
+  const openSleepSetup = () => {
+    if (!canChangeSleepSetting()) { alert("기본 수면시간은 한 달에 한 번만 바꿀 수 있어요. 다음 달에 다시 시도해주세요."); return; }
+    setSetupMode(sleepSetting?.mode || "manual");
+    setSetupBaseIdx(sleepBaseIdx(sleepSetting?.base));
+    setSleepSetupOpen(true);
+  };
 
   // 오늘의 태그(여러 개)
   const [tags, setTags] = useState(() => (Array.isArray(initialEntry?.tags) ? initialEntry.tags : []));
@@ -471,13 +490,53 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               <EmojiTile key={opt.label} icon={opt.icon} label={opt.label} on={sleepVal === opt.label} onClick={() => handleSleepPick(opt)} tint={C.yellow} />
             ))}
           </div>
-          {/* 잠든 시간대(선택) — 취침 리듬/다음날 발견의 재료 */}
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.sub, margin: "16px 0 8px" }}>몇 시쯤 잤어요? <span style={{ color: C.tileOffText, fontWeight: 600 }}>(선택)</span></div>
-          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-            {SLEEP_TIME_OPTS.map(o => (
-              <Chip key={o} label={o} on={sleepTime === o} onClick={() => handleSleepTimePick(o)} />
-            ))}
-          </div>
+          {sleepSetupOpen ? (
+            /* 첫 진입/변경 — 기준 수면 설정 선택 화면 */
+            <div style={{ marginTop: 16, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 14px" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, marginBottom: 3 }}>내 수면 리듬을 먼저 알려주세요</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: C.sub, marginBottom: 14, wordBreak: "keep-all" }}>이 설정으로 '말랑이의 밤' 리포트를 만들어요. (한 달에 한 번 변경 가능)</div>
+
+              {/* 1) 주로 잠드는 시간대 — 좌우로 넘겨 기준 시간 고르기 */}
+              <div style={{ fontSize: 12, fontWeight: 800, color: setupMode === "manual" ? C.ink : C.tileOffText, marginBottom: 8 }}>1. 주로 잠드는 시간대</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, opacity: setupMode === "manual" ? 1 : 0.5 }} onClick={() => setSetupMode("manual")}>
+                <button onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.max(SLEEP_BASE_MIN, i - 1)); }}
+                  style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 16, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>‹</button>
+                <div style={{ flex: 1, display: "flex", gap: 4, justifyContent: "space-between" }}>
+                  {sleepWindowByIdx(setupBaseIdx).map((lbl, i) => (
+                    <div key={i} style={{ flex: 1, textAlign: "center", padding: "9px 2px", borderRadius: 10, fontSize: i === 2 ? 12.5 : 10.5, fontWeight: i === 2 ? 800 : 600,
+                      background: i === 2 ? C.gold : "#fff", color: i === 2 ? "#fff" : C.sub, border: `1px solid ${i === 2 ? C.gold : C.line}` }}>{lbl}</div>
+                  ))}
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.min(SLEEP_BASE_MAX, i + 1)); }}
+                  style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 16, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>›</button>
+              </div>
+
+              {/* 2) 불규칙 */}
+              <button onClick={() => setSetupMode("irregular")}
+                style={{ width: "100%", marginTop: 6, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer",
+                  border: `2px solid ${setupMode === "irregular" ? C.gold : C.yellowLine}` }}>
+                저는 잠드는 시간이 불규칙해요
+              </button>
+
+              <button onClick={confirmSleepSetup}
+                style={{ width: "100%", marginTop: 12, padding: "12px", borderRadius: 12, border: "none", background: C.gold, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+                이대로 설정하기
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* 오늘의 수면 시간대 — 설정(수동 5개 / 불규칙 3개)에 따라 */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 0 8px" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.sub }}>몇 시쯤 잤어요? <span style={{ color: C.tileOffText, fontWeight: 600 }}>(선택)</span></span>
+                <button onClick={openSleepSetup} style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, background: "#fff", border: `1px solid ${C.line}`, borderRadius: 999, padding: "3px 9px", cursor: "pointer" }}>기본 수면시간 변경</button>
+              </div>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                {(sleepOptionsFor(sleepSetting) || SLEEP_TIME_OPTS).map(o => (
+                  <Chip key={o} label={o} on={sleepTime === o} onClick={() => handleSleepTimePick(o)} />
+                ))}
+              </div>
+            </>
+          )}
         </AccordionCard>
       );
     }
