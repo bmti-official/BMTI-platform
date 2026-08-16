@@ -5,7 +5,7 @@ import DiaryCta from './DiaryCta';
 
 // 하단 네비 가운데 캐릭터를 누르면 뜨는 팝업 — 메인으로 바로 가지 않고
 // '내 BMTI 유형'를 보여준다. 오늘 하루일기를 아직 안 남겼으면 위에 기록 유도 CTA도 함께.
-export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday, setView, onRequireLogin, onClose, onExploreTypes }) {
+export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday, setView, onRequireLogin, onClose, onExploreTypes, nickname }) {
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const charInfo = BMTI_INFO[axisCode];
@@ -30,11 +30,11 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               </button>
             </div>
 
-            {/* 다른 유형 구경하기 — 흰 글자, 가로 꽉 찬 버튼 */}
-            <button onClick={() => { onClose(); onExploreTypes && onExploreTypes(); }} className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl active:scale-[0.99] transition shadow-lg" style={{ background: '#8B7BD8' }}>
-              <span className="w-8 h-8 flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>
-              <span className="text-[15px] md:text-base font-extrabold text-white whitespace-nowrap">다른 유형 구경하기</span>
-              <span className="w-8 h-8 rounded-full bg-white/25 text-white flex items-center justify-center text-base font-bold shrink-0">→</span>
+            {/* 다른 유형 구경하기 — 버튼 배경 없음, 글자에만 검은 형광펜(흰 글자), 크게 */}
+            <button onClick={() => { onClose(); onExploreTypes && onExploreTypes(); }} className="w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
+              <span className="w-9 h-9 flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#374151" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>
+              <span className="text-[17px] font-extrabold text-white bg-black px-2.5 py-1 rounded-md whitespace-nowrap">다른 유형 구경하기</span>
+              <span className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
             </button>
 
             {/* 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (골드 채운 버튼) */}
@@ -53,19 +53,20 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {/* 내 BMTI 유형 */}
+            {/* 내 프로필(닉네임) 박스 */}
             <div className="rounded-[2rem] p-6 border shadow-2xl" style={{ background: '#F7F7F6', borderColor: '#EDEDEB' }}>
-              <p className="text-xs font-bold text-gray-400 mb-4">내 BMTI 유형</p>
-              <div className="flex items-center gap-4 mb-5">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
-                  {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || ''}`} />}
+              <p className="text-[13px] font-bold text-gray-500 mb-4">{nickname || '내 프로필'}</p>
+              <div className="flex items-center gap-3 mb-5">
+                {/* 누끼 캐릭터 — 감싸는 원 없음 */}
+                <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
+                  {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || 'scale-110'}`} />}
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-2xl font-black tracking-tight">{axisCode} <span className="text-lg font-bold text-gray-400">{CODE_KO[axisCode]}</span></span>
-                    <span className="bg-pink-100 text-pink-600 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">{CHARACTER_NAMES[axisCode]}</span>
+                  <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+                    <span className="text-2xl font-black text-gray-900 tracking-tight break-keep">{CHARACTER_NAMES[axisCode]}</span>
+                    <span className="text-[13px] font-bold text-gray-600">{axisCode} {CODE_KO[axisCode]}</span>
                   </div>
-                  <p className="text-gray-500 text-sm leading-snug whitespace-pre-line break-keep">{charInfo?.catchphrase}</p>
+                  <p className="text-gray-600 text-sm font-bold leading-snug whitespace-pre-line break-keep">{charInfo?.catchphrase}</p>
                 </div>
               </div>
               {!isLoggedIn ? (
@@ -77,8 +78,9 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
                   <p className="text-[11px] text-gray-400 flex items-center justify-center gap-1"><span>🔕</span> 광고 안 보냄 · 결과만 저장</p>
                 </div>
               ) : (
-                <button onClick={() => go('result')} className="w-full text-white text-[15px] font-bold py-4 rounded-2xl hover:brightness-105 transition-all" style={{ background: '#C9975A' }}>
-                  내 결과 자세히 보기
+                <button onClick={() => go('result')} className="w-full bg-black text-white text-[16px] font-bold py-4 rounded-2xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+                  나의유형 확인하기
                 </button>
               )}
             </div>

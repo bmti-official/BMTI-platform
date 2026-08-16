@@ -270,6 +270,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
           onRequireLogin={() => setIsLoggedIn(true)}
           onClose={() => setShowPartner(false)}
           onExploreTypes={() => setShowTypeGallery(true)}
+          nickname={userProfile?.nickname}
         />
       )}
 

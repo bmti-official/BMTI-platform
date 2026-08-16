@@ -16,13 +16,13 @@ export default function DiaryCta({ loggedToday, onGoDiary, onGoDiscovery, classN
     } else if (onGoDiary) onGoDiary();
   };
 
-  // filled: 팝업용 — 골드 배경 가로 꽉 찬 버튼, 흰 글자(크게)
+  // filled: 팝업용 — 버튼 배경 없음, 글자에만 검은 형광펜(흰 글자), 크게
   if (filled) {
     return (
-      <button onClick={onClick} className={`w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl active:scale-[0.99] transition ${className}`} style={{ background: '#C9975A' }}>
-        <span className="w-8 h-8 flex items-center justify-center shrink-0"><Mallang v={mood} size={31} noBlink /></span>
-        <span className="text-[15px] md:text-base font-extrabold text-white whitespace-nowrap">{label}</span>
-        <span className="w-8 h-8 rounded-full bg-white/25 text-white flex items-center justify-center text-base font-bold shrink-0">→</span>
+      <button onClick={onClick} className={`w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform ${className}`}>
+        <span className="w-9 h-9 flex items-center justify-center shrink-0"><Mallang v={mood} size={34} noBlink /></span>
+        <span className="text-[17px] font-extrabold text-white bg-black px-2.5 py-1 rounded-md whitespace-nowrap">{label}</span>
+        <span className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
       </button>
     );
   }
