@@ -12,6 +12,8 @@ import { todayISO, getEntryForDate } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
 import BmtiPartnerPopup from './BmtiPartnerPopup';
 import TypeGallery from './TypeGallery';
+import DiscoveryConsentPrompt from './DiscoveryConsentPrompt';
+import { hasOptionalHealthConsent } from '../lib/healthConsentSystem';
 
 // 하단 네비 '말랑이의 발견' 아이콘 — 막대그래프 모양.
 // 활성 상태(말랑이의 발견을 보고 있을 때)엔 막대 3개가 분홍/초록/회색을 돌아가며
@@ -146,11 +148,16 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
   // 말랑이의 발견 — 기분 기록이 쌓인 달에서 패턴을 찾아 보여주는 월간 리포트.
   const [showDiscovery, setShowDiscovery] = useState(false);
-  // 홈·결과지·파트너 팝업의 '이번달 기록·발견 알아보기' CTA(DiaryCta)가 발행하는 이벤트로 기록·발견 오버레이를 연다.
+  // 기록·발견은 [선택] 동의가 있어야 열람 가능 — 없으면 동의 유도 팝업.
+  const [showDiscConsent, setShowDiscConsent] = useState(false);
+  const openDiscovery = () => {
+    if (hasOptionalHealthConsent()) { setShowDiscovery(true); setView('home'); }
+    else { setShowDiscConsent(true); }
+  };
+  // 홈·결과지·파트너 팝업의 '이번달 기록·발견 알아보기' CTA(DiaryCta)가 발행하는 이벤트로 기록·발견을 연다.
   useEffect(() => {
-    const open = () => { setShowDiscovery(true); setView('home'); };
-    window.addEventListener('bmti:open-discovery', open);
-    return () => window.removeEventListener('bmti:open-discovery', open);
+    window.addEventListener('bmti:open-discovery', openDiscovery);
+    return () => window.removeEventListener('bmti:open-discovery', openDiscovery);
   }, [setView]);
 
   // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 유형' 팝업.
@@ -233,7 +240,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
               <span className="w-14 shrink-0" aria-hidden="true" />
               <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); }}
                 icon={<Mallang v={diaryMoodTick} size={24} noBlink />} label="다이어리" />
-              <PillTab active={showDiscovery} onClick={() => { setShowDiscovery(true); setView('home'); }}
+              <PillTab active={showDiscovery} onClick={openDiscovery}
                 icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="기록·발견" />
             </div>
           </div>
@@ -271,6 +278,14 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
 
       {showTypeGallery && (
         <TypeGallery onClose={() => setShowTypeGallery(false)} />
+      )}
+
+      {showDiscConsent && (
+        <DiscoveryConsentPrompt
+          userId={userProfile?.id}
+          onClose={() => setShowDiscConsent(false)}
+          onAgreed={() => { setShowDiscConsent(false); setShowDiscovery(true); setView('home'); }}
+        />
       )}
 
     </>

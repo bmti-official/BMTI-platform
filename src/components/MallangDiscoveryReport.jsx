@@ -2733,7 +2733,7 @@ function LetterCard({ data, isM, bmtiCode }) {
             <div style={{ position: "relative", paddingLeft: 26, backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #EBDCB6 27px, #EBDCB6 28px)" }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>To. {data.nickname || "회원"}님</div>
               <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{letterBreaks(data.body)}</p>
-              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>— 내 BMTI 유형, {charName} 드림</div>
+              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>— 당신의 BMTI 유형, {charName} 드림</div>
             </div>
           </div>
         </div>

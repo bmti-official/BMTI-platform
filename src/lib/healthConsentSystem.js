@@ -10,6 +10,10 @@ export function hasLocalHealthConsent() {
 export function setLocalHealthConsent(optional) {
   try { localStorage.setItem(LOCAL_KEY, `${CONSENT_VERSION}${optional ? ':opt' : ''}`); } catch {}
 }
+// 선택(가명처리 후 통계·연구·서비스 개선) 동의 여부 — 기록·발견 열람 게이팅에 쓴다.
+export function hasOptionalHealthConsent() {
+  try { return (localStorage.getItem(LOCAL_KEY) || '').includes(':opt'); } catch { return false; }
+}
 
 /**
  * 서버에 저장된 유저의 건강 기록 동의 상태를 가져옵니다.

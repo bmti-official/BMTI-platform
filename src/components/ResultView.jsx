@@ -21,22 +21,22 @@ const getKoreanName = (code) => {
 
 // BMTI 유형별 정보
 export const BMTI_INFO = {
-  'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '일단 몸으로 부딪혀 보고,\n곁에서 응원해주면 더 힘나는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
-  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '말보다는 행동으로\n결과를 보여주는 사람', bestMatch: 'OCDM', diffTempo: 'ALQM', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
-  'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '궁금한 건 못 참지만\n마음까지 챙기는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },
-  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '이유부터 확실히 알아야\n몸이 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'ALDM', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
-  'ALDM': { kr: '활동적 전신 실전 공감형', catchphrase: '온몸으로 부딪히면서도\n함께라서 더 힘이 나는 사람', bestMatch: 'OCQZ', diffTempo: 'OCQM', color: '#F472B6', bgGradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 100%)' },
-  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '망설임 없이 몸부터 움직이는\n시원시원한 사람', bestMatch: 'OLDZ', diffTempo: 'OCQM', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
-  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '궁금한 것도 많고\n다정한 것도 많은 사람', bestMatch: 'OLQZ', diffTempo: 'ACDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
-  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '숫자와 원리로\n내 몸을 이해하는 사람', bestMatch: 'OCQM', diffTempo: 'ACQZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
-  'OCDM': { kr: '안정적 집중 실전 공감형', catchphrase: '조용히, 근데 확실하게\n마음까지 챙기는 사람', bestMatch: 'ACDM', diffTempo: 'ALQZ', color: '#FB923C', bgGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' },
+  'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '몸으로 부딪히며 배우고,\n응원받을 때 더 힘내는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },
+  'ACDZ': { kr: '활동적 집중 실전 팩트형', catchphrase: '말보다 행동이 앞서고,\n핵심만 딱 원하는 사람', bestMatch: 'OCDM', diffTempo: 'ALQM', color: '#4ECDC4', bgGradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' },
+  'ACQM': { kr: '활동적 집중 탐구 공감형', catchphrase: '궁금하면 바로 파고들고,\n마음까지 챙기는 사람', bestMatch: 'OLDZ', diffTempo: 'OLDM', color: '#A78BFA', bgGradient: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)' },
+  'ACQZ': { kr: '활동적 집중 탐구 팩트형', catchphrase: '이유를 확실히 알아야\n움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'ALDM', color: '#60A5FA', bgGradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)' },
+  'ALDM': { kr: '활동적 전신 실전 공감형', catchphrase: '온몸으로 부딪히고,\n함께라서 더 신나는 사람', bestMatch: 'OCQZ', diffTempo: 'OCQM', color: '#F472B6', bgGradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 100%)' },
+  'ALDZ': { kr: '활동적 전신 실전 팩트형', catchphrase: '재지 않고 몸부터 움직이는\n시원시원한 사람', bestMatch: 'OLDZ', diffTempo: 'OCQM', color: '#34D399', bgGradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)' },
+  'ALQM': { kr: '활동적 전신 탐구 공감형', catchphrase: '궁금한 것도 정도 많은,\n다정한 탐구가 같은 사람', bestMatch: 'OLQZ', diffTempo: 'ACDM', color: '#FBBF24', bgGradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' },
+  'ALQZ': { kr: '활동적 전신 탐구 팩트형', catchphrase: '원리와 숫자로\n내 몸을 이해하는 사람', bestMatch: 'OCQM', diffTempo: 'ACQZ', color: '#818CF8', bgGradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)' },
+  'OCDM': { kr: '안정적 집중 실전 공감형', catchphrase: '차분하지만 확실하게,\n마음까지 챙기는 사람', bestMatch: 'ACDM', diffTempo: 'ALQZ', color: '#FB923C', bgGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 100%)' },
   'OCDZ': { kr: '안정적 집중 실전 팩트형', catchphrase: '군더더기 없이\n필요한 것만 딱 하는 사람', bestMatch: 'OLDZ', diffTempo: 'ACQM', color: '#2DD4BF', bgGradient: 'linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)' },
   'OCQM': { kr: '안정적 집중 탐구 공감형', catchphrase: '꼼꼼히 알아보고\n다정하게 다가가는 사람', bestMatch: 'ACDM', diffTempo: 'ALDZ', color: '#E879F9', bgGradient: 'linear-gradient(135deg, #E879F9 0%, #C026D3 100%)' },
-  'OCQZ': { kr: '안정적 집중 탐구 팩트형', catchphrase: '원리를 알아야\n안심이 되는 사람', bestMatch: 'ACQZ', diffTempo: 'ALDM', color: '#38BDF8', bgGradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)' },
+  'OCQZ': { kr: '안정적 집중 탐구 팩트형', catchphrase: '원리를 이해해야\n마음이 놓이는 사람', bestMatch: 'ACQZ', diffTempo: 'ALDM', color: '#38BDF8', bgGradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)' },
   'OLDM': { kr: '안정적 전신 실전 공감형', catchphrase: '편안한 분위기에서\n다 같이 움직이는 게 좋은 사람', bestMatch: 'ALDM', diffTempo: 'ACQZ', color: '#FB7185', bgGradient: 'linear-gradient(135deg, #FB7185 0%, #E11D48 100%)' },
-  'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '꾸준히 하는 게\n제일 잘 맞는 사람', bestMatch: 'ALDZ', diffTempo: 'ACQM', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
+  'OLDZ': { kr: '안정적 전신 실전 팩트형', catchphrase: '무리 없이 꾸준한 게\n제일 잘 맞는 사람', bestMatch: 'ALDZ', diffTempo: 'ACQM', color: '#4ADE80', bgGradient: 'linear-gradient(135deg, #4ADE80 0%, #16A34A 100%)' },
   'OLQM': { kr: '안정적 전신 탐구 공감형', catchphrase: '천천히, 하지만 확실하게\n마음을 담아 움직이는 사람', bestMatch: 'ALQM', diffTempo: 'ACDZ', color: '#F9A8D4', bgGradient: 'linear-gradient(135deg, #F9A8D4 0%, #EC4899 100%)' },
-  'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '정확한 균형을 찾아야\n마음이 편한 사람', bestMatch: 'ALQZ', diffTempo: 'ACDM', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
+  'OLQZ': { kr: '안정적 전신 탐구 팩트형', catchphrase: '정확한 균형을 찾을 때\n마음이 편한 사람', bestMatch: 'ALQZ', diffTempo: 'ACDM', color: '#67E8F9', bgGradient: 'linear-gradient(135deg, #67E8F9 0%, #06B6D4 100%)' },
 };
 
 const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) => {
@@ -315,11 +315,17 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
           {/* Catchphrase & Name Layout */}
           <div className="w-full flex flex-col items-center justify-center mb-10 mt-6 relative px-4">
-            {resultData.nickname && (
-              <h1 className="text-[clamp(1.75rem,6vw,3rem)] leading-[1.2] font-black tracking-tight text-gray-900 whitespace-pre-line break-keep text-center">
-                {resultData.nickname}
-              </h1>
-            )}
+            {resultData.nickname && (() => {
+              const parts = resultData.nickname.split('\n');
+              const first = parts.length > 1 ? parts[0] : null;
+              const main = parts.length > 1 ? parts.slice(1).join(' ') : resultData.nickname;
+              return (
+                <h1 className="leading-[1.2] font-black tracking-tight text-gray-900 break-keep text-center">
+                  {first && <span className="block text-[clamp(0.95rem,3.6vw,1.35rem)] font-extrabold text-gray-400 mb-1">{first}</span>}
+                  <span className="block text-[clamp(1.75rem,6vw,3rem)]">{main}</span>
+                </h1>
+              );
+            })()}
             <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400 tracking-tight mt-3">
               {axisCode} <span className="text-gray-300">{CODE_KO[axisCode]}</span>
             </span>
@@ -330,7 +336,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
           {/* 4 Tendencies Section */}
           <div className="w-full mb-10 fade-in">
-            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
+            <h3 className="text-[15px] md:text-lg font-bold text-gray-700 mb-5 flex items-center justify-center gap-2">
               <span>🔍 나를 움직이게 하는 4가지 성향</span>
             </h3>
             
@@ -355,18 +361,21 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 else if (letter1 === 'Z') { colorClass = 'bg-[#A78BFA]'; textClass = 'text-[#A78BFA]'; }
 
                 return (
-                  <div key={letter1} className="md:bg-white md:border md:border-gray-100 md:shadow-[0_4px_20px_rgba(0,0,0,0.03)] md:rounded-3xl p-0 md:p-8 mb-8 md:mb-5 w-full text-left">
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="w-full bg-gray-100 rounded-full h-3 flex-1 mr-4 overflow-hidden">
-                        <div className={`${colorClass} h-3 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
+                  <div key={letter1} className="md:bg-white md:border md:border-gray-100 md:shadow-[0_4px_20px_rgba(0,0,0,0.03)] md:rounded-3xl p-0 md:p-8 mb-7 md:mb-5 w-full text-left">
+                    {/* 유형명(작게) + 게이지를 한 줄에 — 게이지를 우측으로 붙여 자리를 아낀다 */}
+                    <div className="flex items-center gap-3 mb-2.5">
+                      <h4 className="flex-1 min-w-0 text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
+                        <span className="text-base md:text-lg shrink-0">{data[level].emoji}</span>
+                        <span className="break-keep">{data[level].modifier} {data.name}</span>
+                      </h4>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="w-16 md:w-24 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                          <div className={`${colorClass} h-1.5 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
+                        </div>
+                        <span className={`${textClass} font-bold text-[11px] md:text-xs w-8 text-right`}>{percent}%</span>
                       </div>
-                      <span className={`${textClass} font-bold text-sm md:text-base min-w-[40px] text-right`}>{percent}%</span>
                     </div>
-                    <h4 className="text-[17px] md:text-[19px] font-bold text-gray-800 mb-4 flex items-center gap-2">
-                      <span className="text-xl md:text-2xl">{data[level].emoji}</span>
-                      <span>{data[level].modifier} {data.name}</span>
-                    </h4>
-                    <p className="font-bold text-gray-800 text-[16px] md:text-[17px] mb-1 leading-relaxed break-keep">
+                    <p className="font-bold text-gray-800 text-[15.5px] md:text-[17px] mb-1 leading-relaxed break-keep">
                       "{data[level].quote}"
                     </p>
                     <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0'}`}>
