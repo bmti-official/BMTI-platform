@@ -3,6 +3,16 @@ import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../dat
 import { supabase } from '../lib/supabaseClient';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import TypeGallery from './TypeGallery';
+import { Mallang } from './Mallang';
+
+// 하단 네비게이션 바 'BMTI' 탭과 동일한 펼친 책 아이콘 (currentColor)
+const BookIcon = ({ className = 'w-6 h-6', style }) => (
+  <svg viewBox="0 0 24 24" className={className} style={style} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 6.2C10.3 5 7.4 4.5 4.3 5v12.6C7.4 17.1 10.3 17.6 12 18.8" />
+    <path d="M12 6.2C13.7 5 16.6 4.5 19.7 5v12.6C16.6 17.1 13.7 17.6 12 18.8" />
+    <path d="M12 6.2V18.8" />
+  </svg>
+);
 import {
   POSTURE_OPTS, POSTURE_LABELS, POSTURE_KNOWN_IDS,
   FREQ_LABELS as EXERCISE_FREQ_LABELS, GOAL_LABELS as EXERCISE_GOAL_LABELS,
@@ -266,11 +276,11 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     }
   };
 
-  // 상단 빠른 이동 타일 (이미지의 2×2 그리드 벤치마킹)
+  // 상단 빠른 이동 타일 (이미지의 2×2 그리드 벤치마킹) — 하단 네비 아이콘과 통일
   const tiles = [
-    { emoji: '🧬', label: '내 유형 결과', sub: bmtiCode ? axisCode : '검사하기', onClick: () => setView(bmtiCode ? 'result' : 'quiz') },
-    { emoji: '📔', label: '건강 다이어리', sub: '오늘 기록하기', onClick: () => setView('aichat') },
-    { emoji: '📈', label: '이번 달 발견', sub: '내 몸 패턴 보기', onClick: () => window.dispatchEvent(new Event('bmti:open-discovery')) },
+    { icon: <BookIcon className="w-6 h-6" style={{ color: PURPLE }} />, label: '내 유형 결과', sub: bmtiCode ? axisCode : '검사하기', onClick: () => setView(bmtiCode ? 'result' : 'quiz') },
+    { icon: <Mallang v={5} size={28} noBlink />, label: '건강 다이어리', sub: '오늘 기록하기', onClick: () => setView('aichat') },
+    { icon: <Mallang v={4} size={28} noBlink />, label: '이번 달 발견', sub: '내 몸 패턴 보기', onClick: () => window.dispatchEvent(new Event('bmti:open-discovery')) },
     { emoji: '🔍', label: '다른 유형 구경', sub: '16유형 둘러보기', onClick: () => setShowGallery(true) },
   ];
 
@@ -300,19 +310,12 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         </div>
 
         <div className="flex items-center gap-4 md:gap-5">
-          {/* 아바타 + 연필 배지 */}
-          <div className="relative flex-shrink-0">
-            <div className="w-[84px] h-[84px] md:w-24 md:h-24 rounded-full bg-gray-50 ring-4 ring-[#C9BEF0] overflow-hidden relative shadow-sm">
-              {charInfo ? (
-                <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
-              ) : (
-                <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
-              )}
-            </div>
-            {!isEditing && (
-              <button onClick={() => setIsEditing(true)} aria-label="프로필 수정" className="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md border-[2.5px] border-white active:scale-95 transition" style={{ background: PURPLE }}>
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-              </button>
+          {/* 아바타 — 누끼 캐릭터만(감싸는 원·수정 배지 없음) */}
+          <div className="w-[92px] h-[92px] md:w-28 md:h-28 flex items-center justify-center flex-shrink-0">
+            {charInfo ? (
+              <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
+            ) : (
+              <span className="text-4xl">👤</span>
             )}
           </div>
 
@@ -359,10 +362,10 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         {!bmtiCode && !isEditing && (
           <button
             onClick={() => setView('home')}
-            className="mt-5 w-full text-white font-bold py-3 rounded-2xl hover:brightness-105 transition-all shadow-sm text-sm"
+            className="mt-5 w-full text-white font-bold py-3 rounded-2xl hover:brightness-105 transition-all shadow-sm text-sm flex items-center justify-center gap-2"
             style={{ background: GOLD }}
           >
-            🧬 BMTI 검사하기
+            <BookIcon className="w-5 h-5" style={{ color: '#fff' }} /> BMTI 검사하기
           </button>
         )}
 
@@ -414,13 +417,13 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
               <div className="text-[15px] font-black text-gray-900 leading-tight">{tl.label}</div>
               <div className="text-[11px] font-bold text-gray-400 mt-1 truncate">{tl.sub}</div>
             </div>
-            <span className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 ml-2" style={{ background: '#F4F0FC' }}>{tl.emoji}</span>
+            <span className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 ml-2 overflow-hidden" style={{ background: '#F4F0FC' }}>{tl.icon || tl.emoji}</span>
           </button>
         ))}
       </div>
 
       {/* 2. BMTI 히스토리 */}
-      <SectionHeader emoji="🧬" title="BMTI 히스토리">
+      <SectionHeader emoji={<BookIcon className="w-[22px] h-[22px]" style={{ color: PURPLE }} />} title="BMTI 히스토리">
         <PillButton onClick={handleNewTest}>새로운 검사하기</PillButton>
       </SectionHeader>
       <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -475,7 +478,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       </div>
 
       {/* 3. 일상 정보 — 온보딩에서 자동으로 채워지고, 여기서 한 달 2번까지 수정 가능 */}
-      <SectionHeader emoji="📋" title="일상 정보">
+      <SectionHeader emoji="📋" title="현재 일상 정보">
         <PillButton gold={isEditingExercise} disabled={savingExercise} onClick={() => { if (isEditingExercise) handleSaveMallangInfo(); else startEditMallang(); }}>
           {savingExercise ? '저장 중...' : isEditingExercise ? '저장하기' : '수정하기'}
         </PillButton>
@@ -589,13 +592,11 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             {/* 운동 목적 */}
             <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
               <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold mb-2">🎯 운동 목적</div>
-              {(userData.exercise_goals && userData.exercise_goals.length > 0) ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {userData.exercise_goals.map((id) => (
-                    <span key={id} className="bg-white border border-gray-200 text-gray-700 px-2.5 py-1 rounded-lg text-xs whitespace-nowrap font-bold">{EXERCISE_GOAL_LABELS[id] || id}</span>
-                  ))}
-                </div>
-              ) : (<div className="text-base font-bold text-gray-800">아직 입력 전이에요</div>)}
+              <div className="text-base font-bold text-gray-800 break-keep">
+                {(userData.exercise_goals && userData.exercise_goals.length > 0)
+                  ? userData.exercise_goals.map((id) => EXERCISE_GOAL_LABELS[id] || id).join(', ')
+                  : '아직 입력 전이에요'}
+              </div>
             </div>
             {/* 자주 하는 자세 */}
             <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
