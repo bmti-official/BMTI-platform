@@ -138,21 +138,20 @@ export const MONTHLY_EDIT_LIMIT = 2;
 // 다이어리 첫 진입 시 '주로 잠드는 시간대'(수동) 또는 '불규칙'을 고르고, 그 뒤 매일의 수면 입력이
 // 이 설정을 따른다. '말랑이의 밤' 월간 집계 때문에 한 달에 한 번만 바꿀 수 있다.
 const SLEEP_KEY = "bmti_sleep_setting";
-// 좌우로 넘겨 기준 시간을 고르는 타임라인. 기준은 10시~2시(양끝 2칸은 '이전/이후' 표기용 여유).
-export const SLEEP_HOURS = ["8시", "9시", "10시", "11시", "12시", "1시", "2시", "3시", "4시"];
-export const SLEEP_BASE_MIN = 2;                       // 10시
-export const SLEEP_BASE_MAX = SLEEP_HOURS.length - 3;  // 2시
+// 좌우로 넘겨 기준 시간을 고르는 타임라인 — 모든 시간을 고를 수 있게 저녁~아침 전체를 담는다.
+export const SLEEP_HOURS = ["저녁 7시", "저녁 8시", "저녁 9시", "밤 10시", "밤 11시", "밤 12시", "새벽 1시", "새벽 2시", "새벽 3시", "새벽 4시", "새벽 5시", "아침 6시", "아침 7시"];
+export const SLEEP_BASE_MIN = 0;
+export const SLEEP_BASE_MAX = SLEEP_HOURS.length - 1;
 // 불규칙 수면 3단계
 export const SLEEP_IRREGULAR_OPTS = ["일찍 잤어요", "적당히 잤어요", "늦게 잤어요"];
 
-const clampBaseIdx = (i) => Math.max(SLEEP_BASE_MIN, Math.min(SLEEP_BASE_MAX, i));
 export function sleepBaseIdx(base) {
   const i = SLEEP_HOURS.indexOf(base);
-  return clampBaseIdx(i < 0 ? 3 : i); // 기본 11시
+  return i < 0 ? 5 : i; // 기본 밤 12시
 }
-// 기준 시간(가운데)을 중심으로 앞2·뒤2 = 5개. 양 끝은 '이전/이후'로 묶는다.
+// 기준 시간을 중심으로 앞2·뒤2 = 5개(매일 입력용). 양 끝은 '이전/이후'로 묶고, 가장자리 기준은 안쪽으로 당겨 5개를 유지.
 export function sleepWindowByIdx(i) {
-  const c = clampBaseIdx(i);
+  const c = Math.max(2, Math.min(SLEEP_HOURS.length - 3, i));
   return [`~${SLEEP_HOURS[c - 2]} 이전`, SLEEP_HOURS[c - 1], SLEEP_HOURS[c], SLEEP_HOURS[c + 1], `${SLEEP_HOURS[c + 2]}~`];
 }
 export function sleepWindow(base) { return sleepWindowByIdx(sleepBaseIdx(base)); }

@@ -493,34 +493,31 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           {sleepSetupOpen ? (
             /* 첫 진입/변경 — 기준 수면 설정 선택 화면 */
             <div style={{ marginTop: 16, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 14px" }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, marginBottom: 3 }}>내 수면 리듬을 먼저 알려주세요</div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: C.sub, marginBottom: 14, wordBreak: "keep-all" }}>이 설정으로 '말랑이의 밤' 리포트를 만들어요. (한 달에 한 번 변경 가능)</div>
-
-              {/* 1) 주로 잠드는 시간대 — 좌우로 넘겨 기준 시간 고르기 */}
-              <div style={{ fontSize: 12, fontWeight: 800, color: setupMode === "manual" ? C.ink : C.tileOffText, marginBottom: 8 }}>1. 주로 잠드는 시간대</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, opacity: setupMode === "manual" ? 1 : 0.5 }} onClick={() => setSetupMode("manual")}>
+              {/* 주로 잠드는 시간대 — 가운데만 크게, 좌우 하나씩 작게. 화살표/양옆을 눌러 스크롤 */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: setupMode === "manual" ? 1 : 0.5 }} onClick={() => setSetupMode("manual")}>
                 <button onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.max(SLEEP_BASE_MIN, i - 1)); }}
                   style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 16, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>‹</button>
-                <div style={{ flex: 1, display: "flex", gap: 4, justifyContent: "space-between" }}>
-                  {sleepWindowByIdx(setupBaseIdx).map((lbl, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: "center", padding: "9px 2px", borderRadius: 10, fontSize: i === 2 ? 12.5 : 10.5, fontWeight: i === 2 ? 800 : 600,
-                      background: i === 2 ? C.gold : "#fff", color: i === 2 ? "#fff" : C.sub, border: `1px solid ${i === 2 ? C.gold : C.line}` }}>{lbl}</div>
-                  ))}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 52 }}>
+                  <span onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.max(SLEEP_BASE_MIN, i - 1)); }}
+                    style={{ flex: 1, textAlign: "right", fontSize: 12, fontWeight: 600, color: C.tileOffText, cursor: "pointer" }}>{setupBaseIdx > SLEEP_BASE_MIN ? SLEEP_HOURS[setupBaseIdx - 1] : ""}</span>
+                  <span style={{ fontSize: 21, fontWeight: 900, color: C.gold, minWidth: 92, textAlign: "center", whiteSpace: "nowrap" }}>{SLEEP_HOURS[setupBaseIdx]}</span>
+                  <span onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.min(SLEEP_BASE_MAX, i + 1)); }}
+                    style={{ flex: 1, textAlign: "left", fontSize: 12, fontWeight: 600, color: C.tileOffText, cursor: "pointer" }}>{setupBaseIdx < SLEEP_BASE_MAX ? SLEEP_HOURS[setupBaseIdx + 1] : ""}</span>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.min(SLEEP_BASE_MAX, i + 1)); }}
                   style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 16, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>›</button>
               </div>
 
-              {/* 2) 불규칙 */}
+              {/* 불규칙 */}
               <button onClick={() => setSetupMode("irregular")}
-                style={{ width: "100%", marginTop: 6, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer",
+                style={{ width: "100%", marginTop: 12, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer",
                   border: `2px solid ${setupMode === "irregular" ? C.gold : C.yellowLine}` }}>
                 저는 잠드는 시간이 불규칙해요
               </button>
 
               <button onClick={confirmSleepSetup}
-                style={{ width: "100%", marginTop: 12, padding: "12px", borderRadius: 12, border: "none", background: C.gold, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
-                이대로 설정하기
+                style={{ width: "100%", marginTop: 12, padding: "12px", borderRadius: 12, border: "none", background: C.gold, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer", lineHeight: 1.45, whiteSpace: "pre-line" }}>
+                {setupMode === "irregular" ? "저는 잠드는 시간이 불규칙해요.\n이렇게 기억해줘요" : `저는 주로 ${SLEEP_HOURS[setupBaseIdx]}에 잠들어요.\n이렇게 기억해줘요`}
               </button>
             </div>
           ) : (
