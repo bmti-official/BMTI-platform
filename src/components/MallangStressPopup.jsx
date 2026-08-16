@@ -61,7 +61,7 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "transparent", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       {/* 우측 상단 닫기 — 흰 배경 동그란 X */}
-      <button onClick={onNext} aria-label="닫기" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, width: 40, height: 40, borderRadius: "50%", border: "none", background: "#fff", color: "#8B857B", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.18)" }}>✕</button>
+      <button onClick={onNext} aria-label="닫기" style={{ position: "absolute", top: 64, right: 16, zIndex: 2, width: 40, height: 40, borderRadius: "50%", border: "none", background: "#fff", color: "#8B857B", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.18)" }}>✕</button>
       <div style={{ width: "100%", maxWidth: 380, background: "transparent", padding: "8px 4px", textAlign: "center", animation: "mallangPopIn .32s cubic-bezier(.22,.9,.32,1)" }}>
         {/* 캐릭터가 말풍선으로 안내 */}
         <div style={{ display: "flex", gap: 9, alignItems: "flex-end", justifyContent: "center", marginBottom: 24, textAlign: "left" }}>

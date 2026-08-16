@@ -318,7 +318,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         return (
           <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
             {/* 월간 캘린더(maxWidth 460)와 같은 폭 · 흰 배경 · 일반 모바일 높이에 맞춰 세로로 스택 */}
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 24, position: "relative", maxHeight: "min(760px, 90vh)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 24, position: "relative", maxHeight: "min(620px, calc(100vh - 172px))", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
               {/* 우측 상단 X — 카드에 고정(스크롤돼도 항상 보임) */}
               <button
                 onClick={() => setPreviewDay(null)}
