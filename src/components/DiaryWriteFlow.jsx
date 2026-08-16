@@ -570,7 +570,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             <>
               {/* 오늘의 수면 시간대 — 설정(수동 5개 / 불규칙 3개)에 따라 */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 0 8px" }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.sub }}>몇 시쯤 잤어요? <span style={{ color: C.tileOffText, fontWeight: 600 }}>(선택)</span></span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.sub }}>{sleepSetting?.mode === "irregular" ? "자야 하는 시간보다 어떻게 잤어요?" : "몇 시쯤 잤어요?"}</span>
                 <button onClick={openSleepSetup} style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, background: "#fff", border: `1px solid ${C.line}`, borderRadius: 999, padding: "3px 9px", cursor: "pointer" }}>기본 수면시간 변경</button>
               </div>
               <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>

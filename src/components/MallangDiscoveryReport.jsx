@@ -2142,7 +2142,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   };
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> });
-  add("weekday", ins.weekdaySore, <WeekdayDrainCard data={ins.weekdaySore} />, exIns.weekdaySore && <WeekdayDrainCard data={exIns.weekdaySore} />);
+  add("weekday", ins.weekdaySore, <WeekdayDrainCard entries={entries} />, exIns.weekdaySore && <WeekdayDrainCard entries={EXAMPLE_ENTRIES} />);
   items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} /> }); // 요일 방전 패턴 밑 — 말랑이의 밤
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
@@ -2532,16 +2532,48 @@ function MallangNightCard({ entries }) {
   );
 }
 
-// 요일별 방전 패턴 — 미니 막대그래프 + 최고 요일 강조 + 팩트 체크 코멘트
-function WeekdayDrainCard({ data }) {
+// 부위별 요일 불편함 평균 — 특정 부위(또는 전체)만 걸러 요일별 평균을 낸다.
+function computeWeekdaySore(entries, part) {
+  const WDF = ["일", "월", "화", "수", "목", "금", "토"];
+  const byWd = {};
+  (entries || []).forEach((d) => { if (!d || !d.date) return; const wd = new Date(d.date + "T00:00:00").getDay(); (d.soreness || []).forEach((s) => { if (s && (!part || s.part === part) && typeof s.level === "number") (byWd[wd] ||= []).push(s.level); }); });
+  const wdAvg = [];
+  for (let wd = 0; wd < 7; wd++) { const arr = byWd[wd] || []; wdAvg.push({ wd, avg: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0, n: arr.length }); }
+  const withData = wdAvg.filter((x) => x.n > 0);
+  if (withData.length < 1) return null;
+  const peak = withData.reduce((m, x) => (x.avg > m.avg ? x : m), withData[0]);
+  const maxAvg = Math.max(...wdAvg.map((x) => x.avg), 1);
+  const pk = WDF[peak.wd], pv = WDF[(peak.wd + 6) % 7];
+  const comment = `${pv}요일까지 쌓인 불편함이 ${pk}요일에 한꺼번에 몰려오나 봐요. ${pk}요일 오후엔 꼭 스트레칭으로 몸을 풀어볼까요?`;
+  return { wdAvg, peak, maxAvg, comment };
+}
+
+// 요일별 불편함 패턴 — 부위 선택 드롭다운 + 미니 막대그래프 + 최고 요일 강조
+function WeekdayDrainCard({ entries }) {
   const t = getTypeAccent();
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
   const order = [1, 2, 3, 4, 5, 6, 0]; // 월~일
+  const partCounts = {};
+  (entries || []).forEach((e) => (e.soreness || []).forEach((s) => { if (s && s.part) partCounts[s.part] = (partCounts[s.part] || 0) + 1; }));
+  const partList = Object.keys(partCounts).sort((a, b) => partCounts[b] - partCounts[a]);
+  const [sorePart, setSorePart] = useState(partList[0] || null);
+  const activePart = sorePart && partCounts[sorePart] ? sorePart : (partList[0] || null);
+  const data = computeWeekdaySore(entries, activePart);
+  if (!data) return null;
   const peakWd = data.peak.wd;
+  const partLabel = activePart ? (PARTS[activePart] || activePart) : "몸";
   return (
-    <InsCard badge="요일별 방전 패턴" title="🗓️ 나의 요일별 방전 패턴" sub="일주일 중 몸이 가장 많이 방전되는 요일을 짚어봤어요">
+    <InsCard badge="요일별 불편함 패턴" title="🗓️ 나의 요일별 불편함 패턴" sub="일주일 중 몸이 가장 많이 불편한 요일을 짚어봤어요">
+      {partList.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: -6, marginBottom: 10 }}>
+          <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
+            style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
+            {partList.map((pid) => <option key={pid} value={pid}>{PARTS[pid] || pid} ({partCounts[pid]})</option>)}
+          </select>
+        </div>
+      )}
       <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: "0 0 18px", lineHeight: 1.5, wordBreak: "keep-all" }}>
-        이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 몸이 가장 많이 불편했어요.
+        이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 <b style={{ color: "#E0554F" }}>{partLabel}</b> 불편함이 가장 컸어요.
       </p>
       {/* 막대 위에 '최고조!'·🔴가 얹히므로, 최고 막대라도 그 라벨이 위 문구와 겹치지 않게
           컨테이너 높이를 넉넉히(128) 잡고 막대 최대 높이는 낮춘다(56). */}

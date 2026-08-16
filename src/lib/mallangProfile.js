@@ -149,10 +149,11 @@ export function sleepBaseIdx(base) {
   const i = SLEEP_HOURS.indexOf(base);
   return i < 0 ? 5 : i; // 기본 밤 12시
 }
-// 기준 시간을 중심으로 앞2·뒤2 = 5개(매일 입력용). 양 끝은 '이전/이후'로 묶고, 가장자리 기준은 안쪽으로 당겨 5개를 유지.
+// 기준 시간을 중심으로 앞2·뒤2 = 5개(매일 입력용). 한 줄에 다 들어가도록 '밤/새벽' 등은 떼고 '~10시 / 11시 / … / 2시~' 형태로 짧게.
+const sleepHourNum = (label) => label.replace(/^(저녁|밤|새벽|아침)\s*/, "");
 export function sleepWindowByIdx(i) {
   const c = Math.max(2, Math.min(SLEEP_HOURS.length - 3, i));
-  return [`~${SLEEP_HOURS[c - 2]} 이전`, SLEEP_HOURS[c - 1], SLEEP_HOURS[c], SLEEP_HOURS[c + 1], `${SLEEP_HOURS[c + 2]}~`];
+  return [`~${sleepHourNum(SLEEP_HOURS[c - 2])}`, sleepHourNum(SLEEP_HOURS[c - 1]), sleepHourNum(SLEEP_HOURS[c]), sleepHourNum(SLEEP_HOURS[c + 1]), `${sleepHourNum(SLEEP_HOURS[c + 2])}~`];
 }
 export function sleepWindow(base) { return sleepWindowByIdx(sleepBaseIdx(base)); }
 
