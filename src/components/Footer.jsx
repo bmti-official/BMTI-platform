@@ -67,7 +67,6 @@ const Footer = () => {
           <p>영업소 소재지: 서울특별시 강남구 압구정로2길 46, 214-S117호(신사동)</p>
           <p>고객센터: 카카오톡 채널 <a href="http://pf.kakao.com/_xasxgZX/chat" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">[@자기점검 50분]</a> (가장 빠른 답변이 가능합니다)</p>
           <p>전화번호: 070-8027-8648 (통화량이 많아 연결이 어려울 수 있습니다. 카카오톡을 이용해 주세요.)</p>
-          <p>이메일: ???@gmail.com (수정 예정)</p>
           <p>호스팅 제공자: GitHub, Inc.</p>
         </div>
       )}

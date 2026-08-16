@@ -9,11 +9,13 @@ import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { getTypeAccent } from '../lib/typeAccent';
 import BmtiRelationMap from './BmtiRelationMap';
 import DiaryCta from './DiaryCta';
+import TypeGallery from './TypeGallery';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
 
 const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
+  const [showGallery, setShowGallery] = useState(false);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);        // 현재 좌우 이동 위치(px)
   const halfRef = useRef(0);          // 캐릭터 목록 한 벌의 폭(무한 루프 기준)
@@ -261,6 +263,21 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <p className="text-center text-gray-400 text-xs mt-2.5 font-medium">내 BMTI 결과를 친구에게 보여주세요</p>
         </div>
       )}
+
+      {/* 다른 유형 구경하기 — 관계도 위. 결과지 CTA와 동일한 스타일 */}
+      <div className="w-full flex justify-center mb-6">
+        <button
+          onClick={() => setShowGallery(true)}
+          className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
+        >
+          <span className="w-8 h-8 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">다른 유형 구경하기</span>
+          <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+        </button>
+      </div>
+      {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
 
       {/* BMTI 유형 관계도 — 16가지 유형이 어떻게 이어지는지 보여주는 지도 */}
       <BmtiRelationMap bmtiCode={bmtiCode} />

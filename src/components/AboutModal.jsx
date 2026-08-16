@@ -28,10 +28,9 @@ const AboutModal = ({ isOpen, onClose }) => {
             <h4 className="font-bold text-base text-black mb-2">이런 걸 할 수 있어요</h4>
             <ul className="list-disc pl-5 text-gray-600 space-y-1.5 break-keep">
               <li><strong>BMTI 검사</strong> — 2분 만에 내 움직임 성향(16유형)과 파트너 캐릭터 확인</li>
-              <li><strong>말랑 다이어리</strong> — 하루 1분, 기분·수면·불편한 부위·운동을 귀엽게 기록</li>
-              <li><strong>발견 리포트</strong> — 쌓인 기록으로 내 몸의 월간 패턴과 인사이트를 발견</li>
-              <li><strong>큐레이션</strong> — 자세 교정·회복·스트레칭 등 몸 관리 콘텐츠를 큐레이션</li>
-              <li><strong>예약</strong> — 전문가 세션·소그룹 클래스 예약(준비 중)</li>
+              <li><strong>건강 다이어리</strong> — 하루 1분, 기분·수면·불편한 부위·운동을 귀엽게 기록</li>
+              <li><strong>기록·발견 리포트</strong> — 쌓인 기록으로 내 몸의 월간 패턴과 인사이트를 발견</li>
+              <li><strong>BMTI 관계도·다른 유형 구경</strong> — 16가지 유형이 어떻게 이어지는지 살펴보고 예시 결과지 확인</li>
             </ul>
           </section>
 
