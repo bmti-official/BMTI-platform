@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CHARACTERS, CHARACTER_NAMES, CODE_KO } from '../data';
-import { BMTI_INFO } from './ResultView';
+import { BMTI_INFO, TENDENCY_HL } from './ResultView';
 import { BMTI_RESULTS } from '../bmti_results';
 import { TENDENCY_DATA } from '../customResultData';
 
 // 4글자 코드를 성향 카드 4장으로 쪼갠다. 각 자리의 글자가 '활성 성향'.
 const PAIRS = [['A', 'O'], ['C', 'L'], ['D', 'Q'], ['Z', 'M']];
 const CARD_COLOR = { A: '#FF6B6B', C: '#4ECDC4', D: '#60A5FA', Z: '#A78BFA' };
+const YELLOW_SHADOW = '0 2px 6px rgba(220,188,86,0.18), 0 12px 28px rgba(233,203,110,0.34)';
+
+// 대표 문장에서 핵심 문구를 항목 색상으로 강조 — 결과지와 동일
+function renderHlQuote(q, active, level, color) {
+  const hl = (TENDENCY_HL[active] || {})[level];
+  if (!hl || !q.includes(hl)) return `"${q}"`;
+  const i = q.indexOf(hl);
+  return <>&quot;{q.slice(0, i)}<span style={{ color }} className="font-extrabold">{hl}</span>{q.slice(i + hl.length)}&quot;</>;
+}
 
 // 다른 유형 구경하기 — 16가지 유형(4×4)의 누끼 캐릭터를 보여주고,
 // 하나를 고르면 '확신의' 기준 예시 결과지(성향 박스까지만, 아코디언 없음)를 띄운다.
@@ -15,7 +24,7 @@ export default function TypeGallery({ onClose }) {
   const [selected, setSelected] = useState(null);
 
   const overlay = (
-    <div className="fixed inset-0 z-[110] bg-[#F7F7F6] overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
+    <div className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
       {selected ? (
         <TypePreview code={selected} onBack={() => setSelected(null)} onClose={onClose} />
       ) : (
@@ -35,19 +44,21 @@ function TypeGrid({ onPick, onClose }) {
       </div>
       <p className="text-[13px] text-gray-500 mb-6 break-keep">궁금한 유형을 눌러 <b className="text-gray-700">예시 결과지</b>를 살펴보세요.</p>
 
-      <div className="grid grid-cols-4 gap-2.5">
-        {CHARACTERS.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => onPick(c.id)}
-            className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
-          >
-            <span className={`w-full aspect-square rounded-2xl flex items-center justify-center overflow-hidden ${c.color || 'bg-gray-100'}`}>
-              <img src={c.image} alt={c.id} className={`w-full h-full object-contain ${c.imgClass || ''}`} />
-            </span>
-            <span className="text-[10px] font-extrabold text-gray-700 leading-none">{c.id}</span>
-          </button>
-        ))}
+      <div className="rounded-[1.6rem] bg-white border border-[#F3EFE6] p-3.5" style={{ boxShadow: YELLOW_SHADOW }}>
+        <div className="grid grid-cols-4 gap-2.5">
+          {CHARACTERS.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onPick(c.id)}
+              className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+            >
+              <span className={`w-full aspect-square rounded-2xl flex items-center justify-center overflow-hidden ${c.color || 'bg-gray-100'}`}>
+                <img src={c.image} alt={c.id} className={`w-full h-full object-contain ${c.imgClass || ''}`} />
+              </span>
+              <span className="text-[10px] font-extrabold text-gray-700 leading-none">{c.id}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -88,11 +99,17 @@ function TypePreview({ code, onBack, onClose }) {
             {charData && <img src={charData.originalImage} alt={code} className="w-full h-auto object-cover" />}
           </div>
           <div className="flex flex-col items-center text-center px-1">
-            {resultData.nickname && (
-              <h1 className="text-[clamp(1.5rem,5.5vw,2.5rem)] leading-[1.2] font-black tracking-tight text-gray-900 whitespace-pre-line break-keep">
-                {resultData.nickname}
-              </h1>
-            )}
+            {resultData.nickname && (() => {
+              const parts = resultData.nickname.split('\n');
+              const first = parts.length > 1 ? parts[0] : null;
+              const main = parts.length > 1 ? parts.slice(1).join(' ') : resultData.nickname;
+              return (
+                <h1 className="leading-[1.2] font-black tracking-tight text-gray-900 break-keep">
+                  {first && <span className="block text-[clamp(0.85rem,3.2vw,1.2rem)] font-extrabold text-gray-400 mb-1">{first}</span>}
+                  <span className="block text-[clamp(1.5rem,5.5vw,2.5rem)]">{main}</span>
+                </h1>
+              );
+            })()}
             <span className="text-lg sm:text-xl font-bold text-gray-400 tracking-tight mt-3">
               {code} <span className="text-gray-300">{CODE_KO[code]}</span>
             </span>
@@ -105,7 +122,7 @@ function TypePreview({ code, onBack, onClose }) {
 
           {/* 🔍 나를 움직이게 하는 4가지 성향 — 확신의 ↔ 유연한 좌우로 넘겨보기, 아코디언 없이 대표 문장까지만 */}
           <div className="w-full mt-10">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+            <h3 className="text-[15px] md:text-lg font-bold text-gray-700 mb-4 flex items-center justify-center gap-2">
               <span>🔍 나를 움직이게 하는 4가지 성향</span>
             </h3>
             {/* 확신의/유연한 성향 스와이프 토글 */}
@@ -128,19 +145,21 @@ function TypePreview({ code, onBack, onClose }) {
                 const v = data[level];
                 const color = CARD_COLOR[l1];
                 return (
-                  <div key={l1} className="p-0 mb-8 w-full text-left">
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="w-full bg-gray-100 rounded-full h-3 flex-1 mr-4 overflow-hidden">
-                        <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${percent}%`, background: color }}></div>
+                  <div key={l1} className="p-0 mb-7 w-full text-left">
+                    <div className="flex items-center gap-3 mb-2.5">
+                      <h4 className="shrink-0 whitespace-nowrap text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
+                        <span className="text-base md:text-lg">{v.emoji}</span>
+                        <span>{v.modifier} {data.name}</span>
+                      </h4>
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
+                          <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%`, background: color }}></div>
+                        </div>
+                        <span className="font-bold text-[11px] md:text-xs w-8 text-right shrink-0" style={{ color }}>{percent}%</span>
                       </div>
-                      <span className="font-bold text-sm min-w-[40px] text-right" style={{ color }}>{percent}%</span>
                     </div>
-                    <h4 className="text-[17px] font-bold text-gray-800 mb-4 flex items-center gap-2">
-                      <span className="text-xl">{v.emoji}</span>
-                      <span>{v.modifier} {data.name}</span>
-                    </h4>
-                    <p className="font-bold text-gray-800 text-[16px] leading-relaxed break-keep">
-                      "{v.quote}"
+                    <p className="font-bold text-gray-800 text-[15.5px] md:text-[17px] leading-relaxed break-keep">
+                      {renderHlQuote(v.quote, active, level, color)}
                     </p>
                   </div>
                 );

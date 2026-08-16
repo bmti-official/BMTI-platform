@@ -10,7 +10,7 @@ import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
 
 // 4가지 성향 대표 문장에서 항목 메인 색상으로 강조할 핵심 문구
-const TENDENCY_HL = {
+export const TENDENCY_HL = {
   A: { confident: '몸을 움직여야', flexible: '가볍게 몸을 움직이면' },
   O: { confident: '조용히', flexible: '조용히 쉬는' },
   C: { confident: "'여기'", flexible: '집중할 부위' },
@@ -21,7 +21,7 @@ const TENDENCY_HL = {
   M: { confident: '다정한 위로', flexible: '가벼운 칭찬이나 다정한 격려' },
 };
 // 각 성향 카드의 메인 색상(축 왼쪽 글자 기준)
-const TENDENCY_HEX = { A: '#FF6B6B', C: '#4ECDC4', D: '#60A5FA', Z: '#A78BFA' };
+export const TENDENCY_HEX = { A: '#FF6B6B', C: '#4ECDC4', D: '#60A5FA', Z: '#A78BFA' };
 
 const getKoreanName = (code) => {
   const map = {
@@ -385,17 +385,17 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
                 return (
                   <div key={letter1} className="md:bg-white md:border md:border-gray-100 md:shadow-[0_4px_20px_rgba(0,0,0,0.03)] md:rounded-3xl p-0 md:p-8 mb-7 md:mb-5 w-full text-left">
-                    {/* 유형명(작게) + 게이지를 한 줄에 — 게이지를 우측으로 붙여 자리를 아낀다 */}
+                    {/* 유형명(작게, 줄바꿈 없음) + 게이지 — 게이지가 남은 폭을 채워 PC에선 문구 옆까지 길게, 모바일에선 짧게 */}
                     <div className="flex items-center gap-3 mb-2.5">
-                      <h4 className="flex-1 min-w-0 text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
-                        <span className="text-base md:text-lg shrink-0">{data[level].emoji}</span>
-                        <span className="break-keep">{data[level].modifier} {data.name}</span>
+                      <h4 className="shrink-0 whitespace-nowrap text-[13px] md:text-[14px] font-bold text-gray-500 flex items-center gap-1.5">
+                        <span className="text-base md:text-lg">{data[level].emoji}</span>
+                        <span>{data[level].modifier} {data.name}</span>
                       </h4>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <div className="w-32 md:w-44 bg-gray-100 rounded-full h-2 overflow-hidden">
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                           <div className={`${colorClass} h-2 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
                         </div>
-                        <span className={`${textClass} font-bold text-[11px] md:text-xs w-8 text-right`}>{percent}%</span>
+                        <span className={`${textClass} font-bold text-[11px] md:text-xs w-8 text-right shrink-0`}>{percent}%</span>
                       </div>
                     </div>
                     <p className="font-bold text-gray-800 text-[15.5px] md:text-[17px] mb-1 leading-relaxed break-keep">

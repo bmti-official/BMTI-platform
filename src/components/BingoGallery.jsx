@@ -28,6 +28,8 @@ const LINES = [
   [0, 5, 10, 15], [3, 6, 9, 12],
 ];
 
+const YELLOW_SHADOW = '0 2px 6px rgba(220,188,86,0.18), 0 12px 28px rgba(233,203,110,0.34)';
+
 function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 function shuffleByCode(arr, code) {
   return arr.map((v, i) => ({ v, k: hash(`${code}_${i}`) })).sort((a, b) => a.k - b.k).map((s) => s.v);
@@ -37,7 +39,7 @@ function shuffleByCode(arr, code) {
 export default function BingoGallery({ onClose }) {
   const [selected, setSelected] = useState(null);
   const overlay = (
-    <div className="fixed inset-0 z-[110] bg-[#F7F7F6] overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
+    <div className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
       {selected ? <BingoBoard code={selected} onBack={() => setSelected(null)} onClose={onClose} /> : <BingoGrid onPick={setSelected} onClose={onClose} />}
     </div>
   );
@@ -52,15 +54,17 @@ function BingoGrid({ onPick, onClose }) {
         <button onClick={onClose} aria-label="닫기" className="text-gray-400 hover:text-gray-700 text-2xl leading-none">✕</button>
       </div>
       <p className="text-[13px] text-gray-500 mb-6 break-keep">궁금한 유형을 눌러 <b className="text-gray-700">나만의 빙고판</b>을 채워보세요.</p>
-      <div className="grid grid-cols-4 gap-2.5">
-        {CHARACTERS.map((c) => (
-          <button key={c.id} onClick={() => onPick(c.id)} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
-            <span className={`w-full aspect-square rounded-2xl flex items-center justify-center overflow-hidden ${c.color || 'bg-gray-100'}`}>
-              <img src={c.image} alt={c.id} className={`w-full h-full object-contain ${c.imgClass || ''}`} />
-            </span>
-            <span className="text-[10px] font-extrabold text-gray-700 leading-none">{c.id}</span>
-          </button>
-        ))}
+      <div className="rounded-[1.6rem] bg-white border border-[#F3EFE6] p-3.5" style={{ boxShadow: YELLOW_SHADOW }}>
+        <div className="grid grid-cols-4 gap-2.5">
+          {CHARACTERS.map((c) => (
+            <button key={c.id} onClick={() => onPick(c.id)} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
+              <span className={`w-full aspect-square rounded-2xl flex items-center justify-center overflow-hidden ${c.color || 'bg-gray-100'}`}>
+                <img src={c.image} alt={c.id} className={`w-full h-full object-contain ${c.imgClass || ''}`} />
+              </span>
+              <span className="text-[10px] font-extrabold text-gray-700 leading-none">{c.id}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
