@@ -143,8 +143,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [sleepSetupOpen, setSleepSetupOpen] = useState(() => !getSleepSetting());
   const [setupMode, setSetupMode] = useState("manual"); // 'manual' | 'irregular'
   const [setupBaseIdx, setSetupBaseIdx] = useState(() => sleepBaseIdx(getSleepSetting()?.base));
+  // 관리자(닉네임 BMTI)는 월 1회 제한 없이 항상 변경 가능
+  const canChangeSleep = () => isAdmin || canChangeSleepSetting();
   const confirmSleepSetup = () => {
-    if (!canChangeSleepSetting() && sleepSetting) { alert("기본 수면시간은 한 달에 한 번만 바꿀 수 있어요. 다음 달에 다시 시도해주세요."); return; }
+    if (!canChangeSleep() && sleepSetting) { alert("기본 수면시간은 한 달에 한 번만 바꿀 수 있어요. 다음 달에 다시 시도해주세요."); return; }
     const base = setupMode === "manual" ? SLEEP_HOURS[setupBaseIdx] : null;
     const v = setSleepSetting(setupMode, base);
     setSleepSettingState(v);
@@ -152,10 +154,42 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     setSleepSetupOpen(false);
   };
   const openSleepSetup = () => {
-    if (!canChangeSleepSetting()) { alert("기본 수면시간은 한 달에 한 번만 바꿀 수 있어요. 다음 달에 다시 시도해주세요."); return; }
+    if (!canChangeSleep()) { alert("기본 수면시간은 한 달에 한 번만 바꿀 수 있어요. 다음 달에 다시 시도해주세요."); return; }
     setSetupMode(sleepSetting?.mode || "manual");
     setSetupBaseIdx(sleepBaseIdx(sleepSetting?.base));
     setSleepSetupOpen(true);
+  };
+  // 시간 무한 스크롤 캐러셀 — 리스트를 여러 번 반복하고, 끝 근처에 가면 가운데 복사본으로 슬쩍 되돌린다.
+  const SLEEP_SLOT = 96, SLEEP_REPEAT = 21;
+  const sleepScrollRef = useRef(null);
+  const sleepIdleRef = useRef(null);
+  const [sleepCenterAbs, setSleepCenterAbs] = useState(() => Math.floor(SLEEP_REPEAT / 2) * SLEEP_HOURS.length + sleepBaseIdx(getSleepSetting()?.base));
+  useEffect(() => {
+    if (!sleepSetupOpen) return;
+    const el = sleepScrollRef.current; if (!el) return;
+    const mid = Math.floor(SLEEP_REPEAT / 2) * SLEEP_HOURS.length + setupBaseIdx;
+    el.scrollLeft = mid * SLEEP_SLOT;
+    setSleepCenterAbs(mid);
+  }, [sleepSetupOpen]);
+  const onSleepScroll = () => {
+    const el = sleepScrollRef.current; if (!el) return;
+    const total = SLEEP_REPEAT * SLEEP_HOURS.length;
+    const idx = Math.max(0, Math.min(total - 1, Math.round(el.scrollLeft / SLEEP_SLOT)));
+    setSleepCenterAbs(idx);
+    const len = SLEEP_HOURS.length;
+    setSetupBaseIdx(((idx % len) + len) % len);
+    if (setupMode !== "manual") setSetupMode("manual");
+    clearTimeout(sleepIdleRef.current);
+    sleepIdleRef.current = setTimeout(() => {
+      const e2 = sleepScrollRef.current; if (!e2) return;
+      const i = Math.round(e2.scrollLeft / SLEEP_SLOT);
+      if (i < len || i >= (SLEEP_REPEAT - 1) * len) {
+        const m = ((i % len) + len) % len;
+        const target = Math.floor(SLEEP_REPEAT / 2) * len + m;
+        e2.scrollLeft = target * SLEEP_SLOT;
+        setSleepCenterAbs(target);
+      }
+    }, 150);
   };
 
   // 오늘의 태그(여러 개)
@@ -493,31 +527,33 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           {sleepSetupOpen ? (
             /* 첫 진입/변경 — 기준 수면 설정 선택 화면 */
             <div style={{ marginTop: 16, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 14px" }}>
-              {/* 주로 잠드는 시간대 — 가운데만 크게, 좌우 하나씩 작게. 화살표/양옆을 눌러 스크롤 */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: setupMode === "manual" ? 1 : 0.5 }} onClick={() => setSetupMode("manual")}>
-                <button onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.max(SLEEP_BASE_MIN, i - 1)); }}
-                  style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 16, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>‹</button>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 52 }}>
-                  <span onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.max(SLEEP_BASE_MIN, i - 1)); }}
-                    style={{ flex: 1, textAlign: "right", fontSize: 12, fontWeight: 600, color: C.tileOffText, cursor: "pointer" }}>{setupBaseIdx > SLEEP_BASE_MIN ? SLEEP_HOURS[setupBaseIdx - 1] : ""}</span>
-                  <span style={{ fontSize: 21, fontWeight: 900, color: C.gold, minWidth: 92, textAlign: "center", whiteSpace: "nowrap" }}>{SLEEP_HOURS[setupBaseIdx]}</span>
-                  <span onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.min(SLEEP_BASE_MAX, i + 1)); }}
-                    style={{ flex: 1, textAlign: "left", fontSize: 12, fontWeight: 600, color: C.tileOffText, cursor: "pointer" }}>{setupBaseIdx < SLEEP_BASE_MAX ? SLEEP_HOURS[setupBaseIdx + 1] : ""}</span>
+              {/* 주로 잠드는 시간대 — 가운데만 크게(연보라), 좌우 얇은 옐로우 선. 좌우로 스크롤(무한) */}
+              <div style={{ position: "relative", opacity: setupMode === "manual" ? 1 : 0.5 }} onClick={() => setSetupMode("manual")}>
+                <div ref={sleepScrollRef} onScroll={onSleepScroll} className="sleep-scroll"
+                  style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", paddingLeft: `calc(50% - ${SLEEP_SLOT / 2}px)`, paddingRight: `calc(50% - ${SLEEP_SLOT / 2}px)`, scrollbarWidth: "none" }}>
+                  {Array.from({ length: SLEEP_REPEAT * SLEEP_HOURS.length }).map((_, k) => {
+                    const on = k === sleepCenterAbs;
+                    return <div key={k} style={{ width: SLEEP_SLOT, flexShrink: 0, scrollSnapAlign: "center", textAlign: "center", padding: "14px 0", fontSize: on ? 21 : 13, fontWeight: on ? 900 : 600, color: on ? "#8B7BD8" : C.tileOffText, transition: "color .15s, font-size .15s", whiteSpace: "nowrap" }}>{SLEEP_HOURS[k % SLEEP_HOURS.length]}</div>;
+                  })}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setSetupMode("manual"); setSetupBaseIdx(i => Math.min(SLEEP_BASE_MAX, i + 1)); }}
-                  style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: C.ink, fontSize: 16, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>›</button>
+                <div style={{ position: "absolute", top: 8, bottom: 8, left: `calc(50% - ${SLEEP_SLOT / 2}px)`, width: 2, background: C.yellowLine, pointerEvents: "none", borderRadius: 2 }} />
+                <div style={{ position: "absolute", top: 8, bottom: 8, left: `calc(50% + ${SLEEP_SLOT / 2}px)`, width: 2, background: C.yellowLine, pointerEvents: "none", borderRadius: 2, transform: "translateX(-2px)" }} />
+                <style>{`.sleep-scroll::-webkit-scrollbar{display:none}`}</style>
               </div>
 
-              {/* 불규칙 */}
-              <button onClick={() => setSetupMode("irregular")}
-                style={{ width: "100%", marginTop: 12, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer",
-                  border: `2px solid ${setupMode === "irregular" ? C.gold : C.yellowLine}` }}>
-                저는 잠드는 시간이 불규칙해요
+              {/* 설정 버튼 — 흰 배경·검정 글씨·연보라 테두리, 시간은 연보라 강조 */}
+              <button onClick={confirmSleepSetup}
+                style={{ width: "100%", marginTop: 14, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13.5, fontWeight: 800, cursor: "pointer", border: "2px solid #C9BEF0", lineHeight: 1.45, whiteSpace: "pre-line" }}>
+                {setupMode === "irregular"
+                  ? "저는 잠드는 시간이 불규칙해요.\n이렇게 기억해줘요"
+                  : <>저는 주로 <span style={{ color: "#8B7BD8", fontWeight: 900 }}>{SLEEP_HOURS[setupBaseIdx]}</span>에 잠들어요.{"\n"}이렇게 기억해줘요</>}
               </button>
 
-              <button onClick={confirmSleepSetup}
-                style={{ width: "100%", marginTop: 12, padding: "12px", borderRadius: 12, border: "none", background: C.gold, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer", lineHeight: 1.45, whiteSpace: "pre-line" }}>
-                {setupMode === "irregular" ? "저는 잠드는 시간이 불규칙해요.\n이렇게 기억해줘요" : `저는 주로 ${SLEEP_HOURS[setupBaseIdx]}에 잠들어요.\n이렇게 기억해줘요`}
+              {/* 불규칙 — 설정 버튼 밑으로 */}
+              <button onClick={() => setSetupMode("irregular")}
+                style={{ width: "100%", marginTop: 10, padding: "12px", borderRadius: 12, background: "#fff", color: C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer",
+                  border: `2px solid ${setupMode === "irregular" ? C.gold : C.yellowLine}` }}>
+                저는 잠드는 시간이 불규칙해요
               </button>
             </div>
           ) : (

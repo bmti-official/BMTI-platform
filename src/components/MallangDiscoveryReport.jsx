@@ -2144,8 +2144,6 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> });
   add("weekday", ins.weekdaySore, <WeekdayDrainCard data={ins.weekdaySore} />, exIns.weekdaySore && <WeekdayDrainCard data={exIns.weekdaySore} />);
   items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} /> }); // 요일 방전 패턴 밑 — 말랑이의 밤
-  add("mindbody", ins.mindBody, <MindBodyLinkCard data={ins.mindBody} />, exIns.mindBody && <MindBodyLinkCard data={exIns.mindBody} />);
-  add("butterfly", ins.butterfly, <ButterflyCard data={ins.butterfly} />, exIns.butterfly && <ButterflyCard data={exIns.butterfly} />);
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
@@ -2335,10 +2333,17 @@ function TrendChartsCard({ entries, exampleEntries }) {
   const lastDay = new Date(yy, mm, 0).getDate();
   const weekRanges = [[1, 7], [8, 14], [15, 21], [22, lastDay]];
 
+  // 불편함을 기록한 부위 목록(많이 기록한 순) — 우측 상단 드롭다운, 기본값=최다 부위
+  const partCounts = {};
+  src.forEach((e) => (e.soreness || []).forEach((s) => { if (s && s.part) partCounts[s.part] = (partCounts[s.part] || 0) + 1; }));
+  const partList = Object.keys(partCounts).sort((a, b) => partCounts[b] - partCounts[a]);
+  const [sorePart, setSorePart] = useState(partList[0] || null);
+  const activePart = sorePart && partCounts[sorePart] ? sorePart : (partList[0] || null);
+
   const dayData = {};
   src.forEach((e) => {
     const dom = Number(e.date.slice(8, 10));
-    const arr = (e.soreness || []).map((s) => s.level).filter((v) => typeof v === "number");
+    const arr = (e.soreness || []).filter((s) => !activePart || s.part === activePart).map((s) => s.level).filter((v) => typeof v === "number");
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
   const fw = weekRanges.findIndex(([a, b]) => { for (let d = a; d <= b; d++) if (dayData[d]) return true; return false; });
@@ -2375,9 +2380,17 @@ function TrendChartsCard({ entries, exampleEntries }) {
 
   const body = (
     <div>
-      {/* 불편함 정도 막대그래프 */}
-      <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, marginBottom: 9, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 9, height: 9, borderRadius: 3, background: "#E0554F" }} /> 불편함 정도
+      {/* 불편함 정도 막대그래프 (+ 부위 선택 드롭다운) */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9, gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 800, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: "#E0554F" }} /> 불편함 정도
+        </span>
+        {partList.length > 0 && (
+          <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
+            style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
+            {partList.map((pid) => <option key={pid} value={pid}>{PARTS[pid] || pid} ({partCounts[pid]})</option>)}
+          </select>
+        )}
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, height: barH + 16, padding: "0 2px" }}>
         {cats.map((c, i) => {
