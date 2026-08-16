@@ -452,19 +452,24 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
               const topMood = find("mood_distribution")?.data?.top || null;
               const exTopMood = exFind("mood_distribution")?.data?.top || null;
               const gender = userData?.kakao_gender || userData?.kakaoGender;
-              return report.sections.map((s) => {
+              // 잠긴(아직 발견된 내용이 없는) 카드는 제일 밑으로 모은다.
+              const items = [];
+              report.sections.forEach((s) => {
                 // 무리·움직임·쉬어감 세 카드는 '활동량 요약' 하나로, '불편했던 순간'은 '바디 스캔'에 합친다.
-                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments") return null;
+                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments") return;
                 if (s.id === "movement") {
-                  return <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
-                    exTopMood={exTopMood} exMove={exFind("movement")} exRest={exFind("rest")} exOver={exFind("overwork")} />;
+                  const locked = !(find("movement")?.unlocked || find("rest")?.unlocked || find("overwork")?.unlocked);
+                  items.push({ locked, node: <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
+                    exTopMood={exTopMood} exMove={exFind("movement")} exRest={exFind("rest")} exOver={exFind("overwork")} /> });
+                  return;
                 }
                 const card = <SectionCard key={s.id} section={s} gender={gender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null}
                   exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} />;
                 // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
-                if (s.id === "notes") return <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment>;
-                return card;
+                if (s.id === "notes") { items.push({ locked: !s.unlocked, node: <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment> }); return; }
+                items.push({ locked: !s.unlocked, node: card });
               });
+              return [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)].map((i) => i.node);
             })()}
           </div>
         ) : (
@@ -2128,20 +2133,31 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const profileSummary = buildProfileSummary(userData);
   const hasProfile = !!(profileSummary.freq || profileSummary.goals.length || profileSummary.posture || profileSummary.sore.length);
   const exProfile = buildProfileSummary(EXAMPLE_USER);
+  // 잠긴(아직 발견된 내용이 없는) 카드는 제일 밑으로 모은다. '회복력 탄성 지수' 카드는 제거.
+  const items = [];
+  const add = (key, cond, realNode, exNode) => {
+    if (cond) items.push({ locked: false, node: <Fragment key={key}>{realNode}</Fragment> });
+    else if (exNode) items.push({ locked: true, node: <Fragment key={key}>{lock(exNode)}</Fragment> });
+  };
+  const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
+  items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> });
+  add("weekday", ins.weekdaySore, <WeekdayDrainCard data={ins.weekdaySore} />, exIns.weekdaySore && <WeekdayDrainCard data={exIns.weekdaySore} />);
+  add("mindbody", ins.mindBody, <MindBodyLinkCard data={ins.mindBody} />, exIns.mindBody && <MindBodyLinkCard data={exIns.mindBody} />);
+  add("butterfly", ins.butterfly, <ButterflyCard data={ins.butterfly} />, exIns.butterfly && <ButterflyCard data={exIns.butterfly} />);
+  add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
+  add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
+  add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
+  if (female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
+  items.push({ locked: false, node: <WeatherFindingCards key="weather" entries={entries} onWeatherUpdated={onWeatherUpdated} /> });
+  const fcUnlocked = !!(ins.factcheck || hasProfile);
+  if (fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
+  else if (exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
+  items.push({ locked: false, node: <LetterCard key="letter" data={ins.letter} isM={isM} bmtiCode={bmtiCode} /> });
+
+  const ordered = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <TrendChartsCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />
-      {ins.weekdaySore ? <WeekdayDrainCard data={ins.weekdaySore} /> : (exIns.weekdaySore && lock(<WeekdayDrainCard data={exIns.weekdaySore} />))}
-      {ins.mindBody ? <MindBodyLinkCard data={ins.mindBody} /> : (exIns.mindBody && lock(<MindBodyLinkCard data={exIns.mindBody} />))}
-      {ins.butterfly ? <ButterflyCard data={ins.butterfly} /> : (exIns.butterfly && lock(<ButterflyCard data={exIns.butterfly} />))}
-      {ins.recovery ? <RecoveryCard data={ins.recovery} /> : (exIns.recovery && lock(<RecoveryCard data={exIns.recovery} />))}
-      {ins.streak ? <StreakCard data={ins.streak} /> : (exIns.streak && lock(<StreakCard data={exIns.streak} />))}
-      {ins.effort ? <EffortCard data={ins.effort} /> : (exIns.effort && lock(<EffortCard data={exIns.effort} />))}
-      {ins.logged ? <LampClockCard data={ins.logged} nickname={nickname} /> : (exIns.logged && lock(<LampClockCard data={exIns.logged} nickname={nickname} />))}
-      {female && (ins.dday ? <DdayCard data={ins.dday} /> : (exIns.dday && lock(<DdayCard data={exIns.dday} />)))}
-      <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />
-      {(ins.factcheck || hasProfile) ? <FactCheckCard rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> : (exIns.factcheck && lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />))}
-      <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} />
+      {ordered.map((i) => i.node)}
     </div>
   );
 }
