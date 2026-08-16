@@ -39,7 +39,7 @@ export default function DiaryCta({ loggedToday, onGoDiary, onGoDiscovery, classN
     <span className={`relative inline-block ${className}`}>
       <button onClick={onClick} className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
         <span className="w-8 h-8 flex items-center justify-center shrink-0"><Mallang v={mood} size={31} noBlink /></span>
-        <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">{label}</span>
+        <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>{label}</span>
         <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
       </button>
       {!loggedToday && (

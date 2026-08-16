@@ -39,10 +39,13 @@ function TypeGrid({ onPick, onClose }) {
   return (
     <div className="max-w-md mx-auto px-5 pt-6 pb-28">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-[19px] font-black text-gray-900">다른 유형 구경하기</h2>
+        <h2 className="text-[19px] font-black text-gray-900 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] text-gray-800" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+          다른 유형 구경하기
+        </h2>
         <button onClick={onClose} aria-label="닫기" className="text-gray-400 hover:text-gray-700 text-2xl leading-none">✕</button>
       </div>
-      <p className="text-[13px] text-gray-500 mb-6 break-keep">궁금한 유형을 눌러 <b className="text-gray-700">예시 결과지</b>를 살펴보세요.</p>
+      <p className="text-[13px] text-gray-500 mb-6 break-keep">궁금한 유형을 눌러 <b style={{ color: '#8B7BD8' }}>예시 결과지</b>를 살펴보세요.</p>
 
       <div className="rounded-[1.6rem] bg-white border border-[#F3EFE6] p-3.5" style={{ boxShadow: YELLOW_SHADOW }}>
         <div className="grid grid-cols-4 gap-2.5">
@@ -75,17 +78,20 @@ function TypePreview({ code, onBack, onClose }) {
 
   return (
     <div className="max-w-md mx-auto pb-28">
-      {/* 예시 안내 배너 — 실제 내 결과와 헷갈리지 않도록 상단 고정 */}
-      <div className="sticky top-0 z-10 bg-[#C9975A] text-white px-5 py-3 flex items-center justify-between shadow-md">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-bold active:opacity-70">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+      {/* 상단 — 바 없이 알약 버튼(유형 목록·✕)과 큰 검은 타이틀 */}
+      <div className="flex items-center justify-between px-5 pt-5">
+        <button onClick={onBack} className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 shadow-sm px-3.5 py-2 text-[13px] font-bold text-gray-700 active:scale-95 transition">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           유형 목록
         </button>
-        <span className="text-[13px] font-black tracking-tight">🔍 예시 결과지</span>
-        <button onClick={onClose} aria-label="닫기" className="text-white/90 hover:text-white text-xl leading-none">✕</button>
+        <button onClick={onClose} aria-label="닫기" className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 text-lg active:scale-95 transition">✕</button>
+      </div>
+      <div className="text-center text-[22px] font-black text-gray-900 mt-3 mb-4 flex items-center justify-center gap-1.5">
+        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+        예시 결과지
       </div>
 
-      <div className="px-5 pt-4">
+      <div className="px-5">
         <div className="rounded-[1.2rem] bg-[#FBF4EA] border border-[#EBD8B8] px-4 py-3 mb-5 text-center">
           <p className="text-[13px] font-bold text-[#8A6A34] break-keep leading-relaxed">
             내 실제 유형이 아니라,
@@ -169,7 +175,7 @@ function TypePreview({ code, onBack, onClose }) {
         </div>
 
         <p className="text-center text-[12px] text-gray-400 mt-6 break-keep">
-          여기까지가 예시 미리보기예요. 내 유형의 전체 결과지는 BMTI 테스트로 확인할 수 있어요.
+          여기까지가 예시 미리보기예요.<br />내 유형의 전체 결과지는 BMTI 테스트로 확인할 수 있어요.
         </p>
         <button
           onClick={onBack}

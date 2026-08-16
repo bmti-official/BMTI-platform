@@ -3,8 +3,9 @@ import { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES, CODE_KO } from '../data';
-import DiaryCta from './DiaryCta';
+import DiaryCta, { YELLOW_HL } from './DiaryCta';
 import TypeGallery from './TypeGallery';
+import BingoGallery from './BingoGallery';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
@@ -122,6 +123,7 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
 const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, onRequireLogin, bmtiCode, bmtiAnswers, userProfile }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showBingo, setShowBingo] = useState(false);
   // 오늘 건강 다이어리 기록 완료 여부 — CTA 문구(기록하기 vs 기록·발견)를 가른다
   const hasLoggedToday = !!getEntryForDate(todayISO());
   const printHeaderRef = useRef(null);
@@ -304,9 +306,13 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
   return (
     <div className="min-h-screen pt-32 md:pt-40 pb-32 px-6 max-w-2xl mx-auto fade-in">
-      <div className="text-center mb-10">
+      <div className="text-center mb-8">
         <p className="text-gray-500 mb-2 font-medium tracking-widest text-sm">ANALYSIS COMPLETE</p>
         <h2 className="text-3xl md:text-4xl font-serif font-bold">내 BMTI 유형은</h2>
+        {/* 건강 다이어리 CTA — '내 BMTI 유형은' 바로 밑 */}
+        <div className="w-full flex justify-center mt-6">
+          <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
+        </div>
       </div>
 
       {/* Brief Character Card */}
@@ -464,9 +470,8 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
         </div>
       </div>
-        {/* CTA 줄 — 기록 CTA와 '다른 유형 구경하기'(둘 다 동일한 글씨·화살표 동그란 버튼 스타일). '실패 없는 운동 강사 고르는 방법' 박스 위 */}
+        {/* CTA 줄 — '다른 유형 구경하기' + 'BMTI 빙고판 하러가기'(형광펜 글자). '실패 없는 운동 강사 고르는 방법' 박스 위 */}
         <div className="w-full flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mb-8">
-          <DiaryCta loggedToday={hasLoggedToday} onGoDiary={() => setView('aichat')} />
           <button
             onClick={() => setShowGallery(true)}
             className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
@@ -474,11 +479,20 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <span className="w-8 h-8 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
             </span>
-            <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">다른 유형 구경하기</span>
+            <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
+            <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+          </button>
+          <button
+            onClick={() => setShowBingo(true)}
+            className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
+          >
+            <span className="w-8 h-8 flex items-center justify-center shrink-0 text-lg">⭐️</span>
+            <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>BMTI 빙고판 하러가기</span>
             <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
           </button>
         </div>
         {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
+        {showBingo && <BingoGallery onClose={() => setShowBingo(false)} />}
         <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
           {/* Custom Instructor Guide Section */}
           <div className="border-b border-gray-100 pb-12 text-left">

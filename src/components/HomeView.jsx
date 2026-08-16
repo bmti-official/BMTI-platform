@@ -11,6 +11,7 @@ import BmtiRelationMap from './BmtiRelationMap';
 import DiaryCta from './DiaryCta';
 import TypeGallery from './TypeGallery';
 import BingoGallery from './BingoGallery';
+import { YELLOW_HL } from './DiaryCta';
 import BmtiGuidePopup from './BmtiGuidePopup';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
@@ -288,7 +289,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <span className="w-8 h-8 flex items-center justify-center shrink-0">
             <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
           </span>
-          <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">다른 유형 구경하기</span>
+          <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
           <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>
         <button
@@ -296,7 +297,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
         >
           <span className="w-8 h-8 flex items-center justify-center shrink-0 text-lg">⭐️</span>
-          <span className="text-[13px] md:text-base font-extrabold text-gray-800 whitespace-nowrap">BMTI 빙고판 하러가기</span>
+          <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>BMTI 빙고판 하러가기</span>
           <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>
       </div>
