@@ -23,6 +23,7 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
+import { getSleepSetting, sleepWindow, SLEEP_IRREGULAR_OPTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
 import bodyFemaleBack from "../assets/3d_body/female_back.png";
@@ -456,7 +457,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
               const items = [];
               report.sections.forEach((s) => {
                 // 무리·움직임·쉬어감 세 카드는 '활동량 요약' 하나로, '불편했던 순간'은 '바디 스캔'에 합친다.
-                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments") return;
+                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments" || s.id === "sleep") return; // 수면(말랑이의 밤)은 '이번 달 발견'으로 옮김
                 if (s.id === "movement") {
                   const locked = !(find("movement")?.unlocked || find("rest")?.unlocked || find("overwork")?.unlocked);
                   items.push({ locked, node: <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
@@ -2142,6 +2143,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> });
   add("weekday", ins.weekdaySore, <WeekdayDrainCard data={ins.weekdaySore} />, exIns.weekdaySore && <WeekdayDrainCard data={exIns.weekdaySore} />);
+  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} /> }); // 요일 방전 패턴 밑 — 말랑이의 밤
   add("mindbody", ins.mindBody, <MindBodyLinkCard data={ins.mindBody} />, exIns.mindBody && <MindBodyLinkCard data={exIns.mindBody} />);
   add("butterfly", ins.butterfly, <ButterflyCard data={ins.butterfly} />, exIns.butterfly && <ButterflyCard data={exIns.butterfly} />);
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
@@ -2442,6 +2444,79 @@ function TrendChartsCard({ entries, exampleEntries }) {
   );
 
   return hasEnough ? card : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{card}</LockedPreview>;
+}
+
+// 말랑이의 밤 — 잠든 시간대(횟수)와 수면의 질을 막대·꺾은선으로. 설정 모드에 따라 둘의 막대/선이 서로 바뀐다.
+function MallangNightCard({ entries }) {
+  const setting = getSleepSetting();
+  const irregular = setting?.mode === "irregular";
+  const buckets = irregular ? SLEEP_IRREGULAR_OPTS : sleepWindow(setting?.base);
+  const days = (entries || []).filter((e) => e && e.sleepTime && buckets.includes(e.sleepTime));
+  if (days.length < 1) return null;
+
+  const counts = buckets.map((bk) => days.filter((d) => d.sleepTime === bk).length);
+  const quals = buckets.map((bk) => {
+    const q = days.filter((d) => d.sleepTime === bk && typeof d.sleep === "number").map((d) => d.sleep);
+    return q.length ? q.reduce((a, b) => a + b, 0) / q.length : null;
+  });
+  const maxCount = Math.max(...counts, 1);
+  const goldIdx = counts.indexOf(Math.max(...counts));
+
+  // mode1(수동): 시간대=막대, 질=꺾은선 / mode2(불규칙): 시간대=꺾은선, 질=막대
+  const timeBar = !irregular;
+  const nCount = (i) => counts[i] / maxCount;
+  const nQual = (i) => (quals[i] == null ? null : quals[i] / 3);
+  const barOf = (i) => (timeBar ? nCount(i) : nQual(i));
+  const lineOf = (i) => (timeBar ? nQual(i) : nCount(i));
+  const barLabel = timeBar ? "잠든 시간대(횟수)" : "수면의 질";
+  const lineLabel = timeBar ? "수면의 질" : "잠든 시간대(횟수)";
+
+  const N = buckets.length, H = 120, barH = 82, gap = N > 4 ? 5 : 8;
+  const xOf = (i) => ((i + 0.5) / N) * 100;
+  const yOf = (v) => 14 + (1 - v) * 72;
+  let dPath = "", prev = false;
+  buckets.forEach((_, i) => { const v = lineOf(i); if (v == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(v).toFixed(2)}`; prev = true; });
+
+  return (
+    <div style={{ background: "linear-gradient(180deg,#2E2A44,#413A5E)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
+      {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (<span key={i} style={{ position: "absolute", left: `${13 + i * 19}%`, top: `${8 + (i % 2) * 8}%`, color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{s}</span>))}
+      <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>말랑이의 밤</div>
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: "#fff" }}>🌙 이번 달, 나의 밤</div>
+      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 14px", wordBreak: "keep-all" }}>
+        {irregular ? "잠든 타이밍은 꺾은선, 수면의 질은 막대로 봤어요." : "잠든 시간대는 막대, 수면의 질은 꺾은선으로 봤어요."}
+      </p>
+
+      <div style={{ position: "relative", height: H }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, paddingTop: 24 }}>
+          {buckets.map((_, i) => {
+            const bv = barOf(i);
+            const h = bv == null ? 3 : Math.max(4, Math.round(bv * barH));
+            return (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                {i === goldIdx && <span style={{ fontSize: 13, marginBottom: 2, lineHeight: 1 }}>🥇</span>}
+                <div style={{ width: "62%", maxWidth: 20, height: h, borderRadius: 6, background: "linear-gradient(180deg,#FFE39A,#F5C860)", opacity: bv == null ? 0.4 : 1 }} />
+              </div>
+            );
+          })}
+        </div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+          {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+        </svg>
+        {buckets.map((_, i) => { const v = lineOf(i); return v == null ? null : (
+          <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(v)}%`, transform: "translate(-50%,-50%)", width: 8, height: 8, borderRadius: "50%", background: "#9CC6FF", boxShadow: "0 0 0 2px rgba(46,42,68,0.9)" }} />
+        ); })}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", gap, marginTop: 6 }}>
+        {buckets.map((bk, i) => (<span key={i} style={{ flex: 1, textAlign: "center", fontSize: N > 4 ? 9 : 10.5, fontWeight: 700, color: i === goldIdx ? "#FFD98A" : "rgba(255,255,255,0.6)" }}>{bk}</span>))}
+      </div>
+
+      <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 12 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 8, borderRadius: 2, background: "#F5C860" }} />{barLabel}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 2, borderRadius: 2, background: "#9CC6FF" }} />{lineLabel}</span>
+      </div>
+    </div>
+  );
 }
 
 // 요일별 방전 패턴 — 미니 막대그래프 + 최고 요일 강조 + 팩트 체크 코멘트
