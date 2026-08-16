@@ -164,6 +164,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
   const [showPartner, setShowPartner] = useState(false);
   // 검사 전 유저가 '나의유형'을 누르면 뜨는 16유형 구경 갤러리.
   const [showTypeGallery, setShowTypeGallery] = useState(false);
+  const [galleryCode, setGalleryCode] = useState(null); // 공유 링크로 열 때 미리 선택된 유형
+  useEffect(() => {
+    const open = (e) => { setGalleryCode(e.detail || null); setShowTypeGallery(true); };
+    window.addEventListener('bmti:open-gallery', open);
+    return () => window.removeEventListener('bmti:open-gallery', open);
+  }, []);
   const hasLoggedToday = !!getEntryForDate(todayISO());
 
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
@@ -279,7 +285,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       )}
 
       {showTypeGallery && (
-        <TypeGallery onClose={() => setShowTypeGallery(false)} />
+        <TypeGallery
+          initialCode={galleryCode}
+          hasBmti={!!bmtiCode}
+          onStartTest={() => { setShowTypeGallery(false); setGalleryCode(null); setView('quiz'); }}
+          onClose={() => { setShowTypeGallery(false); setGalleryCode(null); }}
+        />
       )}
 
       {showDiscConsent && (

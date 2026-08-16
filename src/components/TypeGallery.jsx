@@ -20,13 +20,13 @@ function renderHlQuote(q, active, level, color) {
 
 // 다른 유형 구경하기 — 16가지 유형(4×4)의 누끼 캐릭터를 보여주고,
 // 하나를 고르면 '확신의' 기준 예시 결과지(성향 박스까지만, 아코디언 없음)를 띄운다.
-export default function TypeGallery({ onClose }) {
-  const [selected, setSelected] = useState(null);
+export default function TypeGallery({ onClose, initialCode = null, hasBmti = false, onStartTest }) {
+  const [selected, setSelected] = useState(initialCode || null);
 
   const overlay = (
     <div className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
       {selected ? (
-        <TypePreview code={selected} onBack={() => setSelected(null)} onClose={onClose} />
+        <TypePreview code={selected} hasBmti={hasBmti} onStartTest={onStartTest} onBack={() => setSelected(null)} onClose={onClose} />
       ) : (
         <TypeGrid onPick={setSelected} onClose={onClose} />
       )}
@@ -67,7 +67,7 @@ function TypeGrid({ onPick, onClose }) {
   );
 }
 
-function TypePreview({ code, onBack, onClose }) {
+function TypePreview({ code, onBack, onClose, hasBmti = false, onStartTest }) {
   const charData = CHARACTERS.find(c => c.id === code);
   const info = BMTI_INFO[code] || {};
   const resultData = BMTI_RESULTS[code] || {};
@@ -78,26 +78,36 @@ function TypePreview({ code, onBack, onClose }) {
 
   return (
     <div className="max-w-md mx-auto pb-28">
-      {/* 상단 — 바 없이 알약 버튼(유형 목록·✕)과 큰 검은 타이틀 */}
-      <div className="flex items-center justify-between px-5 pt-5">
+      {/* 상단 — 바 없이 '유형 목록'·'✕' 알약과 가운데 '⎷ 예시 결과지'를 한 줄에 */}
+      <div className="relative flex items-center justify-between px-5 pt-5 pb-3">
         <button onClick={onBack} className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 shadow-sm px-3.5 py-2 text-[13px] font-bold text-gray-700 active:scale-95 transition">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           유형 목록
         </button>
+        <span className="absolute left-1/2 -translate-x-1/2 text-[17px] font-black text-gray-900 flex items-center gap-1.5 whitespace-nowrap">
+          <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+          예시 결과지
+        </span>
         <button onClick={onClose} aria-label="닫기" className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 text-lg active:scale-95 transition">✕</button>
-      </div>
-      <div className="text-center text-[22px] font-black text-gray-900 mt-3 mb-4 flex items-center justify-center gap-1.5">
-        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-        예시 결과지
       </div>
 
       <div className="px-5">
-        <div className="rounded-[1.2rem] bg-[#FBF4EA] border border-[#EBD8B8] px-4 py-3 mb-5 text-center">
+        <div className="rounded-[1.2rem] bg-[#FBF4EA] border border-[#EBD8B8] px-4 py-3 mb-3 text-center">
           <p className="text-[13px] font-bold text-[#8A6A34] break-keep leading-relaxed">
             내 실제 유형이 아니라,
             <br /><b>{code} {CODE_KO[code]}</b> 유형을 골랐을 때 보이는 <b>예시</b>예요.
           </p>
         </div>
+
+        {/* 아직 BMTI 결과가 없는 이용자 — 예시 안내 박스 밑에 테스트 유도 */}
+        {!hasBmti && (
+          <button onClick={onStartTest} className="w-full bg-black text-white rounded-2xl py-3.5 mb-5 flex flex-col items-center hover:bg-gray-900 transition-colors active:scale-[0.99]">
+            <span className="text-[15px] font-bold flex items-center gap-1.5">BMTI 테스트 하기!
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </span>
+            <span className="text-[11px] text-white/70 font-medium mt-0.5">2분이면 끝나요 · 로그인 없이 가능</span>
+          </button>
+        )}
 
         {/* 히어로 — 캐릭터 이미지 + 별명 + 코드 + 캐치프레이즈 */}
         <div className="bg-white border border-gray-200 rounded-[2rem] px-5 pt-0 pb-8 shadow-sm overflow-hidden">

@@ -12,17 +12,20 @@ import SavePromptModal from './components/SavePromptModal';
 import InstallPrompt from './components/InstallPrompt';
 function App() {
   const initialHash = window.location.hash.replace('#', '');
+  // 공유 링크(#example-XXXX) — 받은 사람을 그 유형의 '예시 결과지'(다른 유형 구경하기)로 보낸다.
+  const exampleCode = initialHash.startsWith('example-') ? initialHash.slice('example-'.length) : null;
+  const hashCode = (initialHash && initialHash !== 'quiz' && !exampleCode) ? initialHash : null;
   // 재방문(다이어리 온보딩을 마친) 유저는 첫 화면을 다이어리로 연다. 단, 링크에 해시가 있으면 그 화면 우선.
   const isReturningDiaryUser = (() => { try { return localStorage.getItem('bmti_diary_onboarded') === '1'; } catch { return false; } })();
   const [currentView, setCurrentView] = useState(
-    initialHash === 'quiz' ? 'quiz' : (initialHash ? 'result' : (isReturningDiaryUser ? 'aichat' : 'home'))
+    initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'home' : (isReturningDiaryUser ? 'aichat' : 'home')))
   );
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [bmtiCode, setBmtiCode] = useState(() => {
-    if (initialHash && initialHash !== 'quiz') return initialHash;
+    if (hashCode) return hashCode;
     const saved = localStorage.getItem('bmti_code');
     return saved || '';
   }); // e.g. "ALDZ-Tl"
@@ -34,6 +37,13 @@ function App() {
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [pendingView, setPendingView] = useState(null);
   const savePromptShownRef = useState(() => ({ current: false }))[0];
+
+  // 공유 링크(#example-XXXX)로 들어오면 그 유형의 '예시 결과지'를 연다. (Navbar가 이벤트를 받아 갤러리를 띄움)
+  useEffect(() => {
+    if (!exampleCode) return;
+    const id = setTimeout(() => window.dispatchEvent(new CustomEvent('bmti:open-gallery', { detail: exampleCode })), 150);
+    return () => clearTimeout(id);
+  }, []);
 
   const handleViewChange = (nextView) => {
     // 비로그인 + bmtiCode 존재(테스트 완료) + 아직 팝업 안 뜸 + result에서 다른 탭으로 이동

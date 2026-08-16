@@ -124,8 +124,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   // (카카오 SDK 경로는 카카오 앱에 등록된 도메인/캐시에 따라 예전 주소로 갈 수 있어 폴백으로 둔다.)
   const shareToFriend = () => {
     const siteUrl = 'https://bmti-official.co.kr/';
-    // 공유자의 유형 결과지로 — 받은 사람이 이 유형을 보고 '다른 유형 구경하기'로 이어갈 수 있다.
-    const shareUrl = `${siteUrl}#${axisCode}`;
+    // 받은 사람은 공유자 유형의 '예시 결과지'(다른 유형 구경하기)로 바로 들어온다.
+    const shareUrl = `${siteUrl}#example-${axisCode}`;
     const nick = CHARACTER_NAMES[axisCode] || axisCode;
     const title = `나의 BMTI는 ${axisCode} · ${nick}!`;
     const text = `${(charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ')} — 나와 다른 유형도 구경해보세요! 다른 유형 구경하기 →`;
@@ -302,7 +302,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>
       </div>
-      {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
+      {showGallery && <TypeGallery hasBmti={!!bmtiCode} onStartTest={() => { setShowGallery(false); setView('quiz'); }} onClose={() => setShowGallery(false)} />}
       {showBingo && <BingoGallery onClose={() => setShowBingo(false)} />}
 
       {/* BMTI 유형 관계도 — 16가지 유형이 어떻게 이어지는지 보여주는 지도 */}

@@ -265,8 +265,8 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       return;
     }
     const imageUrl = charData ? new URL(charData.originalImage, window.location.href).href : undefined;
-    // 공유자의 유형 결과지로 — 받은 사람이 이 유형을 보고 '다른 유형 구경하기'로 이어갈 수 있다.
-    const shareUrl = `${siteUrl}#${axisCode}`;
+    // 받은 사람은 공유자 유형의 '예시 결과지'(다른 유형 구경하기)로 바로 들어온다.
+    const shareUrl = `${siteUrl}#example-${axisCode}`;
 
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
@@ -492,7 +492,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
           </button>
         </div>
-        {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
+        {showGallery && <TypeGallery hasBmti={!!bmtiCode} onStartTest={() => { setShowGallery(false); setView('quiz'); }} onClose={() => setShowGallery(false)} />}
         {showBingo && <BingoGallery onClose={() => setShowBingo(false)} />}
         <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
           {/* Custom Instructor Guide Section */}
