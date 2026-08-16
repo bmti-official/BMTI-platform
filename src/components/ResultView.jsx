@@ -265,18 +265,19 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       return;
     }
     const imageUrl = charData ? new URL(charData.originalImage, window.location.href).href : undefined;
+    // 공유자의 유형 결과지로 — 받은 사람이 이 유형을 보고 '다른 유형 구경하기'로 이어갈 수 있다.
     const shareUrl = `${siteUrl}#${axisCode}`;
 
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        title: `나는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode}!`,
-        description: info.catchphrase.replace('\n', ' '),
+        title: `나의 BMTI는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode} (${axisCode})!`,
+        description: `${info.catchphrase.replace('\n', ' ')}\n나와 다른 유형도 구경해보세요!`,
         imageUrl,
         link: { webUrl: shareUrl, mobileWebUrl: shareUrl },
       },
       buttons: [
-        { title: "내 몸이 원하는 '🧘🏻‍♀️움직임 성향' 확인하기", link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } },
+        { title: '다른 유형 구경하기 →', link: { webUrl: shareUrl, mobileWebUrl: shareUrl } },
       ],
     });
   };

@@ -464,7 +464,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     }
     if (id === "sleep") {
       return (
-        <AccordionCard question="전날 밤 잘 잤어요" answerIcon={sleepOpt?.icon} answerText={sleepVal}
+        <AccordionCard question="전날 밤 잘 잤어요?" answerIcon={sleepOpt?.icon} answerText={sleepVal}
           expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
           <div style={{ display: "flex", gap: 6 }}>
             {SLEEP_OPTS.map(opt => (

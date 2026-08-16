@@ -124,10 +124,11 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   // (카카오 SDK 경로는 카카오 앱에 등록된 도메인/캐시에 따라 예전 주소로 갈 수 있어 폴백으로 둔다.)
   const shareToFriend = () => {
     const siteUrl = 'https://bmti-official.co.kr/';
-    // 받은 사람은 공유자의 결과지가 아니라 '설문(#quiz)'으로 보내 직접 검사하게 한다.
-    const shareUrl = `${siteUrl}#quiz`;
-    const title = `나의 BMTI는 ${axisCode}!`;
-    const text = (charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ');
+    // 공유자의 유형 결과지로 — 받은 사람이 이 유형을 보고 '다른 유형 구경하기'로 이어갈 수 있다.
+    const shareUrl = `${siteUrl}#${axisCode}`;
+    const nick = CHARACTER_NAMES[axisCode] || axisCode;
+    const title = `나의 BMTI는 ${axisCode} · ${nick}!`;
+    const text = `${(charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ')} — 나와 다른 유형도 구경해보세요! 다른 유형 구경하기 →`;
     // 1) OS 공유 시트 (모바일: 카카오톡 등 선택 → 링크는 항상 co.kr)
     if (navigator.share) { navigator.share({ title, text, url: shareUrl }).catch(() => {}); return; }
     // 2) 카카오 SDK 공유 카드 (데스크톱 등 네이티브 공유가 없을 때)
@@ -136,7 +137,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       window.Kakao.Share.sendDefault({
         objectType: 'feed',
         content: { title, description: text, imageUrl, link: { webUrl: shareUrl, mobileWebUrl: shareUrl } },
-        buttons: [{ title: '나도 BMTI 검사하기', link: { webUrl: `${siteUrl}#quiz`, mobileWebUrl: `${siteUrl}#quiz` } }],
+        buttons: [{ title: '다른 유형 구경하기 →', link: { webUrl: shareUrl, mobileWebUrl: shareUrl } }],
       });
       return;
     }

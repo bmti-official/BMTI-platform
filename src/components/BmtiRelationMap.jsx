@@ -42,6 +42,13 @@ function extraGoodMatches(code, exclude, n = 2) {
   return all.slice(0, n);
 }
 
+// 환상의 짝꿍 '메인 1개' — A/O(활동↔안정)만 뒤집은 짝.
+// 16유형이 서로 1:1로 짝지어지는 순열(대합)이라, 어떤 유형도 메인으로 안 뽑히거나 두 번 뽑히지 않는다.
+const mainMatchOf = (code) => (code[0] === 'A' ? 'O' : 'A') + code.slice(1);
+const mainReasonOf = (code) => (code[0] === 'A'
+  ? '성향과 관점은 거의 닮았는데 에너지 방향만 서로 반대예요. 활발한 나와 차분한 짝꿍이 만나, 넘치거나 부족한 에너지를 자연스럽게 채워주는 오래 잘 맞는 사이예요.'
+  : '성향과 관점은 거의 닮았는데 에너지 방향만 서로 반대예요. 차분한 나와 활발한 짝꿍이 만나, 넘치거나 부족한 에너지를 자연스럽게 채워주는 오래 잘 맞는 사이예요.');
+
 // 관계도 원 안에서 유독 작게 보이는 누끼들 — 유형별로 살짝 키운다.
 const RELATION_BOOST = {
   ACDM: 1.18, ACQZ: 1.18, ACQM: 1.18, ALDM: 1.18, ALQM: 1.18, OLDM: 1.18, ALDZ: 1.18,
@@ -78,10 +85,10 @@ export default function BmtiRelationMap({ bmtiCode }) {
   const [sel, setSel] = useState(myCode && BMTI_RESULTS[myCode] ? myCode : 'ACDZ');
 
   const res = BMTI_RESULTS[sel] || {};
-  const good = parseMatch(res.goodMatch);
   const bad = parseMatch(res.badMatch);
-  // 환상의 짝꿍 3개: 결과지 대표 짝꿍(있으면) + 어울리는 유형 2개
-  const goodCodes = [good.code, ...extraGoodMatches(sel, [good.code, bad.code].filter(Boolean), good.code ? 2 : 3)].filter(Boolean);
+  // 환상의 짝꿍: 메인 1개(1:1 순열) + 어울리는 유형 2개(메인·조금 다른 템포와 겹치지 않게)
+  const mainCode = mainMatchOf(sel);
+  const goodCodes = [mainCode, ...extraGoodMatches(sel, [mainCode, bad.code].filter(Boolean), 2)];
   const goodSet = new Set(goodCodes);
   const selColor = (BMTI_INFO[sel] || {}).color || '#C9975A';
 
@@ -172,7 +179,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
               >
                 {charOf(code) && <img src={charOf(code).image} alt="" className={charOf(code).imgClass || ''} style={{ width: `${86 * boostOf(code)}%`, height: `${86 * boostOf(code)}%`, objectFit: 'contain' }} />}
                 {isSel && <span className="absolute top-1 left-1 text-[8px] font-extrabold text-white px-1.5 py-0.5 rounded-md" style={{ background: selColor }}>나</span>}
-                {isGood && <span className="absolute top-1 right-1 text-[10px]">💖</span>}
+                {isGood && <span className={`absolute top-1 right-1 leading-none ${code === mainCode ? 'text-[18px] drop-shadow-sm' : 'text-[10px]'}`}>💖</span>}
                 {isBad && <span className="absolute top-1 right-1 text-[10px]">🤔</span>}
               </div>
               <span className="flex flex-col items-center leading-tight" style={{ color: active ? '#1C1A17' : '#9B9489' }}>
@@ -187,8 +194,8 @@ export default function BmtiRelationMap({ bmtiCode }) {
       {/* 이유 카드 — 두 박스의 높이를 동일하게 고정해 유형을 바꿔도 페이지가 흔들리지 않게 한다 */}
       <div className="flex flex-col gap-2.5 mt-6 mb-3">
         <div className="rounded-2xl p-3.5 border overflow-y-auto" style={{ background: '#FDF1F5', borderColor: '#F6D8E2', height: 132 }}>
-          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {good.code ? `${nickOf(good.code)}와 잘 맞는 이유` : '환상의 짝꿍'}</div>
-          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{good.reason || '아직 소개할 짝꿍이 없어요.'}</p>
+          <div className="text-[11.5px] font-extrabold mb-1" style={{ color: GOOD }}>💖 {nickOf(mainCode)}와 잘 맞는 이유</div>
+          <p className="text-[12.5px] text-gray-600 leading-relaxed break-keep">{mainReasonOf(sel)}</p>
           {goodCodes.length > 1 && (
             <p className="text-[11px] font-bold mt-1.5 break-keep" style={{ color: GOOD }}>
               그 밖에 {goodCodes.slice(1).map(nickOf).join(', ')}도 잘 어울려요.
