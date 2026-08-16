@@ -9,6 +9,20 @@ import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 import { BMTI_RESULTS } from '../bmti_results';
 import { INSTRUCTOR_GUIDE_DATA, ESCAPE_DATA, WORST_VIBE_DATA, TENDENCY_DATA } from '../customResultData';
 
+// 4가지 성향 대표 문장에서 항목 메인 색상으로 강조할 핵심 문구
+const TENDENCY_HL = {
+  A: { confident: '몸을 움직여야 오히려 개운해지는', flexible: '가볍게 몸을 움직이면 기분이 훨씬 나아져요' },
+  O: { confident: '조용히 있을 때 진짜 충전되는', flexible: '조용히 쉬는 게 더 잘 맞아요' },
+  C: { confident: "지금 뻐근한 '여기'가 뭔지부터", flexible: '오늘 집중할 부위가 명확해야' },
+  L: { confident: '전체적으로 봐줬으면 해요', flexible: '주변이랑 어떻게 연결됐는지 알면 더 시원해요' },
+  D: { confident: '일단 직접 움직여봐야', flexible: '직접 움직이면서 감을 잡고 싶어요' },
+  Q: { confident: '납득이 돼야 몸이 움직여요', flexible: '이게 왜 좋은지 정도는 알고 싶어요' },
+  Z: { confident: '팩트로 알려주세요', flexible: '지금 뭘 케어해야 하는지' },
+  M: { confident: '다정한 위로가 먼저였으면', flexible: '가벼운 칭찬이나 다정한 격려 한마디' },
+};
+// 각 성향 카드의 메인 색상(축 왼쪽 글자 기준)
+const TENDENCY_HEX = { A: '#FF6B6B', C: '#4ECDC4', D: '#60A5FA', Z: '#A78BFA' };
+
 const getKoreanName = (code) => {
   const map = {
     'ACDZ': '애씨디지', 'ACDM': '애씨디엠', 'ACQZ': '애씨큐지', 'ACQM': '애씨큐엠',
@@ -360,6 +374,15 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 else if (letter1 === 'D') { colorClass = 'bg-[#60A5FA]'; textClass = 'text-[#60A5FA]'; }
                 else if (letter1 === 'Z') { colorClass = 'bg-[#A78BFA]'; textClass = 'text-[#A78BFA]'; }
 
+                const hlPhrase = (TENDENCY_HL[activeLetter] || {})[level];
+                const hlColor = TENDENCY_HEX[letter1] || '#4ECDC4';
+                const renderQuote = () => {
+                  const q = data[level].quote;
+                  if (!hlPhrase || !q.includes(hlPhrase)) return `"${q}"`;
+                  const i = q.indexOf(hlPhrase);
+                  return <>&quot;{q.slice(0, i)}<span style={{ color: hlColor }} className="font-extrabold">{hlPhrase}</span>{q.slice(i + hlPhrase.length)}&quot;</>;
+                };
+
                 return (
                   <div key={letter1} className="md:bg-white md:border md:border-gray-100 md:shadow-[0_4px_20px_rgba(0,0,0,0.03)] md:rounded-3xl p-0 md:p-8 mb-7 md:mb-5 w-full text-left">
                     {/* 유형명(작게) + 게이지를 한 줄에 — 게이지를 우측으로 붙여 자리를 아낀다 */}
@@ -369,14 +392,14 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                         <span className="break-keep">{data[level].modifier} {data.name}</span>
                       </h4>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <div className="w-16 md:w-24 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                          <div className={`${colorClass} h-1.5 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
+                        <div className="w-32 md:w-44 bg-gray-100 rounded-full h-2 overflow-hidden">
+                          <div className={`${colorClass} h-2 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
                         </div>
                         <span className={`${textClass} font-bold text-[11px] md:text-xs w-8 text-right`}>{percent}%</span>
                       </div>
                     </div>
                     <p className="font-bold text-gray-800 text-[15.5px] md:text-[17px] mb-1 leading-relaxed break-keep">
-                      "{data[level].quote}"
+                      {renderQuote()}
                     </p>
                     <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0'}`}>
                       <div className="overflow-hidden">
