@@ -461,16 +461,14 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     return ws.map(w => (w === "기타" ? (sore.whenOthers[p] || "기타") : w)).join("·");
   };
 
-  // 불편한 부위 헤드라인 — 부위마다 시점이 다를 수 있어 부위별로 문장을 따로 만들어 이어붙인다.
-  const soreClauses = sore.parts.map(p => {
+  // 불편한 부위 헤드라인 — 부위마다 시점이 다를 수 있어 부위별로 문장을 따로 만든다.
+  // 부위·불편 정도는 연보라로 강조하려고 구조화해 둔다.
+  const soreClauseData = sore.parts.map(p => {
     const w = whenText(p);
     if (!w) return null;
     const pd = partDisplay(p);
-    return `${w} ${pd}${hasBatchim(pd) ? "이" : "가"} ${sore.levels[p] ?? 5}정도로 불편했`;
+    return { w, pd, suffix: hasBatchim(pd) ? "이" : "가", lvl: sore.levels[p] ?? 5 };
   }).filter(Boolean);
-  const soreHeadline = soreClauses.length > 0
-    ? soreClauses.map((c, i) => i === soreClauses.length - 1 ? `${c}어요` : `${c}고, `).join("")
-    : null;
 
   // "오늘 [허리]와 [목]의 상태는 어땠나요?" — 말랑 정보로 불러온 부위 문구
   const soreQuestion = sore.parts.length > 0
@@ -531,7 +529,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           </div>
           {sleepSetupOpen ? (
             /* 첫 진입/변경 — 기준 수면 설정 선택 화면 */
-            <div style={{ marginTop: 16, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 14px" }}>
+            <div style={{ marginTop: 16, background: C.yellow, border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "16px 14px" }}>
               {/* 현재 선택 문구(버튼 아님) */}
               <div style={{ textAlign: "center", fontSize: 14, fontWeight: 800, color: C.ink, marginBottom: 10 }}>
                 {setupMode === "irregular"
@@ -801,9 +799,11 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               style={{ width: "100%", marginTop: 14, padding: "11px 14px", borderRadius: 14, border: `1px solid ${C.line}`, fontSize: 14, outline: "none", fontFamily: F, boxSizing: "border-box" }} />
           )}
 
-          {soreHeadline && (
+          {soreClauseData.length > 0 && (
             <div style={{ marginTop: 14, padding: "12px 14px", background: "#FAF8F3", borderRadius: 14, fontSize: 13, color: C.sub, fontWeight: 700, lineHeight: 1.5 }}>
-              "{soreHeadline}"
+              "{soreClauseData.map((c, i) => (
+                <span key={i}>{c.w} <span style={{ color: "#8B7BD8", fontWeight: 800 }}>{c.pd}</span>{c.suffix} <span style={{ color: "#8B7BD8", fontWeight: 800 }}>{c.lvl}정도</span>로 불편했{i === soreClauseData.length - 1 ? "어요" : "고, "}</span>
+              ))}"
             </div>
           )}
         </Card>
@@ -1022,7 +1022,7 @@ function Card({ title, action, children }) {
 function Chip({ label, on, onClick, disabled }) {
   return (
     <button onClick={disabled ? undefined : onClick} style={{ flex: "0 0 auto", padding: "9px 15px", borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: disabled ? "default" : "pointer",
-      border: "none", background: on ? getTypeAccent().accent : C.tileOff, color: on ? "#fff" : C.sub, opacity: disabled ? 0.35 : 1, transition: "all .15s" }}>
+      border: on ? "1px solid transparent" : `1px solid ${YELLOW_LINE}`, background: on ? getTypeAccent().accent : YELLOW, color: on ? "#fff" : "#8A7B3E", opacity: disabled ? 0.35 : 1, transition: "all .15s" }}>
       {label}
     </button>
   );

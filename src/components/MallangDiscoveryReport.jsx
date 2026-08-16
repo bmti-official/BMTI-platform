@@ -2143,7 +2143,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> });
   add("weekday", ins.weekdaySore, <WeekdayDrainCard entries={entries} />, exIns.weekdaySore && <WeekdayDrainCard entries={EXAMPLE_ENTRIES} />);
-  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} /> }); // 요일 방전 패턴 밑 — 말랑이의 밤
+  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} nickname={nickname} /> }); // 요일 방전 패턴 밑 — {닉네임}의 밤
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
@@ -2459,74 +2459,114 @@ function TrendChartsCard({ entries, exampleEntries }) {
   return hasEnough ? card : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{card}</LockedPreview>;
 }
 
-// 말랑이의 밤 — 잠든 시간대(횟수)와 수면의 질을 막대·꺾은선으로. 설정 모드에 따라 둘의 막대/선이 서로 바뀐다.
-function MallangNightCard({ entries }) {
+// {닉네임}의 밤 — 주간/일간 토글(기분·불편함 추이와 동일). 잠든 시간대=막대, 수면의 질=꺾은선(4가지 수면 아이콘).
+function MallangNightCard({ entries, nickname }) {
   const setting = getSleepSetting();
   const irregular = setting?.mode === "irregular";
-  const buckets = irregular ? SLEEP_IRREGULAR_OPTS : sleepWindow(setting?.base);
-  const days = (entries || []).filter((e) => e && e.sleepTime && buckets.includes(e.sleepTime));
-  if (days.length < 1) return null;
+  const buckets = irregular ? SLEEP_IRREGULAR_OPTS : sleepWindow(setting?.base); // 이른→늦은 순
+  // 잠든 시간대를 0(가장 이름)~1(가장 늦음) 늦음 정도로 환산 → 막대 높이
+  const bedVal = (st) => { const i = buckets.indexOf(st); return i < 0 ? null : (buckets.length > 1 ? i / (buckets.length - 1) : 0.5); };
 
-  const counts = buckets.map((bk) => days.filter((d) => d.sleepTime === bk).length);
-  const quals = buckets.map((bk) => {
-    const q = days.filter((d) => d.sleepTime === bk && typeof d.sleep === "number").map((d) => d.sleep);
-    return q.length ? q.reduce((a, b) => a + b, 0) / q.length : null;
+  const real = (entries || []).filter((e) => e && e.date && (typeof e.sleep === "number" || (e.sleepTime && buckets.includes(e.sleepTime))));
+  if (real.length < 1) return null;
+
+  const base = real[0].date;
+  const yy = Number(base.slice(0, 4)), mm = Number(base.slice(5, 7));
+  const lastDay = new Date(yy, mm, 0).getDate();
+  const weekRanges = [[1, 7], [8, 14], [15, 21], [22, lastDay]];
+
+  const dayData = {};
+  real.forEach((e) => {
+    const dom = Number(e.date.slice(8, 10));
+    dayData[dom] = { qual: typeof e.sleep === "number" ? e.sleep : null, bed: e.sleepTime ? bedVal(e.sleepTime) : null };
   });
-  const maxCount = Math.max(...counts, 1);
-  const goldIdx = counts.indexOf(Math.max(...counts));
+  const fw = weekRanges.findIndex(([a, b]) => { for (let d = a; d <= b; d++) if (dayData[d]) return true; return false; });
+  const firstDataWeek = fw < 0 ? 0 : fw;
 
-  // mode1(수동): 시간대=막대, 질=꺾은선 / mode2(불규칙): 시간대=꺾은선, 질=막대
-  const timeBar = !irregular;
-  const nCount = (i) => counts[i] / maxCount;
-  const nQual = (i) => (quals[i] == null ? null : quals[i] / 3);
-  const barOf = (i) => (timeBar ? nCount(i) : nQual(i));
-  const lineOf = (i) => (timeBar ? nQual(i) : nCount(i));
-  const barLabel = timeBar ? "잠든 시간대(횟수)" : "수면의 질";
-  const lineLabel = timeBar ? "수면의 질" : "잠든 시간대(횟수)";
+  const [mode, setMode] = useState("weekly");
+  const [weekIdx, setWeekIdx] = useState(firstDataWeek);
 
-  const N = buckets.length, H = 120, barH = 82, gap = N > 4 ? 5 : 8;
+  let cats;
+  if (mode === "weekly") {
+    cats = weekRanges.map(([a, b], i) => {
+      const quals = [], beds = [];
+      for (let d = a; d <= b; d++) if (dayData[d]) { if (dayData[d].qual != null) quals.push(dayData[d].qual); if (dayData[d].bed != null) beds.push(dayData[d].bed); }
+      const avg = (xs) => (xs.length ? xs.reduce((p, q) => p + q, 0) / xs.length : null);
+      return { label: `${i + 1}주`, qual: avg(quals), bed: avg(beds) };
+    });
+  } else {
+    const [a, b] = weekRanges[weekIdx];
+    cats = [];
+    for (let d = a; d <= b; d++) { const r = dayData[d]; cats.push({ label: String(d), qual: r ? r.qual : null, bed: r ? r.bed : null }); }
+  }
+  const N = cats.length || 1;
+  const gap = N > 7 ? 3 : 8;
+  const iconSize = N <= 4 ? 24 : N <= 7 ? 20 : 16;
+  const hasAnyData = cats.some((c) => c.qual != null || c.bed != null);
+
+  const H = 120, barH = 78;
   const xOf = (i) => ((i + 0.5) / N) * 100;
-  const yOf = (v) => 14 + (1 - v) * 72;
+  const yOf = (q) => 14 + (1 - q / 3) * 72; // 수면 질 0~3, 높을수록 위
   let dPath = "", prev = false;
-  buckets.forEach((_, i) => { const v = lineOf(i); if (v == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(v).toFixed(2)}`; prev = true; });
+  cats.forEach((c, i) => { if (c.qual == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.qual).toFixed(2)}`; prev = true; });
+
+  const nightName = (nickname && String(nickname).trim()) ? String(nickname).trim() : "말랑이";
 
   return (
     <div style={{ background: "linear-gradient(180deg,#2E2A44,#413A5E)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
       {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (<span key={i} style={{ position: "absolute", left: `${13 + i * 19}%`, top: `${8 + (i % 2) * 8}%`, color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{s}</span>))}
-      <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>말랑이의 밤</div>
-      <div style={{ fontSize: 16.5, fontWeight: 800, color: "#fff" }}>🌙 이번 달, 나의 밤</div>
-      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 14px", wordBreak: "keep-all" }}>
-        {irregular ? "잠든 타이밍은 꺾은선, 수면의 질은 막대로 봤어요." : "잠든 시간대는 막대, 수면의 질은 꺾은선으로 봤어요."}
-      </p>
-
-      <div style={{ position: "relative", height: H }}>
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, paddingTop: 24 }}>
-          {buckets.map((_, i) => {
-            const bv = barOf(i);
-            const h = bv == null ? 3 : Math.max(4, Math.round(bv * barH));
-            return (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                {i === goldIdx && <span style={{ fontSize: 13, marginBottom: 2, lineHeight: 1 }}>🥇</span>}
-                <div style={{ width: "62%", maxWidth: 20, height: h, borderRadius: 6, background: "linear-gradient(180deg,#FFE39A,#F5C860)", opacity: bv == null ? 0.4 : 1 }} />
-              </div>
-            );
-          })}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, position: "relative" }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>{nightName}의 밤</div>
+          <div style={{ fontSize: 16.5, fontWeight: 800, color: "#fff" }}>🌙 {nightName}의 밤</div>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 수면을 한 주씩 봐요"}</p>
         </div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-          {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
-        </svg>
-        {buckets.map((_, i) => { const v = lineOf(i); return v == null ? null : (
-          <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(v)}%`, transform: "translate(-50%,-50%)", width: 8, height: 8, borderRadius: "50%", background: "#9CC6FF", boxShadow: "0 0 0 2px rgba(46,42,68,0.9)" }} />
-        ); })}
+        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => { setMode("daily"); setWeekIdx(firstDataWeek); }} t={getTypeAccent()} />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", gap, marginTop: 6 }}>
-        {buckets.map((bk, i) => (<span key={i} style={{ flex: 1, textAlign: "center", fontSize: N > 4 ? 9 : 10.5, fontWeight: 700, color: i === goldIdx ? "#FFD98A" : "rgba(255,255,255,0.6)" }}>{bk}</span>))}
-      </div>
+      {mode === "daily" && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "16px 0 4px", position: "relative" }}>
+          <button aria-label="이전 주" onClick={() => setWeekIdx((i) => Math.max(0, i - 1))} disabled={weekIdx === 0} style={trendArrow(weekIdx === 0)}>‹</button>
+          <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", minWidth: 118, textAlign: "center" }}>{weekRanges[weekIdx][0]}~{weekRanges[weekIdx][1]}일 <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>({weekIdx + 1}주차)</span></span>
+          <button aria-label="다음 주" onClick={() => setWeekIdx((i) => Math.min(3, i + 1))} disabled={weekIdx === 3} style={trendArrow(weekIdx === 3)}>›</button>
+        </div>
+      )}
 
-      <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 12 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 8, borderRadius: 2, background: "#F5C860" }} />{barLabel}</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 2, borderRadius: 2, background: "#9CC6FF" }} />{lineLabel}</span>
+      <div style={{ marginTop: mode === "daily" ? 8 : 14, position: "relative" }}>
+        <div style={{ position: "relative", height: H }}>
+          {/* 잠든 시간대 — 늦게 잘수록 막대가 높아요 */}
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, paddingTop: 22 }}>
+            {cats.map((c, i) => {
+              const h = c.bed == null ? 3 : Math.max(5, Math.round((0.18 + c.bed * 0.82) * barH));
+              return (
+                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                  <div style={{ width: "56%", maxWidth: 20, height: h, borderRadius: 6, background: "linear-gradient(180deg,#FFE39A,#F5C860)", opacity: c.bed == null ? 0.4 : 1, transition: "height .3s" }} />
+                </div>
+              );
+            })}
+          </div>
+          {/* 수면의 질 꺾은선 */}
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+            {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+          </svg>
+          {/* 수면의 질 4가지 아이콘 */}
+          {cats.map((c, i) => c.qual == null ? null : (
+            <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#2E2A44", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
+              <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", gap, marginTop: 6 }}>
+          {cats.map((c, i) => <span key={i} style={{ flex: 1, textAlign: "center", fontSize: N > 7 ? 9 : 10.5, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{c.label}</span>)}
+        </div>
+
+        {!hasAnyData && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 700, textAlign: "center", marginTop: 14 }}>이 기간엔 수면 기록이 없어요.</p>}
+
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 12 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 8, borderRadius: 2, background: "#F5C860" }} />잠든 시간대</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 2, borderRadius: 2, background: "#9CC6FF" }} />수면의 질</span>
+        </div>
       </div>
     </div>
   );
