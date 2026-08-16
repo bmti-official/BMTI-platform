@@ -12,7 +12,7 @@ import {
   LOAD_TO_OVEREXERT_LABEL, REASON_TO_EXERCISE_LABEL, KEY_TO_PART_LABEL, KEY_TO_WHEN_LABEL, KEY_TO_EXERCISE_TYPE_LABEL,
 } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
-import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
+import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, saveSleepSettingToServer, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
 
 // ============================================
 // BMTI 하루일기 작성 플로우
@@ -151,6 +151,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     const base = setupMode === "manual" ? SLEEP_HOURS[setupBaseIdx] : null;
     const v = setSleepSetting(setupMode, base);
     setSleepSettingState(v);
+    if (isLoggedIn) saveSleepSettingToServer(v); // 이번 달 기준 수면시간을 서버에도 기록
     setSleepTime(null); // 기준이 바뀌면 오늘 선택은 초기화
     setSleepSetupOpen(false);
   };
@@ -521,7 +522,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     }
     if (id === "sleep") {
       return (
-        <AccordionCard question="전날 밤 잘 잤어요?" answerIcon={sleepOpt?.icon} answerText={sleepVal}
+        <AccordionCard question={sleepSetting?.mode === "irregular" ? "잠을 잘 잤어요?" : "전날 밤 잘 잤어요?"} answerIcon={sleepOpt?.icon} answerText={sleepVal}
           expanded={expanded.sleep} onToggle={() => toggle("sleep")} done={!!sleepVal}>
           <div style={{ display: "flex", gap: 6 }}>
             {SLEEP_OPTS.map(opt => (
@@ -709,7 +710,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       return (
         <Card title="불편한 부위" action={
           <button onClick={() => setSorePopup({ askReconfirm: false })}
-            style={{ flexShrink: 0, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: t.accentDeep, cursor: "pointer", borderRadius: 999, padding: "6px 11px", fontSize: 11.5, fontWeight: 800, fontFamily: F, whiteSpace: "nowrap" }}>
+            style={{ flexShrink: 0, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: C.tileOffText, cursor: "pointer", borderRadius: 999, padding: "6px 11px", fontSize: 11.5, fontWeight: 800, fontFamily: F, whiteSpace: "nowrap" }}>
             🩹 불편했던 곳 수정하기
           </button>
         }>

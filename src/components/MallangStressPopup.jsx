@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Mallang } from "./Mallang";
-import { getTypeAccent, GOLD } from "../lib/typeAccent";
+import { getTypeAccent } from "../lib/typeAccent";
 
 // 말랑이를 고르거나 하루 기록을 마쳤을 때 뜨는 팝업 — 캐릭터가 채팅하듯
 // "말랑이를 눌러서 스트레스를 풀어보세요"라고 말을 걸고, 가운데 큼직하게 뜬
@@ -59,8 +59,10 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
   const label = showBabies ? "꺄아, 다같이 신났어요!" : "말랑이를 눌러서\n스트레스를 풀어보세요";
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "transparent", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ width: "100%", maxWidth: 380, background: "#fff", borderRadius: 28, padding: "26px 24px 24px", textAlign: "center", animation: "mallangPopIn .32s cubic-bezier(.22,.9,.32,1)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "transparent", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      {/* 우측 상단 닫기 — 흰 배경 동그란 X */}
+      <button onClick={onNext} aria-label="닫기" style={{ position: "absolute", top: 16, right: 16, zIndex: 2, width: 40, height: 40, borderRadius: "50%", border: "none", background: "#fff", color: "#8B857B", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.18)" }}>✕</button>
+      <div style={{ width: "100%", maxWidth: 380, background: "transparent", padding: "8px 4px", textAlign: "center", animation: "mallangPopIn .32s cubic-bezier(.22,.9,.32,1)" }}>
         {/* 캐릭터가 말풍선으로 안내 */}
         <div style={{ display: "flex", gap: 9, alignItems: "flex-end", justifyContent: "center", marginBottom: 24, textAlign: "left" }}>
           <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
@@ -106,12 +108,6 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
           )}
         </div>
 
-        <button
-          onClick={onNext}
-          style={{ marginTop: 26, width: "100%", padding: 15, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
-        >
-          {nextLabel}
-        </button>
       </div>
       <style>{`
         @keyframes mallangPopIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}

@@ -174,3 +174,22 @@ export function sleepOptionsFor(setting) {
   if (!setting) return null;
   return setting.mode === "irregular" ? SLEEP_IRREGULAR_OPTS : sleepWindow(setting.base);
 }
+
+// ── 로그인 유저: 기본 수면 설정을 서버(users.sleep_setting JSONB)에 함께 저장/복원 ──
+// 컬럼이 아직 없으면 조용히 실패하고 localStorage만 사용한다(무회귀).
+// 서버 값(달 기준)이 로컬보다 최신이거나 로컬이 없으면 서버 값을 로컬 기준으로 삼아 다른 기기에서도 이어쓴다.
+export function syncSleepSettingFromServer(serverSetting) {
+  if (!serverSetting || typeof serverSetting !== "object" || !serverSetting.month) return;
+  const local = getSleepSetting();
+  if (!local || !local.month || serverSetting.month >= local.month) {
+    try { localStorage.setItem(SLEEP_KEY, JSON.stringify(serverSetting)); } catch {}
+  }
+}
+export async function saveSleepSettingToServer(v) {
+  try {
+    const u = JSON.parse(localStorage.getItem("bmti_user") || "null");
+    if (!u?.id || !v) return;
+    const { supabase } = await import("./supabaseClient");
+    await supabase.from("users").update({ sleep_setting: v }).eq("id", u.id);
+  } catch { /* 컬럼 미존재 등은 무시 — localStorage가 유지된다 */ }
+}

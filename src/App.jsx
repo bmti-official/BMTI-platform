@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
+import { syncSleepSettingFromServer } from './lib/mallangProfile';
 import Navbar from './components/Navbar';
 import HomeView from './components/HomeView';
 import QuizView from './components/QuizView';
@@ -112,6 +113,7 @@ function App() {
                 setUserProfile(updatedUser);
                 setIsLoggedIn(true);
                 localStorage.setItem('bmti_user', JSON.stringify(updatedUser)); // keep id for next load
+                syncSleepSettingFromServer(dbUser.sleep_setting); // 기본 수면 기준을 서버에서 복원(다른 기기 이어쓰기)
                 if (dbUser.bmti_type) {
                   setBmtiCode(dbUser.bmti_type);
                 }

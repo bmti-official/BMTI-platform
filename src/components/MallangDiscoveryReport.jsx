@@ -1244,41 +1244,88 @@ function computeSoulmate(entries) {
   const wit = SOULMATE_WIT[top[0]] || `이 둘이 만난 날이 무려 ${n}일이나 되네요. 서로 꼭 붙어다니는 단짝이었어요 🤝`;
   return { a, b, n, solo, wit };
 }
+// 이번 달 '오늘의 태그' 선택 횟수 순위(많이 선택한 순)
+function computeTagCounts(entries) {
+  const c = {};
+  (entries || []).forEach(e => (e.tags || []).forEach(tg => { if (TAG_ICON[tg]) c[tg] = (c[tg] || 0) + 1; }));
+  return Object.entries(c).sort((a, b) => b[1] - a[1]).map(([tag, n]) => ({ tag, n }));
+}
 function SoulmateCard({ entries, exampleEntries }) {
   const t = getTypeAccent();
-  const real = computeSoulmate(entries);
-  const soul = real || computeSoulmate(exampleEntries);
-  if (!soul) return null;
-  const { a, b, n, solo, wit } = soul;
-  const badge = (name) => (
+  const realRanked = computeTagCounts(entries);
+  const hasReal = realRanked.length > 0;
+  const ranked = hasReal ? realRanked : computeTagCounts(exampleEntries);
+  if (!ranked.length) return null;
+
+  const soul = computeSoulmate(entries) || (hasReal ? null : computeSoulmate(exampleEntries));
+
+  // 피라미드 — 1 / 2 / 3 행(꼭대기가 제일 많이 선택한 태그)
+  const top = ranked.slice(0, 6);
+  const rows = [];
+  if (top[0]) rows.push([top[0]]);
+  if (top[1]) rows.push([top[1], top[2]].filter(Boolean));
+  if (top[3]) rows.push([top[3], top[4], top[5]].filter(Boolean));
+
+  const pTile = (item, sz, isTop) => (
+    <div key={item.tag} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+      <span style={{ position: "relative", width: sz, height: sz, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+        {isTop && <span style={{ position: "absolute", top: -15, fontSize: 15 }}>👑</span>}
+        <DiaryIcon name={TAG_ICON[item.tag]} size={Math.round(sz * 0.54)} />
+      </span>
+      <span style={{ fontSize: sz >= 58 ? 12.5 : 11, fontWeight: 800, color: C.ink }}>{item.tag}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: t.accentDeep }}>{item.n}번</span>
+    </div>
+  );
+
+  const soulBadge = (name) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, animation: "soulmateBob 2.2s ease-in-out infinite" }}>
       <span style={{ width: 58, height: 58, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}><DiaryIcon name={TAG_ICON[name]} size={32} /></span>
       <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink }}>{name}</span>
-      <span style={{ fontSize: 10.5, fontWeight: 700, color: t.accentDeep }}>{solo[name] || 0}번 선택</span>
+      <span style={{ fontSize: 10.5, fontWeight: 700, color: t.accentDeep }}>{(soul?.solo?.[name]) || 0}번 선택</span>
     </div>
   );
+
   const body = (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "4px 0 6px" }}>
-        {badge(a)}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <span style={{ fontSize: 20, animation: "soulmateHeart 1.4s ease-in-out infinite" }}>💞</span>
-          <span style={{ fontSize: 10, fontWeight: 800, color: t.accentDeep, whiteSpace: "nowrap" }}>함께 {n}번</span>
-        </div>
-        {badge(b)}
+      {/* 태그 피라미드 — 제일 많이 선택한 오늘의 태그가 꼭대기 */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "8px 0 4px" }}>
+        {rows.map((row, ri) => (
+          <div key={ri} style={{ display: "flex", justifyContent: "center", gap: ri === 0 ? 0 : 16 }}>
+            {row.map(item => pTile(item, ri === 0 ? 62 : ri === 1 ? 52 : 44, ri === 0))}
+          </div>
+        ))}
       </div>
-      <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, textAlign: "center", margin: "0 0 6px", wordBreak: "keep-all" }}>이번 달, <b style={{ color: t.accentDeep }}>[{a}]</b>와 <b style={{ color: t.accentDeep }}>[{b}]</b>은 찰떡궁합 영혼의 단짝이었어요!</p>
-      <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, textAlign: "center", margin: 0, lineHeight: 1.55, wordBreak: "keep-all" }}>{wit}</p>
+      <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, textAlign: "center", margin: "10px 0 0", wordBreak: "keep-all" }}>이번 달 가장 자주 남긴 <b style={{ color: t.accentDeep }}>[{top[0].tag}]</b> 태그가 피라미드 꼭대기에 올랐어요!</p>
+
+      {soul && (
+        <>
+          <div style={{ height: 1, background: C.line, margin: "16px 0 14px" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
+            <span style={{ fontSize: 16 }}>💞</span>
+            <span style={{ fontSize: 14.5, fontWeight: 800, color: C.ink }}>영혼의 단짝</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 0 6px" }}>
+            {soulBadge(soul.a)}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: 20, animation: "soulmateHeart 1.4s ease-in-out infinite" }}>💞</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: t.accentDeep, whiteSpace: "nowrap" }}>함께 {soul.n}번</span>
+            </div>
+            {soulBadge(soul.b)}
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, textAlign: "center", margin: "0 0 6px", wordBreak: "keep-all" }}>이번 달, <b style={{ color: t.accentDeep }}>[{soul.a}]</b>와 <b style={{ color: t.accentDeep }}>[{soul.b}]</b>은 찰떡궁합 영혼의 단짝이었어요!</p>
+          <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, textAlign: "center", margin: 0, lineHeight: 1.55, wordBreak: "keep-all" }}>{soul.wit}</p>
+        </>
+      )}
     </>
   );
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, fontSize: 16 }}>💞</span>
-        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>영혼의 단짝</span>
-        {!real && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, fontSize: 16 }}>🔺</span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>태그 피라미드</span>
+        {!hasReal && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
-      {real ? body : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{body}</LockedPreview>}
+      {hasReal ? body : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{body}</LockedPreview>}
       <style>{`@keyframes soulmateBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes soulmateHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}`}</style>
     </div>
   );
@@ -2046,13 +2093,13 @@ function computeInsights(entries, userData, report) {
     const josa = (w, a, b) => { const s = String(w || ""); const c = s.charCodeAt(s.length - 1); const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; return has ? a : b; };
     const P = [];
     // 1) 인사 + 성실도
-    P.push(`${nm}님, 안녕하세요.${days.length ? ` 이번 달 ${days.length}일 동안 하루하루를 남겨주셨네요.` : ""} 바쁜 와중에도 자신의 몸과 마음을 들여다본 그 시간이 저는 참 좋았어요.`);
+    P.push(`${nm}님, 안녕하세요.${days.length ? ` 이번 달 ${days.length}일 동안 하루하루를 남겨주셨네요.` : ""} 바쁜 와중에도 자신의 몸과 마음을 들여다본 그 시간이 저는 참 뭉클했어요.`);
     // 2) 가장 많던 기분 (개인화)
     const moodLine = {
       1: `이번 달은 '힘들었어요' 말랑이가 자주 찾아왔죠. 그런 날에도 기록을 놓지 않은 ${nm}님이 정말 대단해요.`,
       2: `'지쳤어요' 말랑이가 유난히 자주 보였어요. 조금 지쳐도 스스로를 챙긴 한 달이었어요.`,
       3: `잔잔하게 '그냥저냥'인 날이 많았어요. 그 평온함도 잘 지내온 증거예요.`,
-      4: `'괜찮았어요' 말랑이가 가장 많이 웃어준 달이었어요. 그 균형이 참 보기 좋았어요.`,
+      4: `'괜찮았어요' 말랑이가 가장 많이 웃어준 달이었어요. 그 균형이 참 보기 좋더라고요.`,
       5: `'좋았어요' 말랑이가 제일 자주 찾아온 반짝이는 한 달이었네요!`,
     }[topMood];
     if (moodLine) P.push(moodLine);
@@ -2314,7 +2361,7 @@ const trendArrow = (disabled) => ({ width: 30, height: 30, borderRadius: "50%", 
 function TrendSwitchPill({ mode, onWeekly, onDaily, t }) {
   const isDaily = mode === "daily";
   return (
-    <div style={{ position: "relative", display: "flex", background: "#F1EEE8", borderRadius: 999, padding: 3, flexShrink: 0 }}>
+    <div style={{ position: "relative", display: "flex", background: "#FBF1C9", borderRadius: 999, padding: 3, flexShrink: 0 }}>
       <span style={{ position: "absolute", top: 3, bottom: 3, left: 3, width: "calc(50% - 3px)", borderRadius: 999, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.16)", transform: isDaily ? "translateX(100%)" : "translateX(0)", transition: "transform .25s ease" }} />
       <button onClick={onWeekly} style={trendPillBtn(!isDaily, t)}>주간</button>
       <button onClick={onDaily} style={trendPillBtn(isDaily, t)}>일간</button>
@@ -2519,7 +2566,7 @@ function MallangNightCard({ entries, nickname }) {
   const nightName = (nickname && String(nickname).trim()) ? String(nickname).trim() : "말랑이";
 
   return (
-    <div style={{ background: "linear-gradient(180deg,#2E2A44,#413A5E)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "linear-gradient(180deg,#3B3557,#514873)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
       {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (<span key={i} style={{ position: "absolute", left: `${13 + i * 19}%`, top: `${8 + (i % 2) * 8}%`, color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{s}</span>))}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, position: "relative" }}>
         <div>
@@ -2559,7 +2606,7 @@ function MallangNightCard({ entries, nickname }) {
           </svg>
           {/* 수면의 질 4가지 아이콘 */}
           {cats.map((c, i) => c.qual == null ? null : (
-            <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#2E2A44", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
+            <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#3B3557", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
               <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
             </div>
           ))}
