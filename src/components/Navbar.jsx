@@ -153,7 +153,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
     return () => window.removeEventListener('bmti:open-discovery', open);
   }, [setView]);
 
-  // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 파트너' 팝업.
+  // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 유형' 팝업.
   const [showPartner, setShowPartner] = useState(false);
   // 검사 전 유저가 '나의유형'을 누르면 뜨는 16유형 구경 갤러리.
   const [showTypeGallery, setShowTypeGallery] = useState(false);
@@ -238,10 +238,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
             </div>
           </div>
 
-          {/* 중앙 캐릭터 — 알약 위로 떠 있는 버튼. 누르면 '내 BMTI 파트너' 팝업을 연다 */}
+          {/* 중앙 캐릭터 — 알약 위로 떠 있는 버튼. 누르면 '내 BMTI 유형' 팝업을 연다 */}
           <button
             onClick={() => setShowPartner(true)}
-            aria-label="내 BMTI 파트너"
+            aria-label="내 BMTI 유형"
             className="fixed left-1/2 -translate-x-1/2 bottom-5 z-40 active:scale-95 transition-transform"
           >
             <div className="relative w-14 h-14 flex items-center justify-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]">

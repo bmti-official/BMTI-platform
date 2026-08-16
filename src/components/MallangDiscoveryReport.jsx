@@ -2701,7 +2701,7 @@ function LetterCard({ data, isM, bmtiCode }) {
   return (
     <div style={{ background: "linear-gradient(180deg,#FFFDF7,#FBF4E6)", borderRadius: 20, padding: "20px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #EEE4CE", position: "relative", overflow: "hidden" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>이번 달의 피날레</div>
-      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, wordBreak: "keep-all", textWrap: "balance" }}>내 BMTI 파트너의 편지</div>
+      <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, wordBreak: "keep-all", textWrap: "balance" }}>내 BMTI 유형의 편지</div>
 
       {/* 누끼 파트너 캐릭터 — 박스 안에 담는다 */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, margin: "16px 0 4px" }}>
@@ -2733,7 +2733,7 @@ function LetterCard({ data, isM, bmtiCode }) {
             <div style={{ position: "relative", paddingLeft: 26, backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #EBDCB6 27px, #EBDCB6 28px)" }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>To. {data.nickname || "회원"}님</div>
               <p style={{ margin: 0, lineHeight: "28px", fontSize: 13.5, color: "#4A4436", fontWeight: 600, wordBreak: "keep-all", textWrap: "pretty", whiteSpace: "pre-line" }}>{letterBreaks(data.body)}</p>
-              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>— 당신의 BMTI 파트너, {charName} 드림</div>
+              <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 800, color: t.accentDeep, lineHeight: "28px" }}>— 내 BMTI 유형, {charName} 드림</div>
             </div>
           </div>
         </div>

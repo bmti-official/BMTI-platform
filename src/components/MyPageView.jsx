@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import TypeGallery from './TypeGallery';
 import { Mallang } from './Mallang';
+import { hasLocalHealthConsent, setLocalHealthConsent, updateHealthRecordConsent } from '../lib/healthConsentSystem';
 
 // 하단 네비게이션 바 'BMTI' 탭과 동일한 펼친 책 아이콘 (currentColor)
 const BookIcon = ({ className = 'w-6 h-6', style }) => (
@@ -11,6 +12,15 @@ const BookIcon = ({ className = 'w-6 h-6', style }) => (
     <path d="M12 6.2C10.3 5 7.4 4.5 4.3 5v12.6C7.4 17.1 10.3 17.6 12 18.8" />
     <path d="M12 6.2C13.7 5 16.6 4.5 19.7 5v12.6C16.6 17.1 13.7 17.6 12 18.8" />
     <path d="M12 6.2V18.8" />
+  </svg>
+);
+
+// 하단 네비게이션 바 '기록·발견' 탭과 동일한 막대그래프 아이콘 (currentColor)
+const ChartIcon = ({ className = 'w-6 h-6', style }) => (
+  <svg viewBox="0 0 24 24" className={className} style={style} fill="none">
+    <rect x="3" y="10" width="4.5" height="10" rx="2.25" fill="currentColor" />
+    <rect x="9.75" y="4" width="4.5" height="16" rx="2.25" fill="currentColor" />
+    <rect x="16.5" y="8" width="4.5" height="12" rx="2.25" fill="currentColor" />
   </svg>
 );
 import {
@@ -35,6 +45,22 @@ function SectionHeader({ emoji, title, children }) {
       <h3 className="font-black text-[17px] text-gray-900 flex items-center gap-2"><span>{emoji}</span>{title}</h3>
       {children}
     </div>
+  );
+}
+
+// 건강 기록 동의 체크 행 (다이어리 게이트와 동일한 문구)
+function ConsentRow({ checked, onToggle, tag, disabled, children }) {
+  return (
+    <button onClick={disabled ? undefined : onToggle} disabled={disabled}
+      className="w-full flex gap-2.5 items-start text-left rounded-xl p-3 border transition-colors"
+      style={{ background: '#FBFAF6', borderColor: checked ? GOLD : '#EDE9E2', cursor: disabled ? 'default' : 'pointer' }}>
+      <span className="w-5 h-5 shrink-0 rounded-md flex items-center justify-center text-white text-[12px] font-black mt-0.5"
+        style={{ border: `2px solid ${checked ? GOLD : '#D8D3C8'}`, background: checked ? GOLD : '#fff' }}>{checked ? '✓' : ''}</span>
+      <span className="flex-1">
+        <span className="text-[10px] font-extrabold" style={{ color: tag === '필수' ? '#C0392B' : '#8A8378' }}>[{tag}]</span>
+        <span className="block text-[12.5px] font-bold text-gray-700 leading-snug mt-0.5 break-keep">{children}</span>
+      </span>
+    </button>
   );
 }
 
@@ -75,6 +101,28 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const [mallangHistory, setMallangHistory] = useState([]); // 일상 정보 스냅샷 박스
   const [showGallery, setShowGallery] = useState(false); // '다른 유형 구경' 갤러리
 
+  // 건강 기록 동의(필수·선택) — 다이어리 첫 진입 게이트와 동일 항목을 마이페이지에서도 관리
+  const consentStr = (() => { try { return localStorage.getItem('bmti_health_consent') || ''; } catch { return ''; } })();
+  const [consentGiven, setConsentGiven] = useState(hasLocalHealthConsent());
+  const [cReq, setCReq] = useState(hasLocalHealthConsent());
+  const [cOpt, setCOpt] = useState(consentStr.includes(':opt'));
+  const [cSaving, setCSaving] = useState(false);
+
+  const saveConsent = async () => {
+    if (!cReq || cSaving) return;
+    setCSaving(true);
+    if (userData?.id) { try { await updateHealthRecordConsent(userData.id, true, cOpt); } catch (e) { console.error('건강정보 동의 저장 실패', e); } }
+    setLocalHealthConsent(cOpt);
+    setCSaving(false);
+    setConsentGiven(true);
+  };
+  // 이미 동의한 상태에서 선택 항목만 켜고 끈다
+  const updateOptional = async (opt) => {
+    setCOpt(opt);
+    if (userData?.id) { try { await updateHealthRecordConsent(userData.id, true, opt); } catch (e) { console.error('선택 동의 변경 실패', e); } }
+    setLocalHealthConsent(opt);
+  };
+
   // 수정 모드에서 부위 토글(최대 2) / when 지정
   const toggleSorePart = (part) => setSoreEdit(prev => {
     const has = prev.find(s => s.part === part);
@@ -107,7 +155,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       try {
         if (userInfo.nickname !== userData.nickname) {
           if (isReservedNickname(userData.nickname)) {
-            alert('BMTI 파트너 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
+            alert('내 BMTI 유형 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
             return;
           }
           const { data, error } = await supabase
@@ -280,7 +328,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const tiles = [
     { icon: <BookIcon className="w-6 h-6" style={{ color: PURPLE }} />, label: '내 유형 결과', sub: bmtiCode ? axisCode : '검사하기', onClick: () => setView(bmtiCode ? 'result' : 'quiz') },
     { icon: <Mallang v={5} size={28} noBlink />, label: '건강 다이어리', sub: '오늘 기록하기', onClick: () => setView('aichat') },
-    { icon: <Mallang v={4} size={28} noBlink />, label: '이번 달 발견', sub: '내 몸 패턴 보기', onClick: () => window.dispatchEvent(new Event('bmti:open-discovery')) },
+    { icon: <ChartIcon className="w-6 h-6" style={{ color: PURPLE }} />, label: '이번 달 발견', sub: '내 몸 패턴 보기', onClick: () => window.dispatchEvent(new Event('bmti:open-discovery')) },
     { emoji: '🔍', label: '다른 유형 구경', sub: '16유형 둘러보기', onClick: () => setShowGallery(true) },
   ];
 
@@ -400,6 +448,29 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             >
               <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${userData.appNotification ? 'left-6' : 'left-1'}`} />
             </button>
+          </div>
+        )}
+
+        {/* 건강 기록 동의 — 아직 동의 전이면 알림 박스 밑에 필수·선택 체크를 노출 */}
+        {!isEditing && !consentGiven && (
+          <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: '#EDE9E2', background: '#FCFBF7' }}>
+            <div className="text-[13px] font-black text-gray-900 mb-0.5">🔒 건강 기록 동의</div>
+            <p className="text-[11px] text-gray-500 font-semibold mb-3 break-keep">기분·불편함·수면은 민감정보(건강정보)예요. 동의가 있어야 안전하게 기록·분석해 드려요.</p>
+            <div className="flex flex-col gap-2">
+              <ConsentRow checked={cReq} onToggle={() => setCReq(v => !v)} tag="필수">
+                기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
+              </ConsentRow>
+              <ConsentRow checked={cOpt} onToggle={() => setCOpt(v => !v)} tag="선택">
+                <b>가명처리</b> 후 통계·연구·서비스 개선(B2B 포함)에 활용하는 것에 동의합니다.
+                <span className="block mt-1 text-[11px] font-extrabold" style={{ color: GOLD }}>✨ 선택 동의를 해야 기록·발견의 분석을 모두 확인할 수 있어요.</span>
+              </ConsentRow>
+            </div>
+            <button onClick={saveConsent} disabled={!cReq || cSaving}
+              className="w-full mt-3 py-3 rounded-xl font-bold text-sm transition-all"
+              style={{ background: cReq ? GOLD : '#E7E2D8', color: cReq ? '#fff' : '#B7B2A9', cursor: cReq && !cSaving ? 'pointer' : 'default' }}>
+              {cSaving ? '저장 중…' : '동의하고 저장하기'}
+            </button>
+            <p className="text-[10px] text-gray-400 font-medium mt-2.5 leading-relaxed break-keep">동의는 마이페이지에서 관리할 수 있고, 저장·처리는 위탁·국외이전 고지에 따릅니다.</p>
           </div>
         )}
       </div>
@@ -643,6 +714,26 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 일상 정보가 없습니다.</div>
         )}
       </div>
+
+      {/* 건강 기록 동의 — 이미 동의한 경우 일상 정보 히스토리 밑에 상태/선택 항목을 노출 */}
+      {consentGiven && (
+        <>
+          <SectionHeader emoji="🔒" title="건강 기록 동의" />
+          <div className="bg-white rounded-3xl p-5 md:p-6 border border-[#F3EFE6] mb-2" style={{ boxShadow: YELLOW_SHADOW }}>
+            <div className="flex flex-col gap-2">
+              <ConsentRow checked disabled tag="필수">
+                기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용에 동의함
+                <span className="block mt-1 text-[11px] font-bold text-gray-400">· 동의 완료</span>
+              </ConsentRow>
+              <ConsentRow checked={cOpt} onToggle={() => updateOptional(!cOpt)} tag="선택">
+                <b>가명처리</b> 후 통계·연구·서비스 개선(B2B 포함) 활용에 동의
+                <span className="block mt-1 text-[11px] font-extrabold" style={{ color: GOLD }}>✨ 선택 동의 시 기록·발견의 분석을 모두 확인할 수 있어요.</span>
+              </ConsentRow>
+            </div>
+            <p className="text-[11px] text-gray-400 font-medium mt-3 break-keep">선택 항목은 언제든 껐다 켤 수 있어요. 필수 동의 철회는 고객센터로 문의해 주세요.</p>
+          </div>
+        </>
+      )}
 
       {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
     </div>

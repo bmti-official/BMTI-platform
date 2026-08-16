@@ -202,7 +202,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       </section>
       {showGuide && <BmtiGuidePopup onClose={() => setShowGuide(false)} />}
 
-      {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 파트너'/기록 유도 박스는
+      {/* 검사 전 유저에게만 테스트 유도 버튼 — '내 BMTI 유형'/기록 유도 박스는
           하단 네비 가운데 캐릭터를 누르면 뜨는 팝업(BmtiPartnerPopup)으로 옮겼다. */}
       {!bmtiCode && (
         <div className="px-6 flex justify-center gap-4 fade-in mb-16">

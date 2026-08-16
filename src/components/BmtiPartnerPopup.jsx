@@ -4,7 +4,7 @@ import { getTypeAccent } from '../lib/typeAccent';
 import DiaryCta from './DiaryCta';
 
 // 하단 네비 가운데 캐릭터를 누르면 뜨는 팝업 — 메인으로 바로 가지 않고
-// '내 BMTI 파트너'를 보여준다. 오늘 하루일기를 아직 안 남겼으면 위에 기록 유도 CTA도 함께.
+// '내 BMTI 유형'를 보여준다. 오늘 하루일기를 아직 안 남겼으면 위에 기록 유도 CTA도 함께.
 export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday, setView, onRequireLogin, onClose }) {
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
@@ -47,9 +47,9 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {/* 내 BMTI 파트너 */}
+            {/* 내 BMTI 유형 */}
             <div className="rounded-[2rem] p-6 border shadow-2xl" style={{ background: '#F7F7F6', borderColor: '#EDEDEB' }}>
-              <p className="text-xs font-bold text-gray-400 mb-4">내 BMTI 파트너</p>
+              <p className="text-xs font-bold text-gray-400 mb-4">내 BMTI 유형</p>
               <div className="flex items-center gap-4 mb-5">
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${charData?.color || 'bg-gray-100'}`}>
                   {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || ''}`} />}
