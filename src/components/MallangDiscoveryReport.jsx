@@ -2188,9 +2188,8 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     else if (exNode) items.push({ locked: true, node: <Fragment key={key}>{lock(exNode)}</Fragment> });
   };
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
-  items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> });
-  add("weekday", ins.weekdaySore, <WeekdayDrainCard entries={entries} />, exIns.weekdaySore && <WeekdayDrainCard entries={EXAMPLE_ENTRIES} />);
-  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} nickname={nickname} /> }); // 요일 방전 패턴 밑 — {닉네임}의 밤
+  items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
+  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} nickname={nickname} /> }); // {닉네임}의 밤
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
@@ -2358,13 +2357,14 @@ function ButterflyCard({ data }) {
 const trendPillBtn = (active, t) => ({ position: "relative", zIndex: 1, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "5px 13px", color: active ? t.accentDeep : C.sub, transition: "color .2s" });
 const trendArrow = (disabled) => ({ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: disabled ? "#CFC9BE" : C.ink, fontSize: 18, fontWeight: 800, lineHeight: 1, cursor: disabled ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 });
 
-function TrendSwitchPill({ mode, onWeekly, onDaily, t }) {
-  const isDaily = mode === "daily";
+const TREND_MODES = ["weekly", "daily", "weekday"];
+const TREND_LABELS = { weekly: "주간", daily: "일간", weekday: "요일별" };
+function TrendSwitchPill({ mode, onSelect, t }) {
+  const idx = Math.max(0, TREND_MODES.indexOf(mode));
   return (
     <div style={{ position: "relative", display: "flex", background: "#FBF1C9", borderRadius: 999, padding: 3, flexShrink: 0 }}>
-      <span style={{ position: "absolute", top: 3, bottom: 3, left: 3, width: "calc(50% - 3px)", borderRadius: 999, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.16)", transform: isDaily ? "translateX(100%)" : "translateX(0)", transition: "transform .25s ease" }} />
-      <button onClick={onWeekly} style={trendPillBtn(!isDaily, t)}>주간</button>
-      <button onClick={onDaily} style={trendPillBtn(isDaily, t)}>일간</button>
+      <span style={{ position: "absolute", top: 3, bottom: 3, left: 3, width: "calc((100% - 6px) / 3)", borderRadius: 999, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.16)", transform: `translateX(${idx * 100}%)`, transition: "transform .25s ease" }} />
+      {TREND_MODES.map((m) => <button key={m} onClick={() => onSelect(m)} style={{ ...trendPillBtn(mode === m, t), flex: "1 0 auto", minWidth: 40, textAlign: "center" }}>{TREND_LABELS[m]}</button>)}
     </div>
   );
 }
@@ -2396,7 +2396,7 @@ function TrendChartsCard({ entries, exampleEntries }) {
   const [mode, setMode] = useState("weekly");
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
-  let cats;
+  let cats, peakWd = null;
   if (mode === "weekly") {
     cats = weekRanges.map(([a, b], i) => {
       const moods = [], sores = [];
@@ -2404,12 +2404,22 @@ function TrendChartsCard({ entries, exampleEntries }) {
       const avg = (xs) => (xs.length ? xs.reduce((p, q) => p + q, 0) / xs.length : null);
       return { label: `${i + 1}주`, mood: avg(moods), sore: avg(sores), n: moods.length };
     });
-  } else {
+  } else if (mode === "daily") {
     // 일간 = 이번 달 모든 날(가로 스크롤). 날짜 밑에 요일도 표시.
     cats = [];
     for (let d = 1; d <= lastDay; d++) { const r = dayData[d]; cats.push({ label: String(d), dow: new Date(yy, mm - 1, d).getDay(), mood: r ? r.mood : null, sore: r ? r.sore : null }); }
+  } else {
+    // 요일별 = 월~일 평균(불편함 막대 + 기분 꺾은선)
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    const wdMoods = {}, wdSores = {};
+    Object.keys(dayData).forEach((k) => { const dom = Number(k); const wd = new Date(yy, mm - 1, dom).getDay(); const r = dayData[dom]; (wdMoods[wd] ||= []).push(r.mood); if (r.sore > 0) (wdSores[wd] ||= []).push(r.sore); });
+    const avg2 = (xs) => (xs && xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+    cats = order.map((wd) => ({ label: WD[wd], wd, mood: avg2(wdMoods[wd]), sore: avg2(wdSores[wd]) }));
+    const withSore = cats.filter((c) => c.sore != null);
+    if (withSore.length) { const pk = withSore.reduce((m, c) => (c.sore > m.sore ? c : m), withSore[0]); peakWd = pk.wd; }
   }
   const scroll = mode === "daily";
+  const isWeekday = mode === "weekday";
   const colW = 42;
   const N = cats.length || 1;
   const soreVals = cats.map((c) => c.sore).filter((v) => v != null);
@@ -2450,6 +2460,15 @@ function TrendChartsCard({ entries, exampleEntries }) {
         )}
       </div>
 
+      {/* 요일별: 최고 요일 문구(다른 모드에선 높이만 확보해 전환 시 박스가 줄지 않게) */}
+      <div style={{ minHeight: 46, marginBottom: 4 }}>
+        {isWeekday && peakWd != null && (
+          <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: 0, lineHeight: 1.5, wordBreak: "keep-all" }}>
+            이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 <b style={{ color: "#E0554F" }}>{activePart ? (PARTS[activePart] || activePart) : "몸"}</b> 불편함이 가장 컸어요.
+          </p>
+        )}
+      </div>
+
       {/* 플롯 — 일간이면 가로 드래그 스크롤 */}
       <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
         <div style={{ width: scroll ? N * colW : "100%" }}>
@@ -2457,11 +2476,12 @@ function TrendChartsCard({ entries, exampleEntries }) {
           <div style={{ display: "flex", alignItems: "flex-end", gap: rowGap, height: barH + 16, padding: "0 2px" }}>
             {cats.map((c, i) => {
               const empty = c.sore == null;
+              const isPeak = isWeekday && c.wd === peakWd && !empty;
               const h = empty ? 3 : Math.max(4, Math.round((c.sore / maxSore) * barH));
               return (
                 <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-                  {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#C4726C" }}>{c.sore.toFixed(1)}</span>}
-                  <div style={{ width: scroll ? 18 : "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : "linear-gradient(180deg,#F0917C,#E0554F)", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
+                  {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: isPeak ? "#E0554F" : "#C4726C" }}>{c.sore.toFixed(1)}</span>}
+                  <div style={{ width: scroll ? 18 : "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : (isPeak ? "linear-gradient(180deg,#F0655F,#E0554F)" : "linear-gradient(180deg,#F0917C,#E0554F)"), boxShadow: isPeak ? "0 3px 8px rgba(224,85,79,0.35)" : "none", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
                 </div>
               );
             })}
@@ -2481,14 +2501,17 @@ function TrendChartsCard({ entries, exampleEntries }) {
             ) : null))}
           </div>
 
-          {/* x축 라벨 — 날짜 + 요일(일간) */}
+          {/* x축 라벨 — 날짜 + 요일(일간). 요일줄은 항상 확보해 모드 전환 시 높이 일정 */}
           <div style={{ display: "flex", gap: rowGap, marginTop: 6, padding: "0 2px" }}>
-            {cats.map((c, i) => (
-              <div key={i} style={{ ...colStyle, textAlign: "center" }}>
-                <div style={{ fontSize: scroll ? 10 : (N > 7 ? 9.5 : 11), fontWeight: 700, color: C.sub }}>{c.label}</div>
-                {scroll && <div style={{ fontSize: 9, fontWeight: 800, color: c.dow === 0 ? "#E0554F" : c.dow === 6 ? "#2F6FE0" : "#BFB9AF", marginTop: 1 }}>{WD[c.dow]}</div>}
-              </div>
-            ))}
+            {cats.map((c, i) => {
+              const wdPeak = isWeekday && c.wd === peakWd;
+              return (
+                <div key={i} style={{ ...colStyle, textAlign: "center" }}>
+                  <div style={{ fontSize: scroll ? 10 : (N > 7 ? 9.5 : 11), fontWeight: wdPeak ? 800 : 700, color: wdPeak ? "#E0554F" : C.sub }}>{c.label}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, height: 11, color: c.dow === 0 ? "#E0554F" : c.dow === 6 ? "#2F6FE0" : "#BFB9AF", marginTop: 1 }}>{scroll ? WD[c.dow] : " "}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -2503,9 +2526,9 @@ function TrendChartsCard({ entries, exampleEntries }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>기분·불편함 추이</div>
           <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>📈 기분과 불편함 추이</div>
-          <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 기록 · 좌우로 넘겨보세요"}</p>
+          <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all", minHeight: 32, lineHeight: 1.35 }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : mode === "daily" ? "하루하루의 기록 · 좌우로 넘겨보세요" : "요일별 평균으로 봤어요"}</p>
         </div>
-        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => setMode("daily")} t={t} />
+        <TrendSwitchPill mode={mode} onSelect={setMode} t={t} />
       </div>
 
       <div style={{ marginTop: 16 }}>{body}</div>
@@ -2547,10 +2570,17 @@ function MallangNightCard({ entries, nickname }) {
       const avg = (xs) => (xs.length ? xs.reduce((p, q) => p + q, 0) / xs.length : null);
       return { label: `${i + 1}주`, qual: avg(quals), bed: avg(beds) };
     });
-  } else {
+  } else if (mode === "daily") {
     // 일간 = 이번 달 모든 날(가로 스크롤). 날짜 밑에 요일도 표시.
     cats = [];
     for (let d = 1; d <= lastDay; d++) { const r = dayData[d]; cats.push({ label: String(d), dow: new Date(yy, mm - 1, d).getDay(), qual: r ? r.qual : null, bed: r ? r.bed : null }); }
+  } else {
+    // 요일별 = 월~일 평균(잠든 시간대 막대 + 수면 질 꺾은선)
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    const wdQuals = {}, wdBeds = {};
+    Object.keys(dayData).forEach((k) => { const dom = Number(k); const wd = new Date(yy, mm - 1, dom).getDay(); const r = dayData[dom]; if (r.qual != null) (wdQuals[wd] ||= []).push(r.qual); if (r.bed != null) (wdBeds[wd] ||= []).push(r.bed); });
+    const avg2 = (xs) => (xs && xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+    cats = order.map((wd) => ({ label: WD[wd], wd, qual: avg2(wdQuals[wd]), bed: avg2(wdBeds[wd]) }));
   }
   const scroll = mode === "daily";
   const colW = 40;
@@ -2590,9 +2620,9 @@ function MallangNightCard({ entries, nickname }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>{nightName}의 밤</div>
           <div style={{ fontSize: 16.5, fontWeight: 800, color: "#fff" }}>🌙 {nightName}의 밤</div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 수면 · 좌우로 넘겨보세요"}</p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all", minHeight: 32, lineHeight: 1.35 }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : mode === "daily" ? "하루하루의 수면 · 좌우로 넘겨보세요" : "요일별 평균으로 봤어요"}</p>
         </div>
-        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => setMode("daily")} t={getTypeAccent()} />
+        <TrendSwitchPill mode={mode} onSelect={setMode} t={getTypeAccent()} />
       </div>
 
       <div style={{ marginTop: 14, position: "relative" }}>
@@ -2624,12 +2654,12 @@ function MallangNightCard({ entries, nickname }) {
               ))}
             </div>
 
-            {/* x축 라벨 — 날짜 + 요일(일간) */}
+            {/* x축 라벨 — 날짜 + 요일(일간). 요일줄은 항상 확보해 모드 전환 시 높이 일정 */}
             <div style={{ display: "flex", gap: rowGap, marginTop: 6 }}>
               {cats.map((c, i) => (
                 <div key={i} style={{ ...colStyle, textAlign: "center" }}>
                   <div style={{ fontSize: (!scroll && N > 7) ? 9 : 10.5, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{c.label}</div>
-                  {scroll && <div style={{ fontSize: 9, fontWeight: 800, color: c.dow === 0 ? "#FF9B9B" : c.dow === 6 ? "#9CC6FF" : "rgba(255,255,255,0.45)", marginTop: 1 }}>{WD[c.dow]}</div>}
+                  <div style={{ fontSize: 9, fontWeight: 800, height: 11, color: c.dow === 0 ? "#FF9B9B" : c.dow === 6 ? "#9CC6FF" : "rgba(255,255,255,0.45)", marginTop: 1 }}>{scroll ? WD[c.dow] : " "}</div>
                 </div>
               ))}
             </div>
