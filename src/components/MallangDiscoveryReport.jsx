@@ -2393,11 +2393,8 @@ function TrendChartsCard({ entries, exampleEntries }) {
     const arr = (e.soreness || []).filter((s) => !activePart || s.part === activePart).map((s) => s.level).filter((v) => typeof v === "number");
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
-  const fw = weekRanges.findIndex(([a, b]) => { for (let d = a; d <= b; d++) if (dayData[d]) return true; return false; });
-  const firstDataWeek = fw < 0 ? 0 : fw;
-
   const [mode, setMode] = useState("weekly");
-  const [weekIdx, setWeekIdx] = useState(firstDataWeek);
+  const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
   let cats;
   if (mode === "weekly") {
@@ -2408,10 +2405,12 @@ function TrendChartsCard({ entries, exampleEntries }) {
       return { label: `${i + 1}주`, mood: avg(moods), sore: avg(sores), n: moods.length };
     });
   } else {
-    const [a, b] = weekRanges[weekIdx];
+    // 일간 = 이번 달 모든 날(가로 스크롤). 날짜 밑에 요일도 표시.
     cats = [];
-    for (let d = a; d <= b; d++) { const r = dayData[d]; cats.push({ label: String(d), mood: r ? r.mood : null, sore: r ? r.sore : null }); }
+    for (let d = 1; d <= lastDay; d++) { const r = dayData[d]; cats.push({ label: String(d), dow: new Date(yy, mm - 1, d).getDay(), mood: r ? r.mood : null, sore: r ? r.sore : null }); }
   }
+  const scroll = mode === "daily";
+  const colW = 42;
   const N = cats.length || 1;
   const soreVals = cats.map((c) => c.sore).filter((v) => v != null);
   const maxSore = Math.max(4, ...soreVals.map((v) => Math.ceil(v)));
@@ -2425,13 +2424,24 @@ function TrendChartsCard({ entries, exampleEntries }) {
   let dPath = "", prev = false;
   cats.forEach((c, i) => { if (c.mood == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.mood).toFixed(2)}`; prev = true; });
 
+  // 일간 가로 드래그 스크롤(클릭해서 좌우로)
+  const scrollElRef = useRef(null);
+  const dragRef = useRef({ down: false, x: 0, left: 0 });
+  const onDragDown = (e) => { const el = scrollElRef.current; if (!el) return; dragRef.current = { down: true, x: e.clientX, left: el.scrollLeft }; };
+  const onDragMove = (e) => { if (!dragRef.current.down || !scrollElRef.current) return; scrollElRef.current.scrollLeft = dragRef.current.left - (e.clientX - dragRef.current.x); };
+  const onDragUp = () => { dragRef.current.down = false; };
+  const colStyle = scroll ? { width: colW, flex: "0 0 auto" } : { flex: 1 };
+  const dragHandlers = scroll ? { onPointerDown: onDragDown, onPointerMove: onDragMove, onPointerUp: onDragUp, onPointerLeave: onDragUp } : {};
+
+  const rowGap = scroll ? 0 : gap;
   const body = (
     <div>
-      {/* 불편함 정도 막대그래프 (+ 부위 선택 드롭다운) */}
+      {/* 범례(불편함·기분) + 부위 선택 드롭다운 — 고정 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9, gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 800, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 9, height: 9, borderRadius: 3, background: "#E0554F" }} /> 불편함 정도
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 9, height: 9, borderRadius: 3, background: "#E0554F" }} /> 불편함</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 9, height: 9, borderRadius: "50%", background: "#BF8FE9" }} /> 기분</span>
+        </div>
         {partList.length > 0 && (
           <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
             style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
@@ -2439,44 +2449,51 @@ function TrendChartsCard({ entries, exampleEntries }) {
           </select>
         )}
       </div>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, height: barH + 16, padding: "0 2px" }}>
-        {cats.map((c, i) => {
-          const empty = c.sore == null;
-          const h = empty ? 3 : Math.max(4, Math.round((c.sore / maxSore) * barH));
-          return (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-              {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#C4726C" }}>{c.sore.toFixed(1)}</span>}
-              <div style={{ width: "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : "linear-gradient(180deg,#F0917C,#E0554F)", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
-            </div>
-          );
-        })}
-      </div>
 
-      <div style={{ height: 1, background: C.line, margin: "16px 0 12px" }} />
-
-      {/* 기분 기록 꺾은선(말랑이 표정) */}
-      <div style={{ fontSize: 12, fontWeight: 800, color: C.ink, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#BF8FE9" }} /> 기분 기록
-      </div>
-      <div style={{ position: "relative", height: H }}>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-          {dPath && <path d={dPath} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
-        </svg>
-        {cats.map((c, i) => (c.mood != null ? (
-          <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)" }}>
-            <Mallang v={Math.round(c.mood)} size={faceSize} noBlink />
+      {/* 플롯 — 일간이면 가로 드래그 스크롤 */}
+      <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
+        <div style={{ width: scroll ? N * colW : "100%" }}>
+          {/* 불편함 막대 */}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: rowGap, height: barH + 16, padding: "0 2px" }}>
+            {cats.map((c, i) => {
+              const empty = c.sore == null;
+              const h = empty ? 3 : Math.max(4, Math.round((c.sore / maxSore) * barH));
+              return (
+                <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                  {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#C4726C" }}>{c.sore.toFixed(1)}</span>}
+                  <div style={{ width: scroll ? 18 : "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : "linear-gradient(180deg,#F0917C,#E0554F)", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
+                </div>
+              );
+            })}
           </div>
-        ) : null))}
+
+          <div style={{ height: 1, background: C.line, margin: "14px 0 12px" }} />
+
+          {/* 기분 꺾은선(말랑이 표정) */}
+          <div style={{ position: "relative", height: H }}>
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+              {dPath && <path d={dPath} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+            </svg>
+            {cats.map((c, i) => (c.mood != null ? (
+              <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)" }}>
+                <Mallang v={Math.round(c.mood)} size={faceSize} noBlink />
+              </div>
+            ) : null))}
+          </div>
+
+          {/* x축 라벨 — 날짜 + 요일(일간) */}
+          <div style={{ display: "flex", gap: rowGap, marginTop: 6, padding: "0 2px" }}>
+            {cats.map((c, i) => (
+              <div key={i} style={{ ...colStyle, textAlign: "center" }}>
+                <div style={{ fontSize: scroll ? 10 : (N > 7 ? 9.5 : 11), fontWeight: 700, color: C.sub }}>{c.label}</div>
+                {scroll && <div style={{ fontSize: 9, fontWeight: 800, color: c.dow === 0 ? "#E0554F" : c.dow === 6 ? "#2F6FE0" : "#BFB9AF", marginTop: 1 }}>{WD[c.dow]}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* x축 라벨 */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap, marginTop: 6, padding: "0 2px" }}>
-        {cats.map((c, i) => (
-          <span key={i} style={{ flex: 1, textAlign: "center", fontSize: N > 7 ? 9.5 : 11, fontWeight: 700, color: C.sub }}>{c.label}</span>
-        ))}
-      </div>
-
-      {!hasAnyData && <p style={{ fontSize: 12, color: C.sub, fontWeight: 700, textAlign: "center", marginTop: 14 }}>이 주에는 기록이 없어요.</p>}
+      {!hasAnyData && <p style={{ fontSize: 12, color: C.sub, fontWeight: 700, textAlign: "center", marginTop: 14 }}>아직 기록이 없어요.</p>}
     </div>
   );
 
@@ -2486,20 +2503,12 @@ function TrendChartsCard({ entries, exampleEntries }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>기분·불편함 추이</div>
           <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>📈 기분과 불편함 추이</div>
-          <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 기록을 한 주씩 봐요"}</p>
+          <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 기록 · 좌우로 넘겨보세요"}</p>
         </div>
-        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => { setMode("daily"); setWeekIdx(firstDataWeek); }} t={t} />
+        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => setMode("daily")} t={t} />
       </div>
 
-      {mode === "daily" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "16px 0 4px" }}>
-          <button aria-label="이전 주" onClick={() => setWeekIdx((i) => Math.max(0, i - 1))} disabled={weekIdx === 0} style={trendArrow(weekIdx === 0)}>‹</button>
-          <span style={{ fontSize: 13, fontWeight: 800, color: C.ink, minWidth: 118, textAlign: "center" }}>{weekRanges[weekIdx][0]}~{weekRanges[weekIdx][1]}일 <span style={{ color: C.sub, fontWeight: 700 }}>({weekIdx + 1}주차)</span></span>
-          <button aria-label="다음 주" onClick={() => setWeekIdx((i) => Math.min(3, i + 1))} disabled={weekIdx === 3} style={trendArrow(weekIdx === 3)}>›</button>
-        </div>
-      )}
-
-      <div style={{ marginTop: mode === "daily" ? 8 : 16 }}>{body}</div>
+      <div style={{ marginTop: 16 }}>{body}</div>
     </div>
   );
 
@@ -2527,11 +2536,8 @@ function MallangNightCard({ entries, nickname }) {
     const dom = Number(e.date.slice(8, 10));
     dayData[dom] = { qual: typeof e.sleep === "number" ? e.sleep : null, bed: e.sleepTime ? bedVal(e.sleepTime) : null };
   });
-  const fw = weekRanges.findIndex(([a, b]) => { for (let d = a; d <= b; d++) if (dayData[d]) return true; return false; });
-  const firstDataWeek = fw < 0 ? 0 : fw;
-
   const [mode, setMode] = useState("weekly");
-  const [weekIdx, setWeekIdx] = useState(firstDataWeek);
+  const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
   let cats;
   if (mode === "weekly") {
@@ -2542,12 +2548,16 @@ function MallangNightCard({ entries, nickname }) {
       return { label: `${i + 1}주`, qual: avg(quals), bed: avg(beds) };
     });
   } else {
-    const [a, b] = weekRanges[weekIdx];
+    // 일간 = 이번 달 모든 날(가로 스크롤). 날짜 밑에 요일도 표시.
     cats = [];
-    for (let d = a; d <= b; d++) { const r = dayData[d]; cats.push({ label: String(d), qual: r ? r.qual : null, bed: r ? r.bed : null }); }
+    for (let d = 1; d <= lastDay; d++) { const r = dayData[d]; cats.push({ label: String(d), dow: new Date(yy, mm - 1, d).getDay(), qual: r ? r.qual : null, bed: r ? r.bed : null }); }
   }
+  const scroll = mode === "daily";
+  const colW = 40;
   const N = cats.length || 1;
   const gap = N > 7 ? 3 : 8;
+  const rowGap = scroll ? 0 : gap;
+  const colStyle = scroll ? { width: colW, flex: "0 0 auto" } : { flex: 1 };
   const iconSize = N <= 4 ? 24 : N <= 7 ? 20 : 16;
   const hasAnyData = cats.some((c) => c.qual != null || c.bed != null);
 
@@ -2563,6 +2573,14 @@ function MallangNightCard({ entries, nickname }) {
   let dPath = "", prev = false;
   cats.forEach((c, i) => { if (c.qual == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.qual).toFixed(2)}`; prev = true; });
 
+  // 일간 가로 드래그 스크롤(클릭해서 좌우로)
+  const scrollElRef = useRef(null);
+  const dragRef = useRef({ down: false, x: 0, left: 0 });
+  const onDragDown = (e) => { const el = scrollElRef.current; if (!el) return; dragRef.current = { down: true, x: e.clientX, left: el.scrollLeft }; };
+  const onDragMove = (e) => { if (!dragRef.current.down || !scrollElRef.current) return; scrollElRef.current.scrollLeft = dragRef.current.left - (e.clientX - dragRef.current.x); };
+  const onDragUp = () => { dragRef.current.down = false; };
+  const dragHandlers = scroll ? { onPointerDown: onDragDown, onPointerMove: onDragMove, onPointerUp: onDragUp, onPointerLeave: onDragUp } : {};
+
   const nightName = (nickname && String(nickname).trim()) ? String(nickname).trim() : "말랑이";
 
   return (
@@ -2572,48 +2590,50 @@ function MallangNightCard({ entries, nickname }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>{nightName}의 밤</div>
           <div style={{ fontSize: 16.5, fontWeight: 800, color: "#fff" }}>🌙 {nightName}의 밤</div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 수면을 한 주씩 봐요"}</p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all" }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : "하루하루의 수면 · 좌우로 넘겨보세요"}</p>
         </div>
-        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => { setMode("daily"); setWeekIdx(firstDataWeek); }} t={getTypeAccent()} />
+        <TrendSwitchPill mode={mode} onWeekly={() => setMode("weekly")} onDaily={() => setMode("daily")} t={getTypeAccent()} />
       </div>
 
-      {mode === "daily" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "16px 0 4px", position: "relative" }}>
-          <button aria-label="이전 주" onClick={() => setWeekIdx((i) => Math.max(0, i - 1))} disabled={weekIdx === 0} style={trendArrow(weekIdx === 0)}>‹</button>
-          <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", minWidth: 118, textAlign: "center" }}>{weekRanges[weekIdx][0]}~{weekRanges[weekIdx][1]}일 <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>({weekIdx + 1}주차)</span></span>
-          <button aria-label="다음 주" onClick={() => setWeekIdx((i) => Math.min(3, i + 1))} disabled={weekIdx === 3} style={trendArrow(weekIdx === 3)}>›</button>
-        </div>
-      )}
-
-      <div style={{ marginTop: mode === "daily" ? 8 : 14, position: "relative" }}>
-        <div style={{ position: "relative", height: H }}>
-          {/* 잠든 시간대 — 늦게 잘수록 막대가 높아요 */}
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap, paddingTop: 22 }}>
-            {cats.map((c, i) => {
-              const h = c.bed == null ? 3 : Math.max(5, Math.round((0.18 + c.bed * 0.82) * barH));
-              return (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                  <div style={{ width: "56%", maxWidth: 20, height: h, borderRadius: 6, background: "linear-gradient(180deg,#FFE39A,#F5C860)", opacity: c.bed == null ? 0.4 : 1, transition: "height .3s" }} />
+      <div style={{ marginTop: 14, position: "relative" }}>
+        <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
+          <div style={{ width: scroll ? N * colW : "100%" }}>
+            <div style={{ position: "relative", height: H }}>
+              {/* 잠든 시간대 — 늦게 잘수록 막대가 높아요 */}
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, paddingTop: 22 }}>
+                {cats.map((c, i) => {
+                  const h = c.bed == null ? 3 : Math.max(5, Math.round((0.18 + c.bed * 0.82) * barH));
+                  return (
+                    <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                      <div style={{ width: scroll ? 16 : "56%", maxWidth: 20, height: h, borderRadius: 6, background: "linear-gradient(180deg,#FFE39A,#F5C860)", opacity: c.bed == null ? 0.4 : 1, transition: "height .3s" }} />
+                    </div>
+                  );
+                })}
+              </div>
+              {/* 기준 시간 점선 — 이 선보다 막대가 높으면 그날 더 늦게 잠든 것 */}
+              <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }} />
+              {/* 수면의 질 꺾은선 */}
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+                {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+              </svg>
+              {/* 수면의 질 4가지 아이콘 */}
+              {cats.map((c, i) => c.qual == null ? null : (
+                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#3B3557", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
+                  <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
                 </div>
-              );
-            })}
-          </div>
-          {/* 기준 시간 점선 — 이 선보다 막대가 높으면 그날 더 늦게 잠든 것 */}
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }} />
-          {/* 수면의 질 꺾은선 */}
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-            {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
-          </svg>
-          {/* 수면의 질 4가지 아이콘 */}
-          {cats.map((c, i) => c.qual == null ? null : (
-            <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#3B3557", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
-              <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", gap, marginTop: 6 }}>
-          {cats.map((c, i) => <span key={i} style={{ flex: 1, textAlign: "center", fontSize: N > 7 ? 9 : 10.5, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{c.label}</span>)}
+            {/* x축 라벨 — 날짜 + 요일(일간) */}
+            <div style={{ display: "flex", gap: rowGap, marginTop: 6 }}>
+              {cats.map((c, i) => (
+                <div key={i} style={{ ...colStyle, textAlign: "center" }}>
+                  <div style={{ fontSize: (!scroll && N > 7) ? 9 : 10.5, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{c.label}</div>
+                  {scroll && <div style={{ fontSize: 9, fontWeight: 800, color: c.dow === 0 ? "#FF9B9B" : c.dow === 6 ? "#9CC6FF" : "rgba(255,255,255,0.45)", marginTop: 1 }}>{WD[c.dow]}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {!hasAnyData && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 700, textAlign: "center", marginTop: 14 }}>이 기간엔 수면 기록이 없어요.</p>}

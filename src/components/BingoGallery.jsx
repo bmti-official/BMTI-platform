@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CHARACTERS, CHARACTER_NAMES, CODE_KO, BMTI_INFO } from '../data';
 
@@ -60,12 +60,23 @@ const YELLOW_SHADOW = '0 2px 6px rgba(220,188,86,0.18), 0 12px 28px rgba(233,203
 // 다른 유형 구경하기와 같은 오버레이 — 캐릭터를 고르면 그 유형의 4×4 빙고판.
 export default function BingoGallery({ onClose }) {
   const [selected, setSelected] = useState(null);
+  const scrollRef = useRef(null);
   const overlay = (
-    <div className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
-      {selected ? <BingoBoard key={selected} code={selected} onBack={() => setSelected(null)} onClose={onClose} /> : <BingoGrid onPick={setSelected} onClose={onClose} />}
+    <div ref={scrollRef} className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
+      {selected ? <BingoBoard key={selected} code={selected} onBack={() => setSelected(null)} onClose={onClose} scrollRef={scrollRef} /> : <BingoGrid onPick={setSelected} onClose={onClose} />}
     </div>
   );
   return createPortal(overlay, document.body);
+}
+
+// 우측 하단 '상단으로' 버튼 — 오버레이 스크롤 컨테이너를 맨 위로.
+function ScrollTopFab({ scrollRef }) {
+  return (
+    <button onClick={() => scrollRef?.current?.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="맨 위로"
+      className="fixed z-[120] bottom-6 right-5 w-11 h-11 rounded-full bg-white border border-gray-200 shadow-lg flex items-center justify-center text-gray-600 active:scale-95 transition">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+    </button>
+  );
 }
 
 function BingoGrid({ onPick, onClose }) {
@@ -92,7 +103,7 @@ function BingoGrid({ onPick, onClose }) {
   );
 }
 
-function BingoBoard({ code, onBack, onClose }) {
+function BingoBoard({ code, onBack, onClose, scrollRef }) {
   const color = (BMTI_INFO[code] || {}).color || '#C9975A';
   const charData = CHARACTERS.find((c) => c.id === code);
   const [cells, setCells] = useState(() => pickRandom(poolForCode(code), 16));
@@ -106,17 +117,19 @@ function BingoBoard({ code, onBack, onClose }) {
 
   return (
     <div className="max-w-md mx-auto pb-28">
-      {/* 상단 — 바 없이 알약 버튼(유형 목록·✕)과 큰 검은 타이틀 */}
-      <div className="flex items-center justify-between px-5 pt-5">
+      {/* 상단 — '유형 목록'·타이틀·✕를 한 줄에, 스크롤해도 따라오도록 sticky */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm relative flex items-center justify-between px-5 pt-5 pb-3">
         <button onClick={onBack} className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 shadow-sm px-3.5 py-2 text-[13px] font-bold text-gray-700 active:scale-95 transition">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           유형 목록
         </button>
+        <span className="absolute left-1/2 -translate-x-1/2 text-[17px] font-black text-gray-900 whitespace-nowrap">⭐️ BMTI 빙고판</span>
         <button onClick={onClose} aria-label="닫기" className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 text-lg active:scale-95 transition">✕</button>
       </div>
-      <div className="text-center text-[22px] font-black text-gray-900 mt-3 mb-4">⭐️ BMTI 빙고판</div>
 
-      <div className="px-5">
+      <ScrollTopFab scrollRef={scrollRef} />
+
+      <div className="px-5 pt-2">
         {/* 원본 이미지 크게 */}
         <div className="rounded-2xl overflow-hidden mb-3 bg-gray-50">
           {charData && <img src={charData.originalImage} alt={code} className="w-full object-cover" style={{ maxHeight: 200 }} />}

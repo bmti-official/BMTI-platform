@@ -190,9 +190,9 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
                 type="button"
                 onClick={() => setShowGuide(true)}
                 aria-label="BMTI 활용법 보기"
-                className="absolute left-full ml-2 md:ml-3 top-1.5 md:top-3 w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-500 font-sans font-bold text-base md:text-xl flex items-center justify-center shadow-sm transition"
+                className="absolute left-full ml-2 md:ml-3 top-2 md:top-4 rounded-full bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-500 font-sans font-bold text-[11px] md:text-[13px] px-3 py-1.5 whitespace-nowrap flex items-center justify-center shadow-sm transition"
               >
-                ?
+                어디에 써요?
               </button>
             </span>
             <span className="text-2xl md:text-3xl font-medium mt-3 text-gray-400">움직임 성향 테스트</span>

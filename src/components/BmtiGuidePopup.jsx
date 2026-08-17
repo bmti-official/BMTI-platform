@@ -51,10 +51,8 @@ export default function BmtiGuidePopup({ onClose }) {
             <div key={i} className="flex gap-3.5 items-start">
               <span className="w-10 h-10 shrink-0 rounded-2xl bg-[#F5F1E8] flex items-center justify-center text-xl">{u.emoji}</span>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  {i === 0 && <span className="text-[10px] font-extrabold text-white bg-[#C9975A] rounded-full px-2 py-0.5">가장 많이 써요</span>}
-                  <h4 className="text-[15px] font-extrabold text-gray-900 break-keep">{u.title}</h4>
-                </div>
+                {i === 0 && <div className="mb-1"><span className="inline-block text-[10px] font-extrabold text-white bg-[#C9975A] rounded-full px-2 py-0.5">가장 많이 써요</span></div>}
+                <h4 className="text-[15px] font-extrabold text-gray-900 break-keep mb-1">{u.title}</h4>
                 <p className="text-[13px] text-gray-600 leading-relaxed break-keep">{u.body}</p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CHARACTERS, CHARACTER_NAMES, CODE_KO } from '../data';
 import { BMTI_INFO, TENDENCY_HL } from './ResultView';
@@ -22,17 +22,28 @@ function renderHlQuote(q, active, level, color) {
 // 하나를 고르면 '확신의' 기준 예시 결과지(성향 박스까지만, 아코디언 없음)를 띄운다.
 export default function TypeGallery({ onClose, initialCode = null, hasBmti = false, onStartTest }) {
   const [selected, setSelected] = useState(initialCode || null);
+  const scrollRef = useRef(null);
 
   const overlay = (
-    <div className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
+    <div ref={scrollRef} className="fixed inset-0 z-[110] bg-white overflow-y-auto" style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
       {selected ? (
-        <TypePreview code={selected} hasBmti={hasBmti} onStartTest={onStartTest} onBack={() => setSelected(null)} onClose={onClose} />
+        <TypePreview code={selected} hasBmti={hasBmti} onStartTest={onStartTest} onBack={() => setSelected(null)} onClose={onClose} scrollRef={scrollRef} />
       ) : (
         <TypeGrid onPick={setSelected} onClose={onClose} />
       )}
     </div>
   );
   return createPortal(overlay, document.body);
+}
+
+// 우측 하단 '상단으로' 버튼 — 오버레이 스크롤 컨테이너를 맨 위로.
+function ScrollTopFab({ scrollRef }) {
+  return (
+    <button onClick={() => scrollRef?.current?.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="맨 위로"
+      className="fixed z-[120] bottom-6 right-5 w-11 h-11 rounded-full bg-white border border-gray-200 shadow-lg flex items-center justify-center text-gray-600 active:scale-95 transition">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+    </button>
+  );
 }
 
 function TypeGrid({ onPick, onClose }) {
@@ -67,7 +78,7 @@ function TypeGrid({ onPick, onClose }) {
   );
 }
 
-function TypePreview({ code, onBack, onClose, hasBmti = false, onStartTest }) {
+function TypePreview({ code, onBack, onClose, hasBmti = false, onStartTest, scrollRef }) {
   const charData = CHARACTERS.find(c => c.id === code);
   const info = BMTI_INFO[code] || {};
   const resultData = BMTI_RESULTS[code] || {};
@@ -78,8 +89,8 @@ function TypePreview({ code, onBack, onClose, hasBmti = false, onStartTest }) {
 
   return (
     <div className="max-w-md mx-auto pb-28">
-      {/* 상단 — 바 없이 '유형 목록'·'✕' 알약과 가운데 '⎷ 예시 결과지'를 한 줄에 */}
-      <div className="relative flex items-center justify-between px-5 pt-5 pb-3">
+      {/* 상단 — '유형 목록'·'⎷ 예시 결과지'·'✕'를 한 줄에, 스크롤해도 따라오도록 sticky */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm relative flex items-center justify-between px-5 pt-5 pb-3">
         <button onClick={onBack} className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 shadow-sm px-3.5 py-2 text-[13px] font-bold text-gray-700 active:scale-95 transition">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           유형 목록
@@ -90,6 +101,8 @@ function TypePreview({ code, onBack, onClose, hasBmti = false, onStartTest }) {
         </span>
         <button onClick={onClose} aria-label="닫기" className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 text-lg active:scale-95 transition">✕</button>
       </div>
+
+      <ScrollTopFab scrollRef={scrollRef} />
 
       <div className="px-5">
         <div className="rounded-[1.2rem] bg-[#FBF4EA] border border-[#EBD8B8] px-4 py-3 mb-3 text-center">
