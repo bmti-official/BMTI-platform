@@ -227,8 +227,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 16 Characters Scroll Section */}
-      <section className="w-full overflow-hidden mb-6 relative">
+      {/* 16 Characters Scroll Section — 모바일 폭으로 제한 */}
+      <section className="w-full max-w-md mx-auto overflow-hidden mb-6 relative">
         {/* Gradient Fade Edges */}
         <div className="absolute left-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
         <div className="absolute right-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
@@ -267,9 +267,9 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 카카오톡 친구 공유 CTA — 결과를 받은 이용자에게만 */}
+      {/* 카카오톡 친구 공유 CTA — 결과를 받은 이용자에게만 (모바일 폭으로 제한) */}
       {bmtiCode && (
-        <div className="px-6 mb-12">
+        <div className="px-6 mb-12 w-full max-w-md mx-auto">
           <button
             onClick={shareToFriend}
             className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] font-extrabold text-sm md:text-base rounded-2xl py-4 shadow-[0_4px_16px_rgba(254,229,0,0.4)] hover:bg-[#F4DC00] active:scale-[0.99] transition-colors"
@@ -314,12 +314,12 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           object-cover로 채운다 — 비율이 같으므로 크롭 없이 꽉 차면서, 이미지가
           박스 끝까지 닿아 위아래 그라데이션도 M처럼 실제 사진 위에 자연스럽게 걸린다. */}
       <div className="w-full mb-24 flex flex-col">
-        <div className="relative w-full aspect-square overflow-hidden">
+        <div className="relative w-full max-w-md mx-auto aspect-square overflow-hidden">
           <img src={mTypeImage} alt="M 유형" className="absolute inset-0 w-full h-full object-cover" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
         </div>
-        <div className="relative w-full aspect-[2304/1838] overflow-hidden">
+        <div className="relative w-full max-w-md mx-auto aspect-[2304/1838] overflow-hidden">
           <img src={zTypeImage} alt="Z 유형" className="absolute inset-0 w-full h-full object-cover" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
