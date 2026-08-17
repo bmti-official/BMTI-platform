@@ -591,7 +591,9 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
   const future = date > today;
   const dayColor = weekdayColor(dow) || C.ink;
   const moodLabel = entry ? (MOODS.find(m => m.v === entry.mood)?.label) : null;
-  const hasDetails = !!entry && items.length > 0;
+  const tags = (entry?.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
+  const hasDetails = !!entry && (items.length > 0 || tags.length > 0);
+  const BODY_H = 250; // 아코디언 바디 고정 높이 — 요약 박스가 이 안에서 스크롤
   const onHeaderClick = () => {
     if (hasDetails) setOpen(o => !o);
     else if ((entry && !locked) || (!entry && writable)) onEdit();
@@ -615,7 +617,7 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
           {entry ? (
             <>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{moodLabel}</div>
-              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, marginTop: 3 }}>{hasDetails ? `기록 ${items.length}가지 · 눌러서 보기` : "기분만 짧게 남긴 날이에요"}</div>
+              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, marginTop: 3 }}>{hasDetails ? `${items.length > 0 ? `기록 ${items.length}가지` : `태그 ${tags.length}개`} · 눌러서 보기` : "기분만 짧게 남긴 날이에요"}</div>
             </>
           ) : (
             <div style={{ fontSize: 12.5, color: writable ? t.accentDeep : C.sub, fontWeight: 700 }}>
@@ -627,20 +629,41 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
         {hasDetails && <span style={{ flexShrink: 0, fontSize: 12, color: C.sub, transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
       </div>
 
-      {/* 아코디언 바디 */}
+      {/* 아코디언 바디 — 월간 미리보기와 같은 박스 형태(오늘의 태그 박스 + 요약 박스). 고정 높이라 요약 박스가 스크롤 */}
       {hasDetails && (
-        <div style={{ maxHeight: open ? 600 : 0, overflow: "hidden", transition: "max-height .3s ease" }}>
-          <div style={{ padding: "2px 14px 14px" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {items.map((it, i) => (
-                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 9, padding: "6px 10px", maxWidth: "100%" }}>
-                  <span style={{ display: "flex", flexShrink: 0 }}><DiaryIcon name={it.icon} size={14} /></span>
-                  <span style={{ fontSize: 12, color: C.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.text}</span>
-                </span>
-              ))}
-            </div>
+        <div style={{ maxHeight: open ? BODY_H : 0, overflow: "hidden", transition: "max-height .3s ease" }}>
+          <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 9, height: BODY_H, boxSizing: "border-box" }}>
+            {/* 오늘의 태그 박스 — 고정 */}
+            {tags.length > 0 && (
+              <div style={{ flexShrink: 0, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "11px 13px", boxShadow: YELLOW_SHADOW }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: C.sub, marginBottom: 7 }}>오늘의 태그</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {tags.map(tg => (
+                    <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.yellow, borderRadius: 999, padding: "5px 10px 5px 6px" }}>
+                      <DiaryIcon name={TAG_LABEL_TO_ICON[tg]} size={16} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{tg}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 나머지(기록 요약) 박스 — 남은 공간에서 스크롤 */}
+            {items.length > 0 ? (
+              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "2px 13px", boxShadow: YELLOW_SHADOW }}>
+                {items.map((it, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
+                    <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={20} /></div>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, boxShadow: YELLOW_SHADOW }}>
+                <span style={{ fontSize: 12.5, color: C.sub, fontWeight: 600 }}>기분만 짧게 남겨둔 날이에요.</span>
+              </div>
+            )}
             {!locked && (
-              <button onClick={onEdit} style={{ marginTop: 10, border: "none", background: "transparent", color: t.accentDeep, fontSize: 12, fontWeight: 800, cursor: "pointer", padding: "2px 0" }}>수정하기 ›</button>
+              <button onClick={onEdit} style={{ flexShrink: 0, alignSelf: "flex-start", border: "none", background: "transparent", color: t.accentDeep, fontSize: 12, fontWeight: 800, cursor: "pointer", padding: "2px 0" }}>수정하기 ›</button>
             )}
           </div>
         </div>
