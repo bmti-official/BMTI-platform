@@ -2361,10 +2361,11 @@ const TREND_MODES = ["weekly", "daily", "weekday"];
 const TREND_LABELS = { weekly: "주간", daily: "일간", weekday: "요일별" };
 function TrendSwitchPill({ mode, onSelect, t }) {
   const idx = Math.max(0, TREND_MODES.indexOf(mode));
+  const W = 48; // 버튼 3개 고정폭 — 슬라이딩 배경이 정확히 버튼 가운데 오게
   return (
     <div style={{ position: "relative", display: "flex", background: "#FBF1C9", borderRadius: 999, padding: 3, flexShrink: 0 }}>
-      <span style={{ position: "absolute", top: 3, bottom: 3, left: 3, width: "calc((100% - 6px) / 3)", borderRadius: 999, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.16)", transform: `translateX(${idx * 100}%)`, transition: "transform .25s ease" }} />
-      {TREND_MODES.map((m) => <button key={m} onClick={() => onSelect(m)} style={{ ...trendPillBtn(mode === m, t), flex: "1 0 auto", minWidth: 40, textAlign: "center" }}>{TREND_LABELS[m]}</button>)}
+      <span style={{ position: "absolute", top: 3, bottom: 3, left: 3, width: W, borderRadius: 999, background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.16)", transform: `translateX(${idx * 100}%)`, transition: "transform .25s ease" }} />
+      {TREND_MODES.map((m) => <button key={m} onClick={() => onSelect(m)} style={{ ...trendPillBtn(mode === m, t), width: W, padding: "5px 0", textAlign: "center", flexShrink: 0 }}>{TREND_LABELS[m]}</button>)}
     </div>
   );
 }
@@ -2469,8 +2470,11 @@ function TrendChartsCard({ entries, exampleEntries }) {
         )}
       </div>
 
-      {/* 플롯 — 일간이면 가로 드래그 스크롤 */}
-      <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
+      {/* 플롯 — 일간이면 가로 드래그 스크롤(좌우 끝 연회색 화살표로 힌트) */}
+      <div style={{ position: "relative" }}>
+        {scroll && <span style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", zIndex: 3, color: "#CFC9BE", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>‹</span>}
+        {scroll && <span style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", zIndex: 3, color: "#CFC9BE", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>›</span>}
+        <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", overflowY: "hidden", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
         <div style={{ width: scroll ? N * colW : "100%" }}>
           {/* 불편함 막대 */}
           <div style={{ display: "flex", alignItems: "flex-end", gap: rowGap, height: barH + 16, padding: "0 2px" }}>
@@ -2513,6 +2517,7 @@ function TrendChartsCard({ entries, exampleEntries }) {
               );
             })}
           </div>
+        </div>
         </div>
       </div>
 
@@ -2614,7 +2619,7 @@ function MallangNightCard({ entries, nickname }) {
   const nightName = (nickname && String(nickname).trim()) ? String(nickname).trim() : "말랑이";
 
   return (
-    <div style={{ background: "linear-gradient(180deg,#3B3557,#514873)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "linear-gradient(180deg,#493F73,#61548F)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
       {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (<span key={i} style={{ position: "absolute", left: `${13 + i * 19}%`, top: `${8 + (i % 2) * 8}%`, color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{s}</span>))}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, position: "relative" }}>
         <div>
@@ -2626,7 +2631,10 @@ function MallangNightCard({ entries, nickname }) {
       </div>
 
       <div style={{ marginTop: 14, position: "relative" }}>
-        <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
+        <div style={{ position: "relative" }}>
+        {scroll && <span style={{ position: "absolute", left: 0, top: "42%", transform: "translateY(-50%)", zIndex: 3, color: "rgba(255,255,255,0.55)", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>‹</span>}
+        {scroll && <span style={{ position: "absolute", right: 0, top: "42%", transform: "translateY(-50%)", zIndex: 3, color: "rgba(255,255,255,0.55)", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>›</span>}
+        <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", overflowY: "hidden", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
           <div style={{ width: scroll ? N * colW : "100%" }}>
             <div style={{ position: "relative", height: H }}>
               {/* 잠든 시간대 — 늦게 잘수록 막대가 높아요 */}
@@ -2648,7 +2656,7 @@ function MallangNightCard({ entries, nickname }) {
               </svg>
               {/* 수면의 질 4가지 아이콘 */}
               {cats.map((c, i) => c.qual == null ? null : (
-                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#3B3557", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
+                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#493F73", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
                   <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
                 </div>
               ))}
@@ -2664,6 +2672,7 @@ function MallangNightCard({ entries, nickname }) {
               ))}
             </div>
           </div>
+        </div>
         </div>
 
         {!hasAnyData && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 700, textAlign: "center", marginTop: 14 }}>이 기간엔 수면 기록이 없어요.</p>}

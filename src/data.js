@@ -143,14 +143,14 @@ import origALDM from './assets/원본/ALDM.png';
 import origALDZ from './assets/원본/ALDZ.png';
 import origALQM from './assets/원본/ALQM.png';
 import origALQZ from './assets/원본/ALQZ.png';
-import origOCDM from './assets/원본/OCDM.png';
+import origOCDM from './assets/원본/OCDM.jpg';
 import origOCDZ from './assets/원본/OCDZ.png';
 import origOCQM from './assets/원본/OCQM.png';
 import origOCQZ from './assets/원본/OCQZ.PNG';
 import origOLDM from './assets/원본/OLDM.png';
 import origOLDZ from './assets/원본/OLDZ.png';
-import origOLQM from './assets/원본/OLQM.png';
-import origOLQZ from './assets/원본/OLQZ.png';
+import origOLQM from './assets/원본/OLQM.jpg';
+import origOLQZ from './assets/원본/OLQZ.jpg';
 
 // 16 BMTI Character types
 export const CHARACTERS = [
