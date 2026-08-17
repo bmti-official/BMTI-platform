@@ -2357,7 +2357,7 @@ function ButterflyCard({ data }) {
 const trendPillBtn = (active, t) => ({ position: "relative", zIndex: 1, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "5px 13px", color: active ? t.accentDeep : C.sub, transition: "color .2s" });
 const trendArrow = (disabled) => ({ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: disabled ? "#CFC9BE" : C.ink, fontSize: 18, fontWeight: 800, lineHeight: 1, cursor: disabled ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 });
 
-const TREND_MODES = ["weekly", "daily", "weekday"];
+const TREND_MODES = ["daily", "weekly", "weekday"];
 const TREND_LABELS = { weekly: "주간", daily: "일간", weekday: "요일별" };
 function TrendSwitchPill({ mode, onSelect, t }) {
   const idx = Math.max(0, TREND_MODES.indexOf(mode));
@@ -2394,7 +2394,7 @@ function TrendChartsCard({ entries, exampleEntries }) {
     const arr = (e.soreness || []).filter((s) => !activePart || s.part === activePart).map((s) => s.level).filter((v) => typeof v === "number");
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
-  const [mode, setMode] = useState("weekly");
+  const [mode, setMode] = useState("daily");
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
   let cats, peakWd = null;
@@ -2564,7 +2564,7 @@ function MallangNightCard({ entries, nickname }) {
     const dom = Number(e.date.slice(8, 10));
     dayData[dom] = { qual: typeof e.sleep === "number" ? e.sleep : null, bed: e.sleepTime ? bedVal(e.sleepTime) : null };
   });
-  const [mode, setMode] = useState("weekly");
+  const [mode, setMode] = useState("daily");
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
   let cats;
