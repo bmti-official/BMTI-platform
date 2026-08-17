@@ -38,8 +38,8 @@ const Footer = () => {
           <button onClick={() => setIsAboutOpen(true)} className="hover:text-black transition-colors break-keep">[서비스 소개]</button>
           <a href={`${import.meta.env.BASE_URL}magazine.html`} className="hover:text-black transition-colors break-keep">[건강 매거진]</a>
           <button onClick={() => setIsContactOpen(true)} className="hover:text-black transition-colors break-keep">[문의하기]</button>
-          <button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors break-keep">[이용약관]</button>
-          <button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors break-keep">[개인정보처리방침]</button>
+          <a href={`${import.meta.env.BASE_URL}terms.html`} className="hover:text-black transition-colors break-keep">[이용약관]</a>
+          <a href={`${import.meta.env.BASE_URL}privacy.html`} className="hover:text-black transition-colors break-keep">[개인정보처리방침]</a>
           <a href="http://www.ftc.go.kr/bizCommPop.do?wrkr_no=8770403614" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors break-keep">[사업자정보확인]</a>
           <button onClick={() => setIsAdInquiryOpen(true)} className="hover:text-black transition-colors break-keep">[광고문의]</button>
         </div>

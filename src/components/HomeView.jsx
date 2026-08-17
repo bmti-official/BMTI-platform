@@ -324,6 +324,22 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
         </div>
+
+        {/* 임시 텍스트 — Z 유형 이미지 밑 (추후 교체 예정) */}
+        <section className="w-full max-w-2xl mx-auto px-6 pt-4 text-center">
+          <h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-3 break-keep">BMTI는 어떤 서비스인가요?</h2>
+          <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep mb-3">
+            BMTI(Body Management Type Indicator)는 나의 움직임 성향을 16가지 유형으로 알아보는 간단한 테스트예요.
+            활동적인지 차분한지, 한 부위에 집중하는지 몸 전체를 살피는지처럼 서로 다른 결을 4가지 축으로 나눠,
+            나에게 잘 맞는 몸 관리 방향과 파트너 캐릭터를 안내해 드려요.
+          </p>
+          <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep">
+            검사 이후에는 <b className="text-gray-700">건강(말랑) 다이어리</b>로 매일의 기분·수면·불편한 부위를 10초 만에 기록하고,
+            한 달치 기록이 쌓이면 나만의 패턴을 정리한 발견 리포트를 받아볼 수 있어요. 오래 앉아 지내는 사람을 위한
+            자세·회복·스트레칭 이야기는 <b className="text-gray-700">건강 매거진</b>에서도 만나보실 수 있습니다.
+          </p>
+          <p className="text-[11px] text-gray-300 mt-4">※ 이 문구는 임시로 넣어둔 안내이며 추후 교체될 예정이에요.</p>
+        </section>
       </div>
 
       {/* Removed Cards Section */}
