@@ -37,9 +37,12 @@
   footer.bottom { margin-top: 34px; padding-top: 22px; border-top: 1px solid #EEEAE2; text-align: center; color: #8A857D; font-size: 12.5px; line-height: 1.7; }
   footer.bottom a { color: #8B7BD8; font-weight: 700; text-decoration: none; }
   .disclaimer { background: #F4F1EA; border-radius: 14px; padding: 14px 16px; font-size: 12.5px; color: #6E6A62; margin: 26px 0 0; text-align: left; }
+  .close-x { position: fixed; top: 14px; right: 14px; z-index: 50; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid #EEEAE2; box-shadow: 0 2px 10px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; color: #6E6A62; font-size: 18px; line-height: 1; text-decoration: none; }
+  .close-x:hover { color: #1C1A17; }
 </style>
 </head>
 <body>
+  <a href="/" class="close-x" aria-label="닫기 (홈으로)" onclick="if(document.referrer&&new URL(document.referrer).origin===location.origin){history.back();return false;}">✕</a>
   <div class="wrap">
     <header class="top">
       <div class="brand">BMTI 건강 매거진</div>
