@@ -311,7 +311,12 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
       noAnim = document.createElement("style");
       // animation:none 은 '기본 상태'로 되돌린다(play-state:paused 는 중간 프레임에 얼어붙어 제거).
       // 2D 말랑이 눈 덮개는 기본이 '덮인' 상태라 눈 감김 → 캡처 땐 숨긴다. 빨강점 펄스는 기본 크기(scale1)로.
-      noAnim.textContent = "*,*::before,*::after{animation:none !important;transition:none !important;}.mallang-eye-cover{opacity:0 !important;transform:scaleY(0) !important;}.sore-dot-pulse{transform:none !important;}.award-confetti{opacity:0 !important;}";
+      // html2canvas는 음수 마진을 무시해 뒤따르는 문구·이모지가 아래로 밀린다 → 캡처 동안 0으로 맞춰 화면과 같은 간격을 유지.
+      noAnim.textContent = "*,*::before,*::after{animation:none !important;transition:none !important;}"
+        + ".mallang-eye-cover{opacity:0 !important;transform:scaleY(0) !important;}"
+        + ".sore-dot-pulse{transform:none !important;}"
+        + ".award-confetti{opacity:0 !important;}"
+        + ".neg-margin{margin:0 !important;}";
       document.head.appendChild(noAnim);
 
       // 표지 — 한글 제목(jsPDF 기본 폰트는 한글 미지원이라 이미지로 렌더)
@@ -1529,7 +1534,10 @@ function MoodDistribution({ data }) {
       <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 8, position: "relative", zIndex: 1 }}>
         {podium.sort((a, b) => a.order - b.order).map((p) => (
           <div key={p.rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0, maxWidth: 96 }}>
-            {p.rank === 1 && <div style={{ fontSize: 20, marginBottom: -6, animation: "crownBob 2s ease-in-out infinite" }}>👑</div>}
+            {/* 왕관은 음수 마진 대신 절대배치 — html2canvas(PDF)가 음수 마진을 무시해 아래 요소가 밀려 내려가는 걸 막는다 */}
+            {p.rank === 1 && <div style={{ height: 15, position: "relative", width: "100%" }}>
+              <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", fontSize: 20, lineHeight: 1, animation: "crownBob 2s ease-in-out infinite" }}>👑</span>
+            </div>}
             <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
               <Mallang v={p.item.mood} size={p.size} />
             </div>
@@ -1578,11 +1586,14 @@ function SoreMap({ data, gender, moments }) {
         const size = 10 + 20 * (p.count / maxCount); // 누적 많을수록 큰 점
         const isTop = top && p.part === top.part;
         return (
-          <span key={p.part} title={`${p.label} ${p.count}번`} className="sore-dot-pulse"
-            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size,
-              marginLeft: -size / 2, marginTop: -size / 2, borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
-              animation: isTop ? "soreDotPulse 1.8s ease-in-out infinite" : "none" }} />
+          // 가운데 정렬은 음수 마진 대신 바깥 래퍼의 transform으로 — PDF(html2canvas)가 음수 마진을 무시해 점이 밀리는 걸 막는다.
+          <span key={p.part} title={`${p.label} ${p.count}번`}
+            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size, transform: "translate(-50%,-50%)" }}>
+            <span className="sore-dot-pulse"
+              style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
+                animation: isTop ? "soreDotPulse 1.8s ease-in-out infinite" : "none" }} />
+          </span>
         );
       })}
       <span style={{ position: "absolute", bottom: -2, left: 0, right: 0, textAlign: "center", fontSize: 11, fontWeight: 700, color: C.sub }}>{label}</span>
@@ -2380,7 +2391,7 @@ function ButterflyCard({ data }) {
           </div>
         </div>
         {/* 연결 화살표 + '며칠 뒤' 라벨 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: "-4px 0" }}>
+        <div className="neg-margin" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: "-4px 0" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: t.accentSoft, color: t.accentDeep, fontSize: 11, fontWeight: 800, padding: "4px 12px", borderRadius: 999 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
             며칠 뒤
@@ -2771,7 +2782,7 @@ function WeekdayDrainCard({ entries }) {
   return (
     <InsCard badge="요일별 불편함 패턴" title="🗓️ 나의 요일별 불편함 패턴" sub="일주일 중 몸이 가장 많이 불편한 요일을 짚어봤어요">
       {partList.length > 0 && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: -6, marginBottom: 10 }}>
+        <div className="neg-margin" style={{ display: "flex", justifyContent: "flex-end", marginTop: -6, marginBottom: 10 }}>
           <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
             style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
             {partList.map((pid) => <option key={pid} value={pid}>{PARTS[pid] || pid} ({partCounts[pid]})</option>)}
@@ -2791,7 +2802,7 @@ function WeekdayDrainCard({ entries }) {
           return (
             <div key={wd} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {isPeak && <span style={{ fontSize: 9.5, fontWeight: 800, color: "#E0554F", lineHeight: 1.1 }}>최고조!</span>}
-              {isPeak && <span style={{ fontSize: 11, marginBottom: -2 }}>🔴</span>}
+              {isPeak && <span className="neg-margin" style={{ fontSize: 11, marginBottom: -2 }}>🔴</span>}
               <div style={{ width: "66%", maxWidth: 22, height: h, borderRadius: 6, background: isPeak ? "linear-gradient(180deg,#F0655F,#E0554F)" : "#E7E1D5", boxShadow: isPeak ? "0 3px 8px rgba(224,85,79,0.35)" : "none", transition: "height .3s" }} />
               <span style={{ fontSize: 11, fontWeight: isPeak ? 800 : 600, color: isPeak ? "#E0554F" : C.sub }}>{WD[wd]}</span>
             </div>
