@@ -46,6 +46,7 @@ export function Mallang({ v, size = 44, tapKey = 0, skinOverride, noBlink = fals
           />
           {eye && !noBlink && (
             <span
+              className="mallang-eye-cover"
               style={{
                 position: "absolute", left: `${eye.x * 100}%`, top: `${eye.y * 100}%`,
                 width: `${eye.w * 100}%`, height: `${eye.h * 100}%`,

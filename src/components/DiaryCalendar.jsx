@@ -79,8 +79,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
   const isM = axisCode.includes("M");
   const nickname = (() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.nickname || null; } catch { return null; } })();
-  const moodQuestionTitle = nickname ? `${nickname} 님, 오늘 기분은 어떠신가요?` : "오늘 기분은 어떠신가요?";
-  const moodQuestionSub = isM ? "정답은 없어요. 지금 느낌그대로면 돼요" : "기록이 쌓이면 주간 패턴을 찾아드립니다";
+  const moodQuestionTitle = nickname ? `${nickname} 말랑아, 오늘 하루 어땠어?` : "말랑아, 오늘 하루 어땠어?";
+  const moodQuestionSub = isM ? "정답은 없어요. 지금 느낌 그대로면 돼요" : "기록이 쌓이면 주간 패턴을 찾아드립니다";
   const moodPickedMessage = isM ? "오늘은 그랬군요. 기억해둘게요" : "기록을 완료했습니다";
   const todayStr = todayISO();
   const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();

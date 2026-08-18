@@ -299,7 +299,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 32;
-      const CARD_W = 330;               // 카드 폭을 페이지보다 좁혀 여러 장이 한 페이지에 담기도록
+      const CARD_W = pageWidth - margin * 2;   // 카드를 페이지 가로폭 가득 차게(가로세로 넓게)
       const usableH = pageHeight - margin * 2;
       const gap = 14;
       let cursorY = margin;
@@ -309,7 +309,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
 
       // 애니메이션·전환·펄스 정지 → 말랑이/왕관/폭죽/바디스캔/빨강점 등이 정착(기본) 상태로 찍힌다.
       noAnim = document.createElement("style");
-      noAnim.textContent = "*,*::before,*::after{animation:none !important;transition:none !important;animation-play-state:paused !important;}";
+      // animation:none 은 '기본 상태'로 되돌린다(play-state:paused 는 중간 프레임에 얼어붙어 제거).
+      // 2D 말랑이 눈 덮개는 기본이 '덮인' 상태라 눈 감김 → 캡처 땐 숨긴다. 빨강점 펄스는 기본 크기(scale1)로.
+      noAnim.textContent = "*,*::before,*::after{animation:none !important;transition:none !important;}.mallang-eye-cover{opacity:0 !important;transform:scaleY(0) !important;}.sore-dot-pulse{transform:none !important;}.award-confetti{opacity:0 !important;}";
       document.head.appendChild(noAnim);
 
       // 표지 — 한글 제목(jsPDF 기본 폰트는 한글 미지원이라 이미지로 렌더)
@@ -344,8 +346,11 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
         for (const t of ["records", "discovery"]) {
           setTab(t);
           await nextPaint();
-          const root = contentRef.current?.firstElementChild;
-          if (!root) continue;
+          // 카드 목록 컨테이너까지 내려간다 — 자식이 하나뿐인 래퍼(<div key={tab}> 등)를 건너뛰지 않으면
+          // 탭 전체가 이미지 한 장으로 캡처되어 좁고 길쭉하게 찌그러진다.
+          let root = contentRef.current?.firstElementChild;
+          for (let i = 0; i < 3 && root && root.children.length === 1; i++) root = root.firstElementChild;
+          if (!root || !root.children.length) continue;
           await waitForImages(root);
           const cards = Array.from(root.children);
           for (const card of cards) {
@@ -359,13 +364,30 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
               scrollX: 0, scrollY: -window.scrollY,
             });
             if (!canvas.width || !canvas.height) continue;
-            const imgData = canvas.toDataURL("image/jpeg", 0.92);
-            let w = CARD_W;
-            let h = (canvas.height * w) / canvas.width;
-            if (h > usableH) { w *= usableH / h; h = usableH; }   // 한 장보다 큰 카드는 페이지에 맞게 축소
-            if (cursorY !== margin && cursorY + h > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
-            pdf.addImage(imgData, "JPEG", (pageWidth - w) / 2, cursorY, w, h);
-            cursorY += h + gap;
+            const w = CARD_W;                       // 가로는 항상 페이지 폭 가득 — 좁게 찌그러지지 않게
+            const ptPerPx = w / canvas.width;
+            const h = canvas.height * ptPerPx;
+
+            if (h <= usableH) {
+              // 한 장에 들어가는 카드 — 남은 공간에 안 들어가면 통째로 다음 페이지로
+              if (cursorY > margin && cursorY + h > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
+              pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", (pageWidth - w) / 2, cursorY, w, h);
+              cursorY += h + gap;
+            } else {
+              // 한 장보다 긴 카드(한 줄 일기장 등) — 폭은 유지한 채 세로로 잘라 여러 페이지에 이어 붙인다.
+              if (cursorY > margin) { pdf.addPage(); cursorY = margin; }
+              const slicePx = Math.floor(usableH / ptPerPx);
+              for (let sy = 0; sy < canvas.height; sy += slicePx) {
+                const hpx = Math.min(slicePx, canvas.height - sy);
+                const slice = document.createElement("canvas");
+                slice.width = canvas.width; slice.height = hpx;
+                slice.getContext("2d").drawImage(canvas, 0, sy, canvas.width, hpx, 0, 0, canvas.width, hpx);
+                const sh = hpx * ptPerPx;
+                if (cursorY > margin && cursorY + sh > pageHeight - margin) { pdf.addPage(); cursorY = margin; }
+                pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", (pageWidth - w) / 2, cursorY, w, sh);
+                cursorY += sh + gap;
+              }
+            }
           }
         }
       } finally {
@@ -499,7 +521,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
         )}
         </div>
         </div>
@@ -1501,7 +1523,7 @@ function MoodDistribution({ data }) {
     <div style={{ background: "linear-gradient(180deg,#FFFCF2,#FBF7EA)", borderRadius: 16, padding: "18px 12px 14px", position: "relative", overflow: "hidden" }}>
       {/* 1등 축하 폭죽 */}
       {[...Array(10)].map((_, i) => (
-        <span key={i} style={{ position: "absolute", left: `${8 + i * 9}%`, top: "6%", fontSize: 12,
+        <span key={i} className="award-confetti" style={{ position: "absolute", left: `${8 + i * 9}%`, top: "6%", fontSize: 12,
           animation: `awardPop 1.8s ease-out ${(i % 5) * 0.18}s infinite` }}>{["🎉", "✨", "🎊"][i % 3]}</span>
       ))}
       <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 8, position: "relative", zIndex: 1 }}>
@@ -1556,7 +1578,7 @@ function SoreMap({ data, gender, moments }) {
         const size = 10 + 20 * (p.count / maxCount); // 누적 많을수록 큰 점
         const isTop = top && p.part === top.part;
         return (
-          <span key={p.part} title={`${p.label} ${p.count}번`}
+          <span key={p.part} title={`${p.label} ${p.count}번`} className="sore-dot-pulse"
             style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size,
               marginLeft: -size / 2, marginTop: -size / 2, borderRadius: "50%",
               background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
@@ -2195,7 +2217,7 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, onWeatherUpdated }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated }) {
   const ins = computeInsights(entries, userData, report);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
@@ -2213,8 +2235,8 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     else if (exNode) items.push({ locked: true, node: <Fragment key={key}>{lock(exNode)}</Fragment> });
   };
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
-  items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
-  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} nickname={nickname} /> }); // {닉네임}의 밤
+  items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
+  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} nickname={nickname} pdfMode={pdfMode} /> }); // {닉네임}의 밤
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
@@ -2223,7 +2245,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const fcUnlocked = !!(ins.factcheck || hasProfile);
   if (fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
   else if (exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
-  items.push({ locked: false, node: <LetterCard key="letter" data={ins.letter} isM={isM} bmtiCode={bmtiCode} /> });
+  items.push({ locked: false, node: <LetterCard key="letter" data={ins.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} /> });
 
   const ordered = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
   return (
@@ -2395,7 +2417,7 @@ function TrendSwitchPill({ mode, onSelect, t }) {
   );
 }
 
-function TrendChartsCard({ entries, exampleEntries }) {
+function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const t = getTypeAccent();
   const real = (entries || []).filter((e) => e && typeof e.mood === "number" && e.date);
   const hasEnough = real.length >= 2;
@@ -2419,7 +2441,8 @@ function TrendChartsCard({ entries, exampleEntries }) {
     const arr = (e.soreness || []).filter((s) => !activePart || s.part === activePart).map((s) => s.level).filter((v) => typeof v === "number");
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
-  const [mode, setMode] = useState("daily");
+  const [modeState, setMode] = useState("daily");
+  const mode = pdfMode ? "weekly" : modeState; // PDF로 저장할 땐 주간 상태로 캡처
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
   let cats, peakWd = null;
@@ -2569,7 +2592,7 @@ function TrendChartsCard({ entries, exampleEntries }) {
 }
 
 // {닉네임}의 밤 — 주간/일간 토글(기분·불편함 추이와 동일). 잠든 시간대=막대, 수면의 질=꺾은선(4가지 수면 아이콘).
-function MallangNightCard({ entries, nickname }) {
+function MallangNightCard({ entries, nickname, pdfMode = false }) {
   const setting = getSleepSetting();
   const irregular = setting?.mode === "irregular";
   const buckets = irregular ? SLEEP_IRREGULAR_OPTS : sleepWindow(setting?.base); // 이른→늦은 순
@@ -2589,7 +2612,8 @@ function MallangNightCard({ entries, nickname }) {
     const dom = Number(e.date.slice(8, 10));
     dayData[dom] = { qual: typeof e.sleep === "number" ? e.sleep : null, bed: e.sleepTime ? bedVal(e.sleepTime) : null };
   });
-  const [mode, setMode] = useState("daily");
+  const [modeState, setMode] = useState("daily");
+  const mode = pdfMode ? "weekly" : modeState; // PDF로 저장할 땐 주간 상태로 캡처
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
   let cats;
@@ -2994,8 +3018,9 @@ function DdayCard({ data }) {
 
 // 편지 본문 — '기록을 보니/이번 달/다음 달/OO 말랑이' 처럼 시작하는 문장 앞에서 줄바꿈해 읽기 쉽게.
 const letterBreaks = (s) => (s || "").replace(/\s+(기록을 보|이번 달|다음\s?달|'[^']+' 말랑이)/g, "\n$1");
-function LetterCard({ data, isM, bmtiCode }) {
-  const [open, setOpen] = useState(false);
+function LetterCard({ data, isM, bmtiCode, pdfMode = false }) {
+  const [openState, setOpen] = useState(false);
+  const open = pdfMode || openState; // PDF로 저장할 땐 편지를 펼친 상태로 캡처
   const t = getTypeAccent();
   const axis = bmtiCode ? String(bmtiCode).split("-")[0] : "";
   const charData = CHARACTERS.find(c => c.id === axis);
