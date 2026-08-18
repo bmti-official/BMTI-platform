@@ -290,6 +290,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
     if (savingPDF) return;
     setSavingPDF(true);
     const prevTab = tab;
+    const nickname = userData?.nickname || "회원";
+    const reportTitle = `${nickname}님의 BMTI 건강 리포트`;
+    let noAnim = null; // 캡처 동안 애니메이션/전환을 꺼서 '움직이는 요소가 어중간하게 찍히는' 문제를 막는다
     try {
       const pdf = new jsPDF({ unit: "pt", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -300,13 +303,31 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
       const gap = 14;
       let cursorY = margin;
 
-      // 표지 제목
-      pdf.setFont("helvetica", "bold"); pdf.setFontSize(16);
-      pdf.text(`${year}.${String(month).padStart(2, "0")}  Mallang Report`, margin, cursorY + 4);
-      cursorY += 26;
-
       // 폰트가 완전히 로드된 뒤 캡처해야 텍스트 기준선이 어긋나지 않는다.
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch { /* noop */ } }
+
+      // 애니메이션·전환·펄스 정지 → 말랑이/왕관/폭죽/바디스캔/빨강점 등이 정착(기본) 상태로 찍힌다.
+      noAnim = document.createElement("style");
+      noAnim.textContent = "*,*::before,*::after{animation:none !important;transition:none !important;animation-play-state:paused !important;}";
+      document.head.appendChild(noAnim);
+
+      // 표지 — 한글 제목(jsPDF 기본 폰트는 한글 미지원이라 이미지로 렌더)
+      const titleEl = document.createElement("div");
+      titleEl.style.cssText = "position:fixed;left:-9999px;top:0;width:640px;padding:6px 4px 12px;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;text-align:center;background:#ffffff;";
+      const eyebrow = document.createElement("div");
+      eyebrow.style.cssText = "font-size:13px;font-weight:800;letter-spacing:.12em;color:#8B7BD8;";
+      eyebrow.textContent = `${year}.${String(month).padStart(2, "0")} MONTHLY REPORT`;
+      const titleH = document.createElement("div");
+      titleH.style.cssText = "font-size:27px;font-weight:900;color:#1C1A17;margin-top:7px;letter-spacing:-0.01em;";
+      titleH.textContent = reportTitle;
+      titleEl.appendChild(eyebrow); titleEl.appendChild(titleH);
+      document.body.appendChild(titleEl);
+      try {
+        const tCanvas = await html2canvas(titleEl, { scale: 2, backgroundColor: "#ffffff" });
+        const tw = CARD_W, th = (tCanvas.height * tw) / tCanvas.width;
+        pdf.addImage(tCanvas.toDataURL("image/jpeg", 0.94), "JPEG", (pageWidth - tw) / 2, cursorY, tw, th);
+        cursorY += th + gap;
+      } finally { document.body.removeChild(titleEl); }
 
       // html2canvas는 position:fixed 조상 + 내부 스크롤 오프셋에서 좌표를 잘못 잡아
       // 문구가 밀리거나 캡처가 늘어난다. 캡처 동안만 스크롤러를 일반 흐름(static)으로 되돌린다.
@@ -327,6 +348,8 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
           await waitForImages(root);
           const cards = Array.from(root.children);
           for (const card of cards) {
+            // '아직 발견된 내용이 없어요'(잠긴 미리보기) 카드는 PDF에 넣지 않는다.
+            if (/아직 발견된 내용이 없어요/.test(card.textContent || "")) continue;
             const rect = card.getBoundingClientRect();
             const canvas = await html2canvas(card, {
               scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true,
@@ -349,20 +372,21 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
       }
 
       const pdfBlob = pdf.output("blob");
-      const fileName = `말랑리포트_${year}-${String(month).padStart(2, "0")}.pdf`;
+      const fileName = `${reportTitle} ${year}-${String(month).padStart(2, "0")}.pdf`;
       const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-        await navigator.share({ files: [pdfFile], title: "말랑 리포트", text: `${year}년 ${month}월 말랑 리포트 — 이번 달 기록과 발견이에요.` });
+        await navigator.share({ files: [pdfFile], title: reportTitle, text: `${year}년 ${month}월 ${reportTitle} — 이번 달 기록과 발견이에요.` });
       } else {
         const link = document.createElement("a");
         link.download = fileName; link.href = URL.createObjectURL(pdfBlob); link.click();
         URL.revokeObjectURL(link.href);
-        alert("말랑 리포트 PDF가 저장되었어요. 카카오톡 채팅방에서 파일을 첨부해 보내주세요.");
+        alert(`${reportTitle} PDF가 저장되었어요. 카카오톡 채팅방에서 파일을 첨부해 보내주세요.`);
       }
     } catch (e) {
       console.error("월간 리포트 PDF 생성 오류:", e);
       alert("리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
     } finally {
+      if (noAnim) noAnim.remove();
       setTab(prevTab);
       setSavingPDF(false);
     }

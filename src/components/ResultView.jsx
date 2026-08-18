@@ -682,6 +682,11 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             const percent = Math.max(percentages[l1], percentages[l2]);
             const level = percent >= 80 ? 'confident' : 'flexible';
             const data = TENDENCY_DATA[activeLetter];
+            const barColor = { A: '#FF6B6B', C: '#4ECDC4', D: '#60A5FA', Z: '#A78BFA' }[l1] || '#4ECDC4';
+            const hlPhrase = (TENDENCY_HL[activeLetter] || {})[level];
+            const hlColor = TENDENCY_HEX[l1] || barColor;
+            const q = data[level].quote;
+            const qi = hlPhrase && q.includes(hlPhrase) ? q.indexOf(hlPhrase) : -1;
             return (
               <div
                 key={l1}
@@ -691,9 +696,15 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '16px' }}>{data[level].emoji}</span>
                   <span style={{ fontWeight: 800, fontSize: '15px' }}>{data[level].modifier} {data.name}</span>
-                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#9ca3af', marginLeft: 'auto' }}>{percent}%</span>
+                  <span style={{ fontWeight: 800, fontSize: '13px', color: barColor, marginLeft: 'auto' }}>{percent}%</span>
                 </div>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>"{data[level].quote}"</p>
+                {/* 게이지 바 — 화면 결과지와 동일 */}
+                <div style={{ height: '8px', background: '#efedea', borderRadius: '999px', overflow: 'hidden', margin: '0 0 10px' }}>
+                  <div style={{ height: '8px', width: `${percent}%`, background: barColor, borderRadius: '999px' }}></div>
+                </div>
+                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>
+                  {qi >= 0 ? (<>&quot;{q.slice(0, qi)}<span style={{ color: hlColor, fontWeight: 800 }}>{hlPhrase}</span>{q.slice(qi + hlPhrase.length)}&quot;</>) : `"${q}"`}
+                </p>
                 <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{data[level].desc}</p>
               </div>
             );
@@ -729,7 +740,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#D6486D', marginBottom: '14px' }}>{vibeData.name}</h3>
             <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>당신의 특징</p>
             <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, marginBottom: '14px', whiteSpace: 'pre-line' }}>{vibeData.trait}</p>
-            <p style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '4px' }}>최악의 분위기</p>
+            <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#D6486D', marginBottom: '4px' }}>최악의 분위기:</p>
             <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{vibeData.worst}</p>
           </div>
 
