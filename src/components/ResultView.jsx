@@ -141,6 +141,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   const printEscapeRef = useRef(null);
   const printVibeRef = useRef(null);
   const printFooterRef = useRef(null);
+  const shareCardRef = useRef(null);   // 공유용 '이력서' 카드 (화면에 안 보이고 캡처 전용)
 
   const [expandBestMatch, setExpandBestMatch] = useState(false);
   const [expandDiffTempo, setExpandDiffTempo] = useState(false);
@@ -294,9 +295,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   const shareUrl = `${siteUrl}#example-${axisCode}`;
   const shareText = `나의 BMTI는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode} (${axisCode})! ${info.catchphrase.replace('\n', ' ')}`;
 
-  // 결과지 헤더(캐릭터+유형명+한 줄 소개)를 이미지로 — 저장/인스타/기본공유에서 함께 쓴다.
+  // 공유 카드(이력서 형태)를 이미지로 — 인스타 스토리/X/이미지 저장/기본공유에서 함께 쓴다.
   const captureShareImage = async () => {
-    const el = printHeaderRef.current;
+    const el = shareCardRef.current || printHeaderRef.current;
     if (!el) return null;
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch { /* noop */ } }
     await waitForImages(el);
@@ -518,52 +519,64 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                 <span className="text-[11px] md:text-xs text-gray-400 font-bold">내 유형을 자랑해보세요</span>
               </div>
 
-              {/* 대표 채널 — 카카오톡(가장 많이 쓰는 경로라 크게) */}
-              <button
-                onClick={handleShareToFriend}
-                className="w-full bg-[#FEE500] hover:bg-[#F4DC00] active:scale-[0.99] rounded-2xl py-4 px-5 flex items-center justify-center gap-2.5 transition-all border border-[#F4DC00]/60 mb-4"
-              >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-                <span className="font-extrabold text-[#3C1E1E] text-[14px] md:text-base">카카오톡으로 공유하기</span>
-              </button>
-
-              {/* 보조 채널 — 3×2 그리드(터치 영역 충분히) */}
-              <div className="grid grid-cols-3 gap-2.5">
+              {/* 주요 채널 — 카카오 · 인스타 스토리 · X 나란히 */}
+              <div className="grid grid-cols-3 gap-2.5 mb-4">
                 {[
                   {
-                    key: 'insta', label: '인스타 스토리', onClick: shareToInstagram,
+                    key: 'kakao', label: '카카오톡', sub: '친구에게', onClick: handleShareToFriend,
+                    bg: 'bg-[#FEE500]', fg: 'text-[#3C1E1E]',
+                    icon: (<svg viewBox="0 0 24 24" className="w-7 h-7 fill-current"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>),
+                  },
+                  {
+                    key: 'insta', label: '인스타', sub: '스토리', onClick: shareToInstagram,
                     bg: 'bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]', fg: 'text-white',
-                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none" /></svg>),
+                    icon: (<svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none" /></svg>),
                   },
                   {
-                    key: 'x', label: 'X (트위터)', onClick: shareToX,
+                    key: 'x', label: 'X', sub: '트위터', onClick: shareToX,
                     bg: 'bg-black', fg: 'text-white',
-                    icon: (<svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-current"><path d="M18.9 2H22l-7.1 8.1L23.2 22h-6.5l-5.1-6.6L5.8 22H2.7l7.6-8.7L1.5 2H8l4.6 6.1L18.9 2Zm-1.1 18h1.7L7.3 3.7H5.5L17.8 20Z" /></svg>),
-                  },
-                  {
-                    key: 'image', label: shareBusy === 'image' ? '만드는 중…' : '이미지 저장', onClick: downloadShareImage,
-                    bg: 'bg-[#F3F1EC]', fg: 'text-gray-700',
-                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 11l5 5 5-5" /><path d="M4 20h16" /></svg>),
-                  },
-                  {
-                    key: 'link', label: '링크 복사', onClick: copyShareLink,
-                    bg: 'bg-[#F3F1EC]', fg: 'text-gray-700',
-                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1" /></svg>),
-                  },
-                  {
-                    key: 'native', label: shareBusy === 'native' ? '여는 중…' : '더보기', onClick: shareNative,
-                    bg: 'bg-[#F3F1EC]', fg: 'text-gray-700',
-                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>),
+                    icon: (<svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M18.9 2H22l-7.1 8.1L23.2 22h-6.5l-5.1-6.6L5.8 22H2.7l7.6-8.7L1.5 2H8l4.6 6.1L18.9 2Zm-1.1 18h1.7L7.3 3.7H5.5L17.8 20Z" /></svg>),
                   },
                 ].map((b) => (
                   <button
                     key={b.key}
                     onClick={b.onClick}
                     disabled={!!shareBusy}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.97] transition disabled:opacity-60"
+                    className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-gray-100 hover:bg-gray-50 active:scale-[0.97] transition disabled:opacity-60"
                   >
-                    <span className={`w-11 h-11 rounded-full flex items-center justify-center ${b.bg} ${b.fg} shadow-sm`}>{b.icon}</span>
-                    <span className="text-[11px] md:text-xs font-bold text-gray-600 break-keep leading-tight text-center">{b.label}</span>
+                    <span className={`w-14 h-14 rounded-2xl flex items-center justify-center ${b.bg} ${b.fg} shadow-sm`}>{b.icon}</span>
+                    <span className="leading-tight text-center">
+                      <span className="block text-[12.5px] font-extrabold text-gray-800">{b.label}</span>
+                      <span className="block text-[10.5px] font-bold text-gray-400">{b.sub}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* 보조 — 작게 한 줄 */}
+              <div className="flex items-center justify-center gap-2 pt-3 border-t border-gray-100">
+                {[
+                  {
+                    key: 'image', label: shareBusy === 'image' ? '만드는 중…' : '이미지 저장', onClick: downloadShareImage,
+                    icon: (<svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 11l5 5 5-5" /><path d="M4 20h16" /></svg>),
+                  },
+                  {
+                    key: 'link', label: '링크 복사', onClick: copyShareLink,
+                    icon: (<svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1" /></svg>),
+                  },
+                  {
+                    key: 'native', label: shareBusy === 'native' ? '여는 중…' : '더보기', onClick: shareNative,
+                    icon: (<svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>),
+                  },
+                ].map((b) => (
+                  <button
+                    key={b.key}
+                    onClick={b.onClick}
+                    disabled={!!shareBusy}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#F5F3EF] hover:bg-gray-200 active:scale-[0.97] transition text-gray-600 disabled:opacity-60"
+                  >
+                    {b.icon}
+                    <span className="text-[11px] font-bold whitespace-nowrap">{b.label}</span>
                   </button>
                 ))}
               </div>
@@ -782,6 +795,103 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
       {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) =====
           섹션마다 별도 ref로 캡처해 PDF에서 각 블록이 통째로 다음 페이지로 넘어가도록 한다. */}
       <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
+        {/* ── 공유용 '이력서' 카드 (인스타 스토리·X·이미지 저장 공용) ───────────── */}
+        {(() => {
+          const B = '2px solid #1C1A17';                      // 표 테두리
+          const cell = { border: B, padding: '14px 12px', textAlign: 'center', fontSize: '20px', fontWeight: 700, color: '#1C1A17' };
+          const label = { ...cell, fontWeight: 800, fontSize: '19px' };
+          const axes = percentages ? [['A', 'O'], ['C', 'L'], ['D', 'Q'], ['Z', 'M']].map(([l1, l2]) => {
+            const isLeft = percentages[l1] >= 50;
+            const active = isLeft ? l1 : l2;
+            const percent = Math.max(percentages[l1], percentages[l2]);
+            const level = percent >= 80 ? 'confident' : 'flexible';
+            const d = TENDENCY_DATA[active];
+            return { key: l1, emoji: d[level].emoji, name: `${d[level].modifier} ${d.name.replace(/\s*\(.*\)$/, '')}`, percent, color: TENDENCY_HEX[l1] || '#8B7BD8' };
+          }) : [];
+          const mate = CHARACTERS.find(c => c.id === info.bestMatch);
+          const tempo = CHARACTERS.find(c => c.id === info.diffTempo);
+          const partnerCell = (ch, code, cap, capColor, span) => (
+            <td colSpan={span} style={{ ...cell, padding: '16px 12px' }}>
+              <div style={{ fontSize: '17px', fontWeight: 800, color: capColor, marginBottom: '10px' }}>{cap}</div>
+              {ch && <img src={ch.image} alt={code} style={{ width: '120px', height: '120px', objectFit: 'contain', display: 'block', margin: '0 auto 8px' }} crossOrigin="anonymous" />}
+              <div style={{ fontSize: '19px', fontWeight: 800 }}>{code}<span style={{ color: '#8A857D', marginLeft: '8px' }}>{CODE_KO[code]}</span></div>
+            </td>
+          );
+          return (
+            <div ref={shareCardRef} style={{ width: '900px', background: '#EFE7D6', padding: '34px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', border: B, tableLayout: 'fixed' }}>
+                <tbody>
+                  {/* 헤더 — 캐릭터 | 테스트명/유형/한 줄 소개 */}
+                  <tr>
+                    <td rowSpan={3} style={{ ...cell, width: '34%', padding: '10px', background: '#F6F1E6' }}>
+                      {charData && <img src={charData.image} alt={axisCode} style={{ width: '100%', maxWidth: '250px', height: 'auto', display: 'block', margin: '0 auto' }} crossOrigin="anonymous" />}
+                    </td>
+                    <td colSpan={2} style={{ ...cell, fontSize: '27px', fontWeight: 900 }}>BMTI 움직임 성향 테스트</td>
+                  </tr>
+                  <tr>
+                    <td style={{ ...label, width: '20%', background: '#F6F1E6' }}>유&nbsp;&nbsp;&nbsp;형</td>
+                    <td style={{ ...cell, fontSize: '25px', fontWeight: 900 }}>{axisCode}&nbsp;&nbsp;<span style={{ color: '#8A857D' }}>{CODE_KO[axisCode]}</span></td>
+                  </tr>
+                  <tr>
+                    <td colSpan={2} style={{ ...cell, fontSize: '21px', fontWeight: 800, whiteSpace: 'pre-line', lineHeight: 1.45 }}>{info.catchphrase}</td>
+                  </tr>
+
+                  {/* 4가지 성향 — 이름 / 게이지 / 퍼센트 */}
+                  <tr>
+                    <td colSpan={3} style={{ ...label, background: '#EDE8F9', fontSize: '21px' }}>나를 움직이게 하는 4가지 성향</td>
+                  </tr>
+                  {axes.map((a) => (
+                    <tr key={a.key}>
+                      <td colSpan={2} style={{ ...cell, textAlign: 'left', fontSize: '19px' }}>
+                        <span style={{ marginRight: '8px' }}>{a.emoji}</span>{a.name}
+                      </td>
+                      <td style={{ ...cell, width: '34%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ flex: 1, height: '12px', background: '#EDEAE4', borderRadius: '999px', overflow: 'hidden' }}>
+                            <div style={{ width: `${a.percent}%`, height: '12px', background: a.color, borderRadius: '999px' }} />
+                          </div>
+                          <span style={{ fontSize: '18px', fontWeight: 800, color: a.color, width: '52px', textAlign: 'right' }}>{a.percent}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* 라벨 · 값 */}
+                  <tr>
+                    <td style={{ ...label, background: '#FBE9F0' }}>나만의 유형</td>
+                    <td colSpan={2} style={{ ...cell, whiteSpace: 'pre-line' }}>{(resultData.nickname || '').replace(/\n/g, ' ')}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ ...label, background: '#FDF6DC' }}>잘 맞는 강사</td>
+                    <td colSpan={2} style={cell}>{guideData.title}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ ...label, background: '#FBE9F0' }}>운동 스타일</td>
+                    <td colSpan={2} style={cell}>{escapeInfo.title}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ ...label, background: '#FDF6DC' }}>최악의 분위기</td>
+                    <td colSpan={2} style={cell}>{vibeData.name}</td>
+                  </tr>
+
+                  {/* 짝꿍 */}
+                  <tr>
+                    <td colSpan={2} style={{ ...label, background: '#F6F1E6' }}>💖 환상의 짝꿍</td>
+                    <td style={{ ...label, background: '#F6F1E6' }}>🤔 조금 다른 템포</td>
+                  </tr>
+                  <tr>
+                    {partnerCell(mate, info.bestMatch, '나와 잘 맞아요', '#D6486D', 2)}
+                    {partnerCell(tempo, info.diffTempo, '템포가 달라요', '#6B7280', 1)}
+                  </tr>
+                </tbody>
+              </table>
+              <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '17px', fontWeight: 800, color: '#6E6A62' }}>
+                나도 검사하기 · bmti-official.co.kr
+              </div>
+            </div>
+          );
+        })()}
+
         <div style={{ width: '736px', background: '#ffffff', color: '#1f2937', fontFamily: "'Pretendard', sans-serif" }}>
           {/* Header */}
           <div ref={printHeaderRef} style={{ textAlign: 'center', padding: '8px 8px 24px' }}>
