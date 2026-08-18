@@ -267,7 +267,7 @@ function buildExampleEntries() {
 const EXAMPLE_ENTRIES = buildExampleEntries();
 const EXAMPLE_USER = { nickname: "회원", kakao_gender: "female", kakaoGender: "female", exercise_frequency: "sometimes", common_posture: "sitting", exercise_goals: ["flexibility"] };
 
-export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) {
+export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, isLoggedIn = true, onRequireLogin }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
@@ -287,6 +287,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData }) 
 
   // '이번달 기록' + '이번달 발견'을 한 PDF로 만들어 카카오톡(OS 공유 시트)으로 전달 (ResultView 패턴 재사용)
   const handleMonthlyPDF = async () => {
+    if (!isLoggedIn) { if (onRequireLogin) onRequireLogin(); return; } // 로그인 사용자만 PDF 받기 → 비로그인은 카카오 시작 팝업
     if (savingPDF) return;
     setSavingPDF(true);
     const prevTab = tab;

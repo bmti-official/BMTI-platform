@@ -120,7 +120,7 @@ const AppScrollTop = () => {
   );
 };
 
-const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, bmtiCode }) => {
+const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
 
   const [lastChatDate, setLastChatDate] = useState(localStorage.getItem('last_chat_date'));
 
@@ -281,7 +281,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, userProfile, 
       )}
 
       {showDiscovery && (
-        <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} />
+        <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
       )}
 
       {showTypeGallery && (
