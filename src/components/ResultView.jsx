@@ -122,6 +122,14 @@ const ChemistryCard = ({ type, targetCode, resultData, isExpanded, onToggle }) =
 
 const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setIsLoggedIn, onRequireLogin, bmtiCode, bmtiAnswers, userProfile }) => {
   const [isSavingPDF, setIsSavingPDF] = useState(false);
+  const [shareBusy, setShareBusy] = useState(null);   // 'image' | 'native'
+  const [toast, setToast] = useState('');
+  const toastTimer = useRef(null);
+  const showToast = (msg) => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 2200);
+  };
   const [showGallery, setShowGallery] = useState(false);
   const [showBingo, setShowBingo] = useState(false);
   // 오늘 건강 다이어리 기록 완료 여부 — CTA 문구(기록하기 vs 기록·발견)를 가른다
@@ -282,6 +290,68 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     });
   };
 
+  // ── 친구에게 공유하기 — 공용 헬퍼 ──────────────────────────────
+  const shareUrl = `${siteUrl}#example-${axisCode}`;
+  const shareText = `나의 BMTI는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode} (${axisCode})! ${info.catchphrase.replace('\n', ' ')}`;
+
+  // 결과지 헤더(캐릭터+유형명+한 줄 소개)를 이미지로 — 저장/인스타/기본공유에서 함께 쓴다.
+  const captureShareImage = async () => {
+    const el = printHeaderRef.current;
+    if (!el) return null;
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch { /* noop */ } }
+    await waitForImages(el);
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
+  };
+  const downloadShareImage = async () => {
+    try {
+      setShareBusy('image');
+      const blob = await captureShareImage();
+      if (!blob) return;
+      const link = document.createElement('a');
+      link.download = `BMTI_${axisCode}.png`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast('결과 이미지를 저장했어요');
+    } catch { showToast('이미지를 만들지 못했어요'); } finally { setShareBusy(null); }
+  };
+  const shareToInstagram = async () => {
+    // 웹에서 스토리에 바로 올릴 수는 없어, 이미지를 저장한 뒤 인스타그램을 열어준다.
+    await downloadShareImage();
+    showToast('이미지를 저장했어요 · 인스타그램 스토리에 올려보세요');
+    setTimeout(() => { window.open('https://www.instagram.com/', '_blank', 'noopener'); }, 900);
+  };
+  const shareToX = () => {
+    const u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(u, '_blank', 'noopener');
+  };
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('링크를 복사했어요');
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = shareUrl; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); showToast('링크를 복사했어요'); } catch { showToast('복사에 실패했어요'); }
+      document.body.removeChild(ta);
+    }
+  };
+  const shareNative = async () => {
+    try {
+      setShareBusy('native');
+      const blob = await captureShareImage();
+      const file = blob ? new File([blob], `BMTI_${axisCode}.png`, { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'BMTI 결과', text: shareText, url: shareUrl });
+      } else if (navigator.share) {
+        await navigator.share({ title: 'BMTI 결과', text: shareText, url: shareUrl });
+      } else {
+        await copyShareLink();
+      }
+    } catch { /* 사용자가 취소한 경우 포함 — 조용히 무시 */ } finally { setShareBusy(null); }
+  };
+
   if (!bmtiCode && !quizCompleted) {
     return (
       <div className="min-h-screen pt-32 md:pt-40 pb-28 px-6 flex flex-col items-center justify-center text-center fade-in">
@@ -440,33 +510,64 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
           {/* Chemistry section 제거 — BMTI 관계도가 대신 보여준다 */}
 
-          {/* CTA section: 4 buttons in priority order */}
-          <div className="w-full mt-8 mb-4 flex flex-col gap-3">
-            {/* 1. 카카오톡으로 내 결과지 저장하기 / 친구에게 자랑하기 */}
-            <div className="w-full grid grid-cols-2 gap-3">
-              <button
-                onClick={handleSaveResultPDF}
-                disabled={isSavingPDF}
-                className="w-full bg-[#FEE500] hover:bg-[#F4DC00] disabled:opacity-60 disabled:cursor-wait p-5 md:p-6 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#F4DC00]/50"
-              >
-                <span className="text-2xl md:text-3xl mb-2 md:mb-3 group-hover:scale-110 transition-transform">💬</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-base mb-1.5 leading-snug break-keep">
-                  {isSavingPDF ? '결과지 만드는 중...' : (<>카카오톡으로<br />내 결과지 저장하기</>)}
-                </span>
-                <span className="text-[10px] md:text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">PDF 파일</span>
-              </button>
+          {/* 친구에게 공유하기 — 대표(카카오) 1개 + 보조 채널 5개를 한 박스에 */}
+          <div className="w-full mt-8 mb-4">
+            <div className="w-full bg-white border border-gray-200 rounded-[1.75rem] p-5 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[15px] md:text-lg font-extrabold text-gray-900">친구에게 공유하기</h3>
+                <span className="text-[11px] md:text-xs text-gray-400 font-bold">내 유형을 자랑해보세요</span>
+              </div>
+
+              {/* 대표 채널 — 카카오톡(가장 많이 쓰는 경로라 크게) */}
               <button
                 onClick={handleShareToFriend}
-                className="w-full bg-[#FEE500] hover:bg-[#F4DC00] p-5 md:p-6 rounded-3xl flex flex-col items-center justify-center text-center transition-all shadow-sm group border border-[#F4DC00]/50"
+                className="w-full bg-[#FEE500] hover:bg-[#F4DC00] active:scale-[0.99] rounded-2xl py-4 px-5 flex items-center justify-center gap-2.5 transition-all border border-[#F4DC00]/60 mb-4"
               >
-                <span className="text-2xl md:text-3xl mb-2 md:mb-3 group-hover:scale-110 transition-transform">💬</span>
-                <span className="font-bold text-[#3C1E1E] text-[13px] md:text-base mb-1.5 leading-snug break-keep">
-                  카카오톡으로<br />친구에게 자랑하기
-                </span>
-                <span className="text-[10px] md:text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full">공유 카드</span>
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
+                <span className="font-extrabold text-[#3C1E1E] text-[14px] md:text-base">카카오톡으로 공유하기</span>
               </button>
-            </div>
 
+              {/* 보조 채널 — 3×2 그리드(터치 영역 충분히) */}
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  {
+                    key: 'insta', label: '인스타 스토리', onClick: shareToInstagram,
+                    bg: 'bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]', fg: 'text-white',
+                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none" /></svg>),
+                  },
+                  {
+                    key: 'x', label: 'X (트위터)', onClick: shareToX,
+                    bg: 'bg-black', fg: 'text-white',
+                    icon: (<svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-current"><path d="M18.9 2H22l-7.1 8.1L23.2 22h-6.5l-5.1-6.6L5.8 22H2.7l7.6-8.7L1.5 2H8l4.6 6.1L18.9 2Zm-1.1 18h1.7L7.3 3.7H5.5L17.8 20Z" /></svg>),
+                  },
+                  {
+                    key: 'image', label: shareBusy === 'image' ? '만드는 중…' : '이미지 저장', onClick: downloadShareImage,
+                    bg: 'bg-[#F3F1EC]', fg: 'text-gray-700',
+                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 11l5 5 5-5" /><path d="M4 20h16" /></svg>),
+                  },
+                  {
+                    key: 'link', label: '링크 복사', onClick: copyShareLink,
+                    bg: 'bg-[#F3F1EC]', fg: 'text-gray-700',
+                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1" /></svg>),
+                  },
+                  {
+                    key: 'native', label: shareBusy === 'native' ? '여는 중…' : '더보기', onClick: shareNative,
+                    bg: 'bg-[#F3F1EC]', fg: 'text-gray-700',
+                    icon: (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>),
+                  },
+                ].map((b) => (
+                  <button
+                    key={b.key}
+                    onClick={b.onClick}
+                    disabled={!!shareBusy}
+                    className="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.97] transition disabled:opacity-60"
+                  >
+                    <span className={`w-11 h-11 rounded-full flex items-center justify-center ${b.bg} ${b.fg} shadow-sm`}>{b.icon}</span>
+                    <span className="text-[11px] md:text-xs font-bold text-gray-600 break-keep leading-tight text-center">{b.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -657,6 +758,26 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
         </div>
+
+        {/* 제일 하단 — 카카오톡으로 내 결과지 저장하기(가로로 길게) */}
+        <button
+          onClick={handleSaveResultPDF}
+          disabled={isSavingPDF}
+          className="w-full mt-8 bg-[#FEE500] hover:bg-[#F4DC00] disabled:opacity-60 disabled:cursor-wait rounded-3xl py-5 px-6 flex items-center justify-center gap-3 transition-all shadow-sm border border-[#F4DC00]/60 active:scale-[0.99]"
+        >
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-[#3C1E1E] shrink-0"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
+          <span className="font-extrabold text-[#3C1E1E] text-[15px] md:text-lg">
+            {isSavingPDF ? '결과지 만드는 중...' : '카카오톡으로 내 결과지 저장하기'}
+          </span>
+          <span className="text-[10px] md:text-[11px] text-[#3C1E1E]/70 font-bold bg-black/5 px-2.5 py-1 rounded-full shrink-0">PDF</span>
+        </button>
+
+        {/* 공유 결과 안내 토스트 */}
+        {toast && (
+          <div className="fixed left-1/2 -translate-x-1/2 bottom-28 z-[130] bg-black/85 text-white text-[13px] font-bold px-5 py-3 rounded-2xl shadow-lg pointer-events-none max-w-[calc(100%-48px)] text-center break-keep">
+            {toast}
+          </div>
+        )}
 
       {/* ===== PDF 결과지 소스 (화면에는 보이지 않고 html2canvas 캡처용으로만 존재) =====
           섹션마다 별도 ref로 캡처해 PDF에서 각 블록이 통째로 다음 페이지로 넘어가도록 한다. */}
