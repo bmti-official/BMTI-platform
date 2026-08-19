@@ -293,7 +293,13 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
 
   // ── 친구에게 공유하기 — 공용 헬퍼 ──────────────────────────────
   const shareUrl = `${siteUrl}t/${axisCode}.html`;
-  const shareText = `나의 BMTI는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode} (${axisCode})! ${info.catchphrase.replace('\n', ' ')}`;
+  // 공유 문구 — 닉네임은 대표 줄만 쓰고(윗줄 수식어는 붙이면 두 문장이 뭉개진다), 줄바꿈을 살려 읽기 쉽게.
+  const shareText = (() => {
+    const parts = (resultData.nickname || '').split('\n').map(s => s.trim()).filter(Boolean);
+    const main = parts.length > 1 ? parts.slice(1).join(' ') : (parts[0] || axisCode);
+    const catchphrase = (info.catchphrase || '').trim();
+    return `나의 BMTI는 '${main}' (${axisCode} ${CODE_KO[axisCode] || ''})\n\n${catchphrase}\n\n#BMTI #움직임성향테스트`;
+  })();
 
   // 공유 카드(이력서 형태)를 이미지로 — 인스타 스토리/X/이미지 저장/기본공유에서 함께 쓴다.
   const captureShareImage = async () => {
