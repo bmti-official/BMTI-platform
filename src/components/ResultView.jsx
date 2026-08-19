@@ -815,35 +815,30 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             return <>&quot;{a.quote.slice(0, i)}<span style={{ color: a.color, fontWeight: 800 }}>{a.hl}</span>{a.quote.slice(i + a.hl.length)}&quot;</>;
           };
           // 결과지(웹) 스타일 그대로 — 흰 배경 · 둥근 박스 · 검은 그림자 · 얇은 구분선 · 핵심 문구 색상
-          const SECTIONS = [
-            { head: "🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법", accent: '#7C6FF0', title: guideData.title, body: guideData.badGuide },
-            { head: '💸 헬스장 기부천사 탈출법', accent: '#C9862A', title: escapeInfo.title, body: escapeInfo.escape },
-            { head: "💥 멘탈 바사삭 '최악의 운동 분위기'", accent: '#D6486D', title: vibeData.name, body: vibeData.worst },
-          ];
           const card = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '26px', boxShadow: '0 5px 18px rgba(0,0,0,0.18)', padding: '22px 24px', boxSizing: 'border-box' };
           const hr = { height: '1px', background: '#1C1A17', opacity: 0.12, margin: '13px 0' };
           return (
             <div ref={shareCardRef} style={{ width: '900px', background: '#FFFFFF', padding: '22px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box', color: '#1C1A17' }}>
-              {/* 헤더 카드 — 캐릭터 + 유형 + 닉네임 + 캐치프레이즈 */}
-              <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '12px' }}>
+              {/* 헤더 카드 — 원본 이미지를 가로 꽉 차게, 문구는 그 아래 */}
+              <div style={{ ...card, padding: 0, overflow: 'hidden', marginBottom: '12px' }}>
                 {charData && (
-                  <img src={charData.image} alt={axisCode} style={{ width: '170px', height: '170px', objectFit: 'contain', flexShrink: 0 }} crossOrigin="anonymous" />
+                  <img src={charData.originalImage} alt={axisCode} style={{ width: '100%', height: 'auto', display: 'block' }} crossOrigin="anonymous" />
                 )}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ padding: '20px 24px 22px', textAlign: 'center' }}>
                   <div style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '0.2em', color: '#9CA3AF', lineHeight: 1.2, marginBottom: '8px' }}>BMTI 움직임 성향 테스트</div>
-                  <div style={{ fontSize: '30px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+                  <div style={{ fontSize: '32px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
                     {axisCode}<span style={{ color: '#B7B2A9', marginLeft: '12px' }}>{CODE_KO[axisCode]}</span>
                   </div>
-                  <div style={{ ...hr, margin: '11px 0' }} />
-                  <div style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1.25, color: '#8B7BD8', whiteSpace: 'pre-line', marginBottom: '5px' }}>
+                  <div style={{ ...hr, margin: '13px 0' }} />
+                  <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1.25, color: '#8B7BD8', whiteSpace: 'pre-line', marginBottom: '6px' }}>
                     {(resultData.nickname || '').replace(/\n/g, ' ')}
                   </div>
-                  <div style={{ fontSize: '17px', fontWeight: 700, lineHeight: 1.4, color: '#4B5563', whiteSpace: 'pre-line' }}>{info.catchphrase}</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1.45, color: '#4B5563', whiteSpace: 'pre-line' }}>{info.catchphrase}</div>
                 </div>
               </div>
 
               {/* 4가지 성향 */}
-              <div style={{ ...card, marginBottom: '12px' }}>
+              <div style={card}>
                 <div style={{ fontSize: '19px', fontWeight: 900, lineHeight: 1.2, marginBottom: '14px' }}>🔍 나를 움직이게 하는 4가지 성향</div>
                 {axes.map((a, i) => (
                   <div key={a.key} style={{ marginTop: i > 0 ? '13px' : 0 }}>
@@ -857,18 +852,6 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                       <span style={{ fontSize: '17px', fontWeight: 800, lineHeight: 1.2, color: a.color, width: '54px', textAlign: 'right' }}>{a.percent}%</span>
                     </div>
                     <div style={{ fontSize: '16.5px', fontWeight: 700, lineHeight: 1.45, color: '#1C1A17', marginTop: '5px' }}>{renderCardQuote(a)}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 상세 — 한 카드에 3섹션(구분선으로 나눔) */}
-              <div style={card}>
-                {SECTIONS.map((s, i) => (
-                  <div key={s.head}>
-                    {i > 0 && <div style={hr} />}
-                    <div style={{ fontSize: '15px', fontWeight: 800, lineHeight: 1.3, color: '#9CA3AF', marginBottom: '5px' }}>{s.head}</div>
-                    <div style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1.25, color: s.accent, marginBottom: '6px' }}>{s.title}</div>
-                    <div style={{ fontSize: '16.5px', fontWeight: 600, lineHeight: 1.5, color: '#4B5563', whiteSpace: 'pre-line' }}>{s.body}</div>
                   </div>
                 ))}
               </div>
