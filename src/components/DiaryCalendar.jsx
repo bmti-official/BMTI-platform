@@ -4,7 +4,6 @@ import MallangStressPopup from "./MallangStressPopup";
 import { DiaryIcon } from "./DiaryIcons";
 import DiaryHelpPopup from "./DiaryHelpPopup";
 import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
-import FeedbackModal from "./FeedbackModal";
 import { MOODS, CHARACTERS } from "../data";
 import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
@@ -14,6 +13,7 @@ import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { hasLocalHealthConsent } from "../lib/healthConsentSystem";
 import HealthConsentGate from "./HealthConsentGate";
+import { openKakaoChannelChat } from "../lib/kakaoChannel";
 
 // 색상 통일: 핵심 버튼 골드 / 박스 연옐로우 / 강조 요소는 유형별(M 연분홍·Z 연보라).
 // 단, 기분(말랑이)·요일 색 등 '데이터 색'은 의미가 있어 그대로 둔다.
@@ -73,7 +73,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [view, setView] = useState(() => { try { return localStorage.getItem("bmti_diary_calview") === "week" ? "week" : "month"; } catch { return "month"; } });
   useLayoutEffect(() => { try { localStorage.setItem("bmti_diary_calview", view); } catch {} }, [view]);
   const [showHelp, setShowHelp] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
   const t = getTypeAccent(bmtiCode);
   const axisCode = bmtiCode ? bmtiCode.split("-")[0] : "";
   const charImage = CHARACTERS.find(c => c.id === axisCode)?.image;
@@ -218,11 +217,11 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
           {view === "month"
             ? months.map(m => (
                 <MonthSection key={toISO(m)} monthDate={m} isCurrent={sameMonth(m, today)} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onDayPreview={setPreviewDay} onEditDay={onEditDay}
-                  onToday={() => setShowMoodPopup(true)} onFuture={showFutureToast} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={() => setShowFeedback(true)} />
+                  onToday={() => setShowMoodPopup(true)} onFuture={showFutureToast} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={openKakaoChannelChat} />
               ))
             : weeks.map(w => (
                 <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay}
-                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={() => setShowFeedback(true)} />
+                  calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={openKakaoChannelChat} />
               ))}
           {loading === "bottom" && <CalLoader />}
         </div>
@@ -247,9 +246,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         <DiaryHelpPopup onClose={() => setShowHelp(false)} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
       )}
 
-      {showFeedback && (
-        <FeedbackModal source="diary" userId={(() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.id || null; } catch { return null; } })()} onClose={() => setShowFeedback(false)} />
-      )}
 
       {showMoodPopup && (
         <>

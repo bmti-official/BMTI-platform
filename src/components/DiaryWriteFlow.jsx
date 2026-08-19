@@ -4,7 +4,6 @@ import { readMallangProfile } from "../lib/mallangProfile";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
-import FeedbackModal from "./FeedbackModal";
 import { DiaryIcon } from "./DiaryIcons";
 import { MOODS as DAY_MOODS } from "../data";
 import {
@@ -13,6 +12,7 @@ import {
 } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, saveSleepSettingToServer, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
+import { openKakaoChannelChat } from "../lib/kakaoChannel";
 
 // ============================================
 // BMTI 하루일기 작성 플로우
@@ -118,7 +118,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // ── 데이터 ──
   const [dayMood, setDayMood] = useState(initialDayMood);
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
   // 온보딩1 — 다이어리 입력 시 '불편한 부위' 프로필 입력/월 1회 재확인 팝업
   const [sorePopup, setSorePopup] = useState(null); // null | { askReconfirm }
   useEffect(() => {
@@ -915,7 +914,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           )}
 
           {phase === "form" && (
-            <button onClick={() => setShowFeedback(true)}
+            <button onClick={openKakaoChannelChat}
               style={{ display: "block", margin: "8px auto 0", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
               💬 다이어리의 개선 의견 보내기
             </button>
@@ -934,9 +933,6 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           <MallangStressPopup mood={moodData.v} charImage={charImage} nextLabel="완료" onNext={() => { if (!isLoggedIn) setShowKakaoPrompt(true); else if (onClose) onClose(); }} />
         )}
 
-        {showFeedback && (
-          <FeedbackModal source="diary" userId={(() => { try { return JSON.parse(localStorage.getItem("bmti_user") || "null")?.id || null; } catch { return null; } })()} onClose={() => setShowFeedback(false)} />
-        )}
 
         {sorePopup && (
           <MallangInfoPopup mode="sore" userInfo={userInfo} isLoggedIn={isLoggedIn} gender={gender} setUserProfile={setUserProfile}

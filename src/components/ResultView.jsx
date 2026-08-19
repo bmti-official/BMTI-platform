@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { CHARACTERS, calculateBMTIPercentages, CHARACTER_NAMES as SHORT_NICKNAMES, CODE_KO } from '../data';
@@ -806,17 +806,8 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             const percent = Math.max(percentages[l1], percentages[l2]);
             const level = percent >= 80 ? 'confident' : 'flexible';
             const d = TENDENCY_DATA[active];
-            return { key: l1, emoji: d[level].emoji, name: `${d[level].modifier} ${d.name.replace(/\s*\(.*\)$/, '')}`, percent, color: TENDENCY_HEX[l1] || '#8B7BD8' };
+            return { key: l1, emoji: d[level].emoji, name: `${d[level].modifier} ${d.name.replace(/\s*\(.*\)$/, '')}`, quote: d[level].quote, percent, color: TENDENCY_HEX[l1] || '#8B7BD8' };
           }) : [];
-          const mate = CHARACTERS.find(c => c.id === info.bestMatch);
-          const tempo = CHARACTERS.find(c => c.id === info.diffTempo);
-          const partnerCell = (ch, code, cap, capColor, span) => (
-            <td colSpan={span} style={{ ...cell, padding: '16px 12px' }}>
-              <div style={{ fontSize: '17px', fontWeight: 800, color: capColor, marginBottom: '10px' }}>{cap}</div>
-              {ch && <img src={ch.image} alt={code} style={{ width: '120px', height: '120px', objectFit: 'contain', display: 'block', margin: '0 auto 8px' }} crossOrigin="anonymous" />}
-              <div style={{ fontSize: '19px', fontWeight: 800 }}>{code}<span style={{ color: '#8A857D', marginLeft: '8px' }}>{CODE_KO[code]}</span></div>
-            </td>
-          );
           return (
             <div ref={shareCardRef} style={{ width: '900px', background: '#EFE7D6', padding: '34px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', border: B, tableLayout: 'fixed' }}>
@@ -842,47 +833,41 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                   </tr>
                   {axes.map((a) => (
                     <tr key={a.key}>
-                      <td colSpan={2} style={{ ...cell, textAlign: 'left', fontSize: '19px' }}>
-                        <span style={{ marginRight: '8px' }}>{a.emoji}</span>{a.name}
-                      </td>
-                      <td style={{ ...cell, width: '34%' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ flex: 1, height: '12px', background: '#EDEAE4', borderRadius: '999px', overflow: 'hidden' }}>
+                      <td colSpan={3} style={{ ...cell, textAlign: 'left', padding: '16px 18px' }}>
+                        {/* 유형명 + 게이지 한 줄 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <span style={{ fontSize: '20px', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                            <span style={{ marginRight: '8px' }}>{a.emoji}</span>{a.name}
+                          </span>
+                          <div style={{ flex: 1, height: '12px', background: '#EDEAE4', borderRadius: '999px', overflow: 'hidden', minWidth: '120px' }}>
                             <div style={{ width: `${a.percent}%`, height: '12px', background: a.color, borderRadius: '999px' }} />
                           </div>
-                          <span style={{ fontSize: '18px', fontWeight: 800, color: a.color, width: '52px', textAlign: 'right' }}>{a.percent}%</span>
+                          <span style={{ fontSize: '18px', fontWeight: 800, color: a.color, width: '58px', textAlign: 'right' }}>{a.percent}%</span>
                         </div>
+                        {/* 대표 문장 */}
+                        <div style={{ fontSize: '17px', fontWeight: 600, color: '#5E594F', lineHeight: 1.5, marginTop: '8px' }}>&quot;{a.quote}&quot;</div>
                       </td>
                     </tr>
                   ))}
 
-                  {/* 라벨 · 값 */}
-                  <tr>
-                    <td style={{ ...label, background: '#FBE9F0' }}>나만의 유형</td>
-                    <td colSpan={2} style={{ ...cell, whiteSpace: 'pre-line' }}>{(resultData.nickname || '').replace(/\n/g, ' ')}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ ...label, background: '#FDF6DC' }}>잘 맞는 강사</td>
-                    <td colSpan={2} style={cell}>{guideData.title}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ ...label, background: '#FBE9F0' }}>운동 스타일</td>
-                    <td colSpan={2} style={cell}>{escapeInfo.title}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ ...label, background: '#FDF6DC' }}>최악의 분위기</td>
-                    <td colSpan={2} style={cell}>{vibeData.name}</td>
-                  </tr>
-
-                  {/* 짝꿍 */}
-                  <tr>
-                    <td colSpan={2} style={{ ...label, background: '#F6F1E6' }}>💖 환상의 짝꿍</td>
-                    <td style={{ ...label, background: '#F6F1E6' }}>🤔 조금 다른 템포</td>
-                  </tr>
-                  <tr>
-                    {partnerCell(mate, info.bestMatch, '나와 잘 맞아요', '#D6486D', 2)}
-                    {partnerCell(tempo, info.diffTempo, '템포가 달라요', '#6B7280', 1)}
-                  </tr>
+                  {/* 상세 — 제목 + 설명 */}
+                  {[
+                    { head: "🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법", bg: '#EDE8F9', title: guideData.title, body: guideData.badGuide },
+                    { head: '💸 헬스장 기부천사 탈출법', bg: '#FDF6DC', title: escapeInfo.title, body: escapeInfo.escape },
+                    { head: "💥 멘탈 바사삭 '최악의 운동 분위기'", bg: '#FBE9F0', title: vibeData.name, body: vibeData.worst },
+                  ].map((s) => (
+                    <Fragment key={s.head}>
+                      <tr>
+                        <td colSpan={3} style={{ ...label, background: s.bg, fontSize: '20px', padding: '12px' }}>{s.head}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan={3} style={{ ...cell, textAlign: 'left', padding: '16px 18px' }}>
+                          <div style={{ fontSize: '21px', fontWeight: 900, marginBottom: '8px' }}>{s.title}</div>
+                          <div style={{ fontSize: '17px', fontWeight: 600, color: '#5E594F', lineHeight: 1.55, whiteSpace: 'pre-line' }}>{s.body}</div>
+                        </td>
+                      </tr>
+                    </Fragment>
+                  ))}
                 </tbody>
               </table>
               <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '17px', fontWeight: 800, color: '#6E6A62' }}>

@@ -3,7 +3,6 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
 import { CHARACTERS, CHARACTER_NAMES } from "../data";
-import FeedbackModal from "./FeedbackModal";
 import { DiaryIcon } from "./DiaryIcons";
 import { SLEEP_ICON } from "../lib/diaryEntryLabels";
 
@@ -29,6 +28,7 @@ import bodyFemaleFront from "../assets/3d_body/female_front.png";
 import bodyFemaleBack from "../assets/3d_body/female_back.png";
 import bodyMaleFront from "../assets/3d_body/male_front.png";
 import bodyMaleBack from "../assets/3d_body/male_back.png";
+import { openKakaoChannelChat } from "../lib/kakaoChannel";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -275,7 +275,6 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   const [tab, setTab] = useState("records"); // "records" | "discovery"
   const [, forceWeatherRefresh] = useState(0); // 날씨를 붙인 뒤 리포트를 다시 읽게 하는 트리거
   const [savingPDF, setSavingPDF] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
   const contentRef = useRef(null);
   const scrollerRef = useRef(null);
   const goTab = (key) => { setTab(key); scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" }); };
@@ -553,14 +552,13 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
         </p>
 
         {/* 말랑이의 발견 개선 의견 받기 */}
-        <button onClick={() => setShowFeedback(true)}
+        <button onClick={openKakaoChannelChat}
           style={{ display: "block", margin: "22px auto 0", border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
           💬 다이어리와 기록·발견의 개선 의견 보내기
         </button>
       </div>
 
       {showExample && <DiscoveryExamplePopup onClose={() => setShowExample(false)} />}
-      {showFeedback && <FeedbackModal source="discovery" userId={userData?.id} onClose={() => setShowFeedback(false)} />}
     </div>
   );
 }
