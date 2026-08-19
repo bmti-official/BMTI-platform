@@ -608,9 +608,9 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
         </div>
         {showGallery && <TypeGallery hasBmti={!!bmtiCode} onStartTest={() => { setShowGallery(false); setView('quiz'); }} onClose={() => setShowGallery(false)} />}
         {showBingo && <BingoGallery onClose={() => setShowBingo(false)} />}
-        <div className="fade-in bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 shadow-sm space-y-12">
+        <div className="fade-in flex flex-col gap-5">
           {/* Custom Instructor Guide Section */}
-          <div className="border-b border-gray-100 pb-12 text-left">
+          <div className="bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 text-left shadow-[0_6px_22px_rgba(0,0,0,0.20)]">
             <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
               <span className="text-xl">🙋🏻‍♂️🙋🏻‍♀️</span> 실패 없는 운동 강사 고르는 방법
             </h5>
@@ -663,7 +663,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* Custom Escape Data Section */}
-          <div className="border-b border-gray-100 pb-12 text-left">
+          <div className="bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 text-left shadow-[0_6px_22px_rgba(0,0,0,0.20)]">
             <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
               <span className="text-xl">💸</span> 헬스장 기부천사 탈출법
             </h5>
@@ -723,7 +723,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
           </div>
 
           {/* Custom Worst Vibe Section */}
-          <div className="border-b border-gray-100 pb-12 text-left">
+          <div className="bg-white border border-gray-200 rounded-[2rem] px-5 py-8 md:p-10 text-left shadow-[0_6px_22px_rgba(0,0,0,0.20)]">
             <h5 className="font-semibold text-sm md:text-base text-gray-500 mb-5 flex items-center gap-2">
               <span className="text-xl">💥</span> 멘탈 바사삭 '최악의 운동 분위기'
             </h5>
@@ -808,69 +808,65 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             const d = TENDENCY_DATA[active];
             return { key: l1, emoji: d[level].emoji, name: `${d[level].modifier} ${d.name.replace(/\s*\(.*\)$/, '')}`, quote: d[level].quote, percent, color: TENDENCY_HEX[l1] || '#8B7BD8' };
           }) : [];
+          // 결과지(웹) 스타일 그대로 — 흰 배경 · 둥근 박스 · 검은 그림자 · 얇은 구분선 · 핵심 문구 색상
+          const SECTIONS = [
+            { head: "🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법", accent: '#7C6FF0', title: guideData.title, body: guideData.badGuide },
+            { head: '💸 헬스장 기부천사 탈출법', accent: '#C9862A', title: escapeInfo.title, body: escapeInfo.escape },
+            { head: "💥 멘탈 바사삭 '최악의 운동 분위기'", accent: '#D6486D', title: vibeData.name, body: vibeData.worst },
+          ];
+          const card = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '32px', boxShadow: '0 6px 22px rgba(0,0,0,0.20)', padding: '30px 32px', boxSizing: 'border-box' };
+          const hr = { height: '1px', background: '#1C1A17', opacity: 0.12, margin: '22px 0' };
           return (
-            <div ref={shareCardRef} style={{ width: '900px', background: '#EFE7D6', padding: '34px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', border: B, tableLayout: 'fixed' }}>
-                <tbody>
-                  {/* 헤더 — 캐릭터 | 테스트명/유형/한 줄 소개 */}
-                  <tr>
-                    <td rowSpan={3} style={{ ...cell, width: '34%', padding: '10px', background: '#F6F1E6' }}>
-                      {charData && <img src={charData.image} alt={axisCode} style={{ width: '100%', maxWidth: '250px', height: 'auto', display: 'block', margin: '0 auto' }} crossOrigin="anonymous" />}
-                    </td>
-                    <td colSpan={2} style={{ ...cell, fontSize: '27px', fontWeight: 900 }}>BMTI 움직임 성향 테스트</td>
-                  </tr>
-                  <tr>
-                    <td style={{ ...label, width: '20%', background: '#F6F1E6' }}>유&nbsp;&nbsp;&nbsp;형</td>
-                    <td style={{ ...cell, fontSize: '25px', fontWeight: 900 }}>{axisCode}&nbsp;&nbsp;<span style={{ color: '#8A857D' }}>{CODE_KO[axisCode]}</span></td>
-                  </tr>
-                  <tr>
-                    <td colSpan={2} style={{ ...cell, fontSize: '21px', fontWeight: 800, whiteSpace: 'pre-line', lineHeight: 1.45 }}>{info.catchphrase}</td>
-                  </tr>
+            <div ref={shareCardRef} style={{ width: '900px', background: '#FFFFFF', padding: '30px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box', color: '#1C1A17' }}>
+              {/* 헤더 카드 — 캐릭터 + 유형 + 닉네임 + 캐치프레이즈 */}
+              <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '26px', marginBottom: '18px' }}>
+                {charData && (
+                  <img src={charData.image} alt={axisCode} style={{ width: '230px', height: '230px', objectFit: 'contain', flexShrink: 0 }} crossOrigin="anonymous" />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.22em', color: '#9CA3AF', lineHeight: 1.2, marginBottom: '12px' }}>BMTI 움직임 성향 테스트</div>
+                  <div style={{ fontSize: '34px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+                    {axisCode}<span style={{ color: '#B7B2A9', marginLeft: '12px' }}>{CODE_KO[axisCode]}</span>
+                  </div>
+                  <div style={{ ...hr, margin: '16px 0' }} />
+                  <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1.3, color: '#8B7BD8', whiteSpace: 'pre-line', marginBottom: '8px' }}>
+                    {(resultData.nickname || '').replace(/\n/g, ' ')}
+                  </div>
+                  <div style={{ fontSize: '19px', fontWeight: 700, lineHeight: 1.45, color: '#4B5563', whiteSpace: 'pre-line' }}>{info.catchphrase}</div>
+                </div>
+              </div>
 
-                  {/* 4가지 성향 — 이름 / 게이지 / 퍼센트 */}
-                  <tr>
-                    <td colSpan={3} style={{ ...label, background: '#EDE8F9', fontSize: '21px' }}>나를 움직이게 하는 4가지 성향</td>
-                  </tr>
-                  {axes.map((a) => (
-                    <tr key={a.key}>
-                      <td colSpan={3} style={{ ...cell, textAlign: 'left', padding: '16px 18px' }}>
-                        {/* 유형명 + 게이지 한 줄 */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <span style={{ fontSize: '20px', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                            <span style={{ marginRight: '8px' }}>{a.emoji}</span>{a.name}
-                          </span>
-                          <div style={{ flex: 1, height: '12px', background: '#EDEAE4', borderRadius: '999px', overflow: 'hidden', minWidth: '120px' }}>
-                            <div style={{ width: `${a.percent}%`, height: '12px', background: a.color, borderRadius: '999px' }} />
-                          </div>
-                          <span style={{ fontSize: '18px', fontWeight: 800, color: a.color, width: '58px', textAlign: 'right' }}>{a.percent}%</span>
-                        </div>
-                        {/* 대표 문장 */}
-                        <div style={{ fontSize: '17px', fontWeight: 600, color: '#5E594F', lineHeight: 1.5, marginTop: '8px' }}>&quot;{a.quote}&quot;</div>
-                      </td>
-                    </tr>
-                  ))}
+              {/* 4가지 성향 */}
+              <div style={{ ...card, marginBottom: '18px' }}>
+                <div style={{ fontSize: '21px', fontWeight: 900, lineHeight: 1.2, marginBottom: '20px' }}>🔍 나를 움직이게 하는 4가지 성향</div>
+                {axes.map((a, i) => (
+                  <div key={a.key}>
+                    {i > 0 && <div style={hr} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <span style={{ fontSize: '20px', fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', color: '#4B5563' }}>
+                        <span style={{ marginRight: '8px' }}>{a.emoji}</span>{a.name}
+                      </span>
+                      <div style={{ flex: 1, height: '12px', background: '#F3F1EC', borderRadius: '999px', overflow: 'hidden', minWidth: '110px' }}>
+                        <div style={{ width: `${a.percent}%`, height: '12px', background: a.color, borderRadius: '999px' }} />
+                      </div>
+                      <span style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.2, color: a.color, width: '58px', textAlign: 'right' }}>{a.percent}%</span>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1.5, color: '#1C1A17', marginTop: '10px' }}>&quot;{a.quote}&quot;</div>
+                  </div>
+                ))}
+              </div>
 
-                  {/* 상세 — 제목 + 설명 */}
-                  {[
-                    { head: "🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법", bg: '#EDE8F9', title: guideData.title, body: guideData.badGuide },
-                    { head: '💸 헬스장 기부천사 탈출법', bg: '#FDF6DC', title: escapeInfo.title, body: escapeInfo.escape },
-                    { head: "💥 멘탈 바사삭 '최악의 운동 분위기'", bg: '#FBE9F0', title: vibeData.name, body: vibeData.worst },
-                  ].map((s) => (
-                    <Fragment key={s.head}>
-                      <tr>
-                        <td colSpan={3} style={{ ...label, background: s.bg, fontSize: '20px', padding: '12px' }}>{s.head}</td>
-                      </tr>
-                      <tr>
-                        <td colSpan={3} style={{ ...cell, textAlign: 'left', padding: '16px 18px' }}>
-                          <div style={{ fontSize: '21px', fontWeight: 900, marginBottom: '8px' }}>{s.title}</div>
-                          <div style={{ fontSize: '17px', fontWeight: 600, color: '#5E594F', lineHeight: 1.55, whiteSpace: 'pre-line' }}>{s.body}</div>
-                        </td>
-                      </tr>
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '17px', fontWeight: 800, color: '#6E6A62' }}>
+              {/* 상세 3섹션 */}
+              {SECTIONS.map((s, i) => (
+                <div key={s.head} style={{ ...card, marginBottom: i === SECTIONS.length - 1 ? 0 : '18px' }}>
+                  <div style={{ fontSize: '17px', fontWeight: 800, lineHeight: 1.3, color: '#9CA3AF', marginBottom: '12px' }}>{s.head}</div>
+                  <div style={{ fontSize: '26px', fontWeight: 900, lineHeight: 1.3, color: s.accent }}>{s.title}</div>
+                  <div style={hr} />
+                  <div style={{ fontSize: '18px', fontWeight: 600, lineHeight: 1.6, color: '#4B5563', whiteSpace: 'pre-line' }}>{s.body}</div>
+                </div>
+              ))}
+
+              <div style={{ textAlign: 'center', marginTop: '22px', fontSize: '17px', fontWeight: 800, lineHeight: 1.2, color: '#9CA3AF' }}>
                 나도 검사하기 · bmti-official.co.kr
               </div>
             </div>
