@@ -815,25 +815,31 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             return <>&quot;{a.quote.slice(0, i)}<span style={{ color: a.color, fontWeight: 800 }}>{a.hl}</span>{a.quote.slice(i + a.hl.length)}&quot;</>;
           };
           // 결과지(웹) 스타일 그대로 — 흰 배경 · 둥근 박스 · 검은 그림자 · 얇은 구분선 · 핵심 문구 색상
-          const card = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '26px', boxShadow: '0 5px 18px rgba(0,0,0,0.18)', padding: '22px 24px', boxSizing: 'border-box' };
-          const hr = { height: '1px', background: '#1C1A17', opacity: 0.12, margin: '13px 0' };
+          const card = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '26px', boxShadow: '0 8px 26px rgba(0,0,0,0.28)', padding: '22px 24px', boxSizing: 'border-box' };
           return (
-            <div ref={shareCardRef} style={{ width: '900px', background: '#FFFFFF', padding: '22px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box', color: '#1C1A17' }}>
+            <div ref={shareCardRef} style={{ width: '900px', background: '#FFFFFF', padding: '30px 26px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box', color: '#1C1A17' }}>
               {/* 헤더 카드 — 원본 이미지를 가로 꽉 차게, 문구는 그 아래 */}
               <div style={{ ...card, padding: 0, overflow: 'hidden', marginBottom: '12px' }}>
                 {charData && (
                   <img src={charData.originalImage} alt={axisCode} style={{ width: '100%', height: 'auto', display: 'block' }} crossOrigin="anonymous" />
                 )}
-                <div style={{ padding: '20px 24px 22px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '0.2em', color: '#9CA3AF', lineHeight: 1.2, marginBottom: '8px' }}>BMTI 움직임 성향 테스트</div>
-                  <div style={{ fontSize: '32px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
-                    {axisCode}<span style={{ color: '#B7B2A9', marginLeft: '12px' }}>{CODE_KO[axisCode]}</span>
+                {/* 문구 배치·크기·색상은 웹 결과지와 동일 — 닉네임(윗줄 회색 + 본문 검정) → 유형 코드 → 캐치프레이즈 */}
+                <div style={{ padding: '26px 24px 28px', textAlign: 'center' }}>
+                  {(() => {
+                    const parts = (resultData.nickname || '').split('\n');
+                    const first = parts.length > 1 ? parts[0] : null;
+                    const main = parts.length > 1 ? parts.slice(1).join(' ') : (resultData.nickname || '');
+                    return (
+                      <div style={{ lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+                        {first && <div style={{ fontSize: '25px', fontWeight: 800, color: '#9CA3AF', lineHeight: 1.25, marginBottom: '5px' }}>{first}</div>}
+                        <div style={{ fontSize: '54px', fontWeight: 900, color: '#111827', lineHeight: 1.2 }}>{main}</div>
+                      </div>
+                    );
+                  })()}
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: '#9CA3AF', lineHeight: 1.3, marginTop: '13px', letterSpacing: '-0.3px' }}>
+                    {axisCode} <span style={{ color: '#D1D5DB' }}>{CODE_KO[axisCode]}</span>
                   </div>
-                  <div style={{ ...hr, margin: '13px 0' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1.25, color: '#8B7BD8', whiteSpace: 'pre-line', marginBottom: '6px' }}>
-                    {(resultData.nickname || '').replace(/\n/g, ' ')}
-                  </div>
-                  <div style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1.45, color: '#4B5563', whiteSpace: 'pre-line' }}>{info.catchphrase}</div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, lineHeight: 1.65, color: '#4B5563', whiteSpace: 'pre-line', marginTop: '18px' }}>{info.catchphrase}</div>
                 </div>
               </div>
 
