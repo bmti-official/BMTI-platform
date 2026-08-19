@@ -13,10 +13,11 @@ import TypeGallery from './TypeGallery';
 import BingoGallery from './BingoGallery';
 import { YELLOW_HL } from './DiaryCta';
 import BmtiGuidePopup from './BmtiGuidePopup';
+import ShareBox from './ShareBox';
 import mTypeImage from '../assets/M 유형.png';
 import zTypeImage from '../assets/Z 유형.png';
 
-const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, userProfile }) => {
+const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode, bmtiAnswers, userProfile }) => {
   const [activeChar, setActiveChar] = useState(null);
   const [showGallery, setShowGallery] = useState(false);
   const [showBingo, setShowBingo] = useState(false);
@@ -267,17 +268,10 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 카카오톡 친구 공유 CTA — 결과를 받은 이용자에게만 (모바일 폭으로 제한) */}
+      {/* 친구에게 공유하기 — 결과를 받은 이용자에게만 (결과지와 같은 공용 박스) */}
       {bmtiCode && (
-        <div className="px-6 mb-12 w-full max-w-md mx-auto">
-          <button
-            onClick={shareToFriend}
-            className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] font-extrabold text-sm md:text-base rounded-2xl py-4 shadow-[0_4px_16px_rgba(254,229,0,0.4)] hover:bg-[#F4DC00] active:scale-[0.99] transition-colors"
-          >
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#3C1E1E]"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.556 1.7 4.8 4.27 6.054-.188.703-.682 2.544-.78 2.936-.122.485.176.478.373.344.154-.103 2.45-1.674 3.447-2.355.54.08 1.103.12 1.69.12 4.97 0 9-3.185 9-7.114C21 6.185 16.97 3 12 3z" /></svg>
-            카카오톡 친구에게 공유하기
-          </button>
-          <p className="text-center text-gray-400 text-xs mt-2.5 font-medium">내 BMTI 결과를 친구에게 보여주세요</p>
+        <div className="px-4 mb-12 w-full max-w-md mx-auto">
+          <ShareBox bmtiCode={bmtiCode} bmtiAnswers={bmtiAnswers} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
         </div>
       )}
 

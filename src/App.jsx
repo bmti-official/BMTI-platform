@@ -275,6 +275,7 @@ function App() {
             isLoggedIn={isLoggedIn}
             onRequireLogin={() => setShowSignup(true)}
             bmtiCode={bmtiCode}
+            bmtiAnswers={bmtiAnswers}
             userProfile={userProfile}
           />
         )}
