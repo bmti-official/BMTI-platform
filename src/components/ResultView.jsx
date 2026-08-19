@@ -806,67 +806,74 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
             const percent = Math.max(percentages[l1], percentages[l2]);
             const level = percent >= 80 ? 'confident' : 'flexible';
             const d = TENDENCY_DATA[active];
-            return { key: l1, emoji: d[level].emoji, name: `${d[level].modifier} ${d.name.replace(/\s*\(.*\)$/, '')}`, quote: d[level].quote, percent, color: TENDENCY_HEX[l1] || '#8B7BD8' };
+            return { key: l1, emoji: d[level].emoji, name: `${d[level].modifier} ${d.name.replace(/\s*\(.*\)$/, '')}`, quote: d[level].quote, hl: (TENDENCY_HL[active] || {})[level], percent, color: TENDENCY_HEX[l1] || '#8B7BD8' };
           }) : [];
+          // 대표 문장의 핵심 문구만 성향 색으로 — 웹 결과지와 동일
+          const renderCardQuote = (a) => {
+            const i = a.hl && a.quote.includes(a.hl) ? a.quote.indexOf(a.hl) : -1;
+            if (i < 0) return <>&quot;{a.quote}&quot;</>;
+            return <>&quot;{a.quote.slice(0, i)}<span style={{ color: a.color, fontWeight: 800 }}>{a.hl}</span>{a.quote.slice(i + a.hl.length)}&quot;</>;
+          };
           // 결과지(웹) 스타일 그대로 — 흰 배경 · 둥근 박스 · 검은 그림자 · 얇은 구분선 · 핵심 문구 색상
           const SECTIONS = [
             { head: "🙋🏻‍♂️🙋🏻‍♀️ 실패 없는 운동 강사 고르는 방법", accent: '#7C6FF0', title: guideData.title, body: guideData.badGuide },
             { head: '💸 헬스장 기부천사 탈출법', accent: '#C9862A', title: escapeInfo.title, body: escapeInfo.escape },
             { head: "💥 멘탈 바사삭 '최악의 운동 분위기'", accent: '#D6486D', title: vibeData.name, body: vibeData.worst },
           ];
-          const card = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '32px', boxShadow: '0 6px 22px rgba(0,0,0,0.20)', padding: '30px 32px', boxSizing: 'border-box' };
-          const hr = { height: '1px', background: '#1C1A17', opacity: 0.12, margin: '22px 0' };
+          const card = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '26px', boxShadow: '0 5px 18px rgba(0,0,0,0.18)', padding: '22px 24px', boxSizing: 'border-box' };
+          const hr = { height: '1px', background: '#1C1A17', opacity: 0.12, margin: '13px 0' };
           return (
-            <div ref={shareCardRef} style={{ width: '900px', background: '#FFFFFF', padding: '30px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box', color: '#1C1A17' }}>
+            <div ref={shareCardRef} style={{ width: '900px', background: '#FFFFFF', padding: '22px', fontFamily: "'Pretendard', sans-serif", boxSizing: 'border-box', color: '#1C1A17' }}>
               {/* 헤더 카드 — 캐릭터 + 유형 + 닉네임 + 캐치프레이즈 */}
-              <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '26px', marginBottom: '18px' }}>
+              <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '12px' }}>
                 {charData && (
-                  <img src={charData.image} alt={axisCode} style={{ width: '230px', height: '230px', objectFit: 'contain', flexShrink: 0 }} crossOrigin="anonymous" />
+                  <img src={charData.image} alt={axisCode} style={{ width: '170px', height: '170px', objectFit: 'contain', flexShrink: 0 }} crossOrigin="anonymous" />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.22em', color: '#9CA3AF', lineHeight: 1.2, marginBottom: '12px' }}>BMTI 움직임 성향 테스트</div>
-                  <div style={{ fontSize: '34px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '0.2em', color: '#9CA3AF', lineHeight: 1.2, marginBottom: '8px' }}>BMTI 움직임 성향 테스트</div>
+                  <div style={{ fontSize: '30px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
                     {axisCode}<span style={{ color: '#B7B2A9', marginLeft: '12px' }}>{CODE_KO[axisCode]}</span>
                   </div>
-                  <div style={{ ...hr, margin: '16px 0' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1.3, color: '#8B7BD8', whiteSpace: 'pre-line', marginBottom: '8px' }}>
+                  <div style={{ ...hr, margin: '11px 0' }} />
+                  <div style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1.25, color: '#8B7BD8', whiteSpace: 'pre-line', marginBottom: '5px' }}>
                     {(resultData.nickname || '').replace(/\n/g, ' ')}
                   </div>
-                  <div style={{ fontSize: '19px', fontWeight: 700, lineHeight: 1.45, color: '#4B5563', whiteSpace: 'pre-line' }}>{info.catchphrase}</div>
+                  <div style={{ fontSize: '17px', fontWeight: 700, lineHeight: 1.4, color: '#4B5563', whiteSpace: 'pre-line' }}>{info.catchphrase}</div>
                 </div>
               </div>
 
               {/* 4가지 성향 */}
-              <div style={{ ...card, marginBottom: '18px' }}>
-                <div style={{ fontSize: '21px', fontWeight: 900, lineHeight: 1.2, marginBottom: '20px' }}>🔍 나를 움직이게 하는 4가지 성향</div>
+              <div style={{ ...card, marginBottom: '12px' }}>
+                <div style={{ fontSize: '19px', fontWeight: 900, lineHeight: 1.2, marginBottom: '14px' }}>🔍 나를 움직이게 하는 4가지 성향</div>
                 {axes.map((a, i) => (
-                  <div key={a.key}>
-                    {i > 0 && <div style={hr} />}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <span style={{ fontSize: '20px', fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', color: '#4B5563' }}>
-                        <span style={{ marginRight: '8px' }}>{a.emoji}</span>{a.name}
+                  <div key={a.key} style={{ marginTop: i > 0 ? '13px' : 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', color: '#4B5563' }}>
+                        <span style={{ marginRight: '7px' }}>{a.emoji}</span>{a.name}
                       </span>
-                      <div style={{ flex: 1, height: '12px', background: '#F3F1EC', borderRadius: '999px', overflow: 'hidden', minWidth: '110px' }}>
-                        <div style={{ width: `${a.percent}%`, height: '12px', background: a.color, borderRadius: '999px' }} />
+                      <div style={{ flex: 1, height: '11px', background: '#F3F1EC', borderRadius: '999px', overflow: 'hidden', minWidth: '100px' }}>
+                        <div style={{ width: `${a.percent}%`, height: '11px', background: a.color, borderRadius: '999px' }} />
                       </div>
-                      <span style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.2, color: a.color, width: '58px', textAlign: 'right' }}>{a.percent}%</span>
+                      <span style={{ fontSize: '17px', fontWeight: 800, lineHeight: 1.2, color: a.color, width: '54px', textAlign: 'right' }}>{a.percent}%</span>
                     </div>
-                    <div style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1.5, color: '#1C1A17', marginTop: '10px' }}>&quot;{a.quote}&quot;</div>
+                    <div style={{ fontSize: '16.5px', fontWeight: 700, lineHeight: 1.45, color: '#1C1A17', marginTop: '5px' }}>{renderCardQuote(a)}</div>
                   </div>
                 ))}
               </div>
 
-              {/* 상세 3섹션 */}
-              {SECTIONS.map((s, i) => (
-                <div key={s.head} style={{ ...card, marginBottom: i === SECTIONS.length - 1 ? 0 : '18px' }}>
-                  <div style={{ fontSize: '17px', fontWeight: 800, lineHeight: 1.3, color: '#9CA3AF', marginBottom: '12px' }}>{s.head}</div>
-                  <div style={{ fontSize: '26px', fontWeight: 900, lineHeight: 1.3, color: s.accent }}>{s.title}</div>
-                  <div style={hr} />
-                  <div style={{ fontSize: '18px', fontWeight: 600, lineHeight: 1.6, color: '#4B5563', whiteSpace: 'pre-line' }}>{s.body}</div>
-                </div>
-              ))}
+              {/* 상세 — 한 카드에 3섹션(구분선으로 나눔) */}
+              <div style={card}>
+                {SECTIONS.map((s, i) => (
+                  <div key={s.head}>
+                    {i > 0 && <div style={hr} />}
+                    <div style={{ fontSize: '15px', fontWeight: 800, lineHeight: 1.3, color: '#9CA3AF', marginBottom: '5px' }}>{s.head}</div>
+                    <div style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1.25, color: s.accent, marginBottom: '6px' }}>{s.title}</div>
+                    <div style={{ fontSize: '16.5px', fontWeight: 600, lineHeight: 1.5, color: '#4B5563', whiteSpace: 'pre-line' }}>{s.body}</div>
+                  </div>
+                ))}
+              </div>
 
-              <div style={{ textAlign: 'center', marginTop: '22px', fontSize: '17px', fontWeight: 800, lineHeight: 1.2, color: '#9CA3AF' }}>
+              <div style={{ textAlign: 'center', marginTop: '14px', fontSize: '16px', fontWeight: 800, lineHeight: 1.2, color: '#9CA3AF' }}>
                 나도 검사하기 · bmti-official.co.kr
               </div>
             </div>
