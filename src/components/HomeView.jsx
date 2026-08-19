@@ -125,7 +125,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   const shareToFriend = () => {
     const siteUrl = 'https://bmti-official.co.kr/';
     // 받은 사람은 공유자 유형의 '예시 결과지'(다른 유형 구경하기)로 바로 들어온다.
-    const shareUrl = `${siteUrl}#example-${axisCode}`;
+    const shareUrl = `${siteUrl}t/${axisCode}.html`;
     const nick = (BMTI_RESULTS[axisCode]?.nickname || CHARACTER_NAMES[axisCode] || axisCode).replace(/\n/g, ' ');
     const title = `나의 BMTI는 ${nick} (${axisCode})!`;
     const description = `${(charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ')}\n나와 다른 유형도 구경해보세요!`;

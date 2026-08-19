@@ -275,7 +275,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     }
     const imageUrl = charData ? new URL(charData.originalImage, window.location.href).href : undefined;
     // 받은 사람은 공유자 유형의 '예시 결과지'(다른 유형 구경하기)로 바로 들어온다.
-    const shareUrl = `${siteUrl}#example-${axisCode}`;
+    const shareUrl = `${siteUrl}t/${axisCode}.html`;
 
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
@@ -292,7 +292,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
   };
 
   // ── 친구에게 공유하기 — 공용 헬퍼 ──────────────────────────────
-  const shareUrl = `${siteUrl}#example-${axisCode}`;
+  const shareUrl = `${siteUrl}t/${axisCode}.html`;
   const shareText = `나의 BMTI는 ${resultData.nickname ? resultData.nickname.replace('\n', ' ') : axisCode} (${axisCode})! ${info.catchphrase.replace('\n', ' ')}`;
 
   // 공유 카드(이력서 형태)를 이미지로 — 인스타 스토리/X/이미지 저장/기본공유에서 함께 쓴다.
@@ -323,9 +323,26 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
     showToast('이미지를 저장했어요 · 인스타그램 스토리에 올려보세요');
     setTimeout(() => { window.open('https://www.instagram.com/', '_blank', 'noopener'); }, 900);
   };
-  const shareToX = () => {
-    const u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-    window.open(u, '_blank', 'noopener');
+  // X는 웹 인텐트로 이미지를 첨부할 수 없다.
+  //  · 모바일: OS 공유 시트로 결과 카드 이미지를 X 앱에 직접 첨부
+  //  · 그 외: 문구+링크 인텐트 — 링크(유형별 카드 페이지)의 트위터 카드로 큰 이미지가 뜬다
+  const shareToX = async () => {
+    const openIntent = () => {
+      const u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+      window.open(u, '_blank', 'noopener');
+    };
+    const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+    if (!isMobile) { openIntent(); return; }
+    try {
+      setShareBusy('x');
+      const blob = await captureShareImage();
+      const file = blob ? new File([blob], `BMTI_${axisCode}.png`, { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: `${shareText} ${shareUrl}` });
+      } else {
+        openIntent();
+      }
+    } catch { /* 사용자가 취소한 경우 포함 */ } finally { setShareBusy(null); }
   };
   const copyShareLink = async () => {
     try {
@@ -533,7 +550,7 @@ const ResultView = ({ setView, quizCompleted, setQuizCompleted, isLoggedIn, setI
                     icon: (<svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none" /></svg>),
                   },
                   {
-                    key: 'x', label: 'X', sub: '트위터', onClick: shareToX,
+                    key: 'x', label: 'X', sub: shareBusy === 'x' ? '준비 중…' : '트위터', onClick: shareToX,
                     bg: 'bg-black', fg: 'text-white',
                     icon: (<svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M18.9 2H22l-7.1 8.1L23.2 22h-6.5l-5.1-6.6L5.8 22H2.7l7.6-8.7L1.5 2H8l4.6 6.1L18.9 2Zm-1.1 18h1.7L7.3 3.7H5.5L17.8 20Z" /></svg>),
                   },
