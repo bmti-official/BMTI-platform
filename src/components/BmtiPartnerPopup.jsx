@@ -59,7 +59,7 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
               <div className="flex items-center gap-3 mb-5">
                 {/* 누끼 캐릭터 — 감싸는 원 없음 */}
                 <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
-                  {charData && <img src={charData.image} alt={axisCode} className={`w-full h-full object-contain ${charData.imgClass || 'scale-110'}`} />}
+                  {charData && <img src={charData.image} alt={axisCode} className="w-full h-full object-contain" />}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">

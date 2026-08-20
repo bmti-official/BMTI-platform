@@ -67,7 +67,7 @@ function TypeGrid({ onPick, onClose }) {
               className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
             >
               <span className={`w-full aspect-square rounded-2xl flex items-center justify-center overflow-hidden ${c.color || 'bg-gray-100'}`}>
-                <img src={c.image} alt={c.id} className={`w-full h-full object-contain ${c.imgClass || ''}`} />
+                <img src={c.image} alt={c.id} className="w-full h-full object-contain" />
               </span>
               <span className="text-[10px] font-extrabold text-gray-700 leading-none">{c.id}</span>
             </button>

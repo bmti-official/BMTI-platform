@@ -175,7 +175,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const defaultAiImage = '⭐️';
-  const aiAvatar = charData ? <img src={charData.image} alt="AI" className={`w-full h-full object-contain drop-shadow-md ${charData.imgClass || 'scale-110'}`} /> : <div className="text-3xl">{defaultAiImage}</div>;
+  const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain drop-shadow-md" /> : <div className="text-3xl">{defaultAiImage}</div>;
 
   return (
     <>

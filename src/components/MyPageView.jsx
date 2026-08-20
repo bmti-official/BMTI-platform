@@ -361,7 +361,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           {/* 아바타 — 누끼 캐릭터만(감싸는 원·수정 배지 없음) */}
           <div className="w-[92px] h-[92px] md:w-28 md:h-28 flex items-center justify-center flex-shrink-0">
             {charInfo ? (
-              <img src={charInfo.image} alt={axisCode} className={`w-full h-full object-contain ${charInfo.imgClass || 'scale-110'}`} />
+              <img src={charInfo.image} alt={axisCode} className="w-full h-full object-contain" />
             ) : (
               <span className="text-4xl">👤</span>
             )}
@@ -515,7 +515,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 {item.isCurrent && <div className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: GOLD }}></div>}
                 <div className="w-16 h-16 md:w-20 md:h-20 mb-3 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
                   {codeStr && getCharImage(codeStr) ? (
-                    <img src={getCharImage(codeStr)} alt={shortCode} className="w-full h-full object-contain scale-110" />
+                    <img src={getCharImage(codeStr)} alt={shortCode} className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-2xl">👤</span>
                   )}

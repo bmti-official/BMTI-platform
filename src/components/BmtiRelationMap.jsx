@@ -69,13 +69,12 @@ function MiniChar({ code, size = 56, ring, bg, plain = false }) {
   // 원 배경을 흰색 위 옅은 틴트로 '불투명'하게 만든다 — 뒤에 깔린 연결선이 원과 겹치는
   // 부분에서 비쳐 보이지 않고(원이 가리고), 원 사이 여백에서만 선이 보이게 한다.
   const tint = bg || `${(BMTI_INFO[code] || {}).color || '#999'}18`;
-  // plain: 작은 원(추가 짝꿍)에서는 유형별 imgClass(translate 등)를 빼서 캐릭터를 가운데로.
   return (
     <div
       className="rounded-full flex items-center justify-center overflow-hidden shrink-0"
       style={{ width: size, height: size, backgroundColor: '#fff', backgroundImage: `linear-gradient(${tint}, ${tint})`, border: `2px solid ${ring || 'transparent'}` }}
     >
-      {ch && <img src={ch.image} alt="" className={plain ? '' : (ch.imgClass || '')} style={{ width: `${84 * boostOf(code)}%`, height: `${84 * boostOf(code)}%`, objectFit: 'contain' }} />}
+      {ch && <img src={ch.image} alt="" style={{ width: `${84 * boostOf(code)}%`, height: `${84 * boostOf(code)}%`, objectFit: 'contain' }} />}
     </div>
   );
 }
@@ -177,7 +176,7 @@ export default function BmtiRelationMap({ bmtiCode }) {
                 className="relative w-full aspect-square rounded-2xl overflow-hidden flex items-center justify-center"
                 style={{ background: `${(BMTI_INFO[code] || {}).color || '#999'}14`, border: `2px solid ${ring}`, boxShadow: active ? `0 4px 12px ${ring}44` : 'none' }}
               >
-                {charOf(code) && <img src={charOf(code).image} alt="" className={charOf(code).imgClass || ''} style={{ width: `${86 * boostOf(code)}%`, height: `${86 * boostOf(code)}%`, objectFit: 'contain' }} />}
+                {charOf(code) && <img src={charOf(code).image} alt="" style={{ width: `${86 * boostOf(code)}%`, height: `${86 * boostOf(code)}%`, objectFit: 'contain' }} />}
                 {isSel && <span className="absolute top-1 left-1 text-[8px] font-extrabold text-white px-1.5 py-0.5 rounded-md" style={{ background: selColor }}>나</span>}
                 {isGood && <span className={`absolute top-1 right-1 leading-none ${code === mainCode ? 'text-[18px] drop-shadow-sm' : 'text-[10px]'}`}>💖</span>}
                 {isBad && <span className="absolute top-1 right-1 text-[10px]">🤔</span>}

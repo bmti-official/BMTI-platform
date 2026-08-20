@@ -164,7 +164,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           </button>
           <div className="flex flex-col items-center animate-[fadeIn_0.3s_ease-out] px-6 max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className={`w-72 h-72 md:w-96 md:h-96 rounded-full ${activeChar.color} flex items-center justify-center overflow-hidden shadow-2xl border-2 border-white/30`}>
-              <img src={activeChar.image} alt={activeChar.id} className={`w-full h-full object-contain drop-shadow-2xl ${activeChar.id === 'OLQM' ? 'scale-90' : ['OCDZ', 'OCQM'].includes(activeChar.id) ? 'scale-100' : 'scale-125'}`} />
+              <img src={activeChar.image} alt={activeChar.id} className="w-full h-full object-contain drop-shadow-2xl" />
             </div>
             {/* 결과지 문구 반영: 코드(제목) → 별명 → 캐치프레이즈 */}
             <div className="mt-7 px-7 py-2.5 bg-white/20 backdrop-blur-lg rounded-full border border-white/30 text-white font-bold text-xl md:text-2xl tracking-wide shadow-xl">
@@ -251,7 +251,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
               onClick={() => handleCharClick(char)}
               className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 hover:shadow-lg transition-all duration-300 overflow-hidden p-1 relative z-10 cursor-pointer`}
             >
-              <img src={char.image} alt={char.id} className={`w-full h-full object-contain scale-[1.10] drop-shadow-sm pointer-events-none ${char.imgClass || ''}`} />
+              <img src={char.image} alt={char.id} className="w-full h-full object-contain drop-shadow-sm pointer-events-none" />
             </div>
           ))}
         </div>

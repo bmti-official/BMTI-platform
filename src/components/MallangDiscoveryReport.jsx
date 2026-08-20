@@ -3043,7 +3043,7 @@ function LetterCard({ data, isM, bmtiCode, pdfMode = false }) {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, margin: "16px 0 4px" }}>
         <div style={{ width: 96, height: 96, borderRadius: 24, background: `radial-gradient(circle at 50% 40%, #fff, ${t.accentSoft})`, border: `1px solid ${t.accentSoft}`, boxShadow: "inset 0 1px 4px rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", animation: open ? "none" : "sealBob 2.6s ease-in-out infinite" }}>
           {charData
-            ? <img src={charData.image} alt={charName} className={charData.imgClass || ""} style={{ width: "82%", height: "82%", objectFit: "contain" }} />
+            ? <img src={charData.image} alt={charName} style={{ width: "82%", height: "82%", objectFit: "contain" }} />
             : <span style={{ fontSize: 40 }}>💌</span>}
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: t.accentDeep }}>{charName} 파트너</div>
