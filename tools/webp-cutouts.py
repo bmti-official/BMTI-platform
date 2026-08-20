@@ -6,7 +6,7 @@
 PNG 원본(고화질)은 그대로 두고, 사이트는 가벼운 .webp 를 import 한다.
 화면에서 가장 크게 쓰이는 곳이 홈 모달(384px @3x ≈ 1152px)이라 1200px 이면 충분하다.
 """
-import os, glob
+import os, sys, glob
 from PIL import Image
 
 SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -14,7 +14,10 @@ SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 MAX_SIDE, QUALITY = 1200, 88
 
 tot_png = tot_webp = 0
+only = {a.upper() for a in sys.argv[1:]}          # 인자를 주면 그 유형만 처리
 for p in sorted(glob.glob(SRC + '/*.png')):
+    if only and os.path.basename(p).split()[0].upper() not in only:
+        continue
     im = Image.open(p).convert('RGBA')
     if max(im.size) > MAX_SIDE:
         im.thumbnail((MAX_SIDE, MAX_SIDE), Image.LANCZOS)

@@ -10,7 +10,7 @@
   → 투명 여백을 잘라내고, 긴 변이 항상 캔버스의 FILL 비율이 되도록 정사각으로 다시 앉힌다.
   → 유형별 scale-[1.25] 같은 보정이 필요 없어진다.
 """
-import os, glob
+import os, sys, glob
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +18,10 @@ SRC = os.path.join(ROOT, 'src', 'assets', '누끼 버전')
 FILL = 0.92        # 긴 변이 캔버스에서 차지할 비율
 MAX_SIDE = 1600    # 웹 표시용으로 충분한 크기(용량 절감)
 
+only = {a.upper() for a in sys.argv[1:]}          # 인자를 주면 그 유형만 처리
 for p in sorted(glob.glob(SRC + '/*.png')):
+    if only and os.path.basename(p).split()[0].upper() not in only:
+        continue
     im = Image.open(p).convert('RGBA')
     bbox = im.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox()
     if not bbox:
