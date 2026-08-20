@@ -117,22 +117,22 @@ export function calculateBMTI(answers) {
   return calculateAxisCode(answers);
 }
 
-import imgACDM from './assets/누끼 버전/ACDM 누끼.png';
-import imgACDZ from './assets/누끼 버전/ACDZ 누끼.png';
-import imgACQM from './assets/누끼 버전/ACQM 누끼.png';
-import imgACQZ from './assets/누끼 버전/ACQZ 누끼.png';
-import imgALDM from './assets/누끼 버전/ALDM 누끼.png';
-import imgALDZ from './assets/누끼 버전/ALDZ 누끼.png';
-import imgALQM from './assets/누끼 버전/ALQM 누끼.png';
-import imgALQZ from './assets/누끼 버전/ALQZ 누끼.png';
-import imgOCDM from './assets/누끼 버전/OCDM 누끼.png';
-import imgOCDZ from './assets/누끼 버전/OCDZ 누끼.png';
-import imgOCQM from './assets/누끼 버전/OCQM 누끼.png';
-import imgOCQZ from './assets/누끼 버전/OCQZ 누끼.png';
-import imgOLDM from './assets/누끼 버전/OLDM 누끼.png';
-import imgOLDZ from './assets/누끼 버전/OLDZ 누끼.png';
-import imgOLQM from './assets/누끼 버전/OLQM 누끼.png';
-import imgOLQZ from './assets/누끼 버전/OLQZ 누끼.png';
+import imgACDM from './assets/누끼 버전/ACDM 누끼.webp';
+import imgACDZ from './assets/누끼 버전/ACDZ 누끼.webp';
+import imgACQM from './assets/누끼 버전/ACQM 누끼.webp';
+import imgACQZ from './assets/누끼 버전/ACQZ 누끼.webp';
+import imgALDM from './assets/누끼 버전/ALDM 누끼.webp';
+import imgALDZ from './assets/누끼 버전/ALDZ 누끼.webp';
+import imgALQM from './assets/누끼 버전/ALQM 누끼.webp';
+import imgALQZ from './assets/누끼 버전/ALQZ 누끼.webp';
+import imgOCDM from './assets/누끼 버전/OCDM 누끼.webp';
+import imgOCDZ from './assets/누끼 버전/OCDZ 누끼.webp';
+import imgOCQM from './assets/누끼 버전/OCQM 누끼.webp';
+import imgOCQZ from './assets/누끼 버전/OCQZ 누끼.webp';
+import imgOLDM from './assets/누끼 버전/OLDM 누끼.webp';
+import imgOLDZ from './assets/누끼 버전/OLDZ 누끼.webp';
+import imgOLQM from './assets/누끼 버전/OLQM 누끼.webp';
+import imgOLQZ from './assets/누끼 버전/OLQZ 누끼.webp';
 
 // Original Images
 import origACDM from './assets/원본/ACDM.png';
