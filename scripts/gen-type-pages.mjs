@@ -40,8 +40,6 @@ const AXIS_LABEL = {
 // nickname/catchphrase는 줄바꿈이 섞여 있어 한 줄로 다듬어 쓴다.
 const oneLine = (s) => String(s || '').replace(/\s*\n\s*/g, ' ').trim();
 
-// 결과지 원문에 남아 있는 [닉네임] 자리표시자를 실제 별명으로 채운다.
-const fillNick = (s, nick) => String(s || '').replace(/\[닉네임\]/g, nick);
 
 const codes = Object.keys(BMTI_RESULTS);
 mkdirSync('public/t', { recursive: true });
@@ -85,10 +83,10 @@ for (const code of codes) {
   </figure>
 
   <h2>어떤 유형인가요</h2>
-  ${paras(fillNick(r.summary, nick))}
+  ${paras(r.summary)}
 
   ${bodyGuide ? `<h2>몸이 뻐근할 때 이 유형은</h2>
-  ${paras(fillNick(bodyGuide, nick))}` : ''}
+  ${paras(bodyGuide)}` : ''}
 
   <h2>네 글자가 뜻하는 것</h2>
   <p class="muted">BMTI는 네 가지 축으로 움직임 성향을 봅니다. ${esc(code)}는 아래 네 가지가 겹친 유형이에요.</p>
@@ -99,8 +97,8 @@ ${axes.map((a) => `  <div class="card">
   </div>`).join('\n')}
 
   <h2>다른 유형과의 궁합</h2>
-  ${paras(fillNick(r.goodMatch, nick))}
-  ${paras(fillNick(r.badMatch, nick))}
+  ${paras(r.goodMatch)}
+  ${paras(r.badMatch)}
 
   ${guide ? `<h2>운동 강사를 고를 때</h2>
   <div class="card">
