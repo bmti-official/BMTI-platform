@@ -175,7 +175,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const defaultAiImage = '⭐️';
-  const aiAvatar = charData ? <img src={charData.image} alt="AI" className="w-full h-full object-contain drop-shadow-md" /> : <div className="text-3xl">{defaultAiImage}</div>;
+  // OLQM('키다리 폼롤러')만 세로로 길고 폭이 좁아 정사각 슬롯에서 유독 작아 보인다.
+  // 다른 유형은 그대로 두고 이 유형의 누끼만 살짝 키운다.
+  const navAvatarScale = axisCode === 'OLQM' ? ' scale-[1.22]' : '';
+  const aiAvatar = charData ? <img src={charData.image} alt="AI" className={`w-full h-full object-contain drop-shadow-md${navAvatarScale}`} /> : <div className="text-3xl">{defaultAiImage}</div>;
 
   return (
     <>

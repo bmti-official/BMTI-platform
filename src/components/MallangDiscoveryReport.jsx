@@ -29,6 +29,7 @@ import bodyFemaleBack from "../assets/3d_body/female_back.png";
 import bodyMaleFront from "../assets/3d_body/male_front.png";
 import bodyMaleBack from "../assets/3d_body/male_back.png";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
+import { getRecordMessage } from "../lib/recordMessage";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -470,7 +471,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
           </button>
         </div>
         <p style={{ textAlign: "center", fontSize: 12.5, color: "#8B7BD8", fontWeight: 700, margin: "0 0 16px" }}>
-          이번 달 {report.meta.recordedDays}일 기록했어요
+          {report.meta.recordedDays > 0
+            ? getRecordMessage(report.meta.recordedDays, (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M"))
+            : "아직 기록이 없어요"}
         </p>
 
         {/* 카테고리 탭 — 위 날짜·기록수와 함께 고정. 선택 시 흰 알약이 옆으로 미끄러진다 */}

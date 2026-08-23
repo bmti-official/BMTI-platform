@@ -11,6 +11,7 @@ import {
 } from "../lib/diaryHistory";
 import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON, TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
+import { getRecordMessage } from "../lib/recordMessage";
 import { hasLocalHealthConsent } from "../lib/healthConsentSystem";
 import HealthConsentGate from "./HealthConsentGate";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
@@ -38,35 +39,6 @@ const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 const addWeeks = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n * 7); return x; };
 const sameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 const MONTH_MIN_DATE = new Date(MIN_YEAR, MIN_MONTH - 1, 1);
-
-// M유형 — 따뜻하고 다정한 응원 문구
-const RECORD_MSG_M = [
-  "", "첫걸음을 응원해요.", "오늘도 잊지 않았군요!", "내 마음 돌보기 3일 차.", "차곡차곡 쌓이는 하루.",
-  "조금씩 쌓이는 내 모습.", "나의 내면과 친해져요.", "일주일 달성! 멋져요.", "새로운 주도 활기차게!", "매일 더 나아지고 있어요.",
-  "꾸준한 모습이 예뻐요.", "오늘도 수고 많았어요.", "당신의 하루를 응원해요.", "좋은 습관이 생겼네요.", "벌써 2주! 수고했어요.",
-  "절반을 넘어섰네요!", "스스로를 안아주세요.", "반환점을 돌아 순항 중!", "내 마음의 소리에 집중.", "나를 알아가는 즐거움.",
-  "20일의 기적, 대단해요.", "매일의 당신이 빛나요.", "습관이 자리 잡았어요.", "오늘도 다정한 하루.", "흔들림 없는 발걸음.",
-  "거의 다 왔어요. 화이팅!", "나를 위한 최고의 선물.", "끝까지 응원할게요!", "한 달이 코앞이에요!", "조금만 더 힘을 내요.",
-  "찬란한 한 달의 완성.", "수고한 나를 토닥여요.",
-];
-
-// Z유형 — 담백하고 냉철한 동기부여 문구
-const RECORD_MSG_Z = [
-  "", "작심삼일은 넘겨봅시다.", "아직 갈 길이 멉니다.", "작심삼일 고비 넘기기.", "페이스 유지하세요.",
-  "아직 초반입니다. 집중.", "루틴이 되어갑니다.", "겨우 일주일, 더 가야죠.", "흐름 끊기지 않게 주의.", "데이터가 쌓이고 있어요.",
-  "이제야 두 자릿수 진입.", "꾸준함도 실력입니다.", "나태해지지 마세요.", "목표에 집중할 시간.", "절반 왔네요. 킵고잉.",
-  "딱 절반 지났습니다.", "후반전 시작입니다.", "절반 넘김. 흐름 유지.", "기록은 배신하지 않죠.", "확실한 패턴 분석 가능.",
-  "20일 달성. 계속 진행.", "데이터 확보. 페이스 유지.", "완주가 눈앞입니다.", "변수 통제 잘하세요.", "무리 없이 달성 중.",
-  "고지가 눈앞. 긴장 유지.", "막판까지 집중하세요.", "유종의 미를 거둡시다.", "막판 스퍼트 올리세요.", "단 며칠 남았습니다.",
-  "사실상 목표 달성.", "완주 성공. 다음 달 준비.",
-];
-
-function getRecordMessage(count, isM) {
-  if (count <= 0) return "";
-  const msgs = isM ? RECORD_MSG_M : RECORD_MSG_Z;
-  const idx = Math.min(count, msgs.length - 1);
-  return `총 ${count}일 기록했어요. ${msgs[idx]}`;
-}
 
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown, userInfo = null, setUserProfile, gender = null }) {
   // 기록 후 캘린더로 돌아왔을 때 같은 보기(월간/주간)로 오도록 보기 상태를 저장해둔다.
@@ -333,13 +305,15 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{moodInfo?.label}</div>
               </div>
 
-              {/* 첫 번째 박스(오늘의 태그) — 고정 */}
-              {(() => {
-                const tags = (previewDay.entry.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
-                if (!tags.length) return null;
-                return (
-                  <div style={{ flexShrink: 0, padding: "0 20px 12px" }}>
-                    <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "12px 14px", boxShadow: YELLOW_SHADOW }}>
+              {/* 본문 — 태그 박스와 기록 요약 박스를 한 스크롤 영역에 함께 담는다.
+                   각 박스에 따로 높이를 물리면 태그가 많을 때 아래 박스가 납작해지므로,
+                   두 박스 모두 내용만큼의 높이를 갖고 넘치는 만큼만 이 영역이 스크롤한다. */}
+              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "0 20px 4px" }}>
+                {(() => {
+                  const tags = (previewDay.entry.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
+                  if (!tags.length) return null;
+                  return (
+                    <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "12px 14px", marginBottom: 12, boxShadow: YELLOW_SHADOW }}>
                       <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>오늘의 태그</div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                         {tags.map(tg => (
@@ -350,12 +324,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                         ))}
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
-              {/* 두 번째 박스(기록 요약) — 길면 이 영역만 스크롤 */}
-              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "0 20px 4px" }}>
                 {items.length > 0 ? (
                   <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", boxShadow: YELLOW_SHADOW }}>
                     {items.map((it, i) => (
