@@ -1,8 +1,11 @@
 // BMTI 말랑 다이어리 서비스 워커 — 앱 셸/정적 자산을 휴대폰에 캐시해서
 // 재방문이 빠르고 오프라인에서도 열리게 한다. (일기 데이터 자체는 localStorage에
 // 저장되며 SW와 무관하게 유지된다.)
-// 배포마다 새 자산을 받도록 버전을 올린다.
-const CACHE = 'bmti-cache-v1';
+//
+// 캐시 이름의 20260823075407 는 빌드할 때 vite.config.js가 실제 빌드 시각으로 바꿔준다.
+// 이름이 배포마다 달라져야 아래 activate의 정리 로직이 옛 캐시를 실제로 지운다.
+// (예전엔 'bmti-cache-v1'로 고정돼 있어 한 번 캐시된 자산이 영원히 남았다.)
+const CACHE = 'bmti-cache-20260823075407';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -27,13 +30,18 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
-        .then((res) => { const c = res.clone(); caches.open(CACHE).then((ca) => ca.put(req, c)); return res; })
+        .then((res) => {
+          // 정상 응답만 캐시한다 — 404·502를 캐시해두면 오프라인 폴백이 망가진다.
+          if (res && res.ok) { const c = res.clone(); caches.open(CACHE).then((ca) => ca.put(req, c)); }
+          return res;
+        })
         .catch(() => caches.match(req).then((m) => m || caches.match(new URL('index.html', self.registration.scope).href)))
     );
     return;
   }
 
-  // 정적 자산: 캐시 우선 → 없으면 네트워크(성공 시 캐시에 저장)
+  // 정적 자산: 캐시 우선 → 없으면 네트워크(성공 시 캐시에 저장).
+  // 파일명에 해시가 붙어 있어 내용이 바뀌면 URL도 바뀌므로 캐시 우선이 안전하다.
   e.respondWith(
     caches.match(req).then((m) => m || fetch(req).then((res) => {
       if (res && res.ok && res.type === 'basic') { const c = res.clone(); caches.open(CACHE).then((ca) => ca.put(req, c)); }
