@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 supabase/.temp
+
+# Python 가상환경 (235MB — 저장소에 넣지 않는다)
+.venv
