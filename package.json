@@ -12,7 +12,11 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "build:domain": "BUILD_TARGET=domain vite build",
-    "deploy:domain": "npm run build:domain && echo bmti-official.co.kr > dist/CNAME && gh-pages -d dist"
+    "deploy:domain": "npm run build:domain && echo bmti-official.co.kr > dist/CNAME && gh-pages -d dist",
+    "gen:types": "node scripts/gen-type-pages.mjs",
+    "gen:info": "node scripts/gen-info-pages.mjs",
+    "gen:sitemap": "node scripts/gen-sitemap.mjs",
+    "gen:pages": "npm run gen:types && npm run gen:info && npm run gen:magazine && npm run gen:sitemap"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

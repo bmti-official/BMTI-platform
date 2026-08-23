@@ -319,20 +319,30 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
         </div>
 
-        {/* 임시 텍스트 — Z 유형 이미지 밑 (추후 교체 예정) */}
+        {/* 서비스 설명 — 검색 유입과 첫 방문자를 위한 본문. 각 정적 페이지로 가는 길목이기도 하다. */}
         <section className="w-full max-w-2xl mx-auto px-6 pt-4 text-center">
           <h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-3 break-keep">BMTI는 어떤 서비스인가요?</h2>
           <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep mb-3">
-            BMTI(Body Management Type Indicator)는 나의 움직임 성향을 16가지 유형으로 알아보는 간단한 테스트예요.
-            활동적인지 차분한지, 한 부위에 집중하는지 몸 전체를 살피는지처럼 서로 다른 결을 4가지 축으로 나눠,
-            나에게 잘 맞는 몸 관리 방향과 파트너 캐릭터를 안내해 드려요.
+            BMTI(Body Management Type Indicator)는 물리치료사가 설계한 움직임 성향 검사예요.
+            같은 뻐근함이라도 사람마다 반응이 다릅니다. 어떤 사람은 일단 움직여야 풀리고, 어떤 사람은 쉬어야 회복돼요.
+            어떤 사람은 &quot;여기가 문제입니다&quot;라는 말에 힘을 얻고, 어떤 사람은 그 말에 마음을 닫습니다.
+          </p>
+          <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep mb-3">
+            BMTI는 그 차이를 <b className="text-gray-700">에너지·시야·학습·피드백</b> 네 가지 축으로 나눠 16가지 유형으로 정리해요.
+            2분이면 끝나고 로그인도 필요 없습니다. 검사를 마치면 내 성향에 맞는 회복 습관, 잘 맞는 강사 유형,
+            피해야 할 운동 환경까지 담긴 결과지를 받아볼 수 있어요.
+          </p>
+          <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep mb-3">
+            검사 이후에는 <b className="text-gray-700">건강(말랑) 다이어리</b>로 매일의 기분·수면·불편한 부위를 10초 만에 기록하고,
+            한 달치 기록이 쌓이면 나만의 패턴을 정리한 발견 리포트를 받아볼 수 있어요.
           </p>
           <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep">
-            검사 이후에는 <b className="text-gray-700">건강(말랑) 다이어리</b>로 매일의 기분·수면·불편한 부위를 10초 만에 기록하고,
-            한 달치 기록이 쌓이면 나만의 패턴을 정리한 발견 리포트를 받아볼 수 있어요. 오래 앉아 지내는 사람을 위한
-            자세·회복·스트레칭 이야기는 <b className="text-gray-700">건강 매거진</b>에서도 만나보실 수 있습니다.
+            <a href="/t/" className="text-gray-700 underline underline-offset-2 font-semibold">16가지 유형 자세히 보기</a>
+            {' · '}
+            <a href="/magazine.html" className="text-gray-700 underline underline-offset-2 font-semibold">건강 매거진</a>
+            {' · '}
+            <a href="/about.html" className="text-gray-700 underline underline-offset-2 font-semibold">서비스 소개</a>
           </p>
-          <p className="text-[11px] text-gray-300 mt-4">※ 이 문구는 임시로 넣어둔 안내이며 추후 교체될 예정이에요.</p>
         </section>
       </div>
 
