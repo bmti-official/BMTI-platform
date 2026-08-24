@@ -228,11 +228,11 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 16 Characters Scroll Section — 넓은 화면에서도 캐릭터가 더 많이 보이도록 폭을 넓힌다.
+      {/* 16 Characters Scroll Section — 넓은 화면에서 캐릭터가 셋만 보여 폭을 조금 넓혔다(448 → 672px).
           캐릭터 크기·간격은 모바일 기준으로 고정해, 창을 키워도 커지지 않고 개수만 늘어난다.
-          목록을 두 벌 이어 붙여 무한 루프를 만들므로, 한 벌 폭(16개 × (112+24) ≈ 2176px)보다
+          목록을 두 벌 이어 붙여 무한 루프를 만들므로, 한 벌 폭(16개 × (112+24) ≈ 2180px)보다
           좁게 max-width를 잡아야 이음매에 빈 공간이 생기지 않는다. */}
-      <section className="w-full max-w-6xl mx-auto overflow-hidden mb-6 relative">
+      <section className="w-full max-w-2xl mx-auto overflow-hidden mb-6 relative">
         {/* 양 끝 페이드 — 넓게 잡으면 캐릭터가 흐려 보이는 구간이 길어진다.
             넓은 화면에선 캐릭터 한 칸 폭(112px)만큼만 부드럽게 지운다. */}
         <div className="absolute left-0 top-0 bottom-0 w-10 md:w-28 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
