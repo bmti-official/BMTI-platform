@@ -250,7 +250,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       const parts = profile.map(s => s.part).slice(0, MAX_SORE_PARTS);
       const whens = {}, whenOthers = {}, levels = {};
       profile.forEach(s => { whens[s.part] = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []); if (s.whenOther) whenOthers[s.part] = s.whenOther; levels[s.part] = 5; });
-      return { parts, levels, whens, whenOthers, partOther: "", profileParts: parts.slice() };
+      // 부위 팝업에서 '기타'가 어디였는지 적어뒀다면 그 이름을 그대로 이어받는다.
+      const profileEtc = profile.find(s => s.part === "기타");
+      return { parts, levels, whens, whenOthers, partOther: (profileEtc?.partOther || "").trim(), profileParts: parts.slice() };
     }
     return { parts: [], levels: {}, whens: {}, whenOthers: {}, partOther: "", profileParts: [] };
   });

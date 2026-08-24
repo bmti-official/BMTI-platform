@@ -35,6 +35,11 @@ export default function BodySelector3D({ gender, value, onChange }) {
     return { ...v, when: cur.includes(w) ? cur.filter(x => x !== w) : [...cur, w] };
   }));
   const setWhenOther = (part, txt) => onChange(value.map(v => v.part === part ? { ...v, whenOther: txt } : v));
+  // '기타'로 고른 부위가 어디였는지 — 여기서 바로 적어 프로필에 함께 저장한다.
+  const setPartOther = (txt) => onChange(value.map(v => v.part === "기타" ? { ...v, partOther: txt } : v));
+
+  // 화면에 부를 이름 — '기타'는 직접 적은 부위명으로 부른다.
+  const partName = (v) => (v.part === "기타" ? (String(v.partOther || "").trim() || "기타") : v.part);
 
   const Figure = ({ view, label }) => (
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -115,8 +120,16 @@ export default function BodySelector3D({ gender, value, onChange }) {
             const whens = Array.isArray(v.when) ? v.when : [];
             return (
               <div key={v.part} style={{ background: "#FAF8F3", borderRadius: 16, padding: "14px 15px" }}>
+                {v.part === "기타" && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#1C1A17", marginBottom: 8 }}>어디가 불편했나요?</div>
+                    <input value={v.partOther || ""} onChange={e => setPartOther(e.target.value.slice(0, 20))}
+                      placeholder="예: 엉덩이, 손가락, 종아리"
+                      style={{ width: "100%", padding: "10px 13px", borderRadius: 12, border: "1px solid #EDE9E2", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                )}
                 <div style={{ fontSize: 13.5, fontWeight: 800, color: "#1C1A17", marginBottom: 10 }}>
-                  '{v.part}'{hasBatchim(v.part) ? "은" : "는"} 언제 그러셨어요? <span style={{ color: "#B7B2A9", fontWeight: 600, fontSize: 11.5 }}>중복 선택 가능</span>
+                  '{partName(v)}'{hasBatchim(partName(v)) ? "은" : "는"} 언제 그러셨어요? <span style={{ color: "#B7B2A9", fontWeight: 600, fontSize: 11.5 }}>중복 선택 가능</span>
                 </div>
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                   {WHEN_OPTS.map(w => (

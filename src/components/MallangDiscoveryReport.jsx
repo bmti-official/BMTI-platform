@@ -1562,6 +1562,16 @@ function MoodDistribution({ data }) {
 
 // ── 뻐근 지도: 3D 캐릭터 앞(좌)·뒤(우) 위에 불편한 부위마다 빨간 점을 찍는다 ──
 // 엔진 부위 키 → {v: 앞/뒤, x, y}(정규화 이미지 기준 중심 %). BodySelector3D의 히트존과 좌표를 맞춘다.
+// 불편 부위 키/라벨 — '기타'는 직접 적은 이름별로 나눠 센다(부위 지도와 같은 규칙).
+// 예: { part: 'etc', partOther: '엉덩이' } → 키 'etc:엉덩이', 라벨 '기타(엉덩이)'
+const sorePartKey = (s) => {
+  if (!s || s.part == null) return null;
+  const other = s.part === "etc" ? String(s.partOther || "").trim() : "";
+  return other ? `etc:${other}` : s.part;
+};
+const sorePartLabel = (key) =>
+  (typeof key === "string" && key.startsWith("etc:")) ? `기타(${key.slice(4)})` : (PARTS[key] || key);
+
 const BODY_POS_3D = {
   head: { v: "front", x: 50, y: 11 }, shoulder: { v: "front", x: 50, y: 31 },
   elbow: { v: "front", x: 25, y: 49 }, wrist: { v: "front", x: 24, y: 61 },
@@ -2444,7 +2454,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
 
   // 불편함을 기록한 부위 목록(많이 기록한 순) — 우측 상단 드롭다운, 기본값=최다 부위
   const partCounts = {};
-  src.forEach((e) => (e.soreness || []).forEach((s) => { if (s && s.part) partCounts[s.part] = (partCounts[s.part] || 0) + 1; }));
+  src.forEach((e) => (e.soreness || []).forEach((s) => { const k = sorePartKey(s); if (k) partCounts[k] = (partCounts[k] || 0) + 1; }));
   const partList = Object.keys(partCounts).sort((a, b) => partCounts[b] - partCounts[a]);
   const [sorePart, setSorePart] = useState(partList[0] || null);
   const activePart = sorePart && partCounts[sorePart] ? sorePart : (partList[0] || null);
@@ -2452,7 +2462,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const dayData = {};
   src.forEach((e) => {
     const dom = Number(e.date.slice(8, 10));
-    const arr = (e.soreness || []).filter((s) => !activePart || s.part === activePart).map((s) => s.level).filter((v) => typeof v === "number");
+    const arr = (e.soreness || []).filter((s) => !activePart || sorePartKey(s) === activePart).map((s) => s.level).filter((v) => typeof v === "number");
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
   const [modeState, setMode] = useState("daily");
@@ -2518,7 +2528,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
         {partList.length > 0 && (
           <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
             style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
-            {partList.map((pid) => <option key={pid} value={pid}>{PARTS[pid] || pid} ({partCounts[pid]})</option>)}
+            {partList.map((pid) => <option key={pid} value={pid}>{sorePartLabel(pid)} ({partCounts[pid]}번)</option>)}
           </select>
         )}
       </div>
@@ -2756,7 +2766,7 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
 function computeWeekdaySore(entries, part) {
   const WDF = ["일", "월", "화", "수", "목", "금", "토"];
   const byWd = {};
-  (entries || []).forEach((d) => { if (!d || !d.date) return; const wd = new Date(d.date + "T00:00:00").getDay(); (d.soreness || []).forEach((s) => { if (s && (!part || s.part === part) && typeof s.level === "number") (byWd[wd] ||= []).push(s.level); }); });
+  (entries || []).forEach((d) => { if (!d || !d.date) return; const wd = new Date(d.date + "T00:00:00").getDay(); (d.soreness || []).forEach((s) => { if (s && (!part || sorePartKey(s) === part) && typeof s.level === "number") (byWd[wd] ||= []).push(s.level); }); });
   const wdAvg = [];
   for (let wd = 0; wd < 7; wd++) { const arr = byWd[wd] || []; wdAvg.push({ wd, avg: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0, n: arr.length }); }
   const withData = wdAvg.filter((x) => x.n > 0);
@@ -2774,21 +2784,21 @@ function WeekdayDrainCard({ entries }) {
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
   const order = [1, 2, 3, 4, 5, 6, 0]; // 월~일
   const partCounts = {};
-  (entries || []).forEach((e) => (e.soreness || []).forEach((s) => { if (s && s.part) partCounts[s.part] = (partCounts[s.part] || 0) + 1; }));
+  (entries || []).forEach((e) => (e.soreness || []).forEach((s) => { const k = sorePartKey(s); if (k) partCounts[k] = (partCounts[k] || 0) + 1; }));
   const partList = Object.keys(partCounts).sort((a, b) => partCounts[b] - partCounts[a]);
   const [sorePart, setSorePart] = useState(partList[0] || null);
   const activePart = sorePart && partCounts[sorePart] ? sorePart : (partList[0] || null);
   const data = computeWeekdaySore(entries, activePart);
   if (!data) return null;
   const peakWd = data.peak.wd;
-  const partLabel = activePart ? (PARTS[activePart] || activePart) : "몸";
+  const partLabel = activePart ? sorePartLabel(activePart) : "몸";
   return (
     <InsCard badge="요일별 불편함 패턴" title="🗓️ 나의 요일별 불편함 패턴" sub="일주일 중 몸이 가장 많이 불편한 요일을 짚어봤어요">
       {partList.length > 0 && (
         <div className="neg-margin" style={{ display: "flex", justifyContent: "flex-end", marginTop: -6, marginBottom: 10 }}>
           <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
             style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
-            {partList.map((pid) => <option key={pid} value={pid}>{PARTS[pid] || pid} ({partCounts[pid]})</option>)}
+            {partList.map((pid) => <option key={pid} value={pid}>{sorePartLabel(pid)} ({partCounts[pid]}번)</option>)}
           </select>
         </div>
       )}

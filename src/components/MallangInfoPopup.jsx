@@ -35,6 +35,8 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
     const soreClean = (mode === "sore" ? sore : (existing.sore || [])).map((s) => ({
       part: s.part, when: Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []),
       whenOther: (Array.isArray(s.when) ? s.when : []).includes("기타") ? (s.whenOther || "").trim() : "",
+      // '기타' 부위는 직접 적은 이름을 함께 남긴다 — 기록·발견에서 '기타(엉덩이)'로 보여준다.
+      ...(s.part === "기타" && String(s.partOther || "").trim() ? { partOther: String(s.partOther).trim() } : {}),
     }));
     // 이 모드가 다루는 필드만 갱신(나머지는 기존 값 유지).
     const payload = {

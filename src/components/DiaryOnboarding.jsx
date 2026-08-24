@@ -39,7 +39,13 @@ export default function DiaryOnboarding({ isLoggedIn, onComplete, userId, gender
   const finish = async (soreOverride) => {
     const finalPosture = posture === "other" ? postureCustom.trim() : posture;
     const soreSrc = soreOverride !== undefined ? soreOverride : sore;
-    const soreClean = soreSrc.map(s => ({ part: s.part, when: Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []), whenOther: (Array.isArray(s.when) ? s.when : []).includes("기타") ? (s.whenOther || "").trim() : "" }));
+    const soreClean = soreSrc.map(s => ({
+      part: s.part,
+      when: Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []),
+      whenOther: (Array.isArray(s.when) ? s.when : []).includes("기타") ? (s.whenOther || "").trim() : "",
+      // '기타' 부위는 직접 적은 이름을 함께 남긴다.
+      ...(s.part === "기타" && String(s.partOther || "").trim() ? { partOther: String(s.partOther).trim() } : {}),
+    }));
     const payload = { mallang_sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture };
 
     if (isLoggedIn && userId) {

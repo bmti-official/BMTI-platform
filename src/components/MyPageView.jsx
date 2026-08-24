@@ -218,7 +218,12 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
     const soreClean = soreEdit.map(s => {
       const whens = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
-      return { part: s.part, when: whens, whenOther: whens.includes('기타') ? (s.whenOther || '').trim() : '' };
+      return {
+        part: s.part, when: whens,
+        whenOther: whens.includes('기타') ? (s.whenOther || '').trim() : '',
+        // '기타' 부위는 직접 적은 이름을 함께 남긴다.
+        ...(s.part === '기타' && String(s.partOther || '').trim() ? { partOther: String(s.partOther).trim() } : {}),
+      };
     });
     const freq = userData.exercise_frequency || null;
     const goals = userData.exercise_goals || [];
