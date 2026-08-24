@@ -33,7 +33,7 @@ for (const r of solo) {
 <article>
   <span class="tag">${esc(r.category)}</span>
   <h1>${esc(r.title)}</h1>
-  <p class="muted">by. ${esc(r.author || '말랑 연구소')}${r.created_at ? ' · ' + esc(String(r.created_at).slice(0, 10)) : ''}</p>
+  <p class="muted">by. ${esc(r.author || 'BMTI')}${r.created_at ? ' · ' + esc(String(r.created_at).slice(0, 10)) : ''}</p>
   ${paras(r.body)}
   <p class="disclaimer">본 글은 일반적인 건강 정보이며 의학적 진단·치료를 대신하지 않습니다.
      증상이 2주 이상 이어지거나 저림·힘 빠짐이 있다면 전문가의 진료를 받아보시길 권합니다.</p>
@@ -59,14 +59,14 @@ const articles = rows.map((r) => soloIds.has(r.id)
   ? `<article class="card">
       <span class="tag">${esc(r.category)}</span>
       <h2 id="a${r.id}">${esc(r.title)}</h2>
-      <p class="muted">by. ${esc(r.author || '말랑 연구소')}</p>
+      <p class="muted">by. ${esc(r.author || 'BMTI')}</p>
       <p>${esc(String(r.body || '').replace(/\s+/g, ' ').slice(0, 120))}…</p>
       <p><a href="${urlOf(r)}">이어서 읽기 →</a></p>
     </article>`
   : `<article class="card">
       <span class="tag">${esc(r.category)}</span>
       <h2 id="a${r.id}">${esc(r.title)}</h2>
-      <p class="muted">by. ${esc(r.author || '말랑 연구소')}${r.created_at ? ' · ' + esc(String(r.created_at).slice(0, 10)) : ''}</p>
+      <p class="muted">by. ${esc(r.author || 'BMTI')}${r.created_at ? ' · ' + esc(String(r.created_at).slice(0, 10)) : ''}</p>
       ${paras(r.body)}
     </article>`).join('\n');
 

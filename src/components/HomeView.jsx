@@ -257,14 +257,26 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       </section>
 
-      {isLoggedIn && bmtiCode && (
-        <div className="text-center mb-8">
-          <button
-            onClick={handleRetakeQuiz}
-            className="text-gray-400 hover:text-gray-600 text-xs md:text-sm font-medium underline underline-offset-4 transition-colors"
-          >
-            다시 검사하기
-          </button>
+      {/* 결과가 있는 이용자에게 — 내 결과지로 바로 가는 버튼.
+          검사 전 이용자에게 보이는 'BMTI 테스트 하기!' 자리를 그대로 잇는다. */}
+      {bmtiCode && (
+        <div className="px-6 flex justify-center mb-8 fade-in">
+          <div className="flex flex-col items-center w-full max-w-sm">
+            <button
+              onClick={() => setView('result')}
+              className="w-full bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              ✔️ 나의유형 확인하기
+            </button>
+            {isLoggedIn && (
+              <button
+                onClick={handleRetakeQuiz}
+                className="mt-3.5 text-gray-400 hover:text-gray-600 text-xs md:text-sm font-medium underline underline-offset-4 transition-colors"
+              >
+                다시 검사하기
+              </button>
+            )}
+          </div>
         </div>
       )}
 
