@@ -189,14 +189,18 @@ function secMoodDistribution(days) {
 function secSoreMap(days) {
   const acc = {};
   for (const d of days) for (const s of d.soreness || []) {
-    acc[s.part] ||= { part: s.part, label: PARTS[s.part], count: 0, sum: 0, sits: {} };
-    acc[s.part].count++;
-    acc[s.part].sum += s.level;
+    // '기타'는 직접 적은 부위명이 날마다 다를 수 있어, 이름별로 나눠 센다.
+    // 라벨은 '기타(엉덩이)'처럼 적은 그대로 보여준다. 이름이 없으면 그냥 '기타'.
+    const other = s.part === "etc" ? String(s.partOther || "").trim() : "";
+    const key = other ? `etc:${other}` : s.part;
+    acc[key] ||= { key, part: s.part, label: other ? `기타(${other})` : PARTS[s.part], count: 0, sum: 0, sits: {} };
+    acc[key].count++;
+    acc[key].sum += s.level;
     const sit = s.situation || "etc";
-    acc[s.part].sits[sit] = (acc[s.part].sits[sit] || 0) + 1;
+    acc[key].sits[sit] = (acc[key].sits[sit] || 0) + 1;
   }
   const parts = Object.values(acc).map((p) => ({
-    part: p.part, label: p.label, count: p.count, avgLevel: p.sum / p.count,
+    key: p.key, part: p.part, label: p.label, count: p.count, avgLevel: p.sum / p.count,
     // 부위별 '언제 불편했나요?' — 상황별 횟수(많은 순)
     situations: Object.keys(SITUATIONS)
       .map((k) => ({ situation: k, label: SITUATIONS[k], count: p.sits[k] || 0 }))

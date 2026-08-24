@@ -43,6 +43,21 @@ export default function BodySelector3D({ gender, value, onChange }) {
         userSelect: "none", WebkitUserSelect: "none" }}>
         <img src={imgSet[view]} alt={label} draggable={false}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
+        {/* '기타' — 몸에 짚을 자리가 없는 부위(엉덩이·손가락 등)를 위해 앞모습 우측 상단에 둔다.
+            어디였는지는 하루 기록 화면에서 직접 적는다. */}
+        {view === "front" && (() => {
+          const on = selectedParts.includes("기타");
+          return (
+            <button data-hotspot="기타" onClick={() => togglePart("기타")}
+              style={{ position: "absolute", right: "5%", top: "3.5%", padding: "5px 10px", borderRadius: 999, cursor: "pointer",
+                background: on ? "rgba(201,151,90,0.30)" : "rgba(255,255,255,0.92)",
+                border: on ? `2px solid ${GOLD}` : "1.5px dashed #D8D3C8",
+                color: on ? GOLD : "#9B9489", fontSize: 10.5, fontWeight: 800, whiteSpace: "nowrap",
+                boxShadow: "0 1px 3px rgba(0,0,0,.08)", transition: "background .12s" }}>
+              기타
+            </button>
+          );
+        })()}
         {HOTSPOTS[view].map((z, i) => {
           const on = selectedParts.includes(z.part);
           return (

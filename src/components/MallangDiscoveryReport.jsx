@@ -1588,7 +1588,7 @@ function SoreMap({ data, gender, moments }) {
         const isTop = top && p.part === top.part;
         return (
           // 가운데 정렬은 음수 마진 대신 바깥 래퍼의 transform으로 — PDF(html2canvas)가 음수 마진을 무시해 점이 밀리는 걸 막는다.
-          <span key={p.part} title={`${p.label} ${p.count}번`}
+          <span key={p.key || p.part} title={`${p.label} ${p.count}번`}
             style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size, transform: "translate(-50%,-50%)" }}>
             <span className="sore-dot-pulse"
               style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%",
@@ -1619,9 +1619,11 @@ function SoreMap({ data, gender, moments }) {
           <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10, textAlign: "center" }}>부위별 불편함 · 언제 그랬나요?</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.parts.map((p) => (
-              <div key={p.part} style={{ border: `1px solid ${C.line}`, borderRadius: 14, padding: "11px 13px", background: "#fff" }}>
+              <div key={p.key || p.part} style={{ border: `1px solid ${C.line}`, borderRadius: 14, padding: "11px 13px", background: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>{p.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>
+                    {p.label}<span style={{ color: C.sub, fontWeight: 700 }}>({p.count}번)</span>
+                  </span>
                   {/* 불편함 강도 평균 박스 — 따로 표시 */}
                   <span style={{ fontSize: 11.5, fontWeight: 800, color: "#E63C37", background: "rgba(230,60,55,0.10)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap" }}>
                     평균 강도 {p.avgLevel.toFixed(1)}<span style={{ color: C.sub, fontWeight: 700 }}>/10</span>
