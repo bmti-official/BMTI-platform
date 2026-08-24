@@ -123,7 +123,7 @@ export function readMallangProfile(userInfo) {
   };
 }
 
-// 이번 달 '수정(edit)' 횟수 제한(2회) 판정용 — 히스토리 rows에서 이번 달 edit 개수를 센다.
+// 이번 달 '수정(edit)' 횟수 — 표시용. 수정 자체에는 제한을 두지 않는다.
 export function editsThisMonth(historyRows) {
   const now = new Date();
   return (historyRows || []).filter(r => {
@@ -132,7 +132,6 @@ export function editsThisMonth(historyRows) {
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   }).length;
 }
-export const MONTHLY_EDIT_LIMIT = 2;
 
 // ── 수면 기준 설정 ─────────────────────────────────────────────
 // 다이어리 첫 진입 시 '주로 잠드는 시간대'(수동) 또는 '불규칙'을 고르고, 그 뒤 매일의 수면 입력이

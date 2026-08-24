@@ -14,6 +14,9 @@ import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, saveSleepSettingToServer, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
 
+// 하루 기록에서 고를 수 있는 불편한 부위 최대 개수 (BodySelector3D의 MAX_PARTS와 맞춘다)
+const MAX_SORE_PARTS = 3;
+
 // ============================================
 // BMTI 하루일기 작성 플로우
 // 한 페이지 스크롤 + 아코디언 구조 — 전체화면
@@ -231,7 +234,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // whens[part] = 언제 배열(중복 선택) / levels[part] = 부위별 강도
   const [sore, setSore] = useState(() => {
     if (initialEntry?.soreness?.length) {
-      const parts = initialEntry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).slice(0, 2);
+      const parts = initialEntry.soreness.map(s => KEY_TO_PART_LABEL[s.part] || s.part).slice(0, MAX_SORE_PARTS);
       const whens = {}, levels = {};
       initialEntry.soreness.forEach(s => {
         const p = KEY_TO_PART_LABEL[s.part] || s.part;
@@ -244,7 +247,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     // 저장된 말랑 정보 자동 불러오기 (로그인=props, 게스트=localStorage)
     const profile = (Array.isArray(mallangSore) && mallangSore.length) ? mallangSore : (getGuestMallang()?.sore || []);
     if (Array.isArray(profile) && profile.length) {
-      const parts = profile.map(s => s.part).slice(0, 2);
+      const parts = profile.map(s => s.part).slice(0, MAX_SORE_PARTS);
       const whens = {}, whenOthers = {}, levels = {};
       profile.forEach(s => { whens[s.part] = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []); if (s.whenOther) whenOthers[s.part] = s.whenOther; levels[s.part] = 5; });
       return { parts, levels, whens, whenOthers, partOther: "", profileParts: parts.slice() };
@@ -475,7 +478,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const soreQuestion = sore.parts.length > 0
     ? `오늘 ${sore.parts.map((p, i) => `[${partDisplay(p)}]` + (i === sore.parts.length - 1 ? "" : (hasBatchim(partDisplay(p)) ? "과 " : "와 "))).join("")}의 상태는 어땠나요?`
     : null;
-  const addPart = (p) => setSore(s => ({ ...s, parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= 2 ? s.parts : [...s.parts, p]) }));
+  const addPart = (p) => setSore(s => ({ ...s, parts: s.parts.includes(p) ? s.parts.filter(x => x !== p) : (s.parts.length >= MAX_SORE_PARTS ? s.parts : [...s.parts, p]) }));
 
   // ── 말랑이 기분 ──
   const moodData = DAY_MOODS.find(m => m.v === dayMood);
@@ -779,7 +782,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
             );
           })}
 
-          {/* 다른 부위 추가하기 (최대 2) */}
+          {/* 다른 부위 추가하기 (최대 3) */}
           {sore.parts.length < 2 && (
             <button onClick={() => setShowPartPicker(v => !v)}
               style={{ marginTop: 16, width: "100%", padding: 12, borderRadius: 14, border: `1px dashed ${C.yellowLine}`, background: C.yellow, color: GOLD, fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>

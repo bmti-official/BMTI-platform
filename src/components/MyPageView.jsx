@@ -27,7 +27,7 @@ import {
   POSTURE_OPTS, POSTURE_LABELS, POSTURE_KNOWN_IDS,
   FREQ_LABELS as EXERCISE_FREQ_LABELS, GOAL_LABELS as EXERCISE_GOAL_LABELS,
   SORE_PARTS, WHEN_OPTS, hasBatchim, soreSummary,
-  editsThisMonth, MONTHLY_EDIT_LIMIT,
+  editsThisMonth,
   setGuestMallang, getGuestMallangHistory, pushGuestMallangHistory,
 } from '../lib/mallangProfile';
 
@@ -123,11 +123,11 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     setLocalHealthConsent(opt);
   };
 
-  // 수정 모드에서 부위 토글(최대 2) / when 지정
+  // 수정 모드에서 부위 토글(최대 3) / when 지정
   const toggleSorePart = (part) => setSoreEdit(prev => {
     const has = prev.find(s => s.part === part);
     if (has) return prev.filter(s => s.part !== part);
-    if (prev.length >= 2) return prev;
+    if (prev.length >= 3) return prev;
     return [...prev, { part, when: [], whenOther: '' }];
   });
   const toggleSoreWhen = (part, w) => setSoreEdit(prev => prev.map(s => {
@@ -215,11 +215,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   };
 
   const handleSaveMallangInfo = async () => {
-    // 한 달 2회 수정 제한 — 이번 달 'edit' 스냅샷이 이미 2개면 막는다.
-    if (editsThisMonth(mallangHistory) >= MONTHLY_EDIT_LIMIT) {
-      alert(`일상 정보는 한 달에 ${MONTHLY_EDIT_LIMIT}번까지만 수정할 수 있어요. 다음 달에 다시 시도해주세요.`);
-      return;
-    }
     const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
     const soreClean = soreEdit.map(s => {
       const whens = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
@@ -548,7 +543,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         })()}
       </div>
 
-      {/* 3. 일상 정보 — 온보딩에서 자동으로 채워지고, 여기서 한 달 2번까지 수정 가능 */}
+      {/* 3. 일상 정보 — 온보딩에서 자동으로 채워지고, 여기서 언제든 수정 가능 */}
       <SectionHeader emoji="📋" title="현재 일상 정보">
         <PillButton gold={isEditingExercise} disabled={savingExercise} onClick={() => { if (isEditingExercise) handleSaveMallangInfo(); else startEditMallang(); }}>
           {savingExercise ? '저장 중...' : isEditingExercise ? '저장하기' : '수정하기'}
@@ -559,7 +554,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           <div className="space-y-5">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-xs font-bold">불편한 부위 (최대 2곳)</span>
+                <span className="text-gray-400 text-xs font-bold">불편한 부위 (최대 3곳)</span>
                 <button onClick={() => setSoreEdit([])}
                   className="text-[11px] py-1 px-2.5 rounded-full border font-bold transition-colors"
                   style={soreEdit.length === 0 ? chipOn : {}}>
@@ -569,7 +564,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
               <div className="grid grid-cols-4 gap-1.5">
                 {SORE_PARTS.map((part) => {
                   const on = soreEdit.some(s => s.part === part);
-                  const disabled = !on && soreEdit.length >= 2;
+                  const disabled = !on && soreEdit.length >= 3;
                   return (
                     <button key={part} onClick={() => toggleSorePart(part)} disabled={disabled}
                       className={`${chipCls} ${on ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'} ${disabled ? 'opacity-40' : ''}`}
@@ -646,7 +641,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                   placeholder="짧게 적어주세요 (예: 운전을 오래 해요)" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
               )}
             </div>
-            <p className="text-[11px] text-gray-400 font-medium">이번 달 수정 {editsThisMonth(mallangHistory)}/{MONTHLY_EDIT_LIMIT}회</p>
+            <p className="text-[11px] text-gray-400 font-medium">이번 달 수정 {editsThisMonth(mallangHistory)}회</p>
           </div>
         ) : (userData.mallang_sore?.length || userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

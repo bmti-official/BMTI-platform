@@ -11,9 +11,9 @@ const IMGS = {
   male: { front: maleFront, back: maleBack },
 };
 
-const MAX_PARTS = 2;
+const MAX_PARTS = 3;
 
-// 성별별 3D 캐릭터의 앞(좌)·뒤(우)를 한 화면에 나란히 두고 부위를 한 번 터치해 최대 2부위 선택.
+// 성별별 3D 캐릭터의 앞(좌)·뒤(우)를 한 화면에 나란히 두고 부위를 한 번 터치해 최대 3부위 선택.
 // value: [{ part, when: string[], whenOther }] / onChange(next)
 export default function BodySelector3D({ gender, value, onChange }) {
   const t = getTypeAccent();
@@ -90,7 +90,7 @@ export default function BodySelector3D({ gender, value, onChange }) {
         <Figure view="back" label="뒷모습" />
       </div>
       <p style={{ textAlign: "center", fontSize: 11.5, color: "#B7B2A9", fontWeight: 600, margin: "10px 0 0" }}>
-        불편한 곳을 <b style={{ color: t.accent }}>한 번 터치</b>해 선택하세요 (최대 2곳)
+        불편한 곳을 <b style={{ color: t.accent }}>한 번 터치</b>해 선택하세요 (최대 3곳)
       </p>
 
       {/* 선택된 부위별: 언제 그러셨어요 (중복 선택) */}
