@@ -228,11 +228,15 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
         </div>
       )}
 
-      {/* 16 Characters Scroll Section — 모바일 폭으로 제한 */}
-      <section className="w-full max-w-md mx-auto overflow-hidden mb-6 relative">
-        {/* Gradient Fade Edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+      {/* 16 Characters Scroll Section — 넓은 화면에서도 캐릭터가 더 많이 보이도록 폭을 넓힌다.
+          캐릭터 크기·간격은 모바일 기준으로 고정해, 창을 키워도 커지지 않고 개수만 늘어난다.
+          목록을 두 벌 이어 붙여 무한 루프를 만들므로, 한 벌 폭(16개 × (112+24) ≈ 2176px)보다
+          좁게 max-width를 잡아야 이음매에 빈 공간이 생기지 않는다. */}
+      <section className="w-full max-w-6xl mx-auto overflow-hidden mb-6 relative">
+        {/* 양 끝 페이드 — 넓게 잡으면 캐릭터가 흐려 보이는 구간이 길어진다.
+            넓은 화면에선 캐릭터 한 칸 폭(112px)만큼만 부드럽게 지운다. */}
+        <div className="absolute left-0 top-0 bottom-0 w-10 md:w-28 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute right-0 top-0 bottom-0 w-10 md:w-28 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
 
         {/* Scrollable Content */}
         <div
@@ -243,13 +247,13 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           onPointerLeave={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
           style={{ touchAction: 'pan-y' }}
-          className="marquee-content flex gap-6 md:gap-8 px-4 select-none cursor-grab"
+          className="marquee-content flex gap-6 px-4 select-none cursor-grab"
         >
           {[...CHARACTERS, ...CHARACTERS].map((char, idx) => (
             <div
               key={idx}
               onClick={() => handleCharClick(char)}
-              className={`flex-shrink-0 w-28 h-28 md:w-40 md:h-40 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 hover:shadow-lg transition-all duration-300 overflow-hidden p-1 relative z-10 cursor-pointer`}
+              className={`flex-shrink-0 w-28 h-28 rounded-full border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex items-center justify-center ${char.color} hover:-translate-y-2 hover:shadow-lg transition-all duration-300 overflow-hidden p-1 relative z-10 cursor-pointer`}
             >
               <img src={char.image} alt={char.id} className="w-full h-full object-contain drop-shadow-sm pointer-events-none" />
             </div>
