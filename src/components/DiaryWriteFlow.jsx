@@ -711,10 +711,20 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       });
       return (
         <Card title="불편한 부위" action={
-          <button onClick={() => setSorePopup({ askReconfirm: false })}
-            style={{ flexShrink: 0, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: C.tileOffText, cursor: "pointer", borderRadius: 999, padding: "6px 11px", fontSize: 11.5, fontWeight: 800, fontFamily: F, whiteSpace: "nowrap" }}>
-            🩹 불편했던 곳 수정하기
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            {/* 두 부위를 다 채우면 아래 '다른 부위 추가하기'가 사라지므로,
+                제목 옆에서 한 곳을 더 넣을 수 있게 한다. */}
+            {sore.parts.length >= 2 && sore.parts.length < MAX_SORE_PARTS && (
+              <button onClick={() => setShowPartPicker(v => !v)}
+                style={{ flexShrink: 0, border: `1.5px dashed ${C.yellowLine}`, background: C.yellow, color: GOLD, cursor: "pointer", borderRadius: 999, padding: "6px 11px", fontSize: 11.5, fontWeight: 800, fontFamily: F, whiteSpace: "nowrap" }}>
+                {showPartPicker ? "닫기" : "+ 불편한 부위 추가"}
+              </button>
+            )}
+            <button onClick={() => setSorePopup({ askReconfirm: false })}
+              style={{ flexShrink: 0, border: `1.5px solid ${t.accentSoft}`, background: "#fff", color: C.tileOffText, cursor: "pointer", borderRadius: 999, padding: "6px 11px", fontSize: 11.5, fontWeight: 800, fontFamily: F, whiteSpace: "nowrap" }}>
+              🩹 불편함 수정
+            </button>
+          </div>
         }>
           {/* 일상 정보에서 불러온 부위로 만든 질문 */}
           {soreQuestion && (
@@ -789,7 +799,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               {showPartPicker ? "부위 선택 닫기" : "+ 다른 부위 추가하기"}
             </button>
           )}
-          {(showPartPicker || sore.parts.length === 0) && sore.parts.length < 2 && (
+          {(showPartPicker || sore.parts.length === 0) && sore.parts.length < MAX_SORE_PARTS && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center", marginTop: 14 }}>
               {pickable.map(p => (
                 <Tile key={p} content={p} on={false} disabled={false} tint={C.yellow}
