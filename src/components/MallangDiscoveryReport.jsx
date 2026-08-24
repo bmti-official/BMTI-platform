@@ -22,7 +22,7 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
-import { getSleepSetting, sleepWindow, SLEEP_IRREGULAR_OPTS } from "../lib/mallangProfile";
+import { getSleepSetting, sleepWindow, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
 import bodyFemaleBack from "../assets/3d_body/female_back.png";
@@ -1572,14 +1572,23 @@ const sorePartKey = (s) => {
 const sorePartLabel = (key) =>
   (typeof key === "string" && key.startsWith("etc:")) ? `기타(${key.slice(4)})` : (PARTS[key] || key);
 
-const BODY_POS_3D = {
-  head: { v: "front", x: 50, y: 11 }, shoulder: { v: "front", x: 50, y: 31 },
-  elbow: { v: "front", x: 25, y: 49 }, wrist: { v: "front", x: 24, y: 61 },
-  abdomen: { v: "front", x: 50, y: 47 }, pelvis: { v: "front", x: 50, y: 59 },
-  knee: { v: "front", x: 50, y: 77 }, ankle: { v: "front", x: 50, y: 90 },
-  neck: { v: "back", x: 50, y: 26 }, back: { v: "back", x: 50, y: 36 }, waist: { v: "back", x: 50, y: 53 },
-  // etc(기타)는 몸 위치가 없어 지도에 표시하지 않는다.
-};
+// 부위별 점 좌표 — 선택 팝업의 히트존(HOTSPOTS)에서 그대로 뽑아 쓴다.
+// 예전엔 부위마다 좌표를 하나씩 손으로 적어둬서, 좌·우로 나뉜 부위(어깨·팔꿈치·손목·무릎·발목)는
+// 한쪽에만, 앞뒤 모두 해당하는 부위(머리·어깨·골반 등)는 앞모습에만 점이 찍혔다.
+// 히트존에서 만들면 '팝업에서 누를 수 있는 자리'와 '지도에 찍히는 점'이 항상 같아진다.
+// 값은 각 히트존의 중심(x + w/2, y + h/2). etc(기타)는 몸에 자리가 없어 히트존이 없고 지도에도 안 나온다.
+const BODY_POS_3D = (() => {
+  const keyOf = Object.fromEntries(Object.entries(PARTS).map(([k, ko]) => [ko, k]));
+  const map = {};
+  for (const view of ["front", "back"]) {
+    for (const z of HOTSPOTS[view] || []) {
+      const key = keyOf[z.part];
+      if (!key) continue;
+      (map[key] ||= []).push({ v: view, x: z.x + z.w / 2, y: z.y + z.h / 2 });
+    }
+  }
+  return map;
+})();
 function SoreMap({ data, gender, moments }) {
   const t = getTypeAccent();
   const isMale = gender === "male" || gender === "M" || gender === "남성";
@@ -1591,21 +1600,21 @@ function SoreMap({ data, gender, moments }) {
   const Figure = ({ src, view, label }) => (
     <div style={{ position: "relative", flex: 1, aspectRatio: "1 / 2", maxWidth: 150 }}>
       <img src={src} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
-      {data.parts.map((p) => {
-        const pos = BODY_POS_3D[p.part];
-        if (!pos || pos.v !== view) return null;
+      {data.parts.flatMap((p) => {
+        // 한 부위가 좌·우 또는 앞·뒤에 걸쳐 있으면 해당하는 자리에 모두 찍는다.
+        const spots = (BODY_POS_3D[p.part] || []).filter((pos) => pos.v === view);
         const size = 10 + 20 * (p.count / maxCount); // 누적 많을수록 큰 점
-        const isTop = top && p.part === top.part;
-        return (
+        const isTop = top && (p.key || p.part) === (top.key || top.part);
+        return spots.map((pos, i) => (
           // 가운데 정렬은 음수 마진 대신 바깥 래퍼의 transform으로 — PDF(html2canvas)가 음수 마진을 무시해 점이 밀리는 걸 막는다.
-          <span key={p.key || p.part} title={`${p.label} ${p.count}번`}
+          <span key={`${p.key || p.part}-${view}-${i}`} title={`${p.label} ${p.count}번`}
             style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size, transform: "translate(-50%,-50%)" }}>
             <span className="sore-dot-pulse"
               style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%",
                 background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
                 animation: isTop ? "soreDotPulse 1.8s ease-in-out infinite" : "none" }} />
           </span>
-        );
+        ));
       })}
       <span style={{ position: "absolute", bottom: -2, left: 0, right: 0, textAlign: "center", fontSize: 11, fontWeight: 700, color: C.sub }}>{label}</span>
     </div>
