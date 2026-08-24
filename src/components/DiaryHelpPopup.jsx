@@ -3,7 +3,7 @@ import { Mallang } from "./Mallang";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 
 // ─────────────────────────────────────────────
-// 말랑 다이어리 '?' 도움말 팝업 — 처음 로그인 후 온보딩에서 보여주던
+// 건강 다이어리 '?' 도움말 팝업 — 처음 로그인 후 온보딩에서 보여주던
 // 대화형 소개 화면(DiaryOnboarding.jsx)을 언제든 다시 볼 수 있는 팝업으로 옮긴 것.
 // 실제 기록(무드 선택 등)은 하지 않고, 소개 문구만 다시 보여준다.
 // 마지막 페이지에서만 로그인 여부에 따라 버튼이 달라진다 — 로그인 상태면 "확인"으로 닫고,
@@ -18,7 +18,7 @@ const C = {
 const STEPS = [
   {
     id: "intro",
-    title: <>말랑 다이어리는<br /><Mark>이런 곳이에요.</Mark></>,
+    title: <>건강 다이어리는<br /><Mark>이런 곳이에요.</Mark></>,
     lead: "매일 조금씩, 진짜 내 몸을 알아가요.",
   },
   {

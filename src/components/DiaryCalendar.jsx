@@ -405,7 +405,7 @@ function CalControls({ calView, onHelp, onToggleView, t }) {
   return (
     <div style={{ position: "sticky", top: 70, zIndex: 36, height: 0, pointerEvents: "none" }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <button onClick={onHelp} aria-label="말랑 다이어리 도움말" style={{ ...btn, color: C.sub, fontSize: 15, fontWeight: 800 }}>?</button>
+        <button onClick={onHelp} aria-label="건강 다이어리 도움말" style={{ ...btn, color: C.sub, fontSize: 15, fontWeight: 800 }}>?</button>
         <button onClick={onToggleView} aria-label={calView === "month" ? "주간 캘린더 보기" : "월간 캘린더 보기"} style={{ ...btn, color: t.accentDeep }}>
           {calView === "month" ? <IconWeek /> : <IconMonth />}
         </button>

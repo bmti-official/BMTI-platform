@@ -2,9 +2,9 @@ import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { GOLD } from "../lib/typeAccent";
 
-// '말랑 다이어리' / '말랑이의 발견' 개선 의견을 받는 모달.
+// '건강 다이어리' / '말랑이의 발견' 개선 의견을 받는 모달.
 // source: 'diary' | 'discovery' — 어느 기능에 대한 의견인지 함께 저장한다.
-const SOURCE_LABEL = { diary: "말랑 다이어리", discovery: "말랑이의 발견" };
+const SOURCE_LABEL = { diary: "건강 다이어리", discovery: "말랑이의 발견" };
 
 export default function FeedbackModal({ source = "diary", userId = null, onClose }) {
   const [text, setText] = useState("");

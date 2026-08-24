@@ -676,7 +676,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-400 text-sm py-2">말랑 다이어리를 처음 시작할 때 물어보는 질문에 답하면 여기에 자동으로 채워져요.</p>
+          <p className="text-center text-gray-400 text-sm py-2">건강 다이어리를 처음 시작할 때 물어보는 질문에 답하면 여기에 자동으로 채워져요.</p>
         )}
       </div>
 

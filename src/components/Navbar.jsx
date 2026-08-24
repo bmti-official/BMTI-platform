@@ -137,7 +137,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
   const todayStr = todayISO();
   const showAiChatDot = !!bmtiCode && lastChatDate !== todayStr;
 
-  // 하단 '말랑 다이어리' 탭 아이콘 — 5가지 말랑이 표정이 번갈아가며 나온다.
+  // 하단 '건강 다이어리' 탭 아이콘 — 5가지 말랑이 표정이 번갈아가며 나온다.
   const [diaryMoodTick, setDiaryMoodTick] = useState(1);
   useEffect(() => {
     const id = setInterval(() => {

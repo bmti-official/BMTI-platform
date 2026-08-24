@@ -333,7 +333,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
             피해야 할 운동 환경까지 담긴 결과지를 받아볼 수 있어요.
           </p>
           <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep mb-3">
-            검사 이후에는 <b className="text-gray-700">건강(말랑) 다이어리</b>로 매일의 기분·수면·불편한 부위를 10초 만에 기록하고,
+            검사 이후에는 <b className="text-gray-700">건강 다이어리</b>로 매일의 기분·수면·불편한 부위를 10초 만에 기록하고,
             한 달치 기록이 쌓이면 나만의 패턴을 정리한 발견 리포트를 받아볼 수 있어요.
           </p>
           <p className="text-[13px] md:text-[15px] text-gray-500 leading-relaxed break-keep">
