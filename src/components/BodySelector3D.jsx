@@ -68,12 +68,15 @@ export default function BodySelector3D({ gender, value, onChange }) {
           return (
             <button key={`${view}-${i}`} data-hotspot={z.part} onClick={() => togglePart(z.part)}
               style={{ position: "absolute", left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%`,
-                borderRadius: 12, cursor: "pointer", padding: 0,
+                borderRadius: z.line ? 999 : 12, cursor: "pointer", padding: 0,
                 background: on ? "rgba(201,151,90,0.30)" : "transparent",
                 border: on ? `2px solid ${GOLD}` : "2px solid transparent",
                 display: "flex", alignItems: "center", justifyContent: "center", transition: "background .12s" }}>
               {on ? (
-                <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, background: "#fff", borderRadius: 7, padding: "1px 4px", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, background: "#fff", borderRadius: 7, padding: "1px 4px", whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>{z.part}</span>
+              ) : z.line ? (
+                // 팔·다리는 점 대신 몸 옆면을 따라 그은 선으로 안내한다.
+                <span className="body-line" />
               ) : (
                 <span className="body-dot" />
               )}
@@ -103,6 +106,9 @@ export default function BodySelector3D({ gender, value, onChange }) {
           animation: bodyDotCore 2.2s ease-in-out infinite; }
         .body-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
           border: 1.5px solid #EE6A62; animation: bodyDotRing 2.2s ease-out infinite; }
+        .body-line { position: relative; width: 4px; height: 82%; border-radius: 999px; display: block;
+          background: linear-gradient(180deg, rgba(247,144,137,0.35), #EE6A62 35%, #EE6A62 65%, rgba(247,144,137,0.35));
+          box-shadow: 0 1px 3px rgba(200,90,80,0.28); animation: bodyDotCore 2.2s ease-in-out infinite; }
       `}</style>
       {/* 앞모습(좌) · 뒷모습(우) 나란히 */}
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>

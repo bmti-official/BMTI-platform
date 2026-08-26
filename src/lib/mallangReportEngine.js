@@ -20,7 +20,7 @@
 
 export const MOOD = { 1: "힘들었어요", 2: "지쳤어요", 3: "그냥저냥", 4: "괜찮았어요", 5: "좋았어요" };
 export const SLEEP = { 0: "밤을 새웠어요", 1: "뒤척였어요", 2: "그냥 그랬어요", 3: "푹 잤어요" };
-export const PARTS = { head: "머리", neck: "목", shoulder: "어깨", elbow: "팔꿈치", wrist: "손목", back: "등", abdomen: "복부", waist: "허리", pelvis: "골반", knee: "무릎", ankle: "발목", etc: "기타" };
+export const PARTS = { head: "머리", neck: "목", shoulder: "어깨", elbow: "팔꿈치", wrist: "손목", back: "등", abdomen: "복부", waist: "허리", pelvis: "골반", knee: "무릎", ankle: "발목", arm: "팔", leg: "다리", etc: "기타" };
 export const SITUATIONS = { morning: "아침에 일어날 때", moving: "움직일 때", sitting: "오래 앉아있을 때", standing: "오래 서있을 때", working: "일할 때", allday: "하루 종일", etc: "기타" };
 export const LOADS = { sit: "오래 앉음", stand: "오래 선 자세", walk: "많이 걸음", lift: "무거운 물건 들기", etc: "기타" };
 export const REASONS = { busy: "바빴어요", tired: "피곤해요", sick: "몸이 안 좋아요", rest: "그냥 쉬고 싶었어요", forgot: "깜빡했어요" };
