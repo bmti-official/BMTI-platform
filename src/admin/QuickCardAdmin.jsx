@@ -3,19 +3,19 @@ import { supabase } from '../lib/supabaseClient';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './theme';
-import { PillPicker, OnePicker, PublishBadge } from './ui';
+import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
-import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
+import QuickCardView from '../features/curation/QuickCardView';
+import { KIND_LABEL, finishRate } from '../features/curation/format';
 
-// 부위 선택지 — 다이어리에서 쓰는 부위 코드를 그대로 쓴다.
+// 바로카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
+const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label: lb }));
 
-// 큐레이션 등록·수정 화면 — 관리자 페이지에서만 쓴다.
-// 이 파일은 사용자 앱(main.jsx)이 import하지 않으므로 사용자 번들에 들어가지 않는다.
 const EMPTY = {
-  published: false, sort_order: 0,
-  title_z: '', title_m: '', body_z: '', body_m: '', cover_url: '',
-  body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
+  published: false, sort_order: 0, kind: 'stretch',
+  title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', duration_sec: 0,
+  tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
 
 function Editor({ row, onSaved, onCancel, onPreview }) {
@@ -28,10 +28,10 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
     setSaving(true); setErr('');
     const payload = { ...f, updated_at: new Date().toISOString() };
-    delete payload.view_count; delete payload.save_count; delete payload.created_at;
+    ['view_count', 'save_count', 'finish_count', 'start_count', 'created_at'].forEach((k) => delete payload[k]);
     const q = f.id
-      ? supabase.from('curation_items').update(payload).eq('id', f.id)
-      : supabase.from('curation_items').insert(payload);
+      ? supabase.from('quick_cards').update(payload).eq('id', f.id)
+      : supabase.from('quick_cards').insert(payload);
     const { error } = await q;
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
@@ -41,33 +41,51 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
   return (
     <div style={{ ...box, marginBottom: 16 }}>
       <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 14 }}>
-        {f.id ? `큐레이션 #${f.id} 수정` : '새 큐레이션'}
+        {f.id ? `바로카드 #${f.id} 수정` : '새 바로카드'}
+      </div>
+
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', marginBottom: 14, flexWrap: 'wrap' }}>
+        <div>
+          <span style={label}>종류</span>
+          <OnePicker options={KIND_OPTIONS} value={f.kind} onChange={set('kind')} />
+        </div>
+        <div>
+          <span style={label}>소요 시간(초)</span>
+          <input style={{ ...input, width: 110 }} type="number" value={f.duration_sec}
+            onChange={(e) => set('duration_sec')(Number(e.target.value) || 0)} />
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <div>
           <span style={label}>제목 · Z 유형 <span style={{ color: '#B23B36' }}>담백하게</span></span>
           <input style={input} value={f.title_z} onChange={(e) => set('title_z')(e.target.value)}
-            placeholder="목이 굳었을 때 3분 이완법" />
+            placeholder="퇴근 후 굳은 몸 녹이는 침대-폼롤러 이완법" />
         </div>
         <div>
           <span style={label}>제목 · M 유형 <span style={{ color: '#B23B36' }}>다정하게</span></span>
           <input style={input} value={f.title_m} onChange={(e) => set('title_m')(e.target.value)}
-            placeholder="목이 뻐근한 날, 3분만 같이 풀어봐요" />
+            placeholder="오늘 하루 고생한 몸, 침대에서 폼롤러로 풀어봐요" />
         </div>
         <div>
-          <span style={label}>본문 · Z 유형</span>
-          <textarea style={area} value={f.body_z || ''} onChange={(e) => set('body_z')(e.target.value)} />
+          <span style={label}>음성 대본 · Z 유형</span>
+          <textarea style={area} value={f.script_z || ''} onChange={(e) => set('script_z')(e.target.value)} />
         </div>
         <div>
-          <span style={label}>본문 · M 유형</span>
-          <textarea style={area} value={f.body_m || ''} onChange={(e) => set('body_m')(e.target.value)} />
+          <span style={label}>음성 대본 · M 유형</span>
+          <textarea style={area} value={f.script_m || ''} onChange={(e) => set('script_m')(e.target.value)} />
         </div>
       </div>
 
-      <div style={{ marginBottom: 14 }}>
-        <span style={label}>대표 이미지 주소</span>
-        <input style={input} value={f.cover_url || ''} onChange={(e) => set('cover_url')(e.target.value)} placeholder="https://..." />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div>
+          <span style={label}>영상 주소</span>
+          <input style={input} value={f.video_url || ''} onChange={(e) => set('video_url')(e.target.value)} placeholder="https://..." />
+        </div>
+        <div>
+          <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 쉼표로 구분</span></span>
+          <TagsInput value={f.tools} onChange={set('tools')} placeholder="폼롤러, 매트" />
+        </div>
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -89,8 +107,7 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
         <div>
           <span style={label}>도구·성향</span>
-          <OnePicker options={TOOL_MODES.map((t) => ({ key: t.id, label: t.label }))}
-            value={f.tool_mode} onChange={set('tool_mode')} />
+          <OnePicker options={TOOL_MODES.map((t) => ({ key: t.id, label: t.label }))} value={f.tool_mode} onChange={set('tool_mode')} />
         </div>
         <div>
           <span style={label}>정렬 순서</span>
@@ -113,22 +130,19 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
   );
 }
 
-export default function CurationAdmin() {
+export default function QuickCardAdmin() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
-  const [editing, setEditing] = useState(null); // null=안 열림, {}=새로, {…}=수정
+  const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  // 목록 읽기 — tick을 올리면 다시 읽는다.
-  // 결과 처리를 .then 안에서 해야 effect 본문에서 동기로 setState 하지 않게 되고,
-  // 화면을 떠난 뒤 응답이 와도 alive 플래그로 걸러진다.
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
     let alive = true;
-    supabase.from('curation_items')
+    supabase.from('quick_cards')
       .select('*').order('sort_order', { ascending: true }).order('id', { ascending: false })
       .then(({ data, error }) => {
         if (!alive) return;
@@ -140,14 +154,14 @@ export default function CurationAdmin() {
   }, [tick]);
 
   const remove = async (id) => {
-    if (!window.confirm(`큐레이션 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
-    const { error } = await supabase.from('curation_items').delete().eq('id', id);
+    if (!window.confirm(`바로카드 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    const { error } = await supabase.from('quick_cards').delete().eq('id', id);
     if (error) { alert('삭제 실패: ' + error.message); return; }
     load();
   };
 
   const togglePublish = async (row) => {
-    const { error } = await supabase.from('curation_items')
+    const { error } = await supabase.from('quick_cards')
       .update({ published: !row.published, updated_at: new Date().toISOString() }).eq('id', row.id);
     if (error) { alert('변경 실패: ' + error.message); return; }
     load();
@@ -156,9 +170,9 @@ export default function CurationAdmin() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>큐레이션</div>
+        <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>바로카드</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
-        <button onClick={() => setEditing({ ...EMPTY })} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 큐레이션</button>
+        <button onClick={() => setEditing({ ...EMPTY })} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
       </div>
 
       {err && (
@@ -176,53 +190,44 @@ export default function CurationAdmin() {
       )}
 
       {preview && (
-        <PreviewModal title="큐레이션 미리보기" onClose={() => setPreview(null)}>
-          {(tone) => (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-              <div>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
-                <CurationCard item={preview} tone={tone} />
-              </div>
-              <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
-                <CurationDetail item={preview} tone={tone} />
-              </div>
-            </div>
-          )}
+        <PreviewModal title="바로카드 미리보기" onClose={() => setPreview(null)}>
+          {(tone) => <QuickCardView card={preview} tone={tone} />}
         </PreviewModal>
       )}
 
       <div style={{ ...box, padding: 0, overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '#', '제목(Z)', '부위 묶음', '조회', '저장', ''].map((h) => (
+              {['상태', '#', '종류', '제목(Z)', '완주율', '조회', '저장', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={7} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={7} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 큐레이션이 없습니다.</td></tr>}
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}` }}>
-                  <PublishBadge published={r.published} onClick={() => togglePublish(r)} />
-                </td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.id}</td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 13, fontWeight: 700, color: INK }}>{r.title_z}</td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12, color: SUB }}>
-                  {(r.body_groups || []).map((g) => BODY_GROUPS.find((x) => x.id === g)?.label || g).join(', ') || '—'}
-                </td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.view_count}</td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>
-                  <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
-                  <button onClick={() => setEditing(r)} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
-                  <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
-                </td>
-              </tr>
-            ))}
+            {loading && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 바로카드가 없습니다.</td></tr>}
+            {rows.map((r) => {
+              const rate = finishRate(r);
+              return (
+                <tr key={r.id}>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}` }}>
+                    <PublishBadge published={r.published} onClick={() => togglePublish(r)} />
+                  </td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.id}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{KIND_LABEL[r.kind] || r.kind}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 13, fontWeight: 700, color: INK }}>{r.title_z}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{rate != null ? `${rate}%` : '—'}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.view_count}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>
+                    <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
+                    <button onClick={() => setEditing(r)} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                    <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
