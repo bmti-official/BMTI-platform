@@ -10,7 +10,7 @@ import SignupModal from './components/SignupModal';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
-import InstallPrompt from './components/InstallPrompt';
+import KakaoChannelPrompt from './components/KakaoChannelPrompt';
 function App() {
   const initialHash = window.location.hash.replace('#', '');
   // 공유 링크(#example-XXXX) — 공유받은 사람은 곧바로 설문(첫 질문)으로 보낸다.
@@ -351,7 +351,7 @@ function App() {
         onComplete={handleSignupComplete}
       />
 
-      {currentView !== 'quiz' && <InstallPrompt />}
+      {currentView !== 'quiz' && <KakaoChannelPrompt />}
     </div>
   );
 }
