@@ -7,6 +7,8 @@
 //   '다리'는 허리-골반(허리에서 내려오는 방사통)과 다리-발 양쪽에 속한다.
 
 // 콘텐츠 분류용 묶음 — 검색 화면에 이 순서로 노출된다.
+// '기타'는 묶음으로 두지 않는다. 다이어리에 '기타'로 적은 부위는 어느 묶음에도
+// 들어가지 않으므로, 기본 부위를 고를 때 자연히 '전체'로 떨어진다.
 export const BODY_GROUPS = [
   { id: "all", label: "전체", parts: [] },                                   // parts 비움 = 전체
   { id: "neck_head", label: "목-머리", parts: ["neck", "head", "arm"] },
@@ -14,7 +16,6 @@ export const BODY_GROUPS = [
   { id: "back_shoulder", label: "등-어깨", parts: ["back", "shoulder"] },
   { id: "leg_foot", label: "다리-발", parts: ["knee", "ankle", "leg"] },
   { id: "arm_hand", label: "팔-손", parts: ["elbow", "wrist", "arm"] },
-  { id: "etc", label: "기타", parts: ["etc"] },
 ];
 
 export const GROUP_IDS = BODY_GROUPS.map((g) => g.id);

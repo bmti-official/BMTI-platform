@@ -4,12 +4,13 @@
 -- 여러 번 실행해도 안전합니다(IF NOT EXISTS / DROP POLICY IF EXISTS).
 -- ===================================================================
 
--- 관리자 판별 — 관리자 계정의 auth 이메일을 여기에 넣습니다.
--- (지금 관리자 페이지 로그인에 쓰는 계정과 같은 주소여야 합니다.)
+-- 관리자 판별 — 관리자 페이지 로그인에 쓰는 auth 이메일을 적습니다.
+-- 여러 명이면 쉼표로 이어서 추가하면 됩니다.
+-- 이 파일을 다시 실행하면 아래 목록으로 덮어써지니, 계정을 바꿨다면 여기도 같이 고쳐두세요.
 create or replace function public.is_admin()
 returns boolean language sql stable as $$
   select coalesce(auth.jwt() ->> 'email', '') in (
-    'dmdwns1637@gmail.com'
+    'dmdwns777@bmti.com'
   );
 $$;
 
