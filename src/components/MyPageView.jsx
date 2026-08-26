@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../data';
 import { supabase } from '../lib/supabaseClient';
+import BodySelector3D from './BodySelector3D';
 import { canRetakeTest } from '../lib/bmtiSystem';
 import TypeGallery from './TypeGallery';
 import { Mallang } from './Mallang';
@@ -26,7 +27,7 @@ const ChartIcon = ({ className = 'w-6 h-6', style }) => (
 import {
   POSTURE_OPTS, POSTURE_LABELS, POSTURE_KNOWN_IDS,
   FREQ_LABELS as EXERCISE_FREQ_LABELS, GOAL_LABELS as EXERCISE_GOAL_LABELS,
-  SORE_PARTS, WHEN_OPTS, hasBatchim, soreSummary,
+  soreSummary,
   editsThisMonth,
   setGuestMallang, getGuestMallangHistory, pushGuestMallangHistory,
 } from '../lib/mallangProfile';
@@ -122,20 +123,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     if (userData?.id) { try { await updateHealthRecordConsent(userData.id, true, opt); } catch (e) { console.error('선택 동의 변경 실패', e); } }
     setLocalHealthConsent(opt);
   };
-
-  // 수정 모드에서 부위 토글(최대 3) / when 지정
-  const toggleSorePart = (part) => setSoreEdit(prev => {
-    const has = prev.find(s => s.part === part);
-    if (has) return prev.filter(s => s.part !== part);
-    if (prev.length >= 3) return prev;
-    return [...prev, { part, when: [], whenOther: '' }];
-  });
-  const toggleSoreWhen = (part, w) => setSoreEdit(prev => prev.map(s => {
-    if (s.part !== part) return s;
-    const cur = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
-    return { ...s, when: cur.includes(w) ? cur.filter(x => x !== w) : [...cur, w] };
-  }));
-  const setSoreWhenOther = (part, txt) => setSoreEdit(prev => prev.map(s => s.part === part ? { ...s, whenOther: txt } : s));
 
   // 상위에서 userInfo가 업데이트될 경우(ex. 새로운 BMTI 검사 완료 후) 동기화
   useEffect(() => {
@@ -333,7 +320,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   ];
 
   // 수정 모드 칩 스타일 — 선택 시 연보라(기본 버튼 색)
-  const chipCls = 'text-xs py-1.5 px-1 rounded-lg border font-bold transition-colors text-center';
   const chipOn = { background: PURPLE, color: '#fff', borderColor: PURPLE };
 
   return (
@@ -566,40 +552,12 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                   <span className={soreEdit.length === 0 ? '' : 'text-gray-500'}>불편한 곳 없음</span>
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {SORE_PARTS.map((part) => {
-                  const on = soreEdit.some(s => s.part === part);
-                  const disabled = !on && soreEdit.length >= 3;
-                  return (
-                    <button key={part} onClick={() => toggleSorePart(part)} disabled={disabled}
-                      className={`${chipCls} ${on ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'} ${disabled ? 'opacity-40' : ''}`}
-                      style={on ? chipOn : undefined}>
-                      {part}
-                    </button>
-                  );
-                })}
-              </div>
-              {soreEdit.map((s) => {
-                const whens = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
-                return (
-                  <div key={s.part} className="mt-3">
-                    <span className="text-gray-500 text-[11px] font-bold block mb-1.5">'{s.part}'{hasBatchim(s.part) ? '은' : '는'} 언제 그러셨어요? <span className="text-gray-400 font-semibold">중복 선택</span></span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[...WHEN_OPTS, '기타'].map((w) => (
-                        <button key={w} onClick={() => toggleSoreWhen(s.part, w)}
-                          className={`text-[11px] py-1 px-2 rounded-md border font-bold transition-colors ${whens.includes(w) ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
-                          style={whens.includes(w) ? chipOn : undefined}>
-                          {w}
-                        </button>
-                      ))}
-                    </div>
-                    {whens.includes('기타') && (
-                      <input type="text" value={s.whenOther || ''} onChange={(e) => setSoreWhenOther(s.part, e.target.value.slice(0, 30))}
-                        placeholder="예: 계단 오를 때" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
-                    )}
-                  </div>
-                );
-              })}
+              {/* 다이어리와 같은 캐릭터 부위 선택 — 부위·'언제 그러셨어요'·기타 입력까지 이 컴포넌트가 함께 처리한다 */}
+              <BodySelector3D
+                gender={userData.kakaoGender}
+                value={soreEdit}
+                onChange={setSoreEdit}
+              />
             </div>
             <div>
               <span className="text-gray-400 text-xs font-bold block mb-2">평소 운동, 어떻게 하세요?</span>
