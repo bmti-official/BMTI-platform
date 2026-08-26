@@ -519,7 +519,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                   return;
                 }
                 const card = <SectionCard key={s.id} section={s} gender={gender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null}
-                  exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} />;
+                  exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} pdfMode={savingPDF} />;
                 // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
                 if (s.id === "notes") { items.push({ locked: !s.unlocked, node: <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment> }); return; }
                 items.push({ locked: !s.unlocked, node: card });
@@ -1384,7 +1384,7 @@ function SoulmateCard({ entries, exampleEntries }) {
   );
 }
 
-function SectionCard({ section: s, gender, entries, topMood, moments, exampleSection, exampleMoments, exTopMood }) {
+function SectionCard({ section: s, gender, entries, topMood, moments, exampleSection, exampleMoments, exTopMood, pdfMode = false }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
   const hasExample = !s.unlocked && exampleSection?.data;
@@ -1411,7 +1411,7 @@ function SectionCard({ section: s, gender, entries, topMood, moments, exampleSec
           {hasExample && (
             <div style={{ marginTop: 16 }}>
               <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">
-                <SectionBody id={s.id} data={exampleSection.data} gender={gender} entries={EXAMPLE_ENTRIES} topMood={exTopMood} moments={exampleMoments} />
+                <SectionBody id={s.id} data={exampleSection.data} gender={gender} entries={EXAMPLE_ENTRIES} topMood={exTopMood} moments={exampleMoments} pdfMode={pdfMode} />
               </LockedPreview>
             </div>
           )}
@@ -1425,7 +1425,7 @@ function SectionCard({ section: s, gender, entries, topMood, moments, exampleSec
               <p style={{ fontSize: 12.5, fontWeight: 700, color: "#A24B4B", margin: 0, lineHeight: 1.55 }}>{s.alert.message}</p>
             </div>
           )}
-          <SectionBody id={s.id} data={s.data} gender={gender} entries={entries} topMood={topMood} moments={moments} />
+          <SectionBody id={s.id} data={s.data} gender={gender} entries={entries} topMood={topMood} moments={moments} pdfMode={pdfMode} />
         </>
       )}
     </div>
@@ -1442,7 +1442,7 @@ function ProgressBar({ current, required, color }) {
   );
 }
 
-function SectionBody({ id, data, gender, entries, topMood, moments }) {
+function SectionBody({ id, data, gender, entries, topMood, moments, pdfMode = false }) {
   if (!data) return null;
   switch (id) {
     case "mood_calendar": return <MoodCalendar data={data} />;
@@ -1453,7 +1453,7 @@ function SectionBody({ id, data, gender, entries, topMood, moments }) {
     case "movement": return <MovementBody data={data} />;
     case "rest": return <RestBody data={data} />;
     case "sleep": return <SleepBody data={data} entries={entries} topMood={topMood} />;
-    case "notes": return <NotesBody data={data} entries={entries} />;
+    case "notes": return <NotesBody data={data} entries={entries} pdfMode={pdfMode} />;
     default: return null;
   }
 }
@@ -1814,23 +1814,19 @@ function PhotoInner({ tags, cat, big }) {
     </div>
   );
 }
-function NotesBody({ data, entries }) {
-  const [open, setOpen] = useState(null);
-  const items = data.items || [];
-  const tagsByDate = {};
-  (entries || []).forEach(e => { if (e?.date && Array.isArray(e.tags)) tagsByDate[e.date] = e.tags; });
-  const tagLabels = (it) => (tagsByDate[it.date] || []);
-
+// 코르크 보드 한 장 — 폴라로이드를 2×2로 붙인다.
+function NotesBoard({ list, tagLabels, onOpen }) {
   return (
-    <div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", background: "#E7D6B8", backgroundImage: "radial-gradient(rgba(150,110,60,0.18) 1px, transparent 1px)", backgroundSize: "10px 10px", borderRadius: 14, padding: "16px 12px" }}>
-        {items.map((it, i) => {
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, justifyItems: "center", alignContent: "start",
+      background: "#E7D6B8", backgroundImage: "radial-gradient(rgba(150,110,60,0.18) 1px, transparent 1px)", backgroundSize: "10px 10px",
+      borderRadius: 14, padding: "16px 12px" }}>
+        {list.map((it, i) => {
           const cat = NOTE_CAT[it.category] || { emoji: "📝", tint: "#F3F1EC" };
           const tilt = (i % 3 - 1) * 3.2;
           const tags = tagLabels(it);
           return (
-            <button key={i} onClick={() => setOpen(it)}
-              style={{ width: "44%", maxWidth: 150, background: "#fff", border: "none", borderRadius: 4, padding: "8px 8px 0", boxShadow: "0 3px 10px rgba(60,45,25,0.22)", cursor: "pointer", transform: `rotate(${tilt}deg)`, transition: "transform .15s" }}>
+            <button key={`${it.date}-${i}`} onClick={() => onOpen(it)}
+              style={{ width: "100%", maxWidth: 150, background: "#fff", border: "none", borderRadius: 4, padding: "8px 8px 0", boxShadow: "0 3px 10px rgba(60,45,25,0.22)", cursor: "pointer", transform: `rotate(${tilt}deg)`, transition: "transform .15s" }}>
               <div style={{ position: "relative", aspectRatio: "1 / 1", borderRadius: 2, background: cat.tint, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                 <PhotoInner tags={tags} cat={cat} />
                 <span style={{ position: "absolute", top: 5, left: "50%", transform: "translateX(-50%)", width: 14, height: 14, borderRadius: "50%", background: "#D6584F", boxShadow: "0 1px 2px rgba(0,0,0,0.3)" }} />
@@ -1847,7 +1843,70 @@ function NotesBody({ data, entries }) {
             </button>
           );
         })}
-      </div>
+    </div>
+  );
+}
+
+// 한 화면(코르크 보드 한 장)에 담는 폴라로이드 수 — 2×2
+const NOTES_PER_PAGE = 4;
+
+function NotesBody({ data, entries, pdfMode = false }) {
+  const [open, setOpen] = useState(null);
+  const [page, setPage] = useState(0);
+  const boardRef = useRef(null);
+  // 최근 날짜가 먼저 오게 정렬한다(엔진도 최신순이지만 여기서 한 번 더 확정).
+  const items = [...(data.items || [])].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const tagsByDate = {};
+  (entries || []).forEach(e => { if (e?.date && Array.isArray(e.tags)) tagsByDate[e.date] = e.tags; });
+  const tagLabels = (it) => (tagsByDate[it.date] || []);
+
+  // PDF로 저장할 땐 넘기는 UI 없이 전부 세로로 이어 붙여 캡처한다.
+  const pageCount = pdfMode ? 1 : Math.max(1, Math.ceil(items.length / NOTES_PER_PAGE));
+  const pages = pdfMode
+    ? [items]
+    : Array.from({ length: pageCount }, (_, i) => items.slice(i * NOTES_PER_PAGE, (i + 1) * NOTES_PER_PAGE));
+  const cur = Math.min(page, pageCount - 1);
+
+  // 좌우로 미는 제스처 — 스크롤 위치로 현재 장을 판단한다.
+  const onBoardScroll = () => {
+    const el = boardRef.current;
+    if (!el || pdfMode) return;
+    const idx = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+    if (idx !== cur) setPage(idx);
+  };
+  const goPage = (i) => {
+    const el = boardRef.current;
+    setPage(i);
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
+
+  return (
+    <div>
+      {pdfMode ? (
+        <NotesBoard list={items} tagLabels={tagLabels} onOpen={setOpen} />
+      ) : pageCount === 1 ? (
+        <NotesBoard list={pages[0]} tagLabels={tagLabels} onOpen={setOpen} />
+      ) : (
+        <>
+          {/* 4장이 넘으면 좌우로 넘겨 본다 — 한 장에 2×2씩 */}
+          <div ref={boardRef} onScroll={onBoardScroll}
+            style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none", borderRadius: 14 }}>
+            {pages.map((list, i) => (
+              <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "start" }}><NotesBoard list={list} tagLabels={tagLabels} onOpen={setOpen} /></div>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 10 }}>
+            {pages.map((_, i) => (
+              <button key={i} onClick={() => goPage(i)} aria-label={`${i + 1}번째 장`}
+                style={{ width: cur === i ? 18 : 7, height: 7, borderRadius: 999, border: "none", padding: 0, cursor: "pointer",
+                  background: cur === i ? "#8A6A3A" : "#D9CDB6", transition: "width .2s, background .2s" }} />
+            ))}
+          </div>
+          <p style={{ textAlign: "center", fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "8px 0 0" }}>
+            좌우로 넘기면 남은 일기를 볼 수 있어요 · 총 {items.length}장
+          </p>
+        </>
+      )}
 
       {open && (() => {
         const cat = NOTE_CAT[open.category] || { emoji: "📝", tint: "#F3F1EC" };
