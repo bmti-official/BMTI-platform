@@ -12,25 +12,7 @@ import { SITE, esc, paras, page, siteNav } from './lib/shell.mjs';
 
 const { BMTI_RESULTS } = await import('../src/bmti_results.js');
 const { INSTRUCTOR_GUIDE_DATA, BODY_GUIDE_DATA, TENDENCY_DATA } = await import('../src/customResultData.js');
-// src/data.js는 이미지(.webp)를 import해서 Node로 직접 불러올 수 없다.
-// 필요한 두 상수만 소스에서 떼어내 읽는다.
-const { CHARACTER_NAMES, CODE_KO } = (() => {
-  const src = readFileSync('src/data.js', 'utf8');
-  const pick = (name) => {
-    const i = src.indexOf(`export const ${name} = {`);
-    if (i < 0) throw new Error(`${name}을 src/data.js에서 찾지 못했습니다`);
-    const start = src.indexOf('{', i);
-    let depth = 0;
-    for (let j = start; j < src.length; j++) {
-      if (src[j] === '{') depth++;
-      else if (src[j] === '}' && --depth === 0) {
-        return new Function(`return ${src.slice(start, j + 1)}`)();
-      }
-    }
-    throw new Error(`${name} 파싱 실패`);
-  };
-  return { CHARACTER_NAMES: pick('CHARACTER_NAMES'), CODE_KO: pick('CODE_KO') };
-})();
+const { CHARACTER_NAMES, CODE_KO } = await import('../src/lib/bmtiTypes.js');
 
 const AXIS_LABEL = {
   A: '에너지', O: '에너지', C: '시야', L: '시야',

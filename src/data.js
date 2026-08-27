@@ -153,6 +153,11 @@ import origOLQM from './assets/원본/OLQM.jpg';
 import origOLQZ from './assets/원본/OLQZ.jpg';
 
 // 16 BMTI Character types
+// 유형 이름표는 이미지 없이 쓰는 곳이 있어 lib/bmtiTypes.js로 옮겼다.
+// 이 파일 안에서도 쓰므로 가져온 뒤 그대로 다시 내보낸다.
+import { CHARACTER_NAMES, CODE_KO } from './lib/bmtiTypes';
+export { CHARACTER_NAMES, CODE_KO };
+
 export const CHARACTERS = [
   { id: 'ACDM', image: imgACDM, originalImage: origACDM, color: 'bg-[#f4f4f4]' },
   { id: 'ACDZ', image: imgACDZ, originalImage: origACDZ, color: 'bg-[#fdf9e6]' },
@@ -174,21 +179,9 @@ export const CHARACTERS = [
 
 // BMTI 캐릭터 별명 (짧은 표시용) — ResultView.jsx의 SHORT_NICKNAMES를 정본으로 통합.
 // gemini.js와 ResultView.jsx에 각각 살짝 다른 철자로 중복 정의되어 있던 것을 여기로 모음.
-export const CHARACTER_NAMES = {
-  ACDZ: '단단한 케틀벨', ACDM: '복근 슬라이더', ACQZ: '핵심만 \'아령(알려)\'줘요', ACQM: '수다쟁이 루프밴드',
-  ALDZ: '팩트폭행 짐볼', ALDM: '뜨끈뜨끈 보수볼', ALQZ: '분석가 트레드밀', ALQM: '물음표 운동화',
-  OCDZ: '저격수 땅콩볼', OCDM: '다정한 마사지건', OCQZ: '심리학자 온냉팩', OCQM: '친절한 하트괄사',
-  OLDZ: '실용주의 요가링', OLDM: '포근포근 운동매트', OLQZ: '깐깐한 거꾸리', OLQM: '키다리 폼롤러'
-};
 
 // 4글자 코드의 한글 읽기 (예: OLQM → 올큐엠)
 // AC=애씨 · AL=앨 · OC=오씨 · OL=올 / D=디 · Q=큐 / Z=지 · M=엠
-export const CODE_KO = {
-  ACDZ: '애씨디지', ACDM: '애씨디엠', ACQZ: '애씨큐지', ACQM: '애씨큐엠',
-  ALDZ: '앨디지', ALDM: '앨디엠', ALQZ: '앨큐지', ALQM: '앨큐엠',
-  OCDZ: '오씨디지', OCDM: '오씨디엠', OCQZ: '오씨큐지', OCQM: '오씨큐엠',
-  OLDZ: '올디지', OLDM: '올디엠', OLQZ: '올큐지', OLQM: '올큐엠',
-};
 
 // 사람 유저가 BMTI 유형 코드(ACDZ 등) 자체를 닉네임으로 쓰지 못하게 막는 데 씀 —
 // 게시판의 AI 페르소나 닉네임이 "AI ACDZ" 형식이라, 코드만 딱 따와서 헷갈리게 하는 걸 방지.
@@ -213,7 +206,6 @@ export const MOODS = [
   { v: 4, label: '괜찮았어요', fill: '#E4F0DE', stroke: '#C3DBBA' },
   { v: 5, label: '좋았어요', fill: '#D2E7BA', stroke: '#B4D19B', circleBg: '#DFF3C4' },
 ];
-
 
 export const BMTI_INFO = {
   'ACDM': { kr: '활동적 집중 실전 공감형', catchphrase: '몸으로 먼저 느끼고, 마음으로 함께 움직이는 사람', bestMatch: 'OLQZ', diffTempo: 'OLQM', color: '#FF6B6B', bgGradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)' },

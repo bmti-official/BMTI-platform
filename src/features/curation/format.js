@@ -23,3 +23,23 @@ export const finishRate = (c) => {
   const st = Number(c.start_count) || 0;
   return st > 0 ? Math.round(((Number(c.finish_count) || 0) / st) * 100) : null;
 };
+
+export const pickRoutineTone = (r, tone) => ({
+  title: (tone === 'm' ? r.title_m : r.title_z) || r.title_z || r.title_m || '',
+});
+
+// 루틴에 담긴 바로카드들에서 총 소요시간·도구·타겟 부위를 모아준다.
+// 관리자가 따로 적지 않아도 카드만 고르면 자동으로 채워지는 값들이다.
+export function routineSummary(cards) {
+  const list = cards || [];
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+  const core = uniq(list.flatMap((c) => c.core_parts || []));
+  return {
+    count: list.length,
+    durationSec: list.reduce((n, c) => n + (Number(c.duration_sec) || 0), 0),
+    tools: uniq(list.flatMap((c) => c.tools || [])),
+    coreParts: core,
+    // 연관 부위는 핵심과 겹치면 빼서 중복 표시를 막는다.
+    relatedParts: uniq(list.flatMap((c) => c.related_parts || [])).filter((p) => !core.includes(p)),
+  };
+}

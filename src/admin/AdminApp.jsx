@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import CurationAdmin from './CurationAdmin';
 import QuickCardAdmin from './QuickCardAdmin';
+import RoutineAdmin from './RoutineAdmin';
 
 // ─────────────────────────────────────────────
 // BMTI 관리자 페이지 (별도 진입점 admin.html) — Supabase Auth로 관리자만 로그인해서
@@ -274,12 +275,14 @@ function Dashboard({ session }) {
           {tabBtn('users', '👤 사용자')}
           {tabBtn('curation', '📚 큐레이션')}
           {tabBtn('cards', '⚡ 바로카드')}
+          {tabBtn('routines', '🎵 플레이리스트')}
         </div>
         {tab === 'stats' && <StatsView users={users} feedback={feedback} loading={loading} />}
         {tab === 'feedback' && <DataTable title="개선 의견" columns={feedbackCols} rows={feedback} loading={loading} error={fbErr} />}
         {tab === 'users' && <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
         {tab === 'curation' && <CurationAdmin />}
         {tab === 'cards' && <QuickCardAdmin />}
+        {tab === 'routines' && <RoutineAdmin />}
       </main>
     </div>
   );
