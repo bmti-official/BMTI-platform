@@ -22,7 +22,7 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
-import { getSleepSetting, sleepWindow, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
+import { getSleepSetting, sleepWindow, sleepBaseIdx, SLEEP_HOURS, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
 import bodyFemaleBack from "../assets/3d_body/female_back.png";
@@ -2492,6 +2492,19 @@ function ButterflyCard({ data }) {
   );
 }
 
+// 막대 색 — 불편함도 늦게 잠든 정도도 '높을수록 안 좋은' 값이라 신호등처럼 읽히게 한다.
+// 0(낮음) 초록 → 0.5(중간) 노랑 → 1(높음) 빨강.
+// 부위 드롭다운의 '전체' 항목 키
+const ALL_PARTS = "__all";
+
+const RISK_BANDS = [
+  { upto: 0.34, from: "#8CCB8F", to: "#59A863", text: "#3F7C48" },
+  { upto: 0.67, from: "#F7D879", to: "#E9BC44", text: "#9A7A16" },
+  { upto: 1.01, from: "#F0917C", to: "#E0554F", text: "#B23B36" },
+];
+const riskBand = (ratio) => RISK_BANDS.find((b) => (Number(ratio) || 0) <= b.upto) || RISK_BANDS[2];
+const riskFill = (ratio) => { const b = riskBand(ratio); return `linear-gradient(180deg,${b.from},${b.to})`; };
+
 // 기분·불편함 추이 — 불편함 막대그래프 + 기분 꺾은선(말랑이 표정). 주간/일간 스와이프 알약으로 전환.
 const trendPillBtn = (active, t) => ({ position: "relative", zIndex: 1, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "5px 13px", color: active ? t.accentDeep : C.sub, transition: "color .2s" });
 const trendArrow = (disabled) => ({ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.line}`, background: "#fff", color: disabled ? "#CFC9BE" : C.ink, fontSize: 18, fontWeight: 800, lineHeight: 1, cursor: disabled ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 });
@@ -2520,20 +2533,26 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const lastDay = new Date(yy, mm, 0).getDate();
   const weekRanges = [[1, 7], [8, 14], [15, 21], [22, lastDay]];
 
-  // 불편함을 기록한 부위 목록(많이 기록한 순) — 우측 상단 드롭다운, 기본값=최다 부위
+  // 불편함을 기록한 부위 목록(많이 기록한 순) — 우측 상단 드롭다운.
+  // 맨 앞의 '전체'는 부위를 가리지 않고 그날 적은 불편함을 모두 평균 낸다.
+  // 전체의 횟수는 '기록한 날 수' — 같은 날 세 부위를 적었어도 1번으로 센다.
   const partCounts = {};
   src.forEach((e) => (e.soreness || []).forEach((s) => { const k = sorePartKey(s); if (k) partCounts[k] = (partCounts[k] || 0) + 1; }));
-  const partList = Object.keys(partCounts).sort((a, b) => partCounts[b] - partCounts[a]);
-  const [sorePart, setSorePart] = useState(partList[0] || null);
-  const activePart = sorePart && partCounts[sorePart] ? sorePart : (partList[0] || null);
+  const soreDayCount = new Set(src.filter((e) => (e.soreness || []).length > 0).map((e) => e.date)).size;
+  const partList = [ALL_PARTS, ...Object.keys(partCounts).sort((a, b) => partCounts[b] - partCounts[a])];
+  const [sorePart, setSorePart] = useState(ALL_PARTS);   // 들어오면 '전체'부터 보인다
+  const activePart = partList.includes(sorePart) ? sorePart : ALL_PARTS;
 
   const dayData = {};
   src.forEach((e) => {
     const dom = Number(e.date.slice(8, 10));
-    const arr = (e.soreness || []).filter((s) => !activePart || sorePartKey(s) === activePart).map((s) => s.level).filter((v) => typeof v === "number");
+    const arr = (e.soreness || [])
+      .filter((s) => activePart === ALL_PARTS || sorePartKey(s) === activePart)
+      .map((s) => s.level).filter((v) => typeof v === "number");
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
   const [modeState, setMode] = useState("daily");
+  const [lineOnTop, setLineOnTop] = useState(false); // 커서를 올리면 꺾은선을 앞으로
   const mode = pdfMode ? "weekly" : modeState; // PDF로 저장할 땐 주간 상태로 캡처
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -2569,9 +2588,10 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const hasAnyData = cats.some((c) => c.mood != null);
   const gap = N > 7 ? 3 : 6;
 
-  const H = 116, barH = 84;
+  const H = 168, barH = 118;
   const xOf = (i) => ((i + 0.5) / N) * 100;
-  const yOf = (mood) => 15 + (1 - (Math.min(5, Math.max(1, mood)) - 1) / 4) * 70;
+  // 기분은 위쪽 영역에 그려 막대와 너무 겹치지 않게 한다.
+  const yOf = (mood) => 11 + (1 - (Math.min(5, Math.max(1, mood)) - 1) / 4) * 54;
   let dPath = "", prev = false;
   cats.forEach((c, i) => { if (c.mood == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.mood).toFixed(2)}`; prev = true; });
 
@@ -2596,7 +2616,11 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
         {partList.length > 0 && (
           <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
             style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
-            {partList.map((pid) => <option key={pid} value={pid}>{sorePartLabel(pid)} ({partCounts[pid]}번)</option>)}
+            {partList.map((pid) => (
+              <option key={pid} value={pid}>
+                {pid === ALL_PARTS ? `전체 (${soreDayCount}번)` : `${sorePartLabel(pid)} (${partCounts[pid]}번)`}
+              </option>
+            ))}
           </select>
         )}
       </div>
@@ -2605,7 +2629,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
       <div style={{ minHeight: 46, marginBottom: 4 }}>
         {isWeekday && peakWd != null && (
           <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: 0, lineHeight: 1.5, wordBreak: "keep-all" }}>
-            이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 <b style={{ color: "#E0554F" }}>{activePart ? (PARTS[activePart] || activePart) : "몸"}</b> 불편함이 가장 컸어요.
+            이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 <b style={{ color: "#E0554F" }}>{activePart === ALL_PARTS ? "몸" : sorePartLabel(activePart)}</b> 불편함이 가장 컸어요.
           </p>
         )}
       </div>
@@ -2616,30 +2640,36 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
         {scroll && <span style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", zIndex: 3, color: "#CFC9BE", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>›</span>}
         <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", overflowY: "hidden", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
         <div style={{ width: scroll ? N * colW : "100%" }}>
-          {/* 불편함 막대 */}
-          <div style={{ display: "flex", alignItems: "flex-end", gap: rowGap, height: barH + 16, padding: "0 2px" }}>
-            {cats.map((c, i) => {
-              const empty = c.sore == null;
-              const isPeak = isWeekday && c.wd === peakWd && !empty;
-              const h = empty ? 3 : Math.max(4, Math.round((c.sore / maxSore) * barH));
-              return (
-                <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-                  {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: isPeak ? "#E0554F" : "#C4726C" }}>{c.sore.toFixed(1)}</span>}
-                  <div style={{ width: scroll ? 18 : "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : (isPeak ? "linear-gradient(180deg,#F0655F,#E0554F)" : "linear-gradient(180deg,#F0917C,#E0554F)"), boxShadow: isPeak ? "0 3px 8px rgba(224,85,79,0.35)" : "none", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
-                </div>
-              );
-            })}
-          </div>
+          {/* 불편함 막대 + 기분 꺾은선을 한 그래프에 겹친다.
+              평소엔 막대와 숫자가 위, 그래프에 커서를 올리면 꺾은선이 위로 올라온다. */}
+          <div
+            style={{ position: "relative", height: H }}
+            onMouseEnter={() => setLineOnTop(true)}
+            onMouseLeave={() => setLineOnTop(false)}
+          >
+            {/* 불편함 막대 */}
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, padding: "0 2px", zIndex: lineOnTop ? 1 : 3 }}>
+              {cats.map((c, i) => {
+                const empty = c.sore == null;
+                const isPeak = isWeekday && c.wd === peakWd && !empty;
+                const ratio = empty ? 0 : Math.min(1, c.sore / maxSore);
+                const band = riskBand(ratio);
+                const h = empty ? 3 : Math.max(4, Math.round(ratio * barH));
+                return (
+                  <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 3, height: "100%" }}>
+                    {!empty && <span style={{ fontSize: 9.5, fontWeight: 800, color: band.text }}>{c.sore.toFixed(1)}</span>}
+                    <div style={{ width: scroll ? 18 : "68%", maxWidth: 22, height: h, borderRadius: 6, background: empty ? "#EFEBE3" : riskFill(ratio), boxShadow: isPeak ? `0 3px 8px ${band.to}55` : "none", opacity: empty ? 0.55 : 1, transition: "height .3s" }} />
+                  </div>
+                );
+              })}
+            </div>
 
-          <div style={{ height: 1, background: C.line, margin: "14px 0 12px" }} />
-
-          {/* 기분 꺾은선(말랑이 표정) */}
-          <div style={{ position: "relative", height: H }}>
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+            {/* 기분 꺾은선(말랑이 표정) */}
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
               {dPath && <path d={dPath} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
             </svg>
             {cats.map((c, i) => (c.mood != null ? (
-              <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)" }}>
+              <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
                 <Mallang v={Math.round(c.mood)} size={faceSize} noBlink />
               </div>
             ) : null))}
@@ -2685,11 +2715,32 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
 
 // {닉네임}의 밤 — 주간/일간 토글(기분·불편함 추이와 동일). 잠든 시간대=막대, 수면의 질=꺾은선(4가지 수면 아이콘).
 function MallangNightCard({ entries, nickname, pdfMode = false }) {
+  // 훅은 아래 'return null'보다 먼저, 항상 같은 순서로 불러야 한다.
+  const [modeState, setMode] = useState("daily");
+  const [lineOnTop, setLineOnTop] = useState(false); // 커서를 올리면 꺾은선을 앞으로
+  const scrollElRef = useRef(null);                  // 일간 가로 드래그 스크롤
+  const dragRef = useRef({ down: false, x: 0, left: 0 });
+
   const setting = getSleepSetting();
   const irregular = setting?.mode === "irregular";
   const buckets = irregular ? SLEEP_IRREGULAR_OPTS : sleepWindow(setting?.base); // 이른→늦은 순
   // 잠든 시간대를 0(가장 이름)~1(가장 늦음) 늦음 정도로 환산 → 막대 높이
   const bedVal = (st) => { const i = buckets.indexOf(st); return i < 0 ? null : (buckets.length > 1 ? i / (buckets.length - 1) : 0.5); };
+  // 막대 위에 적을 시각 — 일간은 '12'처럼 정시, 주간·요일별 평균은 '12:30'처럼 분까지.
+  // 불규칙 수면은 시계 시각이 없으므로 고른 단계 이름을 짧게 보여준다.
+  const centerIdx = Math.max(2, Math.min(SLEEP_HOURS.length - 3, sleepBaseIdx(setting?.base)));
+  const hourNumOf = (label) => Number(String(label).replace(/[^0-9]/g, "")) || null;
+  const bedLabel = (v, exact) => {
+    if (v == null) return null;
+    if (irregular) { const i = Math.round(v * (buckets.length - 1)); return (buckets[i] || "").replace(/\s*잤어요$/, ""); }
+    const f = (centerIdx - 2) + v * (buckets.length - 1);          // SLEEP_HOURS 상의 위치
+    const lo = Math.max(0, Math.min(SLEEP_HOURS.length - 1, Math.floor(f)));
+    const h = hourNumOf(SLEEP_HOURS[lo]);
+    if (h == null) return null;
+    if (exact) return String(h);
+    const mm = Math.round((f - lo) * 60);
+    return mm === 0 ? String(h) : `${h}:${String(mm).padStart(2, "0")}`;
+  };
 
   const real = (entries || []).filter((e) => e && e.date && (typeof e.sleep === "number" || (e.sleepTime && buckets.includes(e.sleepTime))));
   if (real.length < 1) return null;
@@ -2704,7 +2755,6 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
     const dom = Number(e.date.slice(8, 10));
     dayData[dom] = { qual: typeof e.sleep === "number" ? e.sleep : null, bed: e.sleepTime ? bedVal(e.sleepTime) : null };
   });
-  const [modeState, setMode] = useState("daily");
   const mode = pdfMode ? "weekly" : modeState; // PDF로 저장할 땐 주간 상태로 캡처
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -2749,9 +2799,6 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
   let dPath = "", prev = false;
   cats.forEach((c, i) => { if (c.qual == null) { prev = false; return; } dPath += `${prev ? " L" : "M"}${xOf(i).toFixed(2)} ${yOf(c.qual).toFixed(2)}`; prev = true; });
 
-  // 일간 가로 드래그 스크롤(클릭해서 좌우로)
-  const scrollElRef = useRef(null);
-  const dragRef = useRef({ down: false, x: 0, left: 0 });
   const onDragDown = (e) => { const el = scrollElRef.current; if (!el) return; dragRef.current = { down: true, x: e.clientX, left: el.scrollLeft }; };
   const onDragMove = (e) => { if (!dragRef.current.down || !scrollElRef.current) return; scrollElRef.current.scrollLeft = dragRef.current.left - (e.clientX - dragRef.current.x); };
   const onDragUp = () => { dragRef.current.down = false; };
@@ -2777,14 +2824,17 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
         {scroll && <span style={{ position: "absolute", right: 0, top: "42%", transform: "translateY(-50%)", zIndex: 3, color: "rgba(255,255,255,0.55)", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>›</span>}
         <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", overflowY: "hidden", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
           <div style={{ width: scroll ? N * colW : "100%" }}>
-            <div style={{ position: "relative", height: H }}>
+            <div style={{ position: "relative", height: H }}
+              onMouseEnter={() => setLineOnTop(true)} onMouseLeave={() => setLineOnTop(false)}>
               {/* 잠든 시간대 — 늦게 잘수록 막대가 높아요 */}
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, paddingTop: 22 }}>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, paddingTop: 22, zIndex: lineOnTop ? 1 : 3 }}>
                 {cats.map((c, i) => {
                   const h = c.bed == null ? 3 : Math.max(5, Math.round((0.18 + c.bed * 0.82) * barH));
+                  const txt = bedLabel(c.bed, mode === "daily");
                   return (
-                    <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                      <div style={{ width: scroll ? 16 : "56%", maxWidth: 20, height: h, borderRadius: 6, background: "linear-gradient(180deg,#FFE39A,#F5C860)", opacity: c.bed == null ? 0.4 : 1, transition: "height .3s" }} />
+                    <div key={i} style={{ ...colStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 3, height: "100%" }}>
+                      {txt && <span style={{ fontSize: scroll ? 9 : 9.5, fontWeight: 800, color: "rgba(255,255,255,0.92)", whiteSpace: "nowrap" }}>{txt}</span>}
+                      <div style={{ width: scroll ? 16 : "56%", maxWidth: 20, height: h, borderRadius: 6, background: c.bed == null ? "rgba(255,255,255,0.25)" : riskFill(c.bed), opacity: c.bed == null ? 0.4 : 1, transition: "height .3s" }} />
                     </div>
                   );
                 })}
@@ -2792,12 +2842,12 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
               {/* 기준 시간 점선 — 이 선보다 막대가 높으면 그날 더 늦게 잠든 것 */}
               <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }} />
               {/* 수면의 질 꺾은선 */}
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
                 {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
               </svg>
               {/* 수면의 질 4가지 아이콘 */}
               {cats.map((c, i) => c.qual == null ? null : (
-                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#493F73", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex" }}>
+                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#493F73", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
                   <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
                 </div>
               ))}
@@ -2819,7 +2869,7 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
         {!hasAnyData && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 700, textAlign: "center", marginTop: 14 }}>이 기간엔 수면 기록이 없어요.</p>}
 
         <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 12 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 8, borderRadius: 2, background: "#F5C860" }} />잠든 시간대</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 8, borderRadius: 2, background: "linear-gradient(90deg,#59A863,#E9BC44,#E0554F)" }} />잠든 시간대</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}><span style={{ width: 12, height: 2, borderRadius: 2, background: "#9CC6FF" }} />수면의 질</span>
         </div>
         <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.6)", fontWeight: 600, textAlign: "center", margin: "8px 0 0", wordBreak: "keep-all" }}>
