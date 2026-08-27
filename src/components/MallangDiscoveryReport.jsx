@@ -2552,7 +2552,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
     dayData[dom] = { mood: e.mood, sore: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 };
   });
   const [modeState, setMode] = useState("daily");
-  const [lineOnTop, setLineOnTop] = useState(false); // 커서를 올리면 꺾은선을 앞으로
+  const [barsOnTop, setBarsOnTop] = useState(false); // 평소엔 꺾은선이 앞, 커서를 올리면 막대가 앞으로
   const mode = pdfMode ? "weekly" : modeState; // PDF로 저장할 땐 주간 상태로 캡처
   const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -2605,7 +2605,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const dragHandlers = scroll ? { onPointerDown: onDragDown, onPointerMove: onDragMove, onPointerUp: onDragUp, onPointerLeave: onDragUp } : {};
 
   // 한 줄 요약 — 보기(일간·주간·요일별)마다 불편함이 가장 컸던 지점을 짚어준다.
-  const soreName = activePart === ALL_PARTS ? "몸" : sorePartLabel(activePart);
+  const soreName = activePart === ALL_PARTS ? "전체적으로" : sorePartLabel(activePart);
   const hot = (v) => <b style={{ color: "#E0554F" }}>{v}</b>;
   const summaryLine = (() => {
     const withSore = cats.filter((c) => c.sore != null && c.sore > 0);
@@ -2651,11 +2651,11 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
               평소엔 막대와 숫자가 위, 그래프에 커서를 올리면 꺾은선이 위로 올라온다. */}
           <div
             style={{ position: "relative", height: H }}
-            onMouseEnter={() => setLineOnTop(true)}
-            onMouseLeave={() => setLineOnTop(false)}
+            onMouseEnter={() => setBarsOnTop(true)}
+            onMouseLeave={() => setBarsOnTop(false)}
           >
             {/* 불편함 막대 */}
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, padding: "0 2px", zIndex: lineOnTop ? 1 : 3 }}>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, padding: "0 2px", zIndex: barsOnTop ? 3 : 1 }}>
               {cats.map((c, i) => {
                 const empty = c.sore == null;
                 const isPeak = isWeekday && c.wd === peakWd && !empty;
@@ -2672,11 +2672,11 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
             </div>
 
             {/* 기분 꺾은선(말랑이 표정) */}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: barsOnTop ? 2 : 4, pointerEvents: "none" }}>
               {dPath && <path d={dPath} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
             </svg>
             {cats.map((c, i) => (c.mood != null ? (
-              <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
+              <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`, transform: "translate(-50%,-50%)", zIndex: barsOnTop ? 2 : 4, pointerEvents: "none" }}>
                 <Mallang v={Math.round(c.mood)} size={faceSize} noBlink />
               </div>
             ) : null))}
@@ -2734,7 +2734,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
 function MallangNightCard({ entries, nickname, pdfMode = false }) {
   // 훅은 아래 'return null'보다 먼저, 항상 같은 순서로 불러야 한다.
   const [modeState, setMode] = useState("daily");
-  const [lineOnTop, setLineOnTop] = useState(false); // 커서를 올리면 꺾은선을 앞으로
+  const [barsOnTop, setBarsOnTop] = useState(false); // 평소엔 꺾은선이 앞, 커서를 올리면 막대가 앞으로
   const scrollElRef = useRef(null);                  // 일간 가로 드래그 스크롤
   const dragRef = useRef({ down: false, x: 0, left: 0 });
 
@@ -2861,9 +2861,9 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
         <div ref={scrollElRef} {...dragHandlers} className="hide-scrollbar" style={{ overflowX: scroll ? "auto" : "visible", overflowY: "hidden", cursor: scroll ? "grab" : "default", touchAction: scroll ? "pan-x" : "auto", userSelect: "none" }}>
           <div style={{ width: scroll ? N * colW : "100%" }}>
             <div style={{ position: "relative", height: H }}
-              onMouseEnter={() => setLineOnTop(true)} onMouseLeave={() => setLineOnTop(false)}>
+              onMouseEnter={() => setBarsOnTop(true)} onMouseLeave={() => setBarsOnTop(false)}>
               {/* 잠든 시간대 — 늦게 잘수록 막대가 높아요 */}
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, paddingTop: 22, zIndex: lineOnTop ? 1 : 3 }}>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", gap: rowGap, paddingTop: 22, zIndex: barsOnTop ? 3 : 1 }}>
                 {cats.map((c, i) => {
                   const h = c.bed == null ? 3 : Math.max(5, Math.round((0.18 + c.bed * 0.82) * barH));
                   const txt = bedLabel(c.bed, mode === "daily");
@@ -2878,12 +2878,12 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
               {/* 기준 시간 점선 — 이 선보다 막대가 높으면 그날 더 늦게 잠든 것 */}
               <div style={{ position: "absolute", left: 0, right: 0, bottom: baseH, borderTop: "1.5px dashed rgba(255,255,255,0.55)", pointerEvents: "none" }} />
               {/* 수면의 질 꺾은선 */}
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: barsOnTop ? 2 : 4, pointerEvents: "none" }}>
                 {dPath && <path d={dPath} fill="none" stroke="#9CC6FF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
               </svg>
               {/* 수면의 질 4가지 아이콘 */}
               {cats.map((c, i) => c.qual == null ? null : (
-                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#493F73", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex", zIndex: lineOnTop ? 4 : 2, pointerEvents: "none" }}>
+                <div key={i} style={{ position: "absolute", left: `${xOf(i)}%`, top: `${yOf(c.qual)}%`, transform: "translate(-50%,-50%)", background: "#493F73", borderRadius: "50%", padding: 1.5, boxShadow: "0 0 0 2px #9CC6FF", display: "flex", zIndex: barsOnTop ? 2 : 4, pointerEvents: "none" }}>
                   <DiaryIcon name={SLEEP_ICON[Math.max(0, Math.min(3, Math.round(c.qual)))]} size={iconSize} />
                 </div>
               ))}
