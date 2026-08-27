@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState, useEffect, useRef } from 'react';
+import { track } from '../lib/analytics';
 import { QUESTIONS, PART2_QUESTION, PART2_OPTIONS, calculateBMTI } from '../data';
 
 const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) => {
@@ -29,6 +30,8 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) =>
     const currentQuestion = shuffledQuestions[step];
     const newAnswers = [...answers, { id: currentQuestion.id, score }];
     setAnswers(newAnswers);
+    // 몇 번째 문항까지 답했는지 — 어디서 그만두는지 보려고 남긴다.
+    track('quiz_step', { step: step + 1, total: shuffledQuestions.length });
 
     if (step < shuffledQuestions.length - 1) {
       setStep(prev => prev + 1);
@@ -38,6 +41,7 @@ const QuizView = ({ setView, setQuizCompleted, setBmtiCode, setBmtiAnswers }) =>
         orderedAnswers[ans.id - 1] = ans.score;
       });
       const finalCode = calculateBMTI(orderedAnswers);
+      track('quiz_done', { code: finalCode });
       console.log('🧬 BMTI Code:', finalCode);
       console.log('📊 Answers:', orderedAnswers);
       setPendingCode(finalCode);

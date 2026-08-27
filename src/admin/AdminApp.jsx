@@ -4,6 +4,7 @@ import CurationAdmin from './CurationAdmin';
 import QuickCardAdmin from './QuickCardAdmin';
 import RoutineAdmin from './RoutineAdmin';
 import SearchPreview from './SearchPreview';
+import MetricsView from './MetricsView';
 
 // ─────────────────────────────────────────────
 // BMTI 관리자 페이지 (별도 진입점 admin.html) — Supabase Auth로 관리자만 로그인해서
@@ -260,6 +261,7 @@ function Dashboard({ session }) {
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: '22px 18px 60px' }}>
         <div style={{ display: 'flex', gap: 9, marginBottom: 18, flexWrap: 'wrap' }}>
           {tabBtn('stats', '📊 통계')}
+          {tabBtn('metrics', '📈 지표')}
           {tabBtn('users', '👤 사용자')}
           {tabBtn('curation', '📚 큐레이션')}
           {tabBtn('cards', '⚡ 바로카드')}
@@ -267,6 +269,7 @@ function Dashboard({ session }) {
           {tabBtn('search', '🔎 검색 분류')}
         </div>
         {tab === 'stats' && <StatsView users={users} loading={loading} />}
+        {tab === 'metrics' && <MetricsView />}
         {tab === 'users' && <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
         {tab === 'curation' && <CurationAdmin />}
         {tab === 'cards' && <QuickCardAdmin />}

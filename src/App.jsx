@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
+import { track, trackScreen } from './lib/analytics';
 import { syncSleepSettingFromServer } from './lib/mallangProfile';
 import Navbar from './components/Navbar';
 import HomeView from './components/HomeView';
@@ -78,6 +79,7 @@ function App() {
   // Scroll to top and update hash on view change
   useEffect(() => {
     window.scrollTo(0, 0);
+    trackScreen(currentView);   // 화면별 체류 시간 기록
     
     if (currentView === 'result' && bmtiCode) {
       window.history.replaceState(null, '', `#${bmtiCode}`);
@@ -235,6 +237,7 @@ function App() {
       setShowSignup(false);
       setIsLoggedIn(true);
       localStorage.setItem('bmti_user', JSON.stringify(fullUserData));
+      track('signup_done', { hasBmti: !!data.bmti_type });   // 비회원 → 회원 전환
 
       // 기존 회원이 새 기기에서 로그인하는 경우, 이 기기의 bmtiCode/bmtiAnswers가 비어있거나
       // 계정에 저장된 최신 결과와 다를 수 있으므로 DB 값으로 동기화한다.

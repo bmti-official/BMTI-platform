@@ -5,6 +5,7 @@ import { CHARACTERS, CODE_KO, calculateBMTIPercentages } from '../data';
 import { BMTI_RESULTS } from '../bmti_results';
 import { TENDENCY_DATA } from '../customResultData';
 import { TENDENCY_HL, TENDENCY_HEX, BMTI_INFO } from '../lib/resultMeta';
+import { track } from '../lib/analytics';
 
 // 친구에게 공유하기 — 결과지·메인에서 함께 쓰는 공용 박스.
 // 카카오/인스타/X 3개를 나란히, 이미지 저장·링크 복사·더보기는 작게.
@@ -177,7 +178,7 @@ export default function ShareBox({ bmtiCode, bmtiAnswers, isLoggedIn, onRequireL
                 ].map((b) => (
                   <button
                     key={b.key}
-                    onClick={b.onClick}
+                    onClick={() => { track('share_click', { channel: b.key }); b.onClick(); }}
                     disabled={!!shareBusy}
                     className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-gray-100 hover:bg-gray-50 active:scale-[0.97] transition disabled:opacity-60"
                   >
@@ -208,7 +209,7 @@ export default function ShareBox({ bmtiCode, bmtiAnswers, isLoggedIn, onRequireL
                 ].map((b) => (
                   <button
                     key={b.key}
-                    onClick={b.onClick}
+                    onClick={() => { track('share_click', { channel: b.key }); b.onClick(); }}
                     disabled={!!shareBusy}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#F5F3EF] hover:bg-gray-200 active:scale-[0.97] transition text-gray-600 disabled:opacity-60"
                   >
