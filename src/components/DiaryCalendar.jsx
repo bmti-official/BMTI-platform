@@ -12,6 +12,7 @@ import {
 import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON, TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getRecordMessage } from "../lib/recordMessage";
+import { buildDiaryParagraphs } from "../lib/diarySentence";
 import { hasLocalHealthConsent } from "../lib/healthConsentSystem";
 import HealthConsentGate from "./HealthConsentGate";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
@@ -281,78 +282,74 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
       )}
 
       {previewDay && (() => {
-        const items = buildEntrySummary(previewDay.entry);
+        const paras = buildDiaryParagraphs(previewDay.entry);
         const moodInfo = MOODS.find(m => m.v === previewDay.entry.mood);
+        const tags = (previewDay.entry.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
+        const [, mo, da] = previewDay.dateStr.split("-");
+        const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(previewDay.dateStr + "T00:00:00").getDay()];
         return (
-          <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            {/* 월간 캘린더(maxWidth 460)와 같은 폭 · 흰 배경 · 일반 모바일 높이에 맞춰 세로로 스택 */}
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 24, position: "relative", maxHeight: "min(620px, calc(100vh - 172px))", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
-              {/* 우측 상단 X — 카드에 고정(스크롤돼도 항상 보임) */}
-              <button
-                onClick={() => setPreviewDay(null)}
-                aria-label="닫기"
-                style={{ position: "absolute", top: 10, right: 10, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.9)", color: C.sub, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
-              >
-                ✕
-              </button>
+          <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            {/* 그림일기 — 왼쪽 위 말랑이, 오른쪽 위 날짜·태그, 아래로 줄노트 문단 */}
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#FFFDF7", border: `1px solid ${C.yellowLine}`, borderRadius: 20, position: "relative", maxHeight: "min(660px, calc(100vh - 150px))", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
+              <button onClick={() => setPreviewDay(null)} aria-label="닫기"
+                style={{ position: "absolute", top: 9, right: 9, zIndex: 3, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", color: C.sub, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>✕</button>
 
-              {/* 헤더 — 고정 */}
-              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "26px 20px 14px" }}>
-                <Mallang v={previewDay.entry.mood} size={60} />
-                <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 700, marginTop: 10 }}>
-                  {previewDay.dateStr.slice(5, 7)}월 {previewDay.dateStr.slice(8, 10)}일
+              {/* 머리 — 왼쪽 말랑이 칸 · 오른쪽 날짜와 오늘의 태그 */}
+              <div style={{ flexShrink: 0, display: "flex", gap: 10, padding: "16px 16px 12px" }}>
+                <div style={{ width: 104, flexShrink: 0, background: "#EFF6EA", border: `1px solid ${C.yellowLine}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 6px", gap: 5 }}>
+                  <Mallang v={previewDay.entry.mood} size={54} />
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: 1.25 }}>{moodInfo?.label}</div>
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{moodInfo?.label}</div>
-              </div>
-
-              {/* 본문 — 태그 박스와 기록 요약 박스를 한 스크롤 영역에 함께 담는다.
-                   각 박스에 따로 높이를 물리면 태그가 많을 때 아래 박스가 납작해지므로,
-                   두 박스 모두 내용만큼의 높이를 갖고 넘치는 만큼만 이 영역이 스크롤한다. */}
-              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "0 20px 4px" }}>
-                {(() => {
-                  const tags = (previewDay.entry.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
-                  if (!tags.length) return null;
-                  return (
-                    <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "12px 14px", marginBottom: 12, boxShadow: YELLOW_SHADOW }}>
-                      <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>오늘의 태그</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {tags.map(tg => (
-                          <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.yellow, borderRadius: 999, padding: "5px 11px 5px 7px" }}>
-                            <DiaryIcon name={TAG_LABEL_TO_ICON[tg]} size={18} />
-                            <span style={{ fontSize: 11.5, fontWeight: 700, color: C.ink }}>{tg}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {items.length > 0 ? (
-                  <div style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 16, padding: "2px 14px", boxShadow: YELLOW_SHADOW }}>
-                    {items.map((it, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
-                        <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={22} /></div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
-                      </div>
-                    ))}
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "#FBEFD8", border: `1px solid ${C.yellowLine}`, borderRadius: 10, padding: "7px 8px", fontSize: 13.5, fontWeight: 800, color: C.ink, letterSpacing: "0.02em" }}>
+                    <span>{Number(mo)}</span><span style={{ color: C.sub, fontWeight: 700 }}>월</span>
+                    <span style={{ marginLeft: 4 }}>{Number(da)}</span><span style={{ color: C.sub, fontWeight: 700 }}>일</span>
+                    <span style={{ marginLeft: 4 }}>{dow}</span><span style={{ color: C.sub, fontWeight: 700 }}>요일</span>
                   </div>
-                ) : (
-                  <p style={{ textAlign: "center", fontSize: 13, color: C.sub, fontWeight: 600, padding: "8px 0 12px" }}>기분만 짧게 남겨둔 날이에요.</p>
-                )}
+                  <div style={{ flex: 1, minHeight: 52, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 10, padding: "7px 9px", display: "flex", flexWrap: "wrap", gap: 5, alignContent: "flex-start", overflowY: "auto" }}>
+                    {tags.length === 0
+                      ? <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 600 }}>오늘의 태그는 없어요</span>
+                      : tags.map(tg => (
+                        <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.yellow, borderRadius: 7, padding: "3px 7px 3px 4px" }}>
+                          <DiaryIcon name={TAG_LABEL_TO_ICON[tg]} size={15} />
+                          <span style={{ fontSize: 10.5, fontWeight: 700, color: C.ink }}>{tg}</span>
+                        </span>
+                      ))}
+                  </div>
+                </div>
               </div>
 
-              {/* 하단 버튼 — 고정 */}
-              <div style={{ flexShrink: 0, padding: "12px 20px 20px" }}>
-                <button
-                  onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
-                  style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}
-                >
+              {/* 본문 — 줄노트 칸 세 개. 제목 없이 글만 */}
+              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "0 16px 4px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {paras.length === 0 && (
+                  <p style={{ textAlign: "center", fontSize: 13, color: C.sub, fontWeight: 600, padding: "18px 0" }}>기분만 짧게 남겨둔 날이에요.</p>
+                )}
+                {paras.map((para, i) => (
+                  <div key={i} style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 12, padding: "11px 12px", display: "flex", gap: 9, alignItems: "flex-start", boxShadow: YELLOW_SHADOW }}>
+                    <span style={{ flexShrink: 0, display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 96 }}>
+                      {para.icons.map((ic, k) => ic.kind === "chip" ? (
+                        <span key={k} style={{ background: "#FCF3D6", borderRadius: 8, padding: "3px 7px", fontSize: 10.5, fontWeight: 800, color: "#8A6A3A", whiteSpace: "nowrap" }}>{ic.label}</span>
+                      ) : (
+                        <DiaryIcon key={k} name={ic.name} size={22} />
+                      ))}
+                    </span>
+                    <p style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 13, fontWeight: 600, color: C.ink, lineHeight: 1.75, wordBreak: "keep-all",
+                      backgroundImage: `repeating-linear-gradient(180deg, transparent 0, transparent 21.7px, ${C.yellowLine} 21.7px, ${C.yellowLine} 22.75px)` }}>
+                      {para.segs.map((sg, k) => sg.hi
+                        ? <b key={k} style={{ color: "#8B7BD8", fontWeight: 800 }}>{sg.hi}</b>
+                        : <span key={k}>{sg.t}</span>)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ flexShrink: 0, padding: "12px 16px 16px" }}>
+                <button onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
+                  style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 5, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
                   이 기록 수정할래요
                 </button>
-                <button
-                  onClick={() => setPreviewDay(null)}
-                  style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
-                >
+                <button onClick={() => setPreviewDay(null)}
+                  style={{ width: "100%", padding: 11, borderRadius: 14, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                   괜찮아요, 그냥 볼게요
                 </button>
               </div>

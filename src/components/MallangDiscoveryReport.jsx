@@ -1522,7 +1522,9 @@ const PODIUM = [
   { rank: 3, medal: "🥉", h: 40, order: 3, bar: "#D9A066", size: 42 },
 ];
 function MoodDistribution({ data }) {
-  const ranked = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 3);
+  const all = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count);
+  const ranked = all.slice(0, 3);
+  const rest = all.slice(3, 5);   // 4·5등은 시상대 옆에 작게 세워둔다
   if (ranked.length === 0) return null;
   const podium = PODIUM.slice(0, ranked.length).map((p, i) => ({ ...p, item: ranked[i] }));
   return (
@@ -1551,6 +1553,22 @@ function MoodDistribution({ data }) {
             </div>
           </div>
         ))}
+
+        {/* 4·5등 — 시상대에 오르지 못한 기분들 */}
+        {rest.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 8, paddingBottom: 4, marginLeft: 2, flexShrink: 0 }}>
+            {rest.map((it, i) => (
+              <div key={it.mood} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.72)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "3px 8px 3px 4px" }}>
+                <span style={{ fontSize: 9.5, fontWeight: 800, color: C.sub, width: 12, textAlign: "center", flexShrink: 0 }}>{i + 4}</span>
+                <Mallang v={it.mood} size={20} noBlink />
+                <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.15, minWidth: 0 }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap" }}>{it.label}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: C.sub }}>{it.count}번</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <style>{`
         @keyframes awardPop { 0% { transform: translateY(0) scale(.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(26px) scale(1); opacity: 0; } }
