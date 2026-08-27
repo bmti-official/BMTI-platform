@@ -2498,7 +2498,7 @@ function ButterflyCard({ data }) {
 const ALL_PARTS = "__all";
 
 const RISK_BANDS = [
-  { upto: 0.34, from: "#8CCB8F", to: "#59A863", text: "#3F7C48" },
+  { upto: 0.34, from: "#C7E7C3", to: "#A5D6A0", text: "#5E9463" },
   { upto: 0.67, from: "#F7D879", to: "#E9BC44", text: "#9A7A16" },
   { upto: 1.01, from: "#F0917C", to: "#E0554F", text: "#B23B36" },
 ];
@@ -2604,15 +2604,24 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const colStyle = scroll ? { width: colW, flex: "0 0 auto" } : { flex: 1 };
   const dragHandlers = scroll ? { onPointerDown: onDragDown, onPointerMove: onDragMove, onPointerUp: onDragUp, onPointerLeave: onDragUp } : {};
 
+  // 한 줄 요약 — 보기(일간·주간·요일별)마다 불편함이 가장 컸던 지점을 짚어준다.
+  const soreName = activePart === ALL_PARTS ? "몸" : sorePartLabel(activePart);
+  const hot = (v) => <b style={{ color: "#E0554F" }}>{v}</b>;
+  const summaryLine = (() => {
+    const withSore = cats.filter((c) => c.sore != null && c.sore > 0);
+    if (!withSore.length) return null;
+    const top = withSore.reduce((m, c) => (c.sore > m.sore ? c : m), withSore[0]);
+    if (isWeekday) return <>이번 달은 유독 {hot(`${WD[peakWd]}요일`)}에 {hot(soreName)} 불편함이 가장 컸어요.</>;
+    if (mode === "weekly") return <>이번 달은 {hot(`${top.label}차`)}에 {hot(soreName)} 불편함이 가장 컸어요.</>;
+    const avg = withSore.reduce((n, c) => n + c.sore, 0) / withSore.length;
+    return <>{hot(`${top.label}일`)}에 {hot(soreName)} 불편함이 가장 컸고, 평균은 {hot(avg.toFixed(1))}이었어요.</>;
+  })();
+
   const rowGap = scroll ? 0 : gap;
   const body = (
     <div>
-      {/* 범례(불편함·기분) + 부위 선택 드롭다운 — 고정 */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9, gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 9, height: 9, borderRadius: 3, background: "#E0554F" }} /> 불편함</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 9, height: 9, borderRadius: "50%", background: "#BF8FE9" }} /> 기분</span>
-        </div>
+      {/* 부위 선택 드롭다운 — 범례는 밤 카드처럼 그래프 아래에 둔다 */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 9, gap: 8 }}>
         {partList.length > 0 && (
           <select value={activePart || ""} onChange={(e) => setSorePart(e.target.value)}
             style={{ fontSize: 11, fontWeight: 800, color: "#B23B36", background: "#FDECEC", border: "1px solid #F3CFCF", borderRadius: 999, padding: "3px 8px", outline: "none", cursor: "pointer" }}>
@@ -2625,12 +2634,10 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
         )}
       </div>
 
-      {/* 요일별: 최고 요일 문구(다른 모드에선 높이만 확보해 전환 시 박스가 줄지 않게) */}
+      {/* 보기마다 한 줄 요약(높이를 항상 확보해 전환 시 박스가 줄지 않게) */}
       <div style={{ minHeight: 46, marginBottom: 4 }}>
-        {isWeekday && peakWd != null && (
-          <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: 0, lineHeight: 1.5, wordBreak: "keep-all" }}>
-            이번 달은 유독 <b style={{ color: "#E0554F" }}>{WD[peakWd]}요일</b>에 <b style={{ color: "#E0554F" }}>{activePart === ALL_PARTS ? "몸" : sorePartLabel(activePart)}</b> 불편함이 가장 컸어요.
-          </p>
+        {summaryLine && (
+          <p style={{ fontSize: 14, fontWeight: 800, color: C.ink, margin: 0, lineHeight: 1.5, wordBreak: "keep-all" }}>{summaryLine}</p>
         )}
       </div>
 
@@ -2689,6 +2696,16 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
           </div>
         </div>
         </div>
+      </div>
+
+      {/* 범례 — 밤 카드와 같은 자리·같은 모양 */}
+      <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 12 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: C.sub }}>
+          <span style={{ width: 12, height: 8, borderRadius: 2, background: "linear-gradient(90deg,#A5D6A0,#E9BC44,#E0554F)" }} />불편함
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: C.sub }}>
+          <span style={{ width: 12, height: 2, borderRadius: 2, background: t.accent }} />기분
+        </span>
       </div>
 
       {!hasAnyData && <p style={{ fontSize: 12, color: C.sub, fontWeight: 700, textAlign: "center", marginTop: 14 }}>아직 기록이 없어요.</p>}
@@ -2806,6 +2823,19 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
 
   const nightName = (nickname && String(nickname).trim()) ? String(nickname).trim() : "말랑이";
 
+  // 한 줄 요약 — 가장 늦게 잠든 지점을 짚어준다. 시각을 알 수 있으면 함께 적는다.
+  const late = (v) => <b style={{ color: "#FFD98A" }}>{v}</b>;
+  const nightSummary = (() => {
+    const withBed = cats.filter((c) => c.bed != null);
+    if (!withBed.length) return null;
+    const top = withBed.reduce((m, c) => (c.bed > m.bed ? c : m), withBed[0]);
+    const when = bedLabel(top.bed, mode === "daily");
+    const tail = when ? <> 그날은 {late(irregular ? when : `${when}시쯤`)}이었어요.</> : null;
+    if (mode === "weekday") return <>이번 달은 유독 {late(`${WD[top.wd]}요일`)}에 늦게 잠들었어요.{tail}</>;
+    if (mode === "weekly") return <>{late(`${top.label}차`)}에 가장 늦게 잠들었어요.{tail}</>;
+    return <>{late(`${top.label}일`)}에 가장 늦게 잠들었어요.{tail}</>;
+  })();
+
   return (
     <div style={{ background: "linear-gradient(180deg,#493F73,#61548F)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
       {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (<span key={i} style={{ position: "absolute", left: `${13 + i * 19}%`, top: `${8 + (i % 2) * 8}%`, color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{s}</span>))}
@@ -2818,7 +2848,13 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
         <TrendSwitchPill mode={mode} onSelect={setMode} t={getTypeAccent()} />
       </div>
 
-      <div style={{ marginTop: 14, position: "relative" }}>
+      <div style={{ minHeight: 42, marginTop: 10, position: "relative" }}>
+        {nightSummary && (
+          <p style={{ fontSize: 13.5, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.5, wordBreak: "keep-all" }}>{nightSummary}</p>
+        )}
+      </div>
+
+      <div style={{ marginTop: 6, position: "relative" }}>
         <div style={{ position: "relative" }}>
         {scroll && <span style={{ position: "absolute", left: 0, top: "42%", transform: "translateY(-50%)", zIndex: 3, color: "rgba(255,255,255,0.55)", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>‹</span>}
         {scroll && <span style={{ position: "absolute", right: 0, top: "42%", transform: "translateY(-50%)", zIndex: 3, color: "rgba(255,255,255,0.55)", fontSize: 22, fontWeight: 900, lineHeight: 1, pointerEvents: "none" }}>›</span>}
