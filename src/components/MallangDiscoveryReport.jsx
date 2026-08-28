@@ -519,6 +519,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                   return;
                 }
                 const card = <SectionCard key={s.id} section={s} gender={gender} entries={entries} topMood={topMood} moments={s.id === "sore_map" ? find("sore_moments")?.data : null}
+                  distribution={s.id === "mood_calendar" ? find("mood_distribution")?.data : null}
                   exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} pdfMode={savingPDF} />;
                 // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
                 if (s.id === "notes") { items.push({ locked: !s.unlocked, node: <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment> }); return; }
@@ -1384,7 +1385,7 @@ function SoulmateCard({ entries, exampleEntries }) {
   );
 }
 
-function SectionCard({ section: s, gender, entries, topMood, moments, exampleSection, exampleMoments, exTopMood, pdfMode = false }) {
+function SectionCard({ section: s, gender, entries, topMood, moments, distribution, exampleSection, exampleMoments, exTopMood, pdfMode = false }) {
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
   const hasExample = !s.unlocked && exampleSection?.data;
@@ -1395,6 +1396,7 @@ function SectionCard({ section: s, gender, entries, topMood, moments, exampleSec
           {Icon && <Icon size={18} />}
         </span>
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: s.unlocked ? C.ink : "#B7B2A9" }}>{s.title}</span>
+        {s.unlocked && distribution?.items && <MiniPodium items={distribution.items} />}
         {!s.unlocked && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
       {!s.unlocked ? (
@@ -1521,6 +1523,32 @@ const PODIUM = [
   { rank: 2, medal: "🥈", h: 54, order: 1, bar: "#C7CDD6", size: 46 },
   { rank: 3, medal: "🥉", h: 40, order: 3, bar: "#D9A066", size: 42 },
 ];
+// 기분 달력 제목 옆에 세우는 작은 시상대 — 어워즈와 같은 순위를 1~5등까지 압축해 보여준다.
+const MINI_BAR = { 1: { h: 22, bar: "#F4C542", medal: "🥇" }, 2: { h: 16, bar: "#C7CDD6", medal: "🥈" }, 3: { h: 12, bar: "#D9A066", medal: "🥉" } };
+function MiniPodium({ items }) {
+  const ranked = [...(items || [])].filter((i) => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
+  if (ranked.length < 2) return null;
+  // 시상대처럼 2·1·3 순으로 세우고, 4·5는 그 오른쪽에 낮게 붙인다.
+  const order = [2, 1, 3, 4, 5].filter((r) => r <= ranked.length);
+  return (
+    <span style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end", gap: 2.5, flexShrink: 0 }} title="이번 달 말랑이 어워즈">
+      {order.map((rank) => {
+        const it = ranked[rank - 1];
+        const st = MINI_BAR[rank] || { h: 8, bar: "#E4DED0", medal: null };
+        return (
+          <span key={rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+            <Mallang v={it.mood} size={rank === 1 ? 19 : 15} noBlink />
+            <span style={{ width: rank === 1 ? 20 : 16, height: st.h, borderRadius: "3px 3px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
+              display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 1, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)" }}>
+              <span style={{ fontSize: st.medal ? 8.5 : 7.5, fontWeight: 800, color: "#6B5B3A", lineHeight: 1 }}>{st.medal || rank}</span>
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 function MoodDistribution({ data }) {
   const all = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count);
   const ranked = all.slice(0, 3);

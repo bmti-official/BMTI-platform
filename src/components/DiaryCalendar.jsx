@@ -589,10 +589,10 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, t, onE
       {hasDetails && (
         <div style={{ maxHeight: open ? BODY_H : 0, overflow: "hidden", transition: "max-height .3s ease" }}>
           <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 9, height: BODY_H, boxSizing: "border-box" }}>
-            {/* 오늘의 태그 박스 — 고정 */}
+            {/* 태그 박스와 문장 박스를 한 스크롤 영역에 함께 담는다 */}
+            <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
             {tags.length > 0 && (
               <div style={{ flexShrink: 0, background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "11px 13px", boxShadow: YELLOW_SHADOW }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: C.sub, marginBottom: 7 }}>오늘의 태그</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                   {tags.map(tg => (
                     <span key={tg} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.yellow, borderRadius: 999, padding: "5px 10px 5px 6px" }}>
@@ -603,9 +603,9 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, t, onE
                 </div>
               </div>
             )}
-            {/* 문장 박스 세 개 — 월간 미리보기와 같은 모양. 남은 공간에서 스크롤 */}
+            {/* 문장 박스 — 월간 미리보기와 같은 모양 */}
             {paras.length > 0 ? (
-              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+              <>
                 {paras.map((para, i) => (
                   <div key={i} style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start", boxShadow: YELLOW_SHADOW }}>
                     <span style={{ flexShrink: 0, display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 88 }}>
@@ -622,12 +622,13 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, t, onE
                     </p>
                   </div>
                 ))}
-              </div>
+              </>
             ) : (
-              <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, boxShadow: YELLOW_SHADOW }}>
+              <div style={{ flex: "1 1 auto", minHeight: 90, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, boxShadow: YELLOW_SHADOW }}>
                 <span style={{ fontSize: 12.5, color: C.sub, fontWeight: 600 }}>기분만 짧게 남겨둔 날이에요.</span>
               </div>
             )}
+            </div>
             {!locked && (
               <button onClick={onEdit} style={{ flexShrink: 0, alignSelf: "flex-start", border: "none", background: "transparent", color: t.accentDeep, fontSize: 12, fontWeight: 800, cursor: "pointer", padding: "2px 0" }}>수정하기 ›</button>
             )}
