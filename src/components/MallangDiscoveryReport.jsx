@@ -511,7 +511,8 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
               const items = [];
               report.sections.forEach((s) => {
                 // 무리·움직임·쉬어감 세 카드는 '활동량 요약' 하나로, '불편했던 순간'은 '바디 스캔'에 합친다.
-                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments" || s.id === "sleep") return; // 수면(말랑이의 밤)은 '이번 달 발견'으로 옮김
+                // 어워즈(mood_distribution)는 '기분 달력' 안으로 합쳐 별도 카드를 두지 않는다.
+                if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments" || s.id === "sleep" || s.id === "mood_distribution") return; // 수면(말랑이의 밤)은 '이번 달 발견'으로 옮김
                 if (s.id === "movement") {
                   const locked = !(find("movement")?.unlocked || find("rest")?.unlocked || find("overwork")?.unlocked);
                   items.push({ locked, node: <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
@@ -1396,7 +1397,6 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
           {Icon && <Icon size={18} />}
         </span>
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: s.unlocked ? C.ink : "#B7B2A9" }}>{s.title}</span>
-        {s.unlocked && distribution?.items && <MiniPodium items={distribution.items} />}
         {!s.unlocked && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
       {!s.unlocked ? (
@@ -1420,7 +1420,24 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
         </div>
       ) : (
         <>
-          {s.summary && <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>}
+          {s.summary && (
+            distribution?.items
+              ? (
+                /* 기분 달력 — 왼쪽에 요약 문구와 어워즈 한 줄, 오른쪽에 시상대 */
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, margin: "0 0 16px" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: 0 }}>{s.summary}</p>
+                    {distribution.top != null && (
+                      <p style={{ fontSize: 13, fontWeight: 700, color: C.sub, lineHeight: 1.5, margin: "6px 0 0", wordBreak: "keep-all" }}>
+                        이번 달은 <b style={{ color: C.ink, fontWeight: 800 }}>‘{MOOD[distribution.top]} 말랑이’</b>가 가장 많이 찾아왔네요!
+                      </p>
+                    )}
+                  </div>
+                  <MiniPodium items={distribution.items} />
+                </div>
+              )
+              : <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>
+          )}
           {s.alert && (
             <div style={{ display: "flex", gap: 8, background: "#FDEEEE", border: "1px solid #F3CFCF", borderRadius: 12, padding: "11px 13px", marginBottom: 16 }}>
               <span style={{ fontSize: 13 }}>💬</span>
@@ -1448,8 +1465,7 @@ function SectionBody({ id, data, gender, entries, topMood, moments, pdfMode = fa
   if (!data) return null;
   switch (id) {
     case "mood_calendar": return <MoodCalendar data={data} />;
-    case "mood_distribution": return <MoodDistribution data={data} />;
-    case "sore_map": return <SoreMap data={data} gender={gender} moments={moments} />;
+    case "sore_map": return <SoreMap data={data} gender={gender} moments={moments} pdfMode={pdfMode} />;
     case "sore_moments": return <SoreMoments data={data} />;
     case "overwork": return <OverworkBody data={data} />;
     case "movement": return <MovementBody data={data} />;
@@ -1517,92 +1533,30 @@ function MoodCalendar({ data }) {
   );
 }
 
-// ── 이번 달 말랑이 어워즈: 가장 많이 찾아온 기분 TOP 3 금·은·동 시상대 ──
-const PODIUM = [
-  { rank: 1, medal: "🥇", h: 74, order: 2, bar: "#F4C542", size: 56 },
-  { rank: 2, medal: "🥈", h: 54, order: 1, bar: "#C7CDD6", size: 46 },
-  { rank: 3, medal: "🥉", h: 40, order: 3, bar: "#D9A066", size: 42 },
-];
-// 기분 달력 제목 옆에 세우는 작은 시상대 — 어워즈와 같은 순위를 1~5등까지 압축해 보여준다.
-const MINI_BAR = { 1: { h: 22, bar: "#F4C542", medal: "🥇" }, 2: { h: 16, bar: "#C7CDD6", medal: "🥈" }, 3: { h: 12, bar: "#D9A066", medal: "🥉" } };
+// 기분 달력 옆에 세우는 작은 시상대 — 이번 달 가장 많이 찾아온 기분을 1~5등까지.
+const MINI_BAR = { 1: { h: 38, bar: "#F4C542", medal: "🥇" }, 2: { h: 28, bar: "#C7CDD6", medal: "🥈" }, 3: { h: 21, bar: "#D9A066", medal: "🥉" } };
 function MiniPodium({ items }) {
   const ranked = [...(items || [])].filter((i) => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
   if (ranked.length < 2) return null;
   // 시상대처럼 2·1·3 순으로 세우고, 4·5는 그 오른쪽에 낮게 붙인다.
   const order = [2, 1, 3, 4, 5].filter((r) => r <= ranked.length);
   return (
-    <span style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end", gap: 2.5, flexShrink: 0 }} title="이번 달 말랑이 어워즈">
+    <span style={{ display: "flex", alignItems: "flex-end", gap: 4, flexShrink: 0 }} title="이번 달 말랑이 어워즈">
       {order.map((rank) => {
         const it = ranked[rank - 1];
-        const st = MINI_BAR[rank] || { h: 8, bar: "#E4DED0", medal: null };
+        const st = MINI_BAR[rank] || { h: 14, bar: "#E4DED0", medal: null };
         return (
-          <span key={rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-            <Mallang v={it.mood} size={rank === 1 ? 19 : 15} noBlink />
-            <span style={{ width: rank === 1 ? 20 : 16, height: st.h, borderRadius: "3px 3px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
-              display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 1, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)" }}>
-              <span style={{ fontSize: st.medal ? 8.5 : 7.5, fontWeight: 800, color: "#6B5B3A", lineHeight: 1 }}>{st.medal || rank}</span>
+          <span key={rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <Mallang v={it.mood} size={rank === 1 ? 30 : 24} noBlink />
+            <span style={{ fontSize: 8.5, fontWeight: 800, color: C.sub, lineHeight: 1 }}>{it.count}번</span>
+            <span style={{ width: rank === 1 ? 30 : 25, height: st.h, borderRadius: "4px 4px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
+              display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)" }}>
+              <span style={{ fontSize: st.medal ? 12 : 10, fontWeight: 800, color: "#6B5B3A", lineHeight: 1 }}>{st.medal || rank}</span>
             </span>
           </span>
         );
       })}
     </span>
-  );
-}
-
-function MoodDistribution({ data }) {
-  const all = [...data.items].filter(i => i.count > 0).sort((a, b) => b.count - a.count);
-  const ranked = all.slice(0, 3);
-  const rest = all.slice(3, 5);   // 4·5등은 시상대 옆에 작게 세워둔다
-  if (ranked.length === 0) return null;
-  const podium = PODIUM.slice(0, ranked.length).map((p, i) => ({ ...p, item: ranked[i] }));
-  return (
-    <div style={{ background: "linear-gradient(180deg,#FFFCF2,#FBF7EA)", borderRadius: 16, padding: "18px 12px 14px", position: "relative", overflow: "hidden" }}>
-      {/* 1등 축하 폭죽 */}
-      {[...Array(10)].map((_, i) => (
-        <span key={i} className="award-confetti" style={{ position: "absolute", left: `${8 + i * 9}%`, top: "6%", fontSize: 12,
-          animation: `awardPop 1.8s ease-out ${(i % 5) * 0.18}s infinite` }}>{["🎉", "✨", "🎊"][i % 3]}</span>
-      ))}
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 8, position: "relative", zIndex: 1 }}>
-        {podium.sort((a, b) => a.order - b.order).map((p) => (
-          <div key={p.rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0, maxWidth: 96 }}>
-            {/* 왕관은 음수 마진 대신 절대배치 — html2canvas(PDF)가 음수 마진을 무시해 아래 요소가 밀려 내려가는 걸 막는다 */}
-            {p.rank === 1 && <div style={{ height: 15, position: "relative", width: "100%" }}>
-              <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", fontSize: 20, lineHeight: 1, animation: "crownBob 2s ease-in-out infinite" }}>👑</span>
-            </div>}
-            <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
-              <Mallang v={p.item.mood} size={p.size} />
-            </div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, marginTop: 4, textAlign: "center", lineHeight: 1.2, wordBreak: "keep-all" }}>{p.item.label}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, marginBottom: 5 }}>{p.item.count}번</div>
-            {/* 시상대 단 */}
-            <div style={{ width: "100%", height: p.h, background: `linear-gradient(180deg, ${p.bar}, ${p.bar}CC)`, borderRadius: "8px 8px 0 0",
-              display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 6, boxShadow: "inset 0 2px 0 rgba(255,255,255,0.45)" }}>
-              <span style={{ fontSize: 18 }}>{p.medal}</span>
-            </div>
-          </div>
-        ))}
-
-        {/* 4·5등 — 시상대에 오르지 못한 기분들 */}
-        {rest.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 8, paddingBottom: 4, marginLeft: 2, flexShrink: 0 }}>
-            {rest.map((it, i) => (
-              <div key={it.mood} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.72)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "3px 8px 3px 4px" }}>
-                <span style={{ fontSize: 9.5, fontWeight: 800, color: C.sub, width: 12, textAlign: "center", flexShrink: 0 }}>{i + 4}</span>
-                <Mallang v={it.mood} size={20} noBlink />
-                <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.15, minWidth: 0 }}>
-                  <span style={{ fontSize: 9.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap" }}>{it.label}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: C.sub }}>{it.count}번</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <style>{`
-        @keyframes awardPop { 0% { transform: translateY(0) scale(.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(26px) scale(1); opacity: 0; } }
-        @keyframes crownBob { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-3px) rotate(6deg); } }
-      `}</style>
-    </div>
   );
 }
 
@@ -1635,8 +1589,9 @@ const BODY_POS_3D = (() => {
   }
   return map;
 })();
-function SoreMap({ data, gender, moments }) {
+function SoreMap({ data, gender, moments, pdfMode = false }) {
   const t = getTypeAccent();
+  const [openPart, setOpenPart] = useState(null);   // 점을 누르면 그 부위만 팝업으로
   const isMale = gender === "male" || gender === "M" || gender === "남성";
   const imgFront = isMale ? bodyMaleFront : bodyFemaleFront;
   const imgBack = isMale ? bodyMaleBack : bodyFemaleBack;
@@ -1653,8 +1608,10 @@ function SoreMap({ data, gender, moments }) {
         const isTop = top && (p.key || p.part) === (top.key || top.part);
         return spots.map((pos, i) => (
           // 가운데 정렬은 음수 마진 대신 바깥 래퍼의 transform으로 — PDF(html2canvas)가 음수 마진을 무시해 점이 밀리는 걸 막는다.
-          <span key={`${p.key || p.part}-${view}-${i}`} title={`${p.label} ${p.count}번`}
-            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size, transform: "translate(-50%,-50%)" }}>
+          <span key={`${p.key || p.part}-${view}-${i}`} title={`${p.label} ${p.count}번 · 눌러서 보기`}
+            onClick={pdfMode ? undefined : () => setOpenPart(p)}
+            role={pdfMode ? undefined : "button"}
+            style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, width: size, height: size, transform: "translate(-50%,-50%)", cursor: pdfMode ? "default" : "pointer" }}>
             <span className="sore-dot-pulse"
               style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%",
                 background: "radial-gradient(circle, rgba(230,60,55,0.95) 0%, rgba(230,60,55,0.55) 60%, rgba(230,60,55,0) 100%)",
@@ -1674,12 +1631,12 @@ function SoreMap({ data, gender, moments }) {
       </div>
       {top && (
         <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: 0, textAlign: "center", lineHeight: 1.55 }}>
-          점이 클수록 자주 불편했던 곳이에요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
+          점이 클수록 자주 불편했던 곳이에요 · 눌러보세요<br />가장 많이 짚은 곳은 <b style={{ color: "#E63C37", fontWeight: 800 }}>{top.label}</b>
         </p>
       )}
 
-      {/* 부위별 상세 — 평균 불편 강도 + 부위마다 언제 불편했는지를 나눠서 */}
-      {data.parts.length > 0 && (
+      {/* 부위별 상세 — 화면에선 점을 눌러 하나씩 보고, PDF로 저장할 땐 전부 펼쳐 담는다 */}
+      {pdfMode && data.parts.length > 0 && (
         <div style={{ width: "100%", marginTop: 4, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
           <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10, textAlign: "center" }}>부위별 불편함 · 언제 그랬나요?</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1711,6 +1668,42 @@ function SoreMap({ data, gender, moments }) {
           </div>
         </div>
       )}
+      {/* 점을 눌렀을 때 — 그 부위의 강도와 '언제 그랬나요'만 따로 보여준다 */}
+      {openPart && (
+        <div onClick={() => setOpenPart(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 88, background: "rgba(28,26,23,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 26 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 320, background: "#fff", borderRadius: 20, padding: "20px 20px 16px", boxShadow: "0 16px 44px rgba(0,0,0,0.28)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 16, fontWeight: 900, color: C.ink }}>
+                {openPart.label}<span style={{ color: C.sub, fontWeight: 700, fontSize: 13 }}>({openPart.count}번)</span>
+              </span>
+              <button onClick={() => setOpenPart(null)} aria-label="닫기"
+                style={{ border: "none", background: "transparent", color: C.sub, fontSize: 16, cursor: "pointer", padding: 2 }}>✕</button>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: "#E63C37", background: "rgba(230,60,55,0.10)", borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" }}>
+                평균 강도 {openPart.avgLevel.toFixed(1)}<span style={{ color: C.sub, fontWeight: 700 }}>/10</span>
+              </span>
+            </div>
+
+            <div style={{ fontSize: 12, fontWeight: 800, color: C.sub, marginBottom: 8 }}>언제 그랬나요?</div>
+            {openPart.situations && openPart.situations.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {openPart.situations.map((it) => (
+                  <span key={it.situation} style={{ fontSize: 12, fontWeight: 700, background: t.accentSoft, color: t.accentDeep, borderRadius: 999, padding: "6px 11px", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {it.label}<b style={{ fontWeight: 800 }}>{it.count}번</b>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span style={{ fontSize: 12.5, color: C.sub, fontWeight: 600 }}>언제인지 기록이 아직 없어요</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <style>{`@keyframes soreDotPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:1}}`}</style>
     </div>
   );
