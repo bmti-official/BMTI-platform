@@ -9,6 +9,7 @@ import CurationCard, { CurationDetail } from '../features/curation/CurationCard'
 import QuickCardView from '../features/curation/QuickCardView';
 import { FONTS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
+import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 
 // 부위 선택지 — 다이어리에서 쓰는 부위 코드를 그대로 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
@@ -19,6 +20,7 @@ const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', body_z: '', body_m: '', cover_url: '',
   thumb_text: '', read_min: 0, font_key: 'pretendard',
+  char_z: '', char_m: '',
   lead_z: '', lead_m: '',
   s1_img: '', s1_z: '', s1_m: '', s2_img: '', s2_z: '', s2_m: '',
   s3_img: '', s3_z: '', s3_m: '', s4_img: '', s4_z: '', s4_m: '',
@@ -103,6 +105,28 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
               {FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* 목록에서 썸네일 밑에 세울 누끼 캐릭터 — Z/M 각각 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>누끼 캐릭터</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 썸네일 아래, 제목 왼쪽에 놓입니다</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {[['char_z', 'Z 유형'], ['char_m', 'M 유형']].map(([key, lb]) => (
+            <div key={key}>
+              <span style={label}>{lb}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <span style={{ width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {f[key] && <img src={CHARACTERS.find((c) => c.id === f[key])?.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                </span>
+                <select value={f[key] || ''} onChange={(e) => set(key)(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+                  <option value="">지정 안 함</option>
+                  {CHARACTERS.map((c) => <option key={c.id} value={c.id}>{c.id} · {CHARACTER_NAMES[c.id]}</option>)}
+                </select>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -261,7 +285,8 @@ export default function CurationAdmin() {
         <PreviewModal title="큐레이션 미리보기" onClose={() => setPreview(null)}>
           {(tone) => {
             const picked = (preview.card_ids || []).map((id) => allCards.find((c) => c.id === id)).filter(Boolean);
-            const charImage = CHARACTERS.find((c) => c.id === (preview.body_groups?.length ? 'OLQM' : 'OLQM'))?.image;
+            const charCode = tone === 'm' ? preview.char_m : preview.char_z;
+            const charImage = CHARACTERS.find((c) => c.id === charCode)?.image;
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
                 <div>

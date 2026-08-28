@@ -21,3 +21,8 @@ alter table public.curation_items
 
   -- 글 끝에 붙일 추천 바로카드(3~4장)
   add column if not exists card_ids    bigint[] not null default '{}';
+
+-- 목록 카드 썸네일 아래에 세울 BMTI 누끼 캐릭터 — Z/M 유형별로 따로 고른다.
+alter table public.curation_items
+  add column if not exists char_z text,
+  add column if not exists char_m text;
