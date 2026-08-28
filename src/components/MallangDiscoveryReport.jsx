@@ -1552,7 +1552,7 @@ function MiniPodium({ items }) {
   if (ranked.length < 2) return null;
   const order = [4, 2, 1, 3, 5].filter((r) => r <= ranked.length);
   return (
-    <span style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 6 }} title="이번 달 말랑이 어워즈">
+    <span style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 10 }} title="이번 달 말랑이 어워즈">
       {order.map((rank) => {
         const it = ranked[rank - 1];
         const st = MINI_RANK[rank];
