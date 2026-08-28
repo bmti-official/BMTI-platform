@@ -137,7 +137,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     if (!load) return null;
     return LOAD_TO_OVEREXERT_LABEL[load] || "other";
   });
-  const [overexertOther, setOverexertOther] = useState("");
+  const [overexertOther, setOverexertOther] = useState(() => initialEntry?.overwork?.loadOther || "");
   // 수면의 질 + 잠든 시간대
   const [sleepVal, setSleepVal] = useState(() => (initialEntry?.sleep != null ? SLEEP_LABELS[initialEntry.sleep] : null));
   const [sleepTime, setSleepTime] = useState(() => initialEntry?.sleepTime ?? null);
@@ -352,8 +352,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 여기서 리포트 엔진이 기대하는 형태로 변환해 onFinish로 같이 넘긴다.
   const buildEntryExtra = () => {
     const sleep = SLEEP_OPTS.findIndex(o => o.label === sleepVal);
+    // '기타'로 무리한 경우, 직접 적은 내용(직업 등)을 loadOther에 함께 남긴다.
+    // 이게 없으면 미리보기 문장에서 무엇 때문에 무리했는지 되살릴 수 없다.
+    const loadKey = OVEREXERT_LOAD_KEY[overexertPick] || "etc";
+    const loadOther = overexertPick === "other" ? overexertOther.trim() : "";
     const overwork = overexertVal === "yes"
-      ? { yes: true, loads: [OVEREXERT_LOAD_KEY[overexertPick] || "etc"] }
+      ? { yes: true, loads: [loadKey], ...(loadKey === "etc" && loadOther ? { loadOther } : {}) }
       : overexertVal === "no" ? { yes: false, loads: [] } : null;
     const exercise = exerciseDidIt === "yes"
       ? { did: true, types: exerciseTypes.map(t => EXERCISE_TYPE_KEY[t] || t).slice(0, 2) }

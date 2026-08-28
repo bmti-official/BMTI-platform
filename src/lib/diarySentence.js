@@ -14,7 +14,13 @@ const josa = (w, withB, withoutB) => (hasBatchim(String(w || "")) ? withB : with
 const eulReul = (w) => josa(w, "을", "를");
 const iGa = (w) => josa(w, "이", "가");
 const waGwa = (w) => josa(w, "과", "와");
-const euRo = (w) => josa(w, "으로", "로");
+// '로/으로'만 예외 — 받침이 없거나 'ㄹ'이면 '로'를 쓴다. (간호사 일 → 일로)
+const jongseong = (w) => {
+  const c = String(w || "").trim().slice(-1).charCodeAt(0);
+  if (Number.isNaN(c) || c < 0xac00 || c > 0xd7a3) return -1;   // 한글이 아니면 판단하지 않음
+  return (c - 0xac00) % 28;
+};
+const euRo = (w) => { const j = jongseong(w); return (j === 0 || j === 8) ? "로" : (j === -1 ? "로" : "으로"); };
 
 // ── 말 바꾸기 ─────────────────────────────────────────────────
 // '푹 잤어요' → '푹 잤고' 처럼 뒤 문장으로 이어지게 어미를 바꾼다.
@@ -82,7 +88,7 @@ export function buildDiaryParagraphs(entry) {
       segs.push({ t: "그리고 " });
       loads.forEach((l, i) => {
         if (l === "etc") {
-          const w = String(e.overwork.etcText || e.overwork.other || "").trim();
+          const w = String(e.overwork.loadOther || "").trim();
           if (w) { segs.push({ hi: w + euRo(w) }); } else { segs.push({ hi: "이런저런 일로" }); }
         } else {
           icons.push({ kind: "svg", name: LOAD_ICON[l] || "warn" });

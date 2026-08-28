@@ -9,7 +9,7 @@ import {
   getDiaryHistory, getEntryForDate, todayISO, saveDiaryEntry,
   isDayWritable, isEntryLocked,
 } from "../lib/diaryHistory";
-import { KEY_TO_PART_LABEL, KEY_TO_EXERCISE_TYPE_LABEL, REASON_TO_EXERCISE_LABEL, SLEEP_LABELS, SLEEP_ICON, TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
+import { TAG_LABEL_TO_ICON } from "../lib/diaryEntryLabels";
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getRecordMessage } from "../lib/recordMessage";
 import { buildDiaryParagraphs } from "../lib/diarySentence";
@@ -162,16 +162,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const continueToFullForm = () => { saveDiaryEntry(todayStr, poppedMood); setShowMoodPopup(false); const v = poppedMood; setPoppedMood(null); onPickMood && onPickMood(v); };
 
   // 그날 기록 요약 — 저장된 key를 다시 사람이 읽을 라벨로 되돌린다.
-  const buildEntrySummary = (entry) => {
-    const items = [];
-    if (entry.sleep != null) items.push({ icon: SLEEP_ICON[entry.sleep], text: `어제 잠은 '${SLEEP_LABELS[entry.sleep]}'` });
-    if (entry.overwork?.yes) items.push({ icon: "warn", text: "평소보다 무리했어요" });
-    if (entry.exercise?.did === true) { const types = (entry.exercise.types || []).map(x => KEY_TO_EXERCISE_TYPE_LABEL[x] || x).join(", "); items.push({ icon: "walk", text: `운동: ${types}` }); }
-    else if (entry.exercise?.did === false) items.push({ icon: "sofa", text: `운동 안 함 · ${REASON_TO_EXERCISE_LABEL[entry.exercise.reason] || entry.exercise.reason}` });
-    if (entry.soreness?.length) { const parts = entry.soreness.map(s => (s.part === "etc" && s.partOther ? s.partOther : (KEY_TO_PART_LABEL[s.part] || s.part))).join(", "); items.push({ icon: "bandage", text: `불편함: ${parts}` }); }
-    if (entry.note?.text) items.push({ icon: "editPencil", text: entry.note.text });
-    return items;
-  };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "#FFFFFF", fontFamily: "'Pretendard',-apple-system,sans-serif", color: C.ink }}>
@@ -193,7 +183,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                   onToday={() => setShowMoodPopup(true)} onFuture={showFutureToast} calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={openKakaoChannelChat} />
               ))
             : weeks.map(w => (
-                <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} buildEntrySummary={buildEntrySummary} onEditDay={onEditDay}
+                <WeekSection key={toISO(w)} weekStart={w} isCurrent={w.getTime() === startOfWeek(today).getTime()} todayStr={todayStr} today={today} history={history} t={t} isM={isM} onEditDay={onEditDay}
                   calView={view} onHelp={() => setShowHelp(true)} onToggleView={() => setView(view === "month" ? "week" : "month")} onFeedback={openKakaoChannelChat} />
               ))}
           {loading === "bottom" && <CalLoader />}
@@ -290,7 +280,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         return (
           <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
             {/* 그림일기 — 왼쪽 위 말랑이, 오른쪽 위 날짜·태그, 아래로 줄노트 문단 */}
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#FFFDF7", border: `1px solid ${C.yellowLine}`, borderRadius: 20, position: "relative", maxHeight: "min(660px, calc(100vh - 150px))", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#FFFFFF", border: `1px solid ${C.yellowLine}`, borderRadius: 20, position: "relative", maxHeight: "min(660px, calc(100vh - 150px))", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
               <button onClick={() => setPreviewDay(null)} aria-label="닫기"
                 style={{ position: "absolute", top: 9, right: 9, zIndex: 3, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", color: C.sub, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>✕</button>
 
@@ -504,7 +494,7 @@ function MonthSection({ monthDate, isCurrent, todayStr, today, history, t, isM, 
 }
 
 // ── 주간 섹션 — 오늘의 주만 좌우 전체 노랑, 나머진 흰색 ──
-function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, buildEntrySummary, onEditDay, calView, onHelp, onToggleView, onFeedback }) {
+function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, onEditDay, calView, onHelp, onToggleView, onFeedback }) {
   const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(weekStart); x.setDate(x.getDate() + i); return x; });
   const end = days[6];
   const title = weekStart.getMonth() === end.getMonth()
@@ -532,7 +522,7 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
             return (
               <WeekDayRow
                 key={i} date={d} dow={d.getDay()} entry={entry} isToday={isToday} today={today}
-                writable={writable} locked={locked} items={entry ? buildEntrySummary(entry) : []} t={t}
+                writable={writable} locked={locked} t={t}
                 onEdit={() => onEditDay && onEditDay(dateStr, entry || null)}
               />
             );
@@ -550,14 +540,16 @@ function WeekSection({ weekStart, isCurrent, todayStr, today, history, t, isM, b
 }
 
 // ── 주간 하루 카드 (아코디언) — 클릭하면 그날 선택 기록들이 펼쳐진다 ──
-function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items, t, onEdit }) {
+function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, t, onEdit }) {
+  // 월간 미리보기와 같은 문장 박스를 쓴다.
+  const paras = entry ? buildDiaryParagraphs(entry) : [];
   const [open, setOpen] = useState(false);
   const future = date > today;
   const dayColor = weekdayColor(dow) || C.ink;
   const moodLabel = entry ? (MOODS.find(m => m.v === entry.mood)?.label) : null;
   const tags = (entry?.tags || []).filter(tg => TAG_LABEL_TO_ICON[tg]);
-  const hasDetails = !!entry && (items.length > 0 || tags.length > 0);
-  const BODY_H = 250; // 아코디언 바디 고정 높이 — 요약 박스가 이 안에서 스크롤
+  const hasDetails = !!entry && (paras.length > 0 || tags.length > 0);
+  const BODY_H = 300; // 아코디언 바디 고정 높이 — 문장 박스가 이 안에서 스크롤
   const onHeaderClick = () => {
     if (hasDetails) setOpen(o => !o);
     else if ((entry && !locked) || (!entry && writable)) onEdit();
@@ -581,7 +573,7 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
           {entry ? (
             <>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{moodLabel}</div>
-              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, marginTop: 3 }}>{hasDetails ? `${items.length > 0 ? `기록 ${items.length}가지` : `태그 ${tags.length}개`} · 눌러서 보기` : "기분만 짧게 남긴 날이에요"}</div>
+              <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, marginTop: 3 }}>{hasDetails ? `${paras.length > 0 ? `기록 ${paras.length}줄` : `태그 ${tags.length}개`} · 눌러서 보기` : "기분만 짧게 남긴 날이에요"}</div>
             </>
           ) : (
             <div style={{ fontSize: 12.5, color: writable ? t.accentDeep : C.sub, fontWeight: 700 }}>
@@ -611,13 +603,23 @@ function WeekDayRow({ date, dow, entry, isToday, today, writable, locked, items,
                 </div>
               </div>
             )}
-            {/* 나머지(기록 요약) 박스 — 남은 공간에서 스크롤 */}
-            {items.length > 0 ? (
-              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "2px 13px", boxShadow: YELLOW_SHADOW }}>
-                {items.map((it, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: i > 0 ? `1px solid ${C.yellowLine}` : "none" }}>
-                    <div style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={it.icon} size={20} /></div>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, lineHeight: 1.45, flex: 1, textAlign: "left" }}>{it.text}</span>
+            {/* 문장 박스 세 개 — 월간 미리보기와 같은 모양. 남은 공간에서 스크롤 */}
+            {paras.length > 0 ? (
+              <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+                {paras.map((para, i) => (
+                  <div key={i} style={{ background: "#fff", border: `1px solid ${C.yellowLine}`, borderRadius: 14, padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start", boxShadow: YELLOW_SHADOW }}>
+                    <span style={{ flexShrink: 0, display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 88 }}>
+                      {para.icons.map((ic, k) => ic.kind === "chip" ? (
+                        <span key={k} style={{ background: "#FCF3D6", borderRadius: 8, padding: "2px 6px", fontSize: 10, fontWeight: 800, color: "#8A6A3A", whiteSpace: "nowrap" }}>{ic.label}</span>
+                      ) : (
+                        <DiaryIcon key={k} name={ic.name} size={20} />
+                      ))}
+                    </span>
+                    <p style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 12.5, fontWeight: 600, color: C.ink, lineHeight: 1.7, wordBreak: "keep-all" }}>
+                      {para.segs.map((sg, k) => sg.hi
+                        ? <b key={k} style={{ color: "#8B7BD8", fontWeight: 800 }}>{sg.hi}</b>
+                        : <span key={k}>{sg.t}</span>)}
+                    </p>
                   </div>
                 ))}
               </div>
