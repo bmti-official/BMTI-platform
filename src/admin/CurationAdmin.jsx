@@ -6,6 +6,9 @@ import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './th
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
+import QuickCardView from '../features/curation/QuickCardView';
+import { FONTS } from '../features/curation/fonts';
+import { CHARACTERS } from '../data';
 
 // 부위 선택지 — 다이어리에서 쓰는 부위 코드를 그대로 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
@@ -15,10 +18,23 @@ const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: 
 const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', body_z: '', body_m: '', cover_url: '',
+  thumb_text: '', read_min: 0, font_key: 'pretendard',
+  lead_z: '', lead_m: '',
+  s1_img: '', s1_z: '', s1_m: '', s2_img: '', s2_z: '', s2_m: '',
+  s3_img: '', s3_z: '', s3_m: '', s4_img: '', s4_z: '', s4_m: '',
+  card_ids: [],
   body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
 
-function Editor({ row, onSaved, onCancel, onPreview }) {
+// 본문 네 마디 — 기획한 순서 그대로.
+const PARTS_OF_ARTICLE = [
+  { n: 1, label: '문제제기 · 편견의 원인' },
+  { n: 2, label: '과학적 분석' },
+  { n: 3, label: '분석의 의미' },
+  { n: 4, label: '유명인의 사례 · 결론' },
+];
+
+function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
   const [f, setF] = useState(row || EMPTY);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -28,7 +44,7 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
     setSaving(true); setErr('');
     const payload = { ...f, updated_at: new Date().toISOString() };
-    delete payload.view_count; delete payload.save_count; delete payload.created_at;
+    ['view_count', 'save_count', 'created_at'].forEach((k) => delete payload[k]);
     const q = f.id
       ? supabase.from('curation_items').update(payload).eq('id', f.id)
       : supabase.from('curation_items').insert(payload);
@@ -65,9 +81,73 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
         </div>
       </div>
 
-      <div style={{ marginBottom: 14 }}>
-        <span style={label}>대표 이미지 주소</span>
-        <input style={input} value={f.cover_url || ''} onChange={(e) => set('cover_url')(e.target.value)} placeholder="https://..." />
+      {/* 썸네일 — 문구는 Z/M을 나누지 않고 하나만 쓴다 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 10 }}>썸네일</div>
+        <div style={{ marginBottom: 12 }}>
+          <span style={label}>이미지 주소 <span style={{ fontWeight: 600 }}>— 가로로 꽉 차게 들어갑니다(16:9 권장)</span></span>
+          <input style={input} value={f.cover_url || ''} onChange={(e) => set('cover_url')(e.target.value)} placeholder="https://..." />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 190px', gap: 12 }}>
+          <div>
+            <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
+            <input style={input} value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)} placeholder="목이 굳는 진짜 이유" />
+          </div>
+          <div>
+            <span style={label}>가독시간(분) <span style={{ fontWeight: 600 }}>— 0이면 자동</span></span>
+            <input style={input} type="number" value={f.read_min || 0} onChange={(e) => set('read_min')(Number(e.target.value) || 0)} />
+          </div>
+          <div>
+            <span style={label}>글씨체</span>
+            <select value={f.font_key || 'pretendard'} onChange={(e) => set('font_key')(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+              {FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* 본문 — 초록 + 네 마디 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>본문</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>초록은 글 첫머리에 크게 놓입니다 — 전체를 관통하는 한두 문장으로</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div>
+            <span style={label}>초록 · Z 유형</span>
+            <textarea style={{ ...area, minHeight: 72 }} value={f.lead_z || ''} onChange={(e) => set('lead_z')(e.target.value)} />
+          </div>
+          <div>
+            <span style={label}>초록 · M 유형</span>
+            <textarea style={{ ...area, minHeight: 72 }} value={f.lead_m || ''} onChange={(e) => set('lead_m')(e.target.value)} />
+          </div>
+        </div>
+        {PARTS_OF_ARTICLE.map((sec) => (
+          <div key={sec.n} style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, marginBottom: 8 }}>{sec.n}. {sec.label}</div>
+            <input style={{ ...input, marginBottom: 10 }} value={f[`s${sec.n}_img`] || ''}
+              onChange={(e) => set(`s${sec.n}_img`)(e.target.value)} placeholder="이미지 주소 (선택)" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <textarea style={{ ...area, minHeight: 96 }} placeholder="Z 유형 본문"
+                value={f[`s${sec.n}_z`] || ''} onChange={(e) => set(`s${sec.n}_z`)(e.target.value)} />
+              <textarea style={{ ...area, minHeight: 96 }} placeholder="M 유형 본문"
+                value={f[`s${sec.n}_m`] || ''} onChange={(e) => set(`s${sec.n}_m`)(e.target.value)} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 추천 바로카드 3~4장 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <span style={label}>추천 바로카드 <span style={{ fontWeight: 600 }}>— 글 끝에 붙습니다. 3~4장 권장</span></span>
+        {allCards.length === 0
+          ? <div style={{ fontSize: 12.5, color: SUB }}>등록된 바로카드가 없습니다. ⚡ 바로카드에서 먼저 만들어 주세요.</div>
+          : (
+            <PillPicker
+              options={allCards.map((c) => ({ key: String(c.id), label: c.title_z }))}
+              value={(f.card_ids || []).map(String)}
+              onChange={(v) => set('card_ids')(v.map(Number))}
+              max={4}
+            />
+          )}
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -119,6 +199,7 @@ export default function CurationAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null); // null=안 열림, {}=새로, {…}=수정
   const [preview, setPreview] = useState(null);
+  const [allCards, setAllCards] = useState([]);
 
   // 목록 읽기 — tick을 올리면 다시 읽는다.
   // 결과 처리를 .then 안에서 해야 effect 본문에서 동기로 setState 하지 않게 되고,
@@ -128,14 +209,15 @@ export default function CurationAdmin() {
 
   useEffect(() => {
     let alive = true;
-    supabase.from('curation_items')
-      .select('*').order('sort_order', { ascending: true }).order('id', { ascending: false })
-      .then(({ data, error }) => {
-        if (!alive) return;
-        setLoading(false);
-        if (error) { setErr(error.message); return; }
-        setErr(''); setRows(data || []);
-      });
+    (async () => {
+      const a = await supabase.from('curation_items')
+        .select('*').order('sort_order', { ascending: true }).order('id', { ascending: false });
+      const b = await supabase.from('quick_cards').select('*').order('sort_order', { ascending: true });
+      if (!alive) return;
+      setLoading(false);
+      if (a.error) { setErr(a.error.message); return; }
+      setErr(''); setRows(a.data || []); setAllCards(b.data || []);
+    })();
     return () => { alive = false; };
   }, [tick]);
 
@@ -171,24 +253,29 @@ export default function CurationAdmin() {
       )}
 
       {editing && (
-        <Editor row={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }}
+        <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }}
           onPreview={(draft) => setPreview(draft)} />
       )}
 
       {preview && (
         <PreviewModal title="큐레이션 미리보기" onClose={() => setPreview(null)}>
-          {(tone) => (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-              <div>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
-                <CurationCard item={preview} tone={tone} />
+          {(tone) => {
+            const picked = (preview.card_ids || []).map((id) => allCards.find((c) => c.id === id)).filter(Boolean);
+            const charImage = CHARACTERS.find((c) => c.id === (preview.body_groups?.length ? 'OLQM' : 'OLQM'))?.image;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
+                  <CurationCard item={preview} tone={tone} charImage={charImage} />
+                </div>
+                <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
+                  <CurationDetail item={preview} tone={tone} cards={picked}
+                    renderCard={(c) => <QuickCardView card={c} tone={tone} />} />
+                </div>
               </div>
-              <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
-                <CurationDetail item={preview} tone={tone} />
-              </div>
-            </div>
-          )}
+            );
+          }}
         </PreviewModal>
       )}
 

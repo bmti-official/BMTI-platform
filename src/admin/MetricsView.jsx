@@ -50,21 +50,25 @@ export default function MetricsView() {
   const [evErr, setEvErr] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadedAt, setLoadedAt] = useState(0);   // 리텐션 계산 기준 시각
+  const [staffIds, setStaffIds] = useState(new Set());
   const [month, setMonth] = useState(monthKey(new Date().toISOString()));
 
   useEffect(() => {
     let alive = true;
     (async () => {
       const d = await supabase.from('diary_entries').select('user_id,date,soreness');
-      const u = await supabase.from('users').select('id,bmti_type,created_at');
+      const u = await supabase.from('users').select('id,bmti_type,created_at,nickname');
       const e = await supabase.from('app_events').select('anon_id,user_id,name,meta,created_at')
         .order('created_at', { ascending: false }).limit(5000);
       if (!alive) return;
       setLoading(false);
       setLoadedAt(Date.now());
-      setDiary(d.data || []);
-      setUsers(u.data || []);
-      if (e.error) setEvErr(e.error.message); else setEvents(e.data || []);
+      // 닉네임이 '관리자'인 계정은 우리 쪽 시험 기록이라 지표에서 뺀다.
+      const staff = new Set((u.data || []).filter((x) => String(x.nickname || '').trim() === '관리자').map((x) => x.id));
+      setStaffIds(staff);
+      setDiary((d.data || []).filter((r) => !staff.has(r.user_id)));
+      setUsers((u.data || []).filter((x) => !staff.has(x.id)));
+      if (e.error) setEvErr(e.error.message); else setEvents((e.data || []).filter((x) => !x.user_id || !staff.has(x.user_id)));
     })();
     return () => { alive = false; };
   }, []);
@@ -275,6 +279,7 @@ export default function MetricsView() {
 
       <p style={{ fontSize: 11.5, color: SUB, lineHeight: 1.7, margin: 0 }}>
         회원 {users.length}명 · 다이어리 기록 {diary.length}건 · 행동 기록 {events.length}건(최근 5,000건)
+        {staffIds.size > 0 && ` · 닉네임 '관리자' 계정 ${staffIds.size}개는 지표에서 제외했습니다`}
       </p>
     </div>
   );

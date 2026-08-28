@@ -1420,23 +1420,18 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
         </div>
       ) : (
         <>
-          {s.summary && (
-            distribution?.items
-              ? (
-                /* 기분 달력 — 왼쪽에 요약 문구와 어워즈 한 줄, 오른쪽에 시상대 */
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, margin: "0 0 16px" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: 0 }}>{s.summary}</p>
-                    {distribution.top != null && (
-                      <p style={{ fontSize: 13, fontWeight: 700, color: C.sub, lineHeight: 1.5, margin: "6px 0 0", wordBreak: "keep-all" }}>
-                        이번 달은 <b style={{ color: C.ink, fontWeight: 800 }}>‘{MOOD[distribution.top]} 말랑이’</b>가 가장 많이 찾아왔네요!
-                      </p>
-                    )}
-                  </div>
-                  <MiniPodium items={distribution.items} />
-                </div>
-              )
-              : <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>
+          {distribution?.items ? (
+            /* 기분 달력 — 시상대를 크게 올리고, 그 아래에 어워즈 한 줄 */
+            <div style={{ margin: "0 0 16px" }}>
+              <MiniPodium items={distribution.items} />
+              {distribution.top != null && (
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "12px 0 0", textAlign: "center", wordBreak: "keep-all" }}>
+                  이번 달은 <b style={{ color: C.ink, fontWeight: 800 }}>‘{MOOD[distribution.top]} 말랑이’</b>가 가장 많이 찾아왔네요!
+                </p>
+              )}
+            </div>
+          ) : (
+            s.summary && <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>
           )}
           {s.alert && (
             <div style={{ display: "flex", gap: 8, background: "#FDEEEE", border: "1px solid #F3CFCF", borderRadius: 12, padding: "11px 13px", marginBottom: 16 }}>
@@ -1534,24 +1529,24 @@ function MoodCalendar({ data }) {
 }
 
 // 기분 달력 옆에 세우는 작은 시상대 — 이번 달 가장 많이 찾아온 기분을 1~5등까지.
-const MINI_BAR = { 1: { h: 38, bar: "#F4C542", medal: "🥇" }, 2: { h: 28, bar: "#C7CDD6", medal: "🥈" }, 3: { h: 21, bar: "#D9A066", medal: "🥉" } };
+const MINI_BAR = { 1: { h: 62, bar: "#F4C542", medal: "🥇" }, 2: { h: 46, bar: "#C7CDD6", medal: "🥈" }, 3: { h: 34, bar: "#D9A066", medal: "🥉" } };
 function MiniPodium({ items }) {
   const ranked = [...(items || [])].filter((i) => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
   if (ranked.length < 2) return null;
   // 시상대처럼 2·1·3 순으로 세우고, 4·5는 그 오른쪽에 낮게 붙인다.
   const order = [2, 1, 3, 4, 5].filter((r) => r <= ranked.length);
   return (
-    <span style={{ display: "flex", alignItems: "flex-end", gap: 4, flexShrink: 0 }} title="이번 달 말랑이 어워즈">
+    <span style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 6 }} title="이번 달 말랑이 어워즈">
       {order.map((rank) => {
         const it = ranked[rank - 1];
         const st = MINI_BAR[rank] || { h: 14, bar: "#E4DED0", medal: null };
         return (
           <span key={rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <Mallang v={it.mood} size={rank === 1 ? 30 : 24} noBlink />
-            <span style={{ fontSize: 8.5, fontWeight: 800, color: C.sub, lineHeight: 1 }}>{it.count}번</span>
-            <span style={{ width: rank === 1 ? 30 : 25, height: st.h, borderRadius: "4px 4px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
+            <Mallang v={it.mood} size={rank === 1 ? 52 : 40} noBlink />
+            <span style={{ fontSize: 11, fontWeight: 800, color: C.sub, lineHeight: 1 }}>{it.count}번</span>
+            <span style={{ width: rank === 1 ? 52 : 42, height: st.h, borderRadius: "4px 4px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
               display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)" }}>
-              <span style={{ fontSize: st.medal ? 12 : 10, fontWeight: 800, color: "#6B5B3A", lineHeight: 1 }}>{st.medal || rank}</span>
+              <span style={{ fontSize: st.medal ? 19 : 14, fontWeight: 800, color: "#6B5B3A", lineHeight: 1 }}>{st.medal || rank}</span>
             </span>
           </span>
         );
