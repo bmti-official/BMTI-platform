@@ -6,6 +6,8 @@ import { GROUP_LABEL, groupsOfPart } from '../lib/bodyGroups';
 
 // 📈 지표 — 다이어리 기록(지금 바로 되는 것)과 행동 기록(app_events)을 함께 본다.
 const GOLD = '#9C6F26';
+// 관리자 칭호 — 앱 곳곳에서 닉네임이 정확히 'BMTI'인 계정을 관리자로 본다.
+const ADMIN_NICKNAME = 'BMTI';
 const monthKey = (d) => String(d).slice(0, 7);
 const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
 
@@ -63,8 +65,9 @@ export default function MetricsView() {
       if (!alive) return;
       setLoading(false);
       setLoadedAt(Date.now());
-      // 닉네임이 '관리자'인 계정은 우리 쪽 시험 기록이라 지표에서 뺀다.
-      const staff = new Set((u.data || []).filter((x) => String(x.nickname || '').trim() === '관리자').map((x) => x.id));
+      // 관리자 칭호를 받은 계정(닉네임이 정확히 'BMTI')은 우리 쪽 시험 기록이라 지표에서 뺀다.
+      // 앱의 관리자 판별(Navbar·MyPageView·DiaryWriteFlow)과 같은 기준을 쓴다.
+      const staff = new Set((u.data || []).filter((x) => String(x.nickname || '').trim() === ADMIN_NICKNAME).map((x) => x.id));
       setStaffIds(staff);
       setDiary((d.data || []).filter((r) => !staff.has(r.user_id)));
       setUsers((u.data || []).filter((x) => !staff.has(x.id)));
@@ -279,7 +282,7 @@ export default function MetricsView() {
 
       <p style={{ fontSize: 11.5, color: SUB, lineHeight: 1.7, margin: 0 }}>
         회원 {users.length}명 · 다이어리 기록 {diary.length}건 · 행동 기록 {events.length}건(최근 5,000건)
-        {staffIds.size > 0 && ` · 닉네임 '관리자' 계정 ${staffIds.size}개는 지표에서 제외했습니다`}
+        {staffIds.size > 0 && ` · 관리자 계정 ${staffIds.size}개(닉네임 '${ADMIN_NICKNAME}')는 지표에서 제외했습니다`}
       </p>
     </div>
   );

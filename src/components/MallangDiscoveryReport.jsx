@@ -1420,18 +1420,24 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
         </div>
       ) : (
         <>
+          {s.id === "sore_map" && (
+            <p style={{ fontSize: 13.5, fontWeight: 700, color: C.sub, margin: "0 0 14px" }}>
+              불편한 부위를 <b style={{ color: "#8B7BD8", fontWeight: 800 }}>눌러 보세요</b>
+            </p>
+          )}
           {distribution?.items ? (
             /* 기분 달력 — 시상대를 크게 올리고, 그 아래에 어워즈 한 줄 */
             <div style={{ margin: "0 0 16px" }}>
               <MiniPodium items={distribution.items} />
               {distribution.top != null && (
                 <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "12px 0 0", textAlign: "center", wordBreak: "keep-all" }}>
-                  이번 달은 <b style={{ color: C.ink, fontWeight: 800 }}>‘{MOOD[distribution.top]} 말랑이’</b>가 가장 많이 찾아왔네요!
+                  이번 달은 <b style={{ color: "#8B7BD8", fontWeight: 800 }}>‘{MOOD[distribution.top]} 말랑이’</b>가 가장 많이 찾아왔네요!
                 </p>
               )}
             </div>
           ) : (
-            s.summary && <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>
+            s.id !== "sore_map" && s.summary &&
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px" }}>{s.summary}</p>
           )}
           {s.alert && (
             <div style={{ display: "flex", gap: 8, background: "#FDEEEE", border: "1px solid #F3CFCF", borderRadius: 12, padding: "11px 13px", marginBottom: 16 }}>
@@ -1440,6 +1446,16 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
             </div>
           )}
           <SectionBody id={s.id} data={s.data} gender={gender} entries={entries} topMood={topMood} moments={moments} pdfMode={pdfMode} />
+          {/* 바디 스캔 요약은 그림 아래에 둔다 — 부위·횟수·평균을 연보라로 짚는다 */}
+          {s.id === "sore_map" && s.data?.parts?.[0] && (() => {
+            const top = s.data.parts[0];
+            const hi = (v) => <b style={{ color: "#8B7BD8", fontWeight: 800 }}>{v}</b>;
+            return (
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.6, margin: "16px 0 0", wordBreak: "keep-all" }}>
+                {hi(top.label)}{hasBatchimKo(top.label) ? "을" : "를"} {hi(`${top.count}번`)} 짚어주셨어요. 평균 {hi(top.avgLevel.toFixed(1))}이었어요.
+              </p>
+            );
+          })()}
         </>
       )}
     </div>
@@ -1542,7 +1558,12 @@ function MiniPodium({ items }) {
         const st = MINI_BAR[rank] || { h: 14, bar: "#E4DED0", medal: null };
         return (
           <span key={rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            {/* 1등에게만 왕관 — 자리는 늘 확보해 두 줄이 어긋나지 않게 한다 */}
+            <span style={{ height: 17, display: "flex", alignItems: "flex-end", fontSize: 15, lineHeight: 1 }}>
+              {rank === 1 ? <span style={{ animation: "crownBob 2s ease-in-out infinite" }}>👑</span> : null}
+            </span>
             <Mallang v={it.mood} size={rank === 1 ? 52 : 40} noBlink />
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: C.ink, lineHeight: 1.2, textAlign: "center", wordBreak: "keep-all", maxWidth: rank === 1 ? 58 : 46 }}>{it.label}</span>
             <span style={{ fontSize: 11, fontWeight: 800, color: C.sub, lineHeight: 1 }}>{it.count}번</span>
             <span style={{ width: rank === 1 ? 52 : 42, height: st.h, borderRadius: "4px 4px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
               display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)" }}>
@@ -1551,12 +1572,19 @@ function MiniPodium({ items }) {
           </span>
         );
       })}
+      <style>{`@keyframes crownBob { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-2px) rotate(6deg); } }`}</style>
     </span>
   );
 }
 
 // ── 뻐근 지도: 3D 캐릭터 앞(좌)·뒤(우) 위에 불편한 부위마다 빨간 점을 찍는다 ──
 // 엔진 부위 키 → {v: 앞/뒤, x, y}(정규화 이미지 기준 중심 %). BodySelector3D의 히트존과 좌표를 맞춘다.
+// 받침이 있으면 '을', 없으면 '를'
+const hasBatchimKo = (w) => {
+  const c = String(w || "").trim().slice(-1).charCodeAt(0);
+  return c >= 0xac00 && c <= 0xd7a3 ? (c - 0xac00) % 28 !== 0 : true;
+};
+
 // 불편 부위 키/라벨 — '기타'는 직접 적은 이름별로 나눠 센다(부위 지도와 같은 규칙).
 // 예: { part: 'etc', partOther: '엉덩이' } → 키 'etc:엉덩이', 라벨 '기타(엉덩이)'
 const sorePartKey = (s) => {
