@@ -34,17 +34,23 @@ export function CurationThumb({ item, radius = 14, big = false }) {
 }
 
 // 목록 카드
-export default function CurationCard({ item, tone = 'z', charImage, onOpen }) {
+export default function CurationCard({ item, tone = 'z', charImage, charImages, onOpen }) {
   const { title } = pickCurationTone(item, tone);
+  // 누끼 캐릭터는 최대 4개까지 — 여러 개면 조금씩 겹쳐 세운다.
+  const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
   return (
     <button onClick={() => onOpen && onOpen(item)}
       style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: fontStack(item.font_key) }}>
       <CurationThumb item={item} />
       <div style={{ display: 'flex', gap: 10, padding: '11px 2px 0' }}>
-        {/* 유형 누끼 캐릭터 — 동그란 테두리 없이 그림만 */}
-        <span style={{ width: 38, height: 38, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {charImage && <img src={charImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-        </span>
+        {/* 유형 누끼 캐릭터 — 동그란 테두리 없이 그림만, 여러 개면 겹쳐서 */}
+        {chars.length > 0 && (
+          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            {chars.map((src, i) => (
+              <img key={i} src={src} alt="" style={{ width: 38, height: 38, objectFit: 'contain', marginLeft: i ? -12 : 0 }} />
+            ))}
+          </span>
+        )}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 800, color: INK, lineHeight: 1.4, wordBreak: 'keep-all' }}>{title}</span>
           <span style={{ display: 'block', fontSize: 12, color: SUB, fontWeight: 600, marginTop: 5 }}>

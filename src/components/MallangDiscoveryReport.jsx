@@ -1390,15 +1390,18 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
   const Icon = SECTION_ICON[s.id];
   const t = getTypeAccent();
   const hasExample = !s.unlocked && exampleSection?.data;
+  const showPodium = s.unlocked && !!distribution?.items;
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 22px", boxShadow: CARD_SHADOW, border: `1px solid ${s.unlocked ? "#F1EEE8" : "#F3F1EC"}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: s.unlocked ? t.accentSoft : "#F3F1EC", color: s.unlocked ? t.accentDeep : "#C0BBB1" }}>
-          {Icon && <Icon size={18} />}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ position: showPodium ? "absolute" : "static", left: 0, top: 0, display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap", zIndex: 1 }}>
+          <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: s.unlocked ? t.accentSoft : "#F3F1EC", color: s.unlocked ? t.accentDeep : "#C0BBB1" }}>
+            {Icon && <Icon size={18} />}
+          </span>
+          <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: s.unlocked ? C.ink : "#B7B2A9", whiteSpace: "nowrap", flexShrink: 0 }}>{s.title}</span>
         </span>
-        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: s.unlocked ? C.ink : "#B7B2A9", whiteSpace: "nowrap", flexShrink: 0 }}>{s.title}</span>
-        {s.unlocked && distribution?.items && (
-          <span style={{ marginLeft: "auto" }}><MiniPodium items={distribution.items} /></span>
+        {showPodium && (
+          <span style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}><MiniPodium items={distribution.items} /></span>
         )}
         {!s.unlocked && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
@@ -1430,7 +1433,7 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
           )}
           {distribution?.items ? (
             distribution.top != null && (
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px", wordBreak: "keep-all" }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#3F3A31", lineHeight: 1.55, margin: "0 0 16px", textAlign: "right", wordBreak: "keep-all" }}>
                 이번 달은 <b style={{ color: "#8B7BD8", fontWeight: 800 }}>‘{MOOD[distribution.top]} 말랑이’</b>가 가장 많이 찾아왔네요!
               </p>
             )
@@ -1534,37 +1537,34 @@ function MoodCalendar({ data }) {
 }
 
 // 기분 달력 옆에 세우는 작은 시상대 — 이번 달 가장 많이 찾아온 기분을 1~5등까지.
-const MINI_BAR = {
-  1: { h: 46, w: 46, bar: "#F4C542", medal: "🥇" },
-  2: { h: 34, w: 40, bar: "#C7CDD6", medal: "🥈" },
-  3: { h: 25, w: 40, bar: "#D9A066", medal: "🥉" },
+// 시상대 없이 말랑이 크기만으로 순위를 보여준다.
+// 가운데가 1등, 그 왼쪽이 2등, 오른쪽이 3등, 맨 왼쪽이 4등, 맨 오른쪽이 5등.
+const MINI_RANK = {
+  1: { size: 54, font: 10 },
+  2: { size: 42, font: 9.5 },
+  3: { size: 38, font: 9.5 },
+  4: { size: 28, font: 8 },
+  5: { size: 25, font: 8 },
 };
-const MINI_REST = { h: 13, w: 24, bar: "#E4DED0", medal: null };   // 4·5등은 작게
+
 function MiniPodium({ items }) {
   const ranked = [...(items || [])].filter((i) => i.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
   if (ranked.length < 2) return null;
-  // 시상대처럼 2·1·3 순으로 세우고, 4·5는 그 오른쪽에 낮게 붙인다.
-  // 4·5등을 은메달 왼쪽에 작게 세운다 → 5 4 2 1 3
-  const order = [5, 4, 2, 1, 3].filter((r) => r <= ranked.length);
+  const order = [4, 2, 1, 3, 5].filter((r) => r <= ranked.length);
   return (
-    <span style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 3 }} title="이번 달 말랑이 어워즈">
+    <span style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 6 }} title="이번 달 말랑이 어워즈">
       {order.map((rank) => {
         const it = ranked[rank - 1];
-        const st = MINI_BAR[rank] || MINI_REST;
-        const small = !MINI_BAR[rank];
+        const st = MINI_RANK[rank];
         return (
           <span key={rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             {/* 1등에게만 왕관 — 자리는 늘 확보해 두 줄이 어긋나지 않게 한다 */}
-            <span style={{ height: 13, display: "flex", alignItems: "flex-end", fontSize: 12, lineHeight: 1 }}>
+            <span style={{ height: 16, display: "flex", alignItems: "flex-end", fontSize: 14, lineHeight: 1 }}>
               {rank === 1 ? <span style={{ animation: "crownBob 2s ease-in-out infinite" }}>👑</span> : null}
             </span>
-            <Mallang v={it.mood} size={rank === 1 ? 38 : small ? 19 : 30} noBlink />
-            <span style={{ fontSize: small ? 7.5 : 9, fontWeight: 800, color: C.ink, lineHeight: 1.15, textAlign: "center", whiteSpace: "nowrap" }}>{it.label}</span>
-            <span style={{ fontSize: small ? 7.5 : 9, fontWeight: 800, color: C.sub, lineHeight: 1 }}>{it.count}번</span>
-            <span style={{ width: st.w, height: st.h, borderRadius: "4px 4px 0 0", background: `linear-gradient(180deg, ${st.bar}, ${st.bar}CC)`,
-              display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)" }}>
-              <span style={{ fontSize: st.medal ? 15 : 9, fontWeight: 800, color: "#6B5B3A", lineHeight: 1 }}>{st.medal || rank}</span>
-            </span>
+            <Mallang v={it.mood} size={st.size} noBlink />
+            <span style={{ fontSize: st.font, fontWeight: 800, color: C.ink, lineHeight: 1.15, textAlign: "center", whiteSpace: "nowrap" }}>{it.label}</span>
+            <span style={{ fontSize: st.font, fontWeight: 800, color: C.sub, lineHeight: 1 }}>{it.count}번</span>
           </span>
         );
       })}

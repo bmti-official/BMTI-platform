@@ -26,3 +26,17 @@ alter table public.curation_items
 alter table public.curation_items
   add column if not exists char_z text,
   add column if not exists char_m text;
+
+-- 누끼 캐릭터를 유형별로 최대 4개까지 고른다.
+-- (기존 한 개짜리 char_z / char_m 값은 그대로 옮겨 담는다)
+alter table public.curation_items
+  add column if not exists chars_z text[] not null default '{}',
+  add column if not exists chars_m text[] not null default '{}';
+
+update public.curation_items
+   set chars_z = array[char_z]
+ where char_z is not null and char_z <> '' and cardinality(chars_z) = 0;
+
+update public.curation_items
+   set chars_m = array[char_m]
+ where char_m is not null and char_m <> '' and cardinality(chars_m) = 0;

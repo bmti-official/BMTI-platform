@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 import { PART_KEY } from '../lib/diaryEntryLabels';
-import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './theme';
+import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
@@ -20,7 +20,7 @@ const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', body_z: '', body_m: '', cover_url: '',
   thumb_text: '', read_min: 0, font_key: 'pretendard',
-  char_z: '', char_m: '',
+  chars_z: [], chars_m: [],
   lead_z: '', lead_m: '',
   s1_img: '', s1_z: '', s1_m: '', s2_img: '', s2_z: '', s2_m: '',
   s3_img: '', s3_z: '', s3_m: '', s4_img: '', s4_z: '', s4_m: '',
@@ -36,8 +36,46 @@ const PARTS_OF_ARTICLE = [
   { n: 4, label: '유명인의 사례 · 결론' },
 ];
 
+// 예전에 한 개만 고르던 char_z/char_m 값을 배열 칸으로 옮겨 읽는다.
+function normalize(row) {
+  const f = { ...EMPTY, ...(row || {}) };
+  f.chars_z = Array.isArray(f.chars_z) && f.chars_z.length ? f.chars_z : (f.char_z ? [f.char_z] : []);
+  f.chars_m = Array.isArray(f.chars_m) && f.chars_m.length ? f.chars_m : (f.char_m ? [f.char_m] : []);
+  ['card_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
+  return f;
+}
+
+// 유형별 누끼 캐릭터 고르기 — Z 칸에는 Z로 끝나는 유형만, M 칸에는 M으로 끝나는 유형만 나온다.
+function CharPicker({ suffix, value, onChange, max = 4 }) {
+  const list = CHARACTERS.filter((c) => c.id.endsWith(suffix));
+  const toggle = (id) => {
+    if (value.includes(id)) return onChange(value.filter((x) => x !== id));
+    if (value.length >= max) return;
+    onChange([...value, id]);
+  };
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+      {list.map((c) => {
+        const on = value.includes(c.id);
+        const full = !on && value.length >= max;
+        return (
+          <button key={c.id} type="button" onClick={() => toggle(c.id)} disabled={full}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 2px', borderRadius: 12,
+              border: 'none', cursor: full ? 'default' : 'pointer', fontFamily: 'inherit',
+              background: on ? '#fff' : 'transparent', boxShadow: on ? `inset 0 0 0 2px ${ACCENT}` : `inset 0 0 0 1px ${LINE}`,
+              opacity: full ? 0.35 : 1 }}>
+            <img src={c.image} alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} />
+            <span style={{ fontSize: 10, fontWeight: 800, color: on ? INK : SUB }}>{c.id}</span>
+            <span style={{ fontSize: 9, color: SUB, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{CHARACTER_NAMES[c.id]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
-  const [f, setF] = useState(row || EMPTY);
+  const [f, setF] = useState(() => normalize(row));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
@@ -108,23 +146,15 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
         </div>
       </div>
 
-      {/* 목록에서 썸네일 밑에 세울 누끼 캐릭터 — Z/M 각각 */}
+      {/* 목록에서 썸네일 밑에 세울 누끼 캐릭터 — Z/M 각각 최대 4개 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>누끼 캐릭터</div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 썸네일 아래, 제목 왼쪽에 놓입니다</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {[['char_z', 'Z 유형'], ['char_m', 'M 유형']].map(([key, lb]) => (
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 썸네일 아래, 제목 왼쪽에 놓입니다 · 유형마다 최대 4개</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {[['chars_z', 'Z 유형', 'Z'], ['chars_m', 'M 유형', 'M']].map(([key, lb, suffix]) => (
             <div key={key}>
-              <span style={label}>{lb}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <span style={{ width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {f[key] && <img src={CHARACTERS.find((c) => c.id === f[key])?.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-                </span>
-                <select value={f[key] || ''} onChange={(e) => set(key)(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
-                  <option value="">지정 안 함</option>
-                  {CHARACTERS.map((c) => <option key={c.id} value={c.id}>{c.id} · {CHARACTER_NAMES[c.id]}</option>)}
-                </select>
-              </div>
+              <span style={label}>{lb} <span style={{ color: SUB, fontWeight: 700 }}>({f[key].length}/4)</span></span>
+              <CharPicker suffix={suffix} value={f[key]} onChange={set(key)} />
             </div>
           ))}
         </div>
@@ -285,13 +315,13 @@ export default function CurationAdmin() {
         <PreviewModal title="큐레이션 미리보기" onClose={() => setPreview(null)}>
           {(tone) => {
             const picked = (preview.card_ids || []).map((id) => allCards.find((c) => c.id === id)).filter(Boolean);
-            const charCode = tone === 'm' ? preview.char_m : preview.char_z;
-            const charImage = CHARACTERS.find((c) => c.id === charCode)?.image;
+            const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];
+            const charImages = charCodes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean);
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
                 <div>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
-                  <CurationCard item={preview} tone={tone} charImage={charImage} />
+                  <CurationCard item={preview} tone={tone} charImages={charImages} />
                 </div>
                 <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
