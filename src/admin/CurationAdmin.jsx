@@ -5,6 +5,7 @@ import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
+import ImageInput from './ImageInput';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { FONTS } from '../features/curation/fonts';
@@ -125,8 +126,9 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 10 }}>썸네일</div>
         <div style={{ marginBottom: 12 }}>
-          <span style={label}>이미지 주소 <span style={{ fontWeight: 600 }}>— 가로로 꽉 차게 들어갑니다(16:9 권장)</span></span>
-          <input style={input} value={f.cover_url || ''} onChange={(e) => set('cover_url')(e.target.value)} placeholder="https://..." />
+          <span style={label}>이미지 <span style={{ fontWeight: 600 }}>— 가로로 꽉 차게 들어갑니다(16:9 권장)</span></span>
+          <ImageInput value={f.cover_url} onChange={set('cover_url')}
+            hint="사진을 이 칸에 끌어다 놓거나 '사진 올리기'를 누르세요. 주소를 직접 붙여넣어도 됩니다." />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 190px', gap: 12 }}>
           <div>
@@ -177,8 +179,9 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
         {PARTS_OF_ARTICLE.map((sec) => (
           <div key={sec.n} style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
             <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, marginBottom: 8 }}>{sec.n}. {sec.label}</div>
-            <input style={{ ...input, marginBottom: 10 }} value={f[`s${sec.n}_img`] || ''}
-              onChange={(e) => set(`s${sec.n}_img`)(e.target.value)} placeholder="이미지 주소 (선택)" />
+            <div style={{ marginBottom: 10 }}>
+              <ImageInput value={f[`s${sec.n}_img`]} onChange={set(`s${sec.n}_img`)} placeholder="이미지 (선택) — 끌어다 놓거나 주소 붙여넣기" />
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <textarea style={{ ...area, minHeight: 96 }} placeholder="Z 유형 본문"
                 value={f[`s${sec.n}_z`] || ''} onChange={(e) => set(`s${sec.n}_z`)(e.target.value)} />
