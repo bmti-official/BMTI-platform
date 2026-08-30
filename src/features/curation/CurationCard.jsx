@@ -1,6 +1,7 @@
 // 손님에게 보이는 큐레이션 —
 //  목록 카드: 가로로 꽉 찬 썸네일(문구 + 우측 하단 가독시간) → 아래에 누끼 캐릭터 + 제목 → 지표 줄
 //  본문:     같은 썸네일 → 제목 → 초록 → 네 마디(이미지+글) → 추천 바로카드
+import { useRef, useState } from 'react';
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
 import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
@@ -113,6 +114,51 @@ function StatCards({ stats }) {
   );
 }
 
+// 마디에 딸린 사진 — 한 장이면 그대로, 여러 장이면 가로로 넘겨 본다.
+function SectionImages({ imgs, caps, alt }) {
+  const ref = useRef(null);
+  const [at, setAt] = useState(0);
+  if (imgs.length === 0) return null;
+
+  if (imgs.length === 1) {
+    return (
+      <figure style={{ margin: '0 0 12px' }}>
+        <img src={imgs[0]} alt={caps[0] || alt || ''} style={{ width: '100%', borderRadius: 14, display: 'block' }} />
+        {caps[0] && <figcaption style={CAP}>{caps[0]}</figcaption>}
+      </figure>
+    );
+  }
+
+  const onScroll = (e) => {
+    const el = e.currentTarget;
+    const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+    if (i !== at) setAt(Math.min(imgs.length - 1, Math.max(0, i)));
+  };
+
+  return (
+    <figure style={{ margin: '0 0 12px' }}>
+      <div ref={ref} onScroll={onScroll} className="cur-hscroll"
+        style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', borderRadius: 14, WebkitOverflowScrolling: 'touch' }}>
+        {imgs.map((src, k) => (
+          <span key={k} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', display: 'block' }}>
+            <img src={src} alt={caps[k] || alt || ''} style={{ width: '100%', display: 'block' }} />
+          </span>
+        ))}
+      </div>
+      {/* 몇 번째 사진인지 — 점으로 알려 준다 */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 8 }}>
+        {imgs.map((_, k) => (
+          <span key={k} style={{ width: k === at ? 14 : 5, height: 5, borderRadius: 3, background: k === at ? '#8A8378' : '#DCD6CC', transition: 'width 0.18s' }} />
+        ))}
+      </div>
+      {caps[at] && <figcaption style={CAP}>{caps[at]}</figcaption>}
+      <style>{`.cur-hscroll{scrollbar-width:none;-ms-overflow-style:none}.cur-hscroll::-webkit-scrollbar{display:none}`}</style>
+    </figure>
+  );
+}
+
+const CAP = { fontSize: 11.5, color: SUB, fontWeight: 600, textAlign: 'center', marginTop: 7, lineHeight: 1.5, wordBreak: 'keep-all' };
+
 const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boolean).map((p, i) => (
   <p key={i} style={{ fontSize: 14.5, lineHeight: 1.8, margin: '0 0 14px', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{p}</p>
 ));
@@ -154,16 +200,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
               <h2 style={{ fontFamily: F.head, fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
                 margin: '0 0 12px', wordBreak: 'keep-all' }}>{heading}</h2>
             )}
-            {imgs.map((src, k) => (
-              <figure key={k} style={{ margin: '0 0 12px' }}>
-                <img src={src} alt={caps[k] || heading || ''} style={{ width: '100%', borderRadius: 14, display: 'block' }} />
-                {caps[k] && (
-                  <figcaption style={{ fontSize: 11.5, color: SUB, fontWeight: 600, textAlign: 'center', marginTop: 7, lineHeight: 1.5, wordBreak: 'keep-all' }}>
-                    {caps[k]}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
+            <SectionImages imgs={imgs} caps={caps} alt={heading} />
             <Paras text={text} />
             {hasStats && <StatCards stats={stats} />}
             {keyLine && (
