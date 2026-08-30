@@ -7,6 +7,7 @@ import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
+import { parseArticle } from './pasteParse';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { FONTS, fontStack } from '../features/curation/fonts';
@@ -120,7 +121,23 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [draftAt, setDraftAt] = useState(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteNote, setPasteNote] = useState('');
   const first = useRef(true);
+
+  // 통째로 붙여넣은 원고를 칸마다 나눠 담는다.
+  const applyPaste = () => {
+    const { fields, report, count } = parseArticle(pasteText);
+    if (!count) {
+      setPasteNote('형식을 알아보지 못했습니다. [제목 · Z] 처럼 대괄호 머리말이 들어 있는지 확인해 주세요.');
+      return;
+    }
+    setF((prev) => ({ ...prev, ...fields }));
+    setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 저장해 주세요.`);
+    setPasteOpen(false);
+    setPasteText('');
+  };
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
   useUnsavedGuard(f);
 
@@ -161,9 +178,42 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
 
   return (
     <div style={{ ...box, marginBottom: 16 }}>
-      <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 14 }}>
-        {f.id ? `큐레이션 #${f.id} 수정` : '새 큐레이션'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>
+          {f.id ? `큐레이션 #${f.id} 수정` : '새 큐레이션'}
+        </div>
+        <button onClick={() => { setPasteNote(''); setPasteOpen(true); }} style={{ ...btn(false), marginLeft: 'auto' }}>
+          📋 원고 붙여넣기
+        </button>
       </div>
+
+      {pasteNote && (
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: pasteNote.startsWith('형식') ? '#B23B36' : '#2E7D50',
+          background: pasteNote.startsWith('형식') ? '#FDECEA' : '#EDF7F0', borderRadius: 9, padding: '10px 12px', marginBottom: 14, lineHeight: 1.5 }}>
+          {pasteNote}
+        </div>
+      )}
+
+      {pasteOpen && (
+        <div onClick={(e) => { if (e.target === e.currentTarget) setPasteOpen(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,14,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>원고 붙여넣기</div>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
+              AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·초록·소제목·본문·핵심 한 줄·숫자 카드·사진 설명·검색 분류가 각 칸으로 들어갑니다.
+              <br />채팅창에서 함께 딸려오는 <b>MD</b>, <b>+ 1</b> 같은 줄은 알아서 버립니다. 사진은 따로 올려 주세요.
+            </div>
+            <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
+              placeholder={'[제목 · Z] …\n[제목 · M] …\n[썸네일 문구] …\n[초록 · Z] …'}
+              style={{ ...area, flex: 1, minHeight: 320, fontSize: 12.5, lineHeight: 1.6 }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
+              <button onClick={() => setPasteOpen(false)} style={btn(false)}>닫기</button>
+              <span style={{ fontSize: 11.5, color: SUB, alignSelf: 'center', marginLeft: 'auto' }}>이미 적은 칸은 새 내용으로 바뀝니다</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <div>
