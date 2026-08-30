@@ -89,6 +89,18 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
   );
 }
 
+// 초록은 두세 문장까지. 길어지면 큰 글씨가 벽처럼 보인다.
+function LeadCount({ v }) {
+  const n = String(v || '').length;
+  if (!n) return null;
+  const long = n > 110;
+  return (
+    <div style={{ fontSize: 11, fontWeight: 700, color: long ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right' }}>
+      {n}자{long ? ' · 두 문장 안팎(110자)으로 줄이면 훨씬 잘 읽힙니다' : ''}
+    </div>
+  );
+}
+
 // Z·M 두 벌은 길이가 비슷해야 한다. 한쪽이 많이 짧으면 눈에 띄게 알려 준다.
 function CharCount({ a, b }) {
   const la = String(a || '').length, lb = String(b || '').length;
@@ -312,10 +324,12 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
           <div>
             <span style={label}>초록 · Z 유형</span>
             <textarea style={{ ...area, minHeight: 72 }} value={f.lead_z || ''} onChange={(e) => set('lead_z')(e.target.value)} />
+            <LeadCount v={f.lead_z} />
           </div>
           <div>
             <span style={label}>초록 · M 유형</span>
             <textarea style={{ ...area, minHeight: 72 }} value={f.lead_m || ''} onChange={(e) => set('lead_m')(e.target.value)} />
+            <LeadCount v={f.lead_m} />
           </div>
         </div>
         {PARTS_OF_ARTICLE.map((sec) => {

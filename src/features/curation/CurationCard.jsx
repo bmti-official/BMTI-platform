@@ -184,7 +184,8 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
       </div>
 
       {lead && (
-        <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.7, margin: '0 0 20px', padding: '16px 16px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all', fontFamily: F.lead }}>
+        <p style={{ fontSize: 16.5, fontWeight: 600, lineHeight: 1.8, letterSpacing: '-0.005em', color: '#3F3A31',
+          margin: '0 0 22px', padding: '16px 18px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all', fontFamily: F.lead }}>
           {lead}
         </p>
       )}
