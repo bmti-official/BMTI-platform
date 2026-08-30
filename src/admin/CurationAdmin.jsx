@@ -5,7 +5,7 @@ import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
-import ImageInput from './ImageInput';
+import ImageInput, { ImageListInput } from './ImageInput';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { FONTS } from '../features/curation/fonts';
@@ -23,8 +23,8 @@ const EMPTY = {
   thumb_text: '', read_min: 0, font_key: 'pretendard',
   chars_z: [], chars_m: [],
   lead_z: '', lead_m: '',
-  s1_img: '', s1_z: '', s1_m: '', s2_img: '', s2_z: '', s2_m: '',
-  s3_img: '', s3_z: '', s3_m: '', s4_img: '', s4_z: '', s4_m: '',
+  s1_imgs: [], s1_z: '', s1_m: '', s2_imgs: [], s2_z: '', s2_m: '',
+  s3_imgs: [], s3_z: '', s3_m: '', s4_imgs: [], s4_z: '', s4_m: '',
   card_ids: [],
   body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
@@ -42,6 +42,10 @@ function normalize(row) {
   const f = { ...EMPTY, ...(row || {}) };
   f.chars_z = Array.isArray(f.chars_z) && f.chars_z.length ? f.chars_z : (f.char_z ? [f.char_z] : []);
   f.chars_m = Array.isArray(f.chars_m) && f.chars_m.length ? f.chars_m : (f.char_m ? [f.char_m] : []);
+  [1, 2, 3, 4].forEach((n) => {
+    const k = `s${n}_imgs`;
+    if (!Array.isArray(f[k]) || f[k].length === 0) f[k] = f[`s${n}_img`] ? [f[`s${n}_img`]] : [];
+  });
   ['card_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
   return f;
 }
@@ -172,7 +176,8 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
           <div key={sec.n} style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
             <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, marginBottom: 8 }}>{sec.n}. {sec.label}</div>
             <div style={{ marginBottom: 10 }}>
-              <ImageInput value={f[`s${sec.n}_img`]} onChange={set(`s${sec.n}_img`)} placeholder="이미지 (선택) — 끌어다 놓거나 주소 붙여넣기" />
+              <ImageListInput value={f[`s${sec.n}_imgs`]} onChange={set(`s${sec.n}_imgs`)}
+                hint="사진 여러 장을 한 번에 올릴 수 있어요. 올린 순서대로 이 마디 글 위에 차례로 들어갑니다." />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <textarea style={{ ...area, minHeight: 96 }} placeholder="Z 유형 본문"

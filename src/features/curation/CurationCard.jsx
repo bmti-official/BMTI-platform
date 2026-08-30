@@ -64,11 +64,18 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
 }
 
 const SECTIONS = [
-  { img: 's1_img', z: 's1_z', m: 's1_m' },
-  { img: 's2_img', z: 's2_z', m: 's2_m' },
-  { img: 's3_img', z: 's3_z', m: 's3_m' },
-  { img: 's4_img', z: 's4_z', m: 's4_m' },
+  { imgs: 's1_imgs', img: 's1_img', z: 's1_z', m: 's1_m' },
+  { imgs: 's2_imgs', img: 's2_img', z: 's2_z', m: 's2_m' },
+  { imgs: 's3_imgs', img: 's3_img', z: 's3_z', m: 's3_m' },
+  { imgs: 's4_imgs', img: 's4_img', z: 's4_z', m: 's4_m' },
 ];
+
+// 마디에 딸린 사진들 — 여러 장 칸이 비어 있으면 옛 한 장짜리 칸을 쓴다.
+const sectionImages = (item, sec) => {
+  const many = item[sec.imgs];
+  if (Array.isArray(many) && many.length) return many;
+  return item[sec.img] ? [item[sec.img]] : [];
+};
 
 const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boolean).map((p, i) => (
   <p key={i} style={{ fontSize: 14.5, lineHeight: 1.8, margin: '0 0 14px', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{p}</p>
@@ -98,11 +105,13 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
 
       {SECTIONS.map((sec, i) => {
         const text = (tone === 'm' ? item[sec.m] : item[sec.z]) || '';
-        const img = item[sec.img];
-        if (!text && !img) return null;
+        const imgs = sectionImages(item, sec);
+        if (!text && imgs.length === 0) return null;
         return (
           <section key={i} style={{ marginBottom: 22 }}>
-            {img && <img src={img} alt="" style={{ width: '100%', borderRadius: 14, display: 'block', marginBottom: 12 }} />}
+            {imgs.map((src, k) => (
+              <img key={k} src={src} alt="" style={{ width: '100%', borderRadius: 14, display: 'block', marginBottom: 12 }} />
+            ))}
             <Paras text={text} />
           </section>
         );
