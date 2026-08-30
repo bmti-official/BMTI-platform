@@ -10,7 +10,7 @@ import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
-import { FONTS, fontStack } from '../features/curation/fonts';
+import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 
@@ -22,7 +22,8 @@ const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: 
 const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', cover_url: '',
-  thumb_text: '', read_min: 0, font_key: 'pretendard', font_body_key: 'pretendard',
+  thumb_text: '', read_min: 0,
+  thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF',
   chars_z: [], chars_m: [],
   lead_z: '', lead_m: '',
   ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [
@@ -236,7 +237,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
           <ImageInput value={f.cover_url} onChange={set('cover_url')}
             hint="사진을 이 칸에 끌어다 놓거나 '사진 올리기'를 누르세요. 주소를 직접 붙여넣어도 됩니다." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 170px 170px', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 150px 160px 96px', gap: 12 }}>
           <div>
             <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
             <input style={input} value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)} placeholder="목이 굳는 진짜 이유" />
@@ -246,18 +247,33 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
             <input style={input} type="number" value={f.read_min || 0} onChange={(e) => set('read_min')(Number(e.target.value) || 0)} />
           </div>
           <div>
-            <span style={label}>글씨체 <span style={{ fontWeight: 600 }}>— 제목·썸네일</span></span>
-            <select value={f.font_key || 'pretendard'} onChange={(e) => set('font_key')(e.target.value)}
-              style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.font_key) }}>
-              {FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
+            <span style={label}>썸네일 글씨체</span>
+            <select value={f.thumb_font || 'pretendard'} onChange={(e) => set('thumb_font')(e.target.value)}
+              style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.thumb_font) }}>
+              {THUMB_FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
             </select>
           </div>
           <div>
-            <span style={label}>글씨체 <span style={{ fontWeight: 600 }}>— 본문·초록</span></span>
-            <select value={f.font_body_key || f.font_key || 'pretendard'} onChange={(e) => set('font_body_key')(e.target.value)}
-              style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.font_body_key || f.font_key) }}>
-              {FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
-            </select>
+            <span style={label}>썸네일 문구 색</span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input type="color" value={f.thumb_color || '#FFFFFF'} onChange={(e) => set('thumb_color')(e.target.value)}
+                style={{ width: 40, height: 38, padding: 2, border: `1px solid ${LINE}`, borderRadius: 8, background: '#fff', cursor: 'pointer', flexShrink: 0 }} />
+              <input style={{ ...input, flex: 1, minWidth: 0 }} value={f.thumb_color || '#FFFFFF'}
+                onChange={(e) => set('thumb_color')(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <span style={label}>문구 자리</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3 }}>
+              {THUMB_POS.map((p) => {
+                const on = (f.thumb_pos || 'tl') === p.key;
+                return (
+                  <button key={p.key} type="button" title={p.label} onClick={() => set('thumb_pos')(p.key)}
+                    style={{ height: 20, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
+                      background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -502,7 +518,7 @@ export default function CurationAdmin() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
                 <div>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
-                  <CurationCard item={preview} tone={tone} charImages={charImages} />
+                  <CurationCard item={preview} tone={tone} charImages={charImages} charCodes={charCodes} />
                 </div>
                 <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>

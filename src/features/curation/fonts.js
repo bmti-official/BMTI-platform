@@ -9,10 +9,44 @@ export const FONTS = [
 ];
 export const fontStack = (key) => (FONTS.find((f) => f.key === key) || FONTS[0]).stack;
 
-// 제목·썸네일과 본문은 글씨체를 따로 고른다.
-// 본문 칸을 비워 두면 제목 글씨체를 그대로 쓴다.
-export const titleFont = (item) => fontStack(item?.font_key);
-export const bodyFont = (item) => fontStack(item?.font_body_key || item?.font_key);
+// 자리마다 글씨체를 못박아 둔다 — 글마다 달라지지 않게.
+// 썸네일 문구만 관리자가 고른다.
+export const F = {
+  title: fontStack("pretendard"),   // 제목
+  head:  fontStack("pretendard"),   // 소제목
+  lead:  fontStack("pretendard"),   // 초록
+  body:  fontStack("system"),       // 본문
+  key:   fontStack("serif"),        // 핵심 한 줄
+  stat:  fontStack("serif"),        // 숫자 카드
+};
+
+// 썸네일 문구에서 고를 수 있는 글씨체 세 가지
+export const THUMB_FONTS = FONTS.filter((f) => ["pretendard", "serif", "rounded"].includes(f.key));
+
+// 썸네일 문구를 놓을 자리 아홉 곳
+export const THUMB_POS = [
+  { key: "tl", label: "왼쪽 위",   align: "flex-start", justify: "flex-start", text: "left" },
+  { key: "tc", label: "가운데 위", align: "flex-start", justify: "center",     text: "center" },
+  { key: "tr", label: "오른쪽 위", align: "flex-start", justify: "flex-end",   text: "right" },
+  { key: "ml", label: "왼쪽",      align: "center",     justify: "flex-start", text: "left" },
+  { key: "mc", label: "가운데",    align: "center",     justify: "center",     text: "center" },
+  { key: "mr", label: "오른쪽",    align: "center",     justify: "flex-end",   text: "right" },
+  { key: "bl", label: "왼쪽 아래",   align: "flex-end", justify: "flex-start", text: "left" },
+  { key: "bc", label: "가운데 아래", align: "flex-end", justify: "center",     text: "center" },
+  { key: "br", label: "오른쪽 아래", align: "flex-end", justify: "flex-end",   text: "right" },
+];
+export const thumbPos = (key) => THUMB_POS.find((p) => p.key === key) || THUMB_POS[0];
+
+// 밝은 글씨엔 어두운 그림자를, 어두운 글씨엔 밝은 그림자를 깐다.
+export function thumbShadow(color) {
+  const c = String(color || "#FFFFFF").replace("#", "");
+  const n = c.length === 3 ? c.split("").map((x) => x + x).join("") : c;
+  const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return Number.isNaN(lum) || lum > 0.55
+    ? "0 2px 10px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5)"
+    : "0 2px 10px rgba(255,255,255,0.75), 0 1px 2px rgba(255,255,255,0.6)";
+}
 
 // 평균 가독시간 — 관리자가 비워두면 본문 글자 수로 어림한다(분당 약 500자).
 export const readMinutes = (item) => {

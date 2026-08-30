@@ -3,7 +3,8 @@
 //  본문:     같은 썸네일 → 제목 → 초록 → 네 마디(이미지+글) → 추천 바로카드
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
-import { titleFont, bodyFont, readMinutes, timeAgo } from './fonts';
+import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
+import { charBox } from '../../lib/charBox';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 
@@ -16,14 +17,18 @@ export function CurationThumb({ item, radius = 14, big = false }) {
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>대표 이미지 없음</div>}
 
-      {item.thumb_text && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-start', padding: big ? '18px 18px 0' : '12px 12px 0' }}>
-          <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all', fontFamily: titleFont(item),
-            textShadow: '0 2px 10px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5)' }}>
-            {item.thumb_text}
-          </span>
-        </div>
-      )}
+      {item.thumb_text && (() => {
+        const pos = thumbPos(item.thumb_pos);
+        const color = item.thumb_color || '#FFFFFF';
+        return (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify, padding: big ? 18 : 12 }}>
+            <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
+              textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color) }}>
+              {item.thumb_text}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* 우측 하단 평균 가독시간 */}
       <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.78)', color: '#fff', fontSize: big ? 12.5 : 11.5, fontWeight: 700, borderRadius: 5, padding: '2px 6px', letterSpacing: '0.02em' }}>
@@ -33,21 +38,35 @@ export function CurationThumb({ item, radius = 14, big = false }) {
   );
 }
 
+// 누끼 캐릭터 한 마리 — 그림 파일마다 다른 여백을 걷어내고 키를 맞춰 세운다.
+function CharPic({ src, code, h = 38 }) {
+  const b = charBox(code);
+  if (!b) return <img src={src} alt="" style={{ width: h, height: h, objectFit: 'contain', display: 'block' }} />;
+  const full = h * b.size;   // 그림 영역이 h가 되도록 파일 전체를 키운 크기
+  return (
+    <span style={{ position: 'relative', display: 'block', width: h * b.ar, height: h, overflow: 'hidden', flexShrink: 0 }}>
+      <img src={src} alt="" style={{ position: 'absolute', width: full, height: full, maxWidth: 'none',
+        left: -b.left * full, top: -b.top * full, display: 'block' }} />
+    </span>
+  );
+}
+
 // 목록 카드
-export default function CurationCard({ item, tone = 'z', charImage, charImages, onOpen }) {
+export default function CurationCard({ item, tone = 'z', charImage, charImages, charCodes, onOpen }) {
   const { title } = pickCurationTone(item, tone);
-  // 누끼 캐릭터는 최대 4개까지 — 여러 개면 조금씩 겹쳐 세운다.
+  // 누끼 캐릭터는 최대 4개까지 — 여러 마리면 조금씩 겹쳐 세운다.
   const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
+  const codes = charCodes || [];
   return (
     <button onClick={() => onOpen && onOpen(item)}
-      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: titleFont(item) }}>
+      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: F.title }}>
       <CurationThumb item={item} />
       <div style={{ display: 'flex', gap: 10, padding: '11px 2px 0' }}>
         {/* 유형 누끼 캐릭터 — 동그란 테두리 없이 그림만, 여러 개면 겹쳐서 */}
         {chars.length > 0 && (
-          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
             {chars.map((src, i) => (
-              <img key={i} src={src} alt="" style={{ width: 38, height: 38, objectFit: 'contain', marginLeft: i ? -12 : 0 }} />
+              <CharPic key={i} src={src} code={codes[i]} h={34} />
             ))}
           </span>
         )}
@@ -83,7 +102,7 @@ function StatCards({ stats }) {
   const list = (Array.isArray(stats) ? stats : []).filter((s) => s && (s.num || s.text));
   if (list.length === 0) return null;
   return (
-    <div style={{ display: 'flex', gap: 8, margin: '4px 0 16px' }}>
+    <div style={{ display: 'flex', gap: 8, margin: '4px 0 16px', fontFamily: F.stat }}>
       {list.slice(0, 3).map((s, i) => (
         <div key={i} style={{ flex: 1, minWidth: 0, background: '#F6F4EF', borderRadius: 13, padding: '14px 10px', textAlign: 'center' }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: INK, lineHeight: 1.1, letterSpacing: '-0.02em', wordBreak: 'keep-all' }}>{s.num}</div>
@@ -105,7 +124,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
   const groups = (item.body_groups || []).map((g) => GROUP_LABEL[g] || g);
 
   return (
-    <article style={{ fontFamily: titleFont(item), color: INK }}>
+    <article style={{ fontFamily: F.title, color: INK }}>
       <CurationThumb item={item} radius={16} big />
 
       <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.32, margin: '16px 0 8px', wordBreak: 'keep-all' }}>{title}</h1>
@@ -115,7 +134,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
       </div>
 
       {lead && (
-        <p style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.65, margin: '0 0 20px', padding: '14px 15px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all', fontFamily: bodyFont(item) }}>
+        <p style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.7, margin: '0 0 20px', padding: '16px 16px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all', fontFamily: F.lead }}>
           {lead}
         </p>
       )}
@@ -130,9 +149,9 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         const hasStats = Array.isArray(stats) && stats.some((x) => x && (x.num || x.text));
         if (!text && !heading && !keyLine && !hasStats && imgs.length === 0) return null;
         return (
-          <section key={i} style={{ marginBottom: 26, fontFamily: bodyFont(item) }}>
+          <section key={i} style={{ marginBottom: 26, fontFamily: F.body }}>
             {heading && (
-              <h2 style={{ fontFamily: titleFont(item), fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
+              <h2 style={{ fontFamily: F.head, fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
                 margin: '0 0 12px', wordBreak: 'keep-all' }}>{heading}</h2>
             )}
             {imgs.map((src, k) => (
@@ -149,7 +168,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
             {hasStats && <StatCards stats={stats} />}
             {keyLine && (
               <p style={{ margin: '2px 0 0', padding: '2px 0 2px 14px', borderLeft: `4px solid ${KEY_BAR}`,
-                fontSize: 16, fontWeight: 800, lineHeight: 1.6, color: INK, wordBreak: 'keep-all' }}>
+                fontFamily: F.key, fontSize: 16.5, fontWeight: 800, lineHeight: 1.6, color: INK, wordBreak: 'keep-all' }}>
                 {keyLine}
               </p>
             )}
@@ -157,7 +176,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         );
       })}
 
-      {body && <section style={{ marginBottom: 22, fontFamily: bodyFont(item) }}><Paras text={body} /></section>}
+      {body && <section style={{ marginBottom: 22, fontFamily: F.body }}><Paras text={body} /></section>}
 
       {cards.length > 0 && (
         <section style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
