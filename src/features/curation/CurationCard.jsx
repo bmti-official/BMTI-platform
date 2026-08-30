@@ -105,22 +105,6 @@ const sectionImages = (item, sec) => {
   return item[sec.img] ? [item[sec.img]] : [];
 };
 
-// 숫자 카드 — '12kg / 15도' 처럼 숫자와 한 줄 설명을 가로로 세운다.
-function StatCards({ stats }) {
-  const list = (Array.isArray(stats) ? stats : []).filter((s) => s && (s.num || s.text));
-  if (list.length === 0) return null;
-  return (
-    <div style={{ display: 'flex', gap: 8, margin: '4px 0 16px', fontFamily: F.stat }}>
-      {list.slice(0, 3).map((s, i) => (
-        <div key={i} style={{ flex: 1, minWidth: 0, background: '#F6F4EF', borderRadius: 13, padding: '14px 10px', textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: INK, lineHeight: 1.1, letterSpacing: '-0.02em', wordBreak: 'keep-all' }}>{s.num}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginTop: 6, lineHeight: 1.4, wordBreak: 'keep-all' }}>{s.text}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // 마디에 딸린 사진 — 한 장이면 그대로, 여러 장이면 가로로 넘겨 본다.
 function SectionImages({ imgs, caps, alt }) {
   const ref = useRef(null);
@@ -182,7 +166,10 @@ const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boo
 // 본문
 export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
   const { title, body } = pickCurationTone(item, tone);
-  const lead = (tone === 'm' ? item.lead_m : item.lead_z) || '';
+  // 목차 — 소제목이 있는 마디만 줄지어 세운다.
+  const toc = SECTIONS
+    .map((sec) => ({ n: sec.n, label: (tone === 'm' ? item[sec.hm] : item[sec.hz]) || '' }))
+    .filter((t) => t.label);
   const groups = (item.body_groups || []).map((g) => GROUP_LABEL[g] || g);
 
   return (
@@ -195,11 +182,21 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         {item.created_at ? ` · ${timeAgo(item.created_at)}` : ''}
       </div>
 
-      {lead && (
-        <p style={{ fontSize: 16.5, fontWeight: 600, lineHeight: 1.8, letterSpacing: '-0.005em', color: '#3F3A31',
-          margin: '0 0 22px', padding: '16px 18px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all', fontFamily: F.lead }}>
-          {lead}
-        </p>
+      {/* 초록 자리 — 마디 소제목 목차. 누르면 그 마디로 내려간다 */}
+      {toc.length > 0 && (
+        <nav style={{ background: '#FBF6E9', borderRadius: 14, padding: '12px 8px', margin: '0 0 24px' }}>
+          {toc.map((t) => (
+            <button key={t.n} type="button"
+              onClick={() => document.getElementById(`cur-sec-${t.n}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '9px 10px',
+                border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: F.head, color: INK }}>
+              <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: 6, background: '#EFE4C6', color: '#8A6E2F',
+                fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{t.n}</span>
+              <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, wordBreak: 'keep-all' }}>{t.label}</span>
+              <span style={{ flexShrink: 0, color: '#C4BCAE', fontSize: 13 }}>›</span>
+            </button>
+          ))}
+        </nav>
       )}
 
       {SECTIONS.map((sec, i) => {
@@ -209,18 +206,15 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         const imgs = sectionImages(item, sec);
         const caps = Array.isArray(item[sec.caps]) ? item[sec.caps] : [];
         const tip = (tone === 'm' ? item[sec.tipm] : item[sec.tipz]) || '';
-        const stats = sec.n === 2 ? item.stats : null;
-        const hasStats = Array.isArray(stats) && stats.some((x) => x && (x.num || x.text));
-        if (!text && !heading && !keyLine && !tip && !hasStats && imgs.length === 0) return null;
+        if (!text && !heading && !keyLine && !tip && imgs.length === 0) return null;
         return (
-          <section key={i} style={{ marginBottom: 26, fontFamily: F.body }}>
+          <section key={i} id={`cur-sec-${sec.n}`} style={{ marginBottom: 26, fontFamily: F.body, scrollMarginTop: 12 }}>
             {heading && (
               <h2 style={{ fontFamily: F.head, fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
                 margin: '0 0 12px', wordBreak: 'keep-all' }}>{heading}</h2>
             )}
             <SectionImages imgs={imgs} caps={caps} alt={heading} />
             <Paras text={text} />
-            {hasStats && <StatCards stats={stats} />}
             {keyLine && (
               <p style={{ margin: '2px 0 0', padding: '2px 0 2px 14px', borderLeft: `4px solid ${KEY_BAR}`,
                 fontFamily: F.key, fontSize: 16.5, fontWeight: 800, lineHeight: 1.6, color: INK, wordBreak: 'keep-all' }}>

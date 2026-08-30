@@ -6,7 +6,7 @@ import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 
 const NOISE = /^(MD|\+\s*\d+|\d+\s*\/\s*\d+|-{3,}|={3,})$/;
 const HEADER = /^\[\s*([^\]]+?)\s*\]\s*(.*)$/;
-const KEY = /^(소제목|본문|핵심\s*한\s*줄|곁다리\s*팁|팁|숫자\s*카드|숫자|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|썸네일|[1-4]\s*번\s*마디)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
+const KEY = /^(소제목|본문|핵심\s*한\s*줄|곁다리\s*팁|팁|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|썸네일|[1-4]\s*번\s*마디)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
 
 const squeeze = (s) => s.replace(/\n{3,}/g, '\n\n').trim();
 const bare = (s) => String(s || '').replace(/\s+/g, '');
@@ -39,7 +39,6 @@ const toToolMode = (s) => TOOL_MODES.find((t) => t.label === String(s || '').tri
 export function parseArticle(text) {
   const tokens = tokenize(text);
   const out = {};
-  const stats = [];
   const caps = {};          // { 1: '사진 설명', … }
   let section = null;       // 1~4
   let mode = null;          // 'meta' | 'photo'
@@ -55,7 +54,6 @@ export function parseArticle(text) {
       if (t.name.includes('사진제안')) { section = null; mode = 'photo'; continue; }
       if (t.name.startsWith('제목')) { put(t.name.endsWith('M') ? 'title_m' : 'title_z', t.value); continue; }
       if (t.name.includes('썸네일문구')) { put('thumb_text', t.value); continue; }
-      if (t.name.startsWith('초록')) { put(t.name.endsWith('M') ? 'lead_m' : 'lead_z', t.value); continue; }
       continue;
     }
 
@@ -65,14 +63,6 @@ export function parseArticle(text) {
       if (t.name === '본문') { put(`s${section}_${tone}`, t.value); continue; }
       if (t.name === '핵심한줄') { put(`s${section}_key_${tone}`, t.value); continue; }
       if (t.name === '곁다리팁' || t.name === '팁') { put(`s${section}_tip_${tone}`, t.value); continue; }
-      if (t.name === '숫자') {
-        // '4가지 · 설명: 보행 추진…' 또는 '4가지 / 보행 추진…'
-        const mm = t.value.match(/^(.*?)(?:[·・]?\s*설명\s*[:：]|\s+\/\s+)\s*(.*)$/s);
-        const num = (mm ? mm[1] : t.value).replace(/[·・\s]+$/, '').trim();
-        const desc = mm ? mm[2].trim() : '';
-        if (num || desc) stats.push({ num, text: desc });
-        continue;
-      }
       continue;
     }
 
@@ -89,18 +79,21 @@ export function parseArticle(text) {
       if (mm) {
         // 한 줄에 사진 한 장. '사진 내용 / 사진 설명' — 슬래시 뒤쪽이 사진 밑에 들어갈 설명이다.
         // 여러 줄이면 여러 장이고, 적은 순서가 넘겨 보는 순서가 된다.
-        const list = t.value.split('\n')
-          .map((line) => line.replace(/^\s*(?:[①②③④⑤]|[-•*]|\d+[.)])\s*/, ''))
-          .filter((line) => line.includes('/'))
-          .map((line) => { const parts = line.split('/'); return parts.slice(1).join('/').trim(); })
-          .filter(Boolean);
+        const lines = t.value.split('\n').map((line) => line.replace(/^\s*(?:[①②③④⑤]|[-•*]|\d+[.)])\s*/, ''));
+        // '사진 설명: …' 이 있으면 그것만 담는다. (그림 프롬프트 줄은 사람이 보고 쓰는 것)
+        let list = lines.map((line) => (line.match(/사진\s*설명\s*[:：]\s*(.+)$/) || [])[1])
+          .map((v) => (v || '').trim()).filter(Boolean);
+        if (list.length === 0) {
+          list = lines.filter((line) => line.includes('/'))
+            .map((line) => { const parts = line.split('/'); return parts.slice(1).join('/').trim(); })
+            .filter(Boolean);
+        }
         if (list.length) caps[Number(mm[1])] = list;
       }
       continue;
     }
   }
 
-  if (stats.length) { out.stats = stats.slice(0, 3); filled.push('stats'); }
   Object.entries(caps).forEach(([n, list]) => { out[`s${n}_caps`] = list; filled.push(`s${n}_caps`); });
 
   // 무엇이 채워졌는지 한 줄로 알려 준다.
@@ -108,12 +101,10 @@ export function parseArticle(text) {
   const report = [
     has(/^title_/) ? `제목 ${has(/^title_/)}` : null,
     filled.includes('thumb_text') ? '썸네일 문구' : null,
-    has(/^lead_/) ? `초록 ${has(/^lead_/)}` : null,
     has(/^s\d_h_/) ? `소제목 ${has(/^s\d_h_/)}` : null,
     has(/^s\d_[zm]$/) ? `본문 ${has(/^s\d_[zm]$/)}` : null,
     has(/^s\d_key_/) ? `핵심 한 줄 ${has(/^s\d_key_/)}` : null,
     has(/^s\d_tip_/) ? `팁 ${has(/^s\d_tip_/)}` : null,
-    out.stats ? `숫자 카드 ${out.stats.length}` : null,
     has(/_caps$/) ? `사진 설명 ${has(/_caps$/)}` : null,
     has(/^(core_parts|related_parts|body_groups|tool_mode)$/) ? '검색 분류' : null,
   ].filter(Boolean);

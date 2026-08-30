@@ -28,7 +28,6 @@ const EMPTY = {
   thumb_text: '', read_min: 0,
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF',
   chars_z: [], chars_m: [],
-  lead_z: '', lead_m: '',
   ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [
     [`s${n}_imgs`, []], [`s${n}_caps`, []],
     [`s${n}_h_z`, ''], [`s${n}_h_m`, ''],
@@ -36,7 +35,6 @@ const EMPTY = {
     [`s${n}_key_z`, ''], [`s${n}_key_m`, ''],
     [`s${n}_tip_z`, ''], [`s${n}_tip_m`, ''],
   ])),
-  stats: [],
   card_ids: [],
   body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
@@ -59,7 +57,6 @@ function normalize(row) {
     if (!Array.isArray(f[k]) || f[k].length === 0) f[k] = f[`s${n}_img`] ? [f[`s${n}_img`]] : [];
     if (!Array.isArray(f[`s${n}_caps`])) f[`s${n}_caps`] = [];
   });
-  if (!Array.isArray(f.stats)) f.stats = [];
   ['card_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
   return f;
 }
@@ -89,18 +86,6 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
           </button>
         );
       })}
-    </div>
-  );
-}
-
-// 초록은 두세 문장까지. 길어지면 큰 글씨가 벽처럼 보인다.
-function LeadCount({ v }) {
-  const n = String(v || '').length;
-  if (!n) return null;
-  const long = n > 110;
-  return (
-    <div style={{ fontSize: 11, fontWeight: 700, color: long ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right' }}>
-      {n}자{long ? ' · 두 문장 안팎(110자)으로 줄이면 훨씬 잘 읽힙니다' : ''}
     </div>
   );
 }
@@ -180,12 +165,6 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
     return () => clearTimeout(t);
   }, [f, row]);
 
-  // 숫자 카드 세 장 — 빈 자리를 채워 가며 고친다.
-  const setStat = (i, key, v) => setF((p) => {
-    const next = [0, 1, 2].map((k) => ({ num: '', text: '', ...(p.stats?.[k] || {}) }));
-    next[i] = { ...next[i], [key]: v };
-    return { ...p, stats: next };
-  });
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
@@ -232,11 +211,11 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
           <div style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>원고 붙여넣기</div>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
-              AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·초록·소제목·본문·핵심 한 줄·숫자 카드·사진 설명·검색 분류가 각 칸으로 들어갑니다.
+              AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·썸네일 문구·소제목·본문·핵심 한 줄·곁다리 팁·사진 설명·검색 분류가 각 칸으로 들어갑니다.
               <br />채팅창에서 함께 딸려오는 <b>MD</b>, <b>+ 1</b> 같은 줄은 알아서 버립니다. 사진은 따로 올려 주세요.
             </div>
             <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-              placeholder={'[제목 · Z] …\n[제목 · M] …\n[썸네일 문구] …\n[초록 · Z] …'}
+              placeholder={'[제목 · Z] …\n[제목 · M] …\n[썸네일 문구] …\n[1. 문제제기 · 편견의 원인] …'}
               style={{ ...area, flex: 1, minHeight: 320, fontSize: 12.5, lineHeight: 1.6 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
@@ -335,22 +314,10 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
         </div>
       </div>
 
-      {/* 본문 — 초록 + 네 마디 */}
+      {/* 본문 — 네 마디 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>본문</div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>초록은 글 첫머리에 크게 놓입니다 — 전체를 관통하는 한두 문장으로</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-          <div>
-            <span style={label}>초록 · Z 유형</span>
-            <textarea style={{ ...area, minHeight: 72 }} value={f.lead_z || ''} onChange={(e) => set('lead_z')(e.target.value)} />
-            <LeadCount v={f.lead_z} />
-          </div>
-          <div>
-            <span style={label}>초록 · M 유형</span>
-            <textarea style={{ ...area, minHeight: 72 }} value={f.lead_m || ''} onChange={(e) => set('lead_m')(e.target.value)} />
-            <LeadCount v={f.lead_m} />
-          </div>
-        </div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>소제목은 글 첫머리 목차에도 그대로 올라갑니다 — 누르면 그 마디로 내려갑니다</div>
         {PARTS_OF_ARTICLE.map((sec) => {
           const n = sec.n;
           return (
@@ -398,23 +365,6 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
                   value={f[`s${n}_tip_m`] || ''} onChange={(e) => set(`s${n}_tip_m`)(e.target.value)} />
               </div>
 
-              {/* 2번 마디에만 — 숫자 카드 세 장 */}
-              {n === 2 && (
-                <div style={{ marginTop: 12, padding: 12, background: '#fff', borderRadius: 10, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 3 }}>숫자 카드 <span style={{ fontWeight: 600, color: SUB }}>— 이 마디 글 아래에 가로로 세 장</span></div>
-                  <div style={{ fontSize: 11.5, color: SUB, marginBottom: 9 }}>Z·M 공통입니다. 비워 두면 나오지 않습니다.</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <input style={{ ...input, fontWeight: 900 }} placeholder={['12kg', '15도', '8시간'][i]}
-                          value={f.stats?.[i]?.num || ''} onChange={(e) => setStat(i, 'num', e.target.value)} />
-                        <input style={input} placeholder="한 줄 설명"
-                          value={f.stats?.[i]?.text || ''} onChange={(e) => setStat(i, 'text', e.target.value)} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}

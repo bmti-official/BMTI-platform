@@ -14,10 +14,8 @@ export const fontStack = (key) => (FONTS.find((f) => f.key === key) || FONTS[0])
 export const F = {
   title: fontStack("pretendard"),   // 제목
   head:  fontStack("pretendard"),   // 소제목
-  lead:  fontStack("pretendard"),   // 초록
   body:  fontStack("system"),       // 본문
   key:   fontStack("serif"),        // 핵심 한 줄
-  stat:  fontStack("serif"),        // 숫자 카드
 };
 
 // 썸네일 문구에서 고를 수 있는 글씨체 세 가지
@@ -51,7 +49,7 @@ export function thumbShadow(color) {
 // 평균 가독시간 — 관리자가 비워두면 본문 글자 수로 어림한다(분당 약 500자).
 export const readMinutes = (item) => {
   if (Number(item?.read_min) > 0) return Number(item.read_min);
-  const text = ["lead_z", "body_z", "s1_z", "s2_z", "s3_z", "s4_z"].map((k) => item?.[k] || "").join("");
+  const text = ["s1_z", "s2_z", "s3_z", "s4_z"].map((k) => item?.[k] || "").join("");
   return Math.max(1, Math.round(text.length / 500));
 };
 
