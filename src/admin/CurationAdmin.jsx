@@ -90,6 +90,49 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
   );
 }
 
+// 형광펜 버튼이 달린 글 상자.
+// 글에서 칠하고 싶은 대목을 드래그해 고르고 버튼을 누르면 ==이렇게== 감싸진다.
+// 이미 칠해진 곳을 고르고 누르면 지워진다.
+function HiliteBox({ value, onChange, placeholder, minHeight = 96, children }) {
+  const ref = useRef(null);
+  const v = String(value || '');
+
+  const toggle = () => {
+    const el = ref.current;
+    if (!el) return;
+    let a = el.selectionStart, b = el.selectionEnd;
+    if (a === b) { el.focus(); return; }
+    // 고른 범위 양옆에 이미 ==가 있으면 그것까지 포함해서 본다
+    if (v.slice(a - 2, a) === '==' && v.slice(b, b + 2) === '==') { a -= 2; b += 2; }
+    const sel = v.slice(a, b);
+    const on = sel.startsWith('==') && sel.endsWith('==') && sel.length > 4;
+    const inner = on ? sel.slice(2, -2) : sel;
+    const next = v.slice(0, a) + (on ? inner : `==${inner}==`) + v.slice(b);
+    onChange(next);
+    const end = a + (on ? inner.length : inner.length + 4);
+    setTimeout(() => { el.focus(); el.setSelectionRange(a, end); }, 0);
+  };
+
+  const marks = (v.match(/==[^=]+==/g) || []).length;
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+        <button type="button" onClick={toggle}
+          style={{ padding: '4px 10px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 7, cursor: 'pointer',
+            border: 'none', background: '#FBF3C4', color: '#6B5B1F', boxShadow: 'inset 0 0 0 1px #EBDF9B' }}>
+          형광펜
+        </button>
+        <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>
+          {marks > 0 ? `${marks}군데 칠했어요` : '칠할 곳을 드래그해서 고른 뒤 누르세요'}
+        </span>
+      </div>
+      <textarea ref={ref} style={{ ...area, minHeight }} placeholder={placeholder}
+        value={v} onChange={(e) => onChange(e.target.value)} />
+      {children}
+    </div>
+  );
+}
+
 // Z·M 두 벌은 길이가 비슷해야 한다. 한쪽이 많이 짧으면 눈에 띄게 알려 준다.
 function CharCount({ a, b }) {
   const la = String(a || '').length, lb = String(b || '').length;
@@ -339,16 +382,12 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
 
               {/* ③ 본문 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <textarea style={{ ...area, minHeight: 96 }} placeholder="Z 유형 본문"
-                    value={f[`s${n}_z`] || ''} onChange={(e) => set(`s${n}_z`)(e.target.value)} />
+                <HiliteBox placeholder="Z 유형 본문" value={f[`s${n}_z`]} onChange={set(`s${n}_z`)}>
                   <CharCount a={f[`s${n}_z`]} b={f[`s${n}_m`]} />
-                </div>
-                <div>
-                  <textarea style={{ ...area, minHeight: 96 }} placeholder="M 유형 본문"
-                    value={f[`s${n}_m`] || ''} onChange={(e) => set(`s${n}_m`)(e.target.value)} />
+                </HiliteBox>
+                <HiliteBox placeholder="M 유형 본문" value={f[`s${n}_m`]} onChange={set(`s${n}_m`)}>
                   <CharCount a={f[`s${n}_m`]} b={f[`s${n}_z`]} />
-                </div>
+                </HiliteBox>
               </div>
 
               {/* ④ 핵심 한 줄 — 왼쪽 세로줄이 붙은 큰 글씨 */}
@@ -359,10 +398,8 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
 
               {/* 곁다리 팁 — 마디마다 하나, 안 써도 된다 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
-                <textarea style={{ ...area, minHeight: 56 }} placeholder="✨ 곁다리 팁 · Z (선택)"
-                  value={f[`s${n}_tip_z`] || ''} onChange={(e) => set(`s${n}_tip_z`)(e.target.value)} />
-                <textarea style={{ ...area, minHeight: 56 }} placeholder="✨ 곁다리 팁 · M (선택)"
-                  value={f[`s${n}_tip_m`] || ''} onChange={(e) => set(`s${n}_tip_m`)(e.target.value)} />
+                <HiliteBox placeholder="✨ 곁다리 팁 · Z (선택)" minHeight={56} value={f[`s${n}_tip_z`]} onChange={set(`s${n}_tip_z`)} />
+                <HiliteBox placeholder="✨ 곁다리 팁 · M (선택)" minHeight={56} value={f[`s${n}_tip_m`]} onChange={set(`s${n}_tip_m`)} />
               </div>
 
             </div>

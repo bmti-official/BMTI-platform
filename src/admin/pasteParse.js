@@ -8,7 +8,13 @@ const NOISE = /^(MD|\+\s*\d+|\d+\s*\/\s*\d+|-{3,}|={3,})$/;
 const HEADER = /^\[\s*([^\]]+?)\s*\]\s*(.*)$/;
 const KEY = /^(소제목|본문|핵심\s*한\s*줄|곁다리\s*팁|팁|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|썸네일|[1-4]\s*번\s*마디)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
 
-const squeeze = (s) => s.replace(/\n{3,}/g, '\n\n').trim();
+// AI가 형광펜을 **굵게** 나 <mark>로 줬어도 ==형광펜== 으로 받아들인다.
+const toHilite = (s) => String(s)
+  .replace(/<mark[^>]*>([\s\S]*?)<\/mark>/gi, '==$1==')
+  .replace(/\*\*([^*\n]+)\*\*/g, '==$1==')
+  .replace(/==\s*==/g, '');
+
+const squeeze = (s) => toHilite(s).replace(/\n{3,}/g, '\n\n').trim();
 const bare = (s) => String(s || '').replace(/\s+/g, '');
 const splitList = (s) => String(s || '').split(/[,、·・]|\s{2,}/).map((x) => x.trim()).filter(Boolean);
 
