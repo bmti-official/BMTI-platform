@@ -21,8 +21,12 @@ export function CurationThumb({ item, radius = 14, big = false }) {
       {item.thumb_text && (() => {
         const pos = thumbPos(item.thumb_pos);
         const color = item.thumb_color || '#FFFFFF';
+        // 가독시간표는 오른쪽 아래에 있다. 문구가 아래쪽에 놓일 땐 그만큼 자리를 비워 둔다.
+        const pad = big ? 18 : 12;
+        const bottomPad = pos.align === 'flex-end' ? pad + (big ? 30 : 26) : pad;
         return (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify, padding: big ? 18 : 12 }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
+            padding: `${pad}px ${pad}px ${bottomPad}px` }}>
             <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color) }}>
               {item.thumb_text}
@@ -32,8 +36,8 @@ export function CurationThumb({ item, radius = 14, big = false }) {
       })()}
 
       {/* 우측 하단 평균 가독시간 */}
-      <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.78)', color: '#fff', fontSize: big ? 12.5 : 11.5, fontWeight: 700, borderRadius: 5, padding: '2px 6px', letterSpacing: '0.02em' }}>
-        {min}분
+      <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.78)', color: '#fff', fontSize: big ? 12.5 : 11.5, fontWeight: 700, borderRadius: 5, padding: '3px 8px', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+        가독시간 {min}분
       </span>
     </div>
   );

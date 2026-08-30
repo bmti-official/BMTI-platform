@@ -8,7 +8,7 @@ import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
-import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
+import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
@@ -237,43 +237,55 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
           <ImageInput value={f.cover_url} onChange={set('cover_url')}
             hint="사진을 이 칸에 끌어다 놓거나 '사진 올리기'를 누르세요. 주소를 직접 붙여넣어도 됩니다." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 150px 160px 96px', gap: 12 }}>
-          <div>
-            <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
-            <input style={input} value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)} placeholder="목이 굳는 진짜 이유" />
-          </div>
-          <div>
-            <span style={label}>가독시간(분) <span style={{ fontWeight: 600 }}>— 0이면 자동</span></span>
-            <input style={input} type="number" value={f.read_min || 0} onChange={(e) => set('read_min')(Number(e.target.value) || 0)} />
-          </div>
-          <div>
-            <span style={label}>썸네일 글씨체</span>
-            <select value={f.thumb_font || 'pretendard'} onChange={(e) => set('thumb_font')(e.target.value)}
-              style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.thumb_font) }}>
-              {THUMB_FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <span style={label}>썸네일 문구 색</span>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <input type="color" value={f.thumb_color || '#FFFFFF'} onChange={(e) => set('thumb_color')(e.target.value)}
-                style={{ width: 40, height: 38, padding: 2, border: `1px solid ${LINE}`, borderRadius: 8, background: '#fff', cursor: 'pointer', flexShrink: 0 }} />
-              <input style={{ ...input, flex: 1, minWidth: 0 }} value={f.thumb_color || '#FFFFFF'}
-                onChange={(e) => set('thumb_color')(e.target.value)} />
+        {/* 문구는 가로로 길게 — 나머지 설정은 아래로 내려 놓는다 */}
+        <div style={{ marginBottom: 12 }}>
+          <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
+          <input style={{ ...input, fontSize: 16, fontWeight: 800, padding: '12px 14px' }} value={f.thumb_text || ''}
+            onChange={(e) => set('thumb_text')(e.target.value)} placeholder="목이 굳는 진짜 이유" />
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* 왼쪽 — 고르는 칸들 */}
+          <div style={{ flex: '1 1 320px', minWidth: 280, display: 'grid', gridTemplateColumns: '110px 1fr 132px', gap: 12 }}>
+            <div>
+              <span style={label}>가독시간(분) <span style={{ fontWeight: 600 }}>— 0이면 자동</span></span>
+              <input style={input} type="number" value={f.read_min || 0} onChange={(e) => set('read_min')(Number(e.target.value) || 0)} />
+            </div>
+            <div>
+              <span style={label}>썸네일 글씨체</span>
+              <select value={f.thumb_font || 'pretendard'} onChange={(e) => set('thumb_font')(e.target.value)}
+                style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.thumb_font) }}>
+                {THUMB_FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <span style={label}>문구 색</span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="color" value={f.thumb_color || '#FFFFFF'} onChange={(e) => set('thumb_color')(e.target.value)}
+                  style={{ width: 38, height: 38, padding: 2, border: `1px solid ${LINE}`, borderRadius: 8, background: '#fff', cursor: 'pointer', flexShrink: 0 }} />
+                <input style={{ ...input, flex: 1, minWidth: 0, padding: '10px 8px', fontSize: 12.5 }} value={f.thumb_color || '#FFFFFF'}
+                  onChange={(e) => set('thumb_color')(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <span style={label}>문구 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 4 }}>
+                {THUMB_POS.map((p) => {
+                  const on = (f.thumb_pos || 'tl') === p.key;
+                  return (
+                    <button key={p.key} type="button" title={p.label} onClick={() => set('thumb_pos')(p.key)}
+                      style={{ height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
+                        background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <div>
-            <span style={label}>문구 자리</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3 }}>
-              {THUMB_POS.map((p) => {
-                const on = (f.thumb_pos || 'tl') === p.key;
-                return (
-                  <button key={p.key} type="button" title={p.label} onClick={() => set('thumb_pos')(p.key)}
-                    style={{ height: 20, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
-                      background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
-                );
-              })}
-            </div>
+
+          {/* 오른쪽 — 지금 이대로 어떻게 보이는지 */}
+          <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
+            <span style={label}>썸네일 미리보기 <span style={{ fontWeight: 600 }}>— 손님에게 보이는 그대로</span></span>
+            <CurationThumb item={f} />
           </div>
         </div>
       </div>
@@ -416,7 +428,9 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
       </div>
 
       {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+        background: '#fff', margin: '4px -18px -18px', padding: '12px 18px', borderTop: `1px solid ${LINE}`,
+        borderRadius: '0 0 13px 13px', boxShadow: '0 -6px 14px rgba(23,21,15,0.06)' }}>
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
         <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
