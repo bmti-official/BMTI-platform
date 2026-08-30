@@ -86,17 +86,21 @@ export function parseArticle(text) {
     if (mode === 'photo') {
       const mm = t.name.match(/^([1-4])번마디$/);
       if (mm) {
-        // '사진 내용 / 사진 설명' — 슬래시 뒤쪽이 사진 밑에 들어갈 설명이다.
-        const parts = t.value.split('/');
-        const cap = parts.length > 1 ? parts.slice(1).join('/').trim() : '';
-        if (cap) caps[Number(mm[1])] = cap;
+        // 한 줄에 사진 한 장. '사진 내용 / 사진 설명' — 슬래시 뒤쪽이 사진 밑에 들어갈 설명이다.
+        // 여러 줄이면 여러 장이고, 적은 순서가 넘겨 보는 순서가 된다.
+        const list = t.value.split('\n')
+          .map((line) => line.replace(/^\s*(?:[①②③④⑤]|[-•*]|\d+[.)])\s*/, ''))
+          .filter((line) => line.includes('/'))
+          .map((line) => { const parts = line.split('/'); return parts.slice(1).join('/').trim(); })
+          .filter(Boolean);
+        if (list.length) caps[Number(mm[1])] = list;
       }
       continue;
     }
   }
 
   if (stats.length) { out.stats = stats.slice(0, 3); filled.push('stats'); }
-  Object.entries(caps).forEach(([n, cap]) => { out[`s${n}_caps`] = [cap]; filled.push(`s${n}_caps`); });
+  Object.entries(caps).forEach(([n, list]) => { out[`s${n}_caps`] = list; filled.push(`s${n}_caps`); });
 
   // 무엇이 채워졌는지 한 줄로 알려 준다.
   const has = (re) => filled.filter((k) => re.test(k)).length;
