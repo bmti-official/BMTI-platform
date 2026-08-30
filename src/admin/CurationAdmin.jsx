@@ -5,10 +5,11 @@ import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
+import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
 import CurationCard, { CurationDetail } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
-import { FONTS } from '../features/curation/fonts';
+import { FONTS, fontStack } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 
@@ -20,7 +21,7 @@ const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: 
 const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', cover_url: '',
-  thumb_text: '', read_min: 0, font_key: 'pretendard',
+  thumb_text: '', read_min: 0, font_key: 'pretendard', font_body_key: 'pretendard',
   chars_z: [], chars_m: [],
   lead_z: '', lead_m: '',
   s1_imgs: [], s1_z: '', s1_m: '', s2_imgs: [], s2_z: '', s2_m: '',
@@ -84,6 +85,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
+  useUnsavedGuard(f);
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
@@ -126,7 +128,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
           <ImageInput value={f.cover_url} onChange={set('cover_url')}
             hint="사진을 이 칸에 끌어다 놓거나 '사진 올리기'를 누르세요. 주소를 직접 붙여넣어도 됩니다." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 190px', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 170px 170px', gap: 12 }}>
           <div>
             <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
             <input style={input} value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)} placeholder="목이 굳는 진짜 이유" />
@@ -136,8 +138,16 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
             <input style={input} type="number" value={f.read_min || 0} onChange={(e) => set('read_min')(Number(e.target.value) || 0)} />
           </div>
           <div>
-            <span style={label}>글씨체</span>
-            <select value={f.font_key || 'pretendard'} onChange={(e) => set('font_key')(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+            <span style={label}>글씨체 <span style={{ fontWeight: 600 }}>— 제목·썸네일</span></span>
+            <select value={f.font_key || 'pretendard'} onChange={(e) => set('font_key')(e.target.value)}
+              style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.font_key) }}>
+              {FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <span style={label}>글씨체 <span style={{ fontWeight: 600 }}>— 본문·초록</span></span>
+            <select value={f.font_body_key || f.font_key || 'pretendard'} onChange={(e) => set('font_body_key')(e.target.value)}
+              style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.font_body_key || f.font_key) }}>
               {FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
             </select>
           </div>
@@ -241,7 +251,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
-        <button onClick={onCancel} style={btn(false)}>취소</button>
+        <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
         {f.id && (
           <button onClick={() => onDelete(f.id)}
             style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36', boxShadow: 'inset 0 0 0 1px #E7C3C0' }}>
@@ -307,7 +317,7 @@ export default function CurationAdmin() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>큐레이션</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
-        <button onClick={() => setEditing({ ...EMPTY })} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 큐레이션</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 큐레이션</button>
       </div>
 
       {err && (
@@ -374,7 +384,7 @@ export default function CurationAdmin() {
                 <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
                 <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap', position: 'sticky', right: 0, background: '#fff' }}>
                   <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
-                  <button onClick={() => setEditing(r)} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                  <button onClick={() => { if (confirmLeave()) setEditing(r); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
                   <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
                 </td>
               </tr>

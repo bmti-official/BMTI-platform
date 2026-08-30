@@ -9,6 +9,11 @@ export const FONTS = [
 ];
 export const fontStack = (key) => (FONTS.find((f) => f.key === key) || FONTS[0]).stack;
 
+// 제목·썸네일과 본문은 글씨체를 따로 고른다.
+// 본문 칸을 비워 두면 제목 글씨체를 그대로 쓴다.
+export const titleFont = (item) => fontStack(item?.font_key);
+export const bodyFont = (item) => fontStack(item?.font_body_key || item?.font_key);
+
 // 평균 가독시간 — 관리자가 비워두면 본문 글자 수로 어림한다(분당 약 500자).
 export const readMinutes = (item) => {
   if (Number(item?.read_min) > 0) return Number(item.read_min);

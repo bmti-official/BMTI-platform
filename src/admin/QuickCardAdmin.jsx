@@ -5,6 +5,7 @@ import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
+import { useUnsavedGuard, confirmLeave } from './dirty';
 import QuickCardView from '../features/curation/QuickCardView';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
 
@@ -23,6 +24,7 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
+  useUnsavedGuard(f);
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
@@ -124,7 +126,7 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
-        <button onClick={onCancel} style={btn(false)}>취소</button>
+        <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
       </div>
     </div>
   );
@@ -172,7 +174,7 @@ export default function QuickCardAdmin() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>바로카드</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
-        <button onClick={() => setEditing({ ...EMPTY })} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
       </div>
 
       {err && (
@@ -222,7 +224,7 @@ export default function QuickCardAdmin() {
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>
                     <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
-                    <button onClick={() => setEditing(r)} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                    <button onClick={() => { if (confirmLeave()) setEditing(r); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
                     <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
                   </td>
                 </tr>

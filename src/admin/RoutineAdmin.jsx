@@ -4,6 +4,7 @@ import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { INK, SUB, LINE, BG, box, input, label, btn, smallBtn } from './theme';
 import { PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
+import { useUnsavedGuard, confirmLeave } from './dirty';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
 import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curation/format';
 
@@ -72,6 +73,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
+  useUnsavedGuard(f, chosen);
   const s = routineSummary(chosen);
 
   const save = async () => {
@@ -158,7 +160,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview({ routine: f, cards: chosen })} style={btn(false)}>미리보기</button>
-        <button onClick={onCancel} style={btn(false)}>취소</button>
+        <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
       </div>
     </div>
   );
@@ -216,7 +218,7 @@ export default function RoutineAdmin() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>플레이리스트</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
-        <button onClick={() => setEditing({ routine: { ...EMPTY }, cards: [] })} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 루틴</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 루틴</button>
       </div>
 
       {err && (
@@ -277,7 +279,7 @@ export default function RoutineAdmin() {
                   <td style={td}>{rate != null ? `${rate}%` : '—'}</td>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
                     <button onClick={() => setPreview({ routine: r, cards: r.cards })} style={smallBtn}>미리보기</button>
-                    <button onClick={() => setEditing({ routine: r, cards: r.cards })} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                    <button onClick={() => { if (confirmLeave()) setEditing({ routine: r, cards: r.cards }); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
                     <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
                   </td>
                 </tr>

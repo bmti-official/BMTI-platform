@@ -5,6 +5,7 @@ import QuickCardAdmin from './QuickCardAdmin';
 import RoutineAdmin from './RoutineAdmin';
 import SearchPreview from './SearchPreview';
 import MetricsView from './MetricsView';
+import { confirmLeave } from './dirty';
 
 // ─────────────────────────────────────────────
 // BMTI 관리자 페이지 (별도 진입점 admin.html) — Supabase Auth로 관리자만 로그인해서
@@ -247,7 +248,7 @@ function Dashboard({ session }) {
   ];
 
   const tabBtn = (id, label) => (
-    <button onClick={() => setTab(id)} style={{ padding: '9px 16px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', borderRadius: 999, border: 'none', cursor: 'pointer', background: tab === id ? ACCENT : '#fff', color: tab === id ? '#fff' : SUB, boxShadow: tab === id ? 'none' : `inset 0 0 0 1px ${LINE}` }}>{label}</button>
+    <button onClick={() => { if (confirmLeave()) setTab(id); }} style={{ padding: '9px 16px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', borderRadius: 999, border: 'none', cursor: 'pointer', background: tab === id ? ACCENT : '#fff', color: tab === id ? '#fff' : SUB, boxShadow: tab === id ? 'none' : `inset 0 0 0 1px ${LINE}` }}>{label}</button>
   );
 
   return (
@@ -255,7 +256,7 @@ function Dashboard({ session }) {
       <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', background: '#fff', borderBottom: `1px solid ${LINE}` }}>
         <div style={{ fontSize: 18, fontWeight: 900, color: INK }}>🛠 BMTI 관리자</div>
         <div style={{ marginLeft: 'auto', fontSize: 12.5, color: SUB }}>{session?.user?.email}</div>
-        <button onClick={() => supabase.auth.signOut()} style={{ padding: '7px 13px', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', borderRadius: 8, border: `1px solid ${LINE}`, background: '#fff', color: SUB, cursor: 'pointer' }}>로그아웃</button>
+        <button onClick={() => { if (confirmLeave()) supabase.auth.signOut(); }} style={{ padding: '7px 13px', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', borderRadius: 8, border: `1px solid ${LINE}`, background: '#fff', color: SUB, cursor: 'pointer' }}>로그아웃</button>
       </header>
 
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: '22px 18px 60px' }}>

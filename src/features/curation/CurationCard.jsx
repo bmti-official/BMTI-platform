@@ -3,7 +3,7 @@
 //  본문:     같은 썸네일 → 제목 → 초록 → 네 마디(이미지+글) → 추천 바로카드
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
-import { fontStack, readMinutes, timeAgo } from './fonts';
+import { titleFont, bodyFont, readMinutes, timeAgo } from './fonts';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 
@@ -18,7 +18,7 @@ export function CurationThumb({ item, radius = 14, big = false }) {
 
       {item.thumb_text && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-start', padding: big ? '18px 18px 0' : '12px 12px 0' }}>
-          <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
+          <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all', fontFamily: titleFont(item),
             textShadow: '0 2px 10px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5)' }}>
             {item.thumb_text}
           </span>
@@ -40,7 +40,7 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
   const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
   return (
     <button onClick={() => onOpen && onOpen(item)}
-      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: fontStack(item.font_key) }}>
+      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: titleFont(item) }}>
       <CurationThumb item={item} />
       <div style={{ display: 'flex', gap: 10, padding: '11px 2px 0' }}>
         {/* 유형 누끼 캐릭터 — 동그란 테두리 없이 그림만, 여러 개면 겹쳐서 */}
@@ -88,7 +88,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
   const groups = (item.body_groups || []).map((g) => GROUP_LABEL[g] || g);
 
   return (
-    <article style={{ fontFamily: fontStack(item.font_key), color: INK }}>
+    <article style={{ fontFamily: titleFont(item), color: INK }}>
       <CurationThumb item={item} radius={16} big />
 
       <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.32, margin: '16px 0 8px', wordBreak: 'keep-all' }}>{title}</h1>
@@ -98,7 +98,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
       </div>
 
       {lead && (
-        <p style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.65, margin: '0 0 20px', padding: '14px 15px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all' }}>
+        <p style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.65, margin: '0 0 20px', padding: '14px 15px', background: '#FBF6E9', borderRadius: 14, wordBreak: 'keep-all', fontFamily: bodyFont(item) }}>
           {lead}
         </p>
       )}
@@ -108,7 +108,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         const imgs = sectionImages(item, sec);
         if (!text && imgs.length === 0) return null;
         return (
-          <section key={i} style={{ marginBottom: 22 }}>
+          <section key={i} style={{ marginBottom: 22, fontFamily: bodyFont(item) }}>
             {imgs.map((src, k) => (
               <img key={k} src={src} alt="" style={{ width: '100%', borderRadius: 14, display: 'block', marginBottom: 12 }} />
             ))}
@@ -117,7 +117,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         );
       })}
 
-      {body && <section style={{ marginBottom: 22 }}><Paras text={body} /></section>}
+      {body && <section style={{ marginBottom: 22, fontFamily: bodyFont(item) }}><Paras text={body} /></section>}
 
       {cards.length > 0 && (
         <section style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
