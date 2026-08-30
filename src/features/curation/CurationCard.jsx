@@ -8,6 +8,8 @@ import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fon
 import { charBox } from '../../lib/charBox';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
+const HILITE = '#FBF3C4';   // 형광펜 연노랑
+const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
 export function CurationThumb({ item, radius = 14, big = false }) {
@@ -93,6 +95,7 @@ const SECTIONS = [1, 2, 3, 4].map((n) => ({
   z: `s${n}_z`, m: `s${n}_m`,
   hz: `s${n}_h_z`, hm: `s${n}_h_m`,
   keyz: `s${n}_key_z`, keym: `s${n}_key_m`,
+  tipz: `s${n}_tip_z`, tipm: `s${n}_tip_m`,
 }));
 
 // 마디에 딸린 사진들 — 여러 장 칸이 비어 있으면 옛 한 장짜리 칸을 쓴다.
@@ -163,8 +166,17 @@ function SectionImages({ imgs, caps, alt }) {
 
 const CAP = { fontSize: 11.5, color: SUB, fontWeight: 600, textAlign: 'center', marginTop: 7, lineHeight: 1.5, wordBreak: 'keep-all' };
 
+// 본문에 ==이렇게== 적은 곳은 연노랑 형광펜으로 칠한다.
+const Marked = ({ text }) => String(text).split(/(==[^=]+==)/g).filter(Boolean).map((chunk, i) => (
+  chunk.startsWith('==') && chunk.endsWith('==')
+    ? <mark key={i} style={{ background: HILITE, color: 'inherit', padding: '1px 2px', borderRadius: 3 }}>{chunk.slice(2, -2)}</mark>
+    : <span key={i}>{chunk}</span>
+));
+
 const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boolean).map((p, i) => (
-  <p key={i} style={{ fontSize: 14.5, lineHeight: 1.8, margin: '0 0 14px', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{p}</p>
+  <p key={i} style={{ fontSize: 14.5, lineHeight: 1.85, margin: '0 0 15px', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+    <Marked text={p} />
+  </p>
 ));
 
 // 본문
@@ -196,9 +208,10 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
         const keyLine = (tone === 'm' ? item[sec.keym] : item[sec.keyz]) || '';
         const imgs = sectionImages(item, sec);
         const caps = Array.isArray(item[sec.caps]) ? item[sec.caps] : [];
+        const tip = (tone === 'm' ? item[sec.tipm] : item[sec.tipz]) || '';
         const stats = sec.n === 2 ? item.stats : null;
         const hasStats = Array.isArray(stats) && stats.some((x) => x && (x.num || x.text));
-        if (!text && !heading && !keyLine && !hasStats && imgs.length === 0) return null;
+        if (!text && !heading && !keyLine && !tip && !hasStats && imgs.length === 0) return null;
         return (
           <section key={i} style={{ marginBottom: 26, fontFamily: F.body }}>
             {heading && (
@@ -214,6 +227,16 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
                 {keyLine}
               </p>
             )}
+            {/* 곁다리 팁 — 본문에서 살짝 비켜난 정보 */}
+            {tip && (
+              <div style={{ marginTop: 16, background: '#F4F2EE', borderRadius: 13, padding: '14px 15px' }}>
+                <p style={{ fontSize: 13.5, lineHeight: 1.75, margin: 0, color: '#3F3A31', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                  <Marked text={tip} />
+                </p>
+              </div>
+            )}
+            {/* 마디가 끝났다는 시각적 쉼표 */}
+            <div aria-hidden="true" style={{ height: 2, margin: '26px 0 0', background: DOTS }} />
           </section>
         );
       })}

@@ -14,6 +14,9 @@ import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 
+// AI가 '내가 준 정보에 없다'고 스스로 표시한 자리. 공개 전에 지워야 한다.
+export const NEEDS_CHECK = '〔확인 필요〕';
+
 // 부위 선택지 — 다이어리에서 쓰는 부위 코드를 그대로 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
 
@@ -31,6 +34,7 @@ const EMPTY = {
     [`s${n}_h_z`, ''], [`s${n}_h_m`, ''],
     [`s${n}_z`, ''], [`s${n}_m`, ''],
     [`s${n}_key_z`, ''], [`s${n}_key_m`, ''],
+    [`s${n}_tip_z`, ''], [`s${n}_tip_m`, ''],
   ])),
   stats: [],
   card_ids: [],
@@ -106,9 +110,16 @@ function CharCount({ a, b }) {
   const la = String(a || '').length, lb = String(b || '').length;
   if (la === 0 && lb === 0) return null;
   const off = lb > 0 && la > 0 && Math.abs(la - lb) / Math.max(la, lb) > 0.3;
+  // 한 문단이 길면 읽기 어렵다. 200자를 넘는 문단이 있으면 알려 준다.
+  const longPara = String(a || '').split(/\n{2,}/).filter((p) => p.trim().length > 200).length;
+  const warn = off || longPara > 0;
+  const msg = [
+    off ? '반대쪽과 길이 차이가 큽니다' : null,
+    longPara ? `${longPara}개 문단이 200자를 넘어요 — 두세 문장으로 끊어 주세요` : null,
+  ].filter(Boolean).join(' · ');
   return (
-    <div style={{ fontSize: 11, fontWeight: 700, color: off ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right' }}>
-      {la}자{off ? ' · 반대쪽과 길이 차이가 큽니다' : ''}
+    <div style={{ fontSize: 11, fontWeight: 700, color: warn ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right', lineHeight: 1.5 }}>
+      {la}자{msg ? ` · ${msg}` : ''}
     </div>
   );
 }
@@ -147,7 +158,9 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
       return;
     }
     setF((prev) => ({ ...prev, ...fields }));
-    setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 저장해 주세요.`);
+    const need = Object.values(fields).filter((v) => typeof v === 'string' && v.includes(NEEDS_CHECK)).length;
+    setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 저장해 주세요.`
+      + (need ? ` / ${NEEDS_CHECK} 표시가 ${need}군데 있습니다. 사실을 확인하고 표시를 지워야 공개할 수 있어요.` : ''));
     setPasteOpen(false);
     setPasteText('');
   };
@@ -176,6 +189,12 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
+    // AI가 '내가 준 정보에 없는 내용'이라고 표시해 둔 곳은 공개 전에 반드시 확인한다.
+    const unchecked = Object.values(f).filter((v) => typeof v === 'string' && v.includes(NEEDS_CHECK)).length;
+    if (f.published && unchecked > 0) {
+      setErr(`'${NEEDS_CHECK}' 표시가 ${unchecked}군데 남아 있습니다. 사실을 확인하고 표시를 지운 뒤 공개해 주세요.`);
+      return;
+    }
     setSaving(true); setErr('');
     const payload = { ...f, updated_at: new Date().toISOString() };
     ['view_count', 'save_count', 'created_at'].forEach((k) => delete payload[k]);
@@ -369,6 +388,14 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
                 <input style={input} placeholder="핵심 한 줄 · Z (선택)" value={f[`s${n}_key_z`] || ''} onChange={(e) => set(`s${n}_key_z`)(e.target.value)} />
                 <input style={input} placeholder="핵심 한 줄 · M (선택)" value={f[`s${n}_key_m`] || ''} onChange={(e) => set(`s${n}_key_m`)(e.target.value)} />
+              </div>
+
+              {/* 곁다리 팁 — 마디마다 하나, 안 써도 된다 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
+                <textarea style={{ ...area, minHeight: 56 }} placeholder="✨ 곁다리 팁 · Z (선택)"
+                  value={f[`s${n}_tip_z`] || ''} onChange={(e) => set(`s${n}_tip_z`)(e.target.value)} />
+                <textarea style={{ ...area, minHeight: 56 }} placeholder="✨ 곁다리 팁 · M (선택)"
+                  value={f[`s${n}_tip_m`] || ''} onChange={(e) => set(`s${n}_tip_m`)(e.target.value)} />
               </div>
 
               {/* 2번 마디에만 — 숫자 카드 세 장 */}
