@@ -19,7 +19,7 @@ const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: 
 // 이 파일은 사용자 앱(main.jsx)이 import하지 않으므로 사용자 번들에 들어가지 않는다.
 const EMPTY = {
   published: false, sort_order: 0,
-  title_z: '', title_m: '', body_z: '', body_m: '', cover_url: '',
+  title_z: '', title_m: '', cover_url: '',
   thumb_text: '', read_min: 0, font_key: 'pretendard',
   chars_z: [], chars_m: [],
   lead_z: '', lead_m: '',
@@ -75,7 +75,7 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
   );
 }
 
-function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
+function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => normalize(row));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -111,14 +111,6 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
           <span style={label}>제목 · M 유형 <span style={{ color: '#B23B36' }}>다정하게</span></span>
           <input style={input} value={f.title_m} onChange={(e) => set('title_m')(e.target.value)}
             placeholder="목이 뻐근한 날, 3분만 같이 풀어봐요" />
-        </div>
-        <div>
-          <span style={label}>본문 · Z 유형</span>
-          <textarea style={area} value={f.body_z || ''} onChange={(e) => set('body_z')(e.target.value)} />
-        </div>
-        <div>
-          <span style={label}>본문 · M 유형</span>
-          <textarea style={area} value={f.body_m || ''} onChange={(e) => set('body_m')(e.target.value)} />
         </div>
       </div>
 
@@ -241,10 +233,16 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
       </div>
 
       {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
         <button onClick={onCancel} style={btn(false)}>취소</button>
+        {f.id && (
+          <button onClick={() => onDelete(f.id)}
+            style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36', boxShadow: 'inset 0 0 0 1px #E7C3C0' }}>
+            이 큐레이션 삭제
+          </button>
+        )}
       </div>
     </div>
   );
@@ -278,10 +276,17 @@ export default function CurationAdmin() {
     return () => { alive = false; };
   }, [tick]);
 
-  const remove = async (id) => {
+  const remove = async (id, after) => {
     if (!window.confirm(`큐레이션 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
-    const { error } = await supabase.from('curation_items').delete().eq('id', id);
+    // select()를 붙여야 정말 지워졌는지 알 수 있다.
+    // 권한이 없으면 오류 없이 0줄만 돌아오므로, 그때는 그 사실을 알려 준다.
+    const { data, error } = await supabase.from('curation_items').delete().eq('id', id).select('id');
     if (error) { alert('삭제 실패: ' + error.message); return; }
+    if (!data || data.length === 0) {
+      alert('삭제되지 않았습니다. 관리자 계정으로 로그인했는지 확인해 주세요.');
+      return;
+    }
+    if (after) after();
     load();
   };
 
@@ -311,7 +316,7 @@ export default function CurationAdmin() {
 
       {editing && (
         <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }}
-          onPreview={(draft) => setPreview(draft)} />
+          onPreview={(draft) => setPreview(draft)} onDelete={(id) => remove(id, () => setEditing(null))} />
       )}
 
       {preview && (
@@ -341,8 +346,9 @@ export default function CurationAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '#', '제목(Z)', '부위 묶음', '조회', '저장', ''].map((h) => (
-                <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
+              {['상태', '#', '제목(Z)', '부위 묶음', '조회', '저장', ''].map((h, i, arr) => (
+                <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap',
+                  ...(i === arr.length - 1 ? { position: 'sticky', right: 0, background: BG } : null) }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -361,7 +367,7 @@ export default function CurationAdmin() {
                 </td>
                 <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.view_count}</td>
                 <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
-                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap', position: 'sticky', right: 0, background: '#fff' }}>
                   <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
                   <button onClick={() => setEditing(r)} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
                   <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
