@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 import { PART_KEY } from '../lib/diaryEntryLabels';
@@ -24,8 +24,13 @@ const EMPTY = {
   thumb_text: '', read_min: 0, font_key: 'pretendard', font_body_key: 'pretendard',
   chars_z: [], chars_m: [],
   lead_z: '', lead_m: '',
-  s1_imgs: [], s1_z: '', s1_m: '', s2_imgs: [], s2_z: '', s2_m: '',
-  s3_imgs: [], s3_z: '', s3_m: '', s4_imgs: [], s4_z: '', s4_m: '',
+  ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [
+    [`s${n}_imgs`, []], [`s${n}_caps`, []],
+    [`s${n}_h_z`, ''], [`s${n}_h_m`, ''],
+    [`s${n}_z`, ''], [`s${n}_m`, ''],
+    [`s${n}_key_z`, ''], [`s${n}_key_m`, ''],
+  ])),
+  stats: [],
   card_ids: [],
   body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
@@ -46,7 +51,9 @@ function normalize(row) {
   [1, 2, 3, 4].forEach((n) => {
     const k = `s${n}_imgs`;
     if (!Array.isArray(f[k]) || f[k].length === 0) f[k] = f[`s${n}_img`] ? [f[`s${n}_img`]] : [];
+    if (!Array.isArray(f[`s${n}_caps`])) f[`s${n}_caps`] = [];
   });
+  if (!Array.isArray(f.stats)) f.stats = [];
   ['card_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
   return f;
 }
@@ -80,12 +87,62 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
   );
 }
 
+// Z·M 두 벌은 길이가 비슷해야 한다. 한쪽이 많이 짧으면 눈에 띄게 알려 준다.
+function CharCount({ a, b }) {
+  const la = String(a || '').length, lb = String(b || '').length;
+  if (la === 0 && lb === 0) return null;
+  const off = lb > 0 && la > 0 && Math.abs(la - lb) / Math.max(la, lb) > 0.3;
+  return (
+    <div style={{ fontSize: 11, fontWeight: 700, color: off ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right' }}>
+      {la}자{off ? ' · 반대쪽과 길이 차이가 큽니다' : ''}
+    </div>
+  );
+}
+
+// 자동 임시저장 — 브라우저에만 담아 두고, 저장하면 지운다.
+const draftKey = (row) => `bmti_admin_draft_curation_${row?.id || 'new'}`;
+
 function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
-  const [f, setF] = useState(() => normalize(row));
+  const [f, setF] = useState(() => {
+    const base = normalize(row);
+    try {
+      const raw = localStorage.getItem(draftKey(row));
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d?.at && d?.form && window.confirm(`저장하지 않고 나간 내용이 있어요 (${new Date(d.at).toLocaleString('ko-KR')}).\n이어서 쓸까요?\n\n취소를 누르면 그 내용은 버립니다.`)) {
+          return { ...base, ...d.form };
+        }
+        localStorage.removeItem(draftKey(row));
+      }
+    } catch { /* 브라우저가 막아 두었으면 그냥 넘어간다 */ }
+    return base;
+  });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [draftAt, setDraftAt] = useState(null);
+  const first = useRef(true);
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
   useUnsavedGuard(f);
+
+  // 고칠 때마다 1.5초 뒤에 브라우저에 조용히 담아 둔다.
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    const t = setTimeout(() => {
+      try {
+        const at = Date.now();
+        localStorage.setItem(draftKey(row), JSON.stringify({ at, form: f }));
+        setDraftAt(at);
+      } catch { /* 담아 둘 수 없으면 그냥 넘어간다 */ }
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [f, row]);
+
+  // 숫자 카드 세 장 — 빈 자리를 채워 가며 고친다.
+  const setStat = (i, key, v) => setF((p) => {
+    const next = [0, 1, 2].map((k) => ({ num: '', text: '', ...(p.stats?.[k] || {}) }));
+    next[i] = { ...next[i], [key]: v };
+    return { ...p, stats: next };
+  });
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
@@ -98,6 +155,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
     const { error } = await q;
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
+    try { localStorage.removeItem(draftKey(row)); } catch { /* 무시 */ }
     onSaved();
   };
 
@@ -182,21 +240,65 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
             <textarea style={{ ...area, minHeight: 72 }} value={f.lead_m || ''} onChange={(e) => set('lead_m')(e.target.value)} />
           </div>
         </div>
-        {PARTS_OF_ARTICLE.map((sec) => (
-          <div key={sec.n} style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, marginBottom: 8 }}>{sec.n}. {sec.label}</div>
-            <div style={{ marginBottom: 10 }}>
-              <ImageListInput value={f[`s${sec.n}_imgs`]} onChange={set(`s${sec.n}_imgs`)}
-                hint="사진 여러 장을 한 번에 올릴 수 있어요. 올린 순서대로 이 마디 글 위에 차례로 들어갑니다." />
+        {PARTS_OF_ARTICLE.map((sec) => {
+          const n = sec.n;
+          return (
+            <div key={n} style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, marginBottom: 8 }}>{n}. {sec.label}</div>
+
+              {/* ① 소제목 — 글에서 큰 글씨로 나온다 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
+                <input style={input} placeholder="소제목 · Z (선택)" value={f[`s${n}_h_z`] || ''} onChange={(e) => set(`s${n}_h_z`)(e.target.value)} />
+                <input style={input} placeholder="소제목 · M (선택)" value={f[`s${n}_h_m`] || ''} onChange={(e) => set(`s${n}_h_m`)(e.target.value)} />
+              </div>
+
+              {/* ② 사진 + 사진 설명 */}
+              <div style={{ marginBottom: 10 }}>
+                <ImageListInput value={f[`s${n}_imgs`]} onChange={set(`s${n}_imgs`)}
+                  captions={f[`s${n}_caps`]} onCaptions={set(`s${n}_caps`)}
+                  hint="사진 여러 장을 한 번에 올릴 수 있어요. 사진 밑 칸에 설명을 적으면 사진 아래 작은 글씨로 나옵니다." />
+              </div>
+
+              {/* ③ 본문 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <textarea style={{ ...area, minHeight: 96 }} placeholder="Z 유형 본문"
+                    value={f[`s${n}_z`] || ''} onChange={(e) => set(`s${n}_z`)(e.target.value)} />
+                  <CharCount a={f[`s${n}_z`]} b={f[`s${n}_m`]} />
+                </div>
+                <div>
+                  <textarea style={{ ...area, minHeight: 96 }} placeholder="M 유형 본문"
+                    value={f[`s${n}_m`] || ''} onChange={(e) => set(`s${n}_m`)(e.target.value)} />
+                  <CharCount a={f[`s${n}_m`]} b={f[`s${n}_z`]} />
+                </div>
+              </div>
+
+              {/* ④ 핵심 한 줄 — 왼쪽 세로줄이 붙은 큰 글씨 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
+                <input style={input} placeholder="핵심 한 줄 · Z (선택)" value={f[`s${n}_key_z`] || ''} onChange={(e) => set(`s${n}_key_z`)(e.target.value)} />
+                <input style={input} placeholder="핵심 한 줄 · M (선택)" value={f[`s${n}_key_m`] || ''} onChange={(e) => set(`s${n}_key_m`)(e.target.value)} />
+              </div>
+
+              {/* 2번 마디에만 — 숫자 카드 세 장 */}
+              {n === 2 && (
+                <div style={{ marginTop: 12, padding: 12, background: '#fff', borderRadius: 10, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 3 }}>숫자 카드 <span style={{ fontWeight: 600, color: SUB }}>— 이 마디 글 아래에 가로로 세 장</span></div>
+                  <div style={{ fontSize: 11.5, color: SUB, marginBottom: 9 }}>Z·M 공통입니다. 비워 두면 나오지 않습니다.</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <input style={{ ...input, fontWeight: 900 }} placeholder={['12kg', '15도', '8시간'][i]}
+                          value={f.stats?.[i]?.num || ''} onChange={(e) => setStat(i, 'num', e.target.value)} />
+                        <input style={input} placeholder="한 줄 설명"
+                          value={f.stats?.[i]?.text || ''} onChange={(e) => setStat(i, 'text', e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <textarea style={{ ...area, minHeight: 96 }} placeholder="Z 유형 본문"
-                value={f[`s${sec.n}_z`] || ''} onChange={(e) => set(`s${sec.n}_z`)(e.target.value)} />
-              <textarea style={{ ...area, minHeight: 96 }} placeholder="M 유형 본문"
-                value={f[`s${sec.n}_m`] || ''} onChange={(e) => set(`s${sec.n}_m`)(e.target.value)} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 추천 바로카드 3~4장 */}
@@ -252,6 +354,11 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
         <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
+        {draftAt && (
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginLeft: 4 }}>
+            임시저장됨 {new Date(draftAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
         {f.id && (
           <button onClick={() => onDelete(f.id)}
             style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36', boxShadow: 'inset 0 0 0 1px #E7C3C0' }}>
@@ -301,6 +408,7 @@ export default function CurationAdmin() {
       alert('삭제되지 않았습니다. 관리자 계정으로 로그인했는지 확인해 주세요.');
       return;
     }
+    try { localStorage.removeItem(`bmti_admin_draft_curation_${id}`); } catch { /* 무시 */ }
     if (after) after();
     load();
   };

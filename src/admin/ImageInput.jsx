@@ -99,7 +99,7 @@ export default function ImageInput({ value, onChange, placeholder = 'https://...
 
 // ── 여러 장짜리 (본문 마디) ───────────────────────────────────────
 // 올린 순서대로 글에 위에서 아래로 들어간다. ←→로 순서를 바꾸고 ×로 뺀다.
-export function ImageListInput({ value, onChange, hint }) {
+export function ImageListInput({ value, onChange, hint, captions, onCaptions }) {
   const list = Array.isArray(value) ? value : (value ? [value] : []);
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
@@ -121,12 +121,33 @@ export function ImageListInput({ value, onChange, hint }) {
     if (bad.length) setErr(bad.join(' / '));
   };
 
+  const caps = Array.isArray(captions) ? captions : [];
+  const capAt = (i) => caps[i] || '';
+  const setCap = (i, v) => {
+    if (!onCaptions) return;
+    const next = [...caps];
+    while (next.length < list.length) next.push('');
+    next[i] = v;
+    onCaptions(next);
+  };
+
   const move = (i, d) => {
     const next = [...list];
     const j = i + d;
     if (j < 0 || j >= next.length) return;
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
+    if (onCaptions) {
+      const c = [...caps];
+      while (c.length < list.length) c.push('');
+      [c[i], c[j]] = [c[j], c[i]];
+      onCaptions(c);
+    }
+  };
+
+  const removeAt = (i) => {
+    onChange(list.filter((_, k) => k !== i));
+    if (onCaptions) onCaptions(caps.filter((_, k) => k !== i));
   };
 
   const addUrl = () => {
@@ -141,8 +162,12 @@ export function ImageListInput({ value, onChange, hint }) {
       {list.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
           {list.map((src, i) => (
-            <span key={`${src}-${i}`} style={{ width: 92, borderRadius: 9, overflow: 'hidden', background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+            <span key={`${src}-${i}`} style={{ width: onCaptions ? 150 : 92, borderRadius: 9, overflow: 'hidden', background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
               <img src={src} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block' }} />
+              {onCaptions && (
+                <input value={capAt(i)} onChange={(e) => setCap(i, e.target.value)} placeholder="사진 설명 (선택)"
+                  style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderTop: `1px solid ${LINE}`, padding: '5px 6px', fontSize: 11, fontFamily: 'inherit', color: INK, outline: 'none' }} />
+              )}
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3px 5px' }}>
                 <span style={{ fontSize: 10, fontWeight: 800, color: SUB }}>{i + 1}</span>
                 <span style={{ display: 'flex', gap: 2 }}>
@@ -150,7 +175,7 @@ export function ImageListInput({ value, onChange, hint }) {
                     style={{ border: 'none', background: 'transparent', cursor: i === 0 ? 'default' : 'pointer', fontSize: 12, color: i === 0 ? LINE : SUB, padding: '0 2px' }}>←</button>
                   <button type="button" onClick={() => move(i, 1)} disabled={i === list.length - 1} title="뒤로"
                     style={{ border: 'none', background: 'transparent', cursor: i === list.length - 1 ? 'default' : 'pointer', fontSize: 12, color: i === list.length - 1 ? LINE : SUB, padding: '0 2px' }}>→</button>
-                  <button type="button" onClick={() => onChange(list.filter((_, k) => k !== i))} title="빼기"
+                  <button type="button" onClick={() => removeAt(i)} title="빼기"
                     style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#B23B36', padding: '0 2px' }}>×</button>
                 </span>
               </span>

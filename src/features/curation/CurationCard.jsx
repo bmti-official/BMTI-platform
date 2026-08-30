@@ -5,7 +5,7 @@ import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
 import { titleFont, bodyFont, readMinutes, timeAgo } from './fonts';
 
-const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
+const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
 export function CurationThumb({ item, radius = 14, big = false }) {
@@ -63,12 +63,13 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
   );
 }
 
-const SECTIONS = [
-  { imgs: 's1_imgs', img: 's1_img', z: 's1_z', m: 's1_m' },
-  { imgs: 's2_imgs', img: 's2_img', z: 's2_z', m: 's2_m' },
-  { imgs: 's3_imgs', img: 's3_img', z: 's3_z', m: 's3_m' },
-  { imgs: 's4_imgs', img: 's4_img', z: 's4_z', m: 's4_m' },
-];
+const SECTIONS = [1, 2, 3, 4].map((n) => ({
+  n,
+  imgs: `s${n}_imgs`, img: `s${n}_img`, caps: `s${n}_caps`,
+  z: `s${n}_z`, m: `s${n}_m`,
+  hz: `s${n}_h_z`, hm: `s${n}_h_m`,
+  keyz: `s${n}_key_z`, keym: `s${n}_key_m`,
+}));
 
 // 마디에 딸린 사진들 — 여러 장 칸이 비어 있으면 옛 한 장짜리 칸을 쓴다.
 const sectionImages = (item, sec) => {
@@ -76,6 +77,22 @@ const sectionImages = (item, sec) => {
   if (Array.isArray(many) && many.length) return many;
   return item[sec.img] ? [item[sec.img]] : [];
 };
+
+// 숫자 카드 — '12kg / 15도' 처럼 숫자와 한 줄 설명을 가로로 세운다.
+function StatCards({ stats }) {
+  const list = (Array.isArray(stats) ? stats : []).filter((s) => s && (s.num || s.text));
+  if (list.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', gap: 8, margin: '4px 0 16px' }}>
+      {list.slice(0, 3).map((s, i) => (
+        <div key={i} style={{ flex: 1, minWidth: 0, background: '#F6F4EF', borderRadius: 13, padding: '14px 10px', textAlign: 'center' }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: INK, lineHeight: 1.1, letterSpacing: '-0.02em', wordBreak: 'keep-all' }}>{s.num}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginTop: 6, lineHeight: 1.4, wordBreak: 'keep-all' }}>{s.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boolean).map((p, i) => (
   <p key={i} style={{ fontSize: 14.5, lineHeight: 1.8, margin: '0 0 14px', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{p}</p>
@@ -105,14 +122,37 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
 
       {SECTIONS.map((sec, i) => {
         const text = (tone === 'm' ? item[sec.m] : item[sec.z]) || '';
+        const heading = (tone === 'm' ? item[sec.hm] : item[sec.hz]) || '';
+        const keyLine = (tone === 'm' ? item[sec.keym] : item[sec.keyz]) || '';
         const imgs = sectionImages(item, sec);
-        if (!text && imgs.length === 0) return null;
+        const caps = Array.isArray(item[sec.caps]) ? item[sec.caps] : [];
+        const stats = sec.n === 2 ? item.stats : null;
+        const hasStats = Array.isArray(stats) && stats.some((x) => x && (x.num || x.text));
+        if (!text && !heading && !keyLine && !hasStats && imgs.length === 0) return null;
         return (
-          <section key={i} style={{ marginBottom: 22, fontFamily: bodyFont(item) }}>
+          <section key={i} style={{ marginBottom: 26, fontFamily: bodyFont(item) }}>
+            {heading && (
+              <h2 style={{ fontFamily: titleFont(item), fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
+                margin: '0 0 12px', wordBreak: 'keep-all' }}>{heading}</h2>
+            )}
             {imgs.map((src, k) => (
-              <img key={k} src={src} alt="" style={{ width: '100%', borderRadius: 14, display: 'block', marginBottom: 12 }} />
+              <figure key={k} style={{ margin: '0 0 12px' }}>
+                <img src={src} alt={caps[k] || heading || ''} style={{ width: '100%', borderRadius: 14, display: 'block' }} />
+                {caps[k] && (
+                  <figcaption style={{ fontSize: 11.5, color: SUB, fontWeight: 600, textAlign: 'center', marginTop: 7, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                    {caps[k]}
+                  </figcaption>
+                )}
+              </figure>
             ))}
             <Paras text={text} />
+            {hasStats && <StatCards stats={stats} />}
+            {keyLine && (
+              <p style={{ margin: '2px 0 0', padding: '2px 0 2px 14px', borderLeft: `4px solid ${KEY_BAR}`,
+                fontSize: 16, fontWeight: 800, lineHeight: 1.6, color: INK, wordBreak: 'keep-all' }}>
+                {keyLine}
+              </p>
+            )}
           </section>
         );
       })}
