@@ -1,8 +1,7 @@
 // 큐레이션·바로카드 편집 화면이 함께 쓰는 화면 부품.
 // 형광펜 · 글자 수 · 이렇게 보여요 · 임시저장 표시.
-import { useRef, useState } from 'react';
-import { SUB, LINE, area } from './theme';
-import { BodyPreview } from '../features/curation/CurationCard';
+import { useRef } from 'react';
+import { SUB, area } from './theme';
 
 export function DraftMark({ at }) {
   if (!at) return null;
@@ -27,25 +26,6 @@ export function CharCount({ a, b, maxPara = 200 }) {
   return (
     <div style={{ fontSize: 11, fontWeight: 700, color: msg ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right', lineHeight: 1.5 }}>
       {la}자{msg ? ` · ${msg}` : ''}
-    </div>
-  );
-}
-
-// ── 이렇게 보여요 ────────────────────────────────────────────
-export function LiveBody({ text }) {
-  const [open, setOpen] = useState(true);
-  if (!String(text || '').trim()) return null;
-  return (
-    <div style={{ marginTop: 8 }}>
-      <button type="button" onClick={() => setOpen((v) => !v)}
-        style={{ padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: SUB, cursor: 'pointer' }}>
-        {open ? '▾' : '▸'} 이렇게 보여요
-      </button>
-      {open && (
-        <div style={{ marginTop: 6, padding: '10px 12px', background: '#fff', borderRadius: 9, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-          <BodyPreview text={text} />
-        </div>
-      )}
     </div>
   );
 }

@@ -8,9 +8,8 @@ import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
-import MotionInput from './MotionInput';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
-import { CharCount, HiliteBox, LiveBody, DraftMark } from './editorBits';
+import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
@@ -29,7 +28,7 @@ const EMPTY = {
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF',
   chars_z: [], chars_m: [],
   ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [
-    [`s${n}_imgs`, []], [`s${n}_caps`, []], [`s${n}_motion`, ''],
+    [`s${n}_imgs`, []], [`s${n}_caps`, []],
     [`s${n}_h_z`, ''], [`s${n}_h_m`, ''],
     [`s${n}_z`, ''], [`s${n}_m`, ''],
     [`s${n}_key_z`, ''], [`s${n}_key_m`, ''],
@@ -281,13 +280,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
                 <input style={input} placeholder="소제목 · M (선택)" value={f[`s${n}_h_m`] || ''} onChange={(e) => set(`s${n}_h_m`)(e.target.value)} />
               </div>
 
-              {/* ② 반복 동작 — 사진 대신 쓸 수 있다 */}
-              <div style={{ marginBottom: 10 }}>
-                <span style={label}>반복 동작 <span style={{ fontWeight: 600 }}>— 사진 대신 넣고 싶을 때만 (선택)</span></span>
-                <MotionInput value={f[`s${n}_motion`]} onChange={set(`s${n}_motion`)} />
-              </div>
-
-              {/* ③ 사진 + 사진 설명 */}
+              {/* ② 사진 + 사진 설명 */}
               <div style={{ marginBottom: 10 }}>
                 <ImageListInput value={f[`s${n}_imgs`]} onChange={set(`s${n}_imgs`)}
                   captions={f[`s${n}_caps`]} onCaptions={set(`s${n}_caps`)}
@@ -298,11 +291,9 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <HiliteBox placeholder="Z 유형 본문" value={f[`s${n}_z`]} onChange={set(`s${n}_z`)}>
                   <CharCount a={f[`s${n}_z`]} b={f[`s${n}_m`]} />
-                  <LiveBody text={f[`s${n}_z`]} />
                 </HiliteBox>
                 <HiliteBox placeholder="M 유형 본문" value={f[`s${n}_m`]} onChange={set(`s${n}_m`)}>
                   <CharCount a={f[`s${n}_m`]} b={f[`s${n}_z`]} />
-                  <LiveBody text={f[`s${n}_m`]} />
                 </HiliteBox>
               </div>
 

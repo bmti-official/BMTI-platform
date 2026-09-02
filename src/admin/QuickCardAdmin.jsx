@@ -7,7 +7,7 @@ import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
-import { CharCount, HiliteBox, LiveBody, DraftMark } from './editorBits';
+import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
 import MotionInput from './MotionInput';
 import ImageInput from './ImageInput';
@@ -195,14 +195,12 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <span style={label}>음성 대본 · Z 유형</span>
           <HiliteBox placeholder="바르게 앉아 어깨를 내립니다." minHeight={120} value={f.script_z} onChange={set('script_z')}>
             <CharCount a={f.script_z} b={f.script_m} maxPara={160} />
-            <LiveBody text={f.script_z} />
           </HiliteBox>
         </div>
         <div>
           <span style={label}>음성 대본 · M 유형</span>
           <HiliteBox placeholder="편하게 앉아서 어깨에 힘을 빼 보세요." minHeight={120} value={f.script_m} onChange={set('script_m')}>
             <CharCount a={f.script_m} b={f.script_z} maxPara={160} />
-            <LiveBody text={f.script_m} />
           </HiliteBox>
         </div>
       </div>

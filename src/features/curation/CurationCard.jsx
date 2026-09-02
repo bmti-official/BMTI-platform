@@ -6,12 +6,12 @@ import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
 import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
 import { charBox } from '../../lib/charBox';
-import { MotionFromUrl } from './MotionPlayer';
 import { isClip } from './media';
 import AiNote from './AiNote';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#FBF3C4';   // 형광펜 연노랑
+const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 
 // 누끼 캐릭터 한 마리 — 그림 파일마다 다른 여백을 걷어내고 키를 맞춰 세운다.
@@ -85,7 +85,7 @@ function KeepChip({ onSave }) {
   return (
     <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); }}
       style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
-        border: 'none', background: '#F4F2EE', color: SUB, cursor: 'pointer', lineHeight: 1.2,
+        border: 'none', background: KEEP_BG, color: KEEP_INK, cursor: 'pointer', lineHeight: 1.2,
         display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <span>보관</span>
       <span>하기</span>
@@ -120,7 +120,7 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
 
 const SECTIONS = [1, 2, 3, 4].map((n) => ({
   n,
-  imgs: `s${n}_imgs`, img: `s${n}_img`, caps: `s${n}_caps`, motion: `s${n}_motion`,
+  imgs: `s${n}_imgs`, img: `s${n}_img`, caps: `s${n}_caps`,
   z: `s${n}_z`, m: `s${n}_m`,
   hz: `s${n}_h_z`, hm: `s${n}_h_m`,
   keyz: `s${n}_key_z`, keym: `s${n}_key_m`,
@@ -227,7 +227,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', margin: '4px 0 16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.32, margin: '0 0 8px', wordBreak: 'keep-all' }}>{title}</h1>
+          <h1 style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.35, letterSpacing: '-0.02em', margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h1>
           <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
             by. BMTI · 조회수 {fmtCount(item.view_count)}회 · 저장수 {fmtCount(item.save_count)}회
             {item.created_at ? ` · ${timeAgo(item.created_at)}` : ''}
@@ -238,12 +238,13 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
 
       {/* 초록 자리 — 마디 소제목 목차. 누르면 그 마디로 내려간다 */}
       {toc.length > 0 && (
-        <nav style={{ background: '#FBF6E9', borderRadius: 14, padding: '12px 8px', margin: '0 0 24px' }}>
+        <nav style={{ background: '#FBF7EC', borderRadius: 14, padding: '8px 8px', margin: '0 0 26px' }}>
           {toc.map((t) => (
             <button key={t.n} type="button"
               onClick={() => document.getElementById(`cur-sec-${t.n}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '9px 10px',
-                border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: F.head, color: INK }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 10px',
+                border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: F.head, color: INK,
+                borderTop: t.n === 1 ? 'none' : '1px solid rgba(0,0,0,0.045)' }}>
               <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: 6, background: '#EFE4C6', color: '#8A6E2F',
                 fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{t.n}</span>
               <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, wordBreak: 'keep-all' }}>{t.label}</span>
@@ -259,39 +260,33 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
         const keyLine = (tone === 'm' ? item[sec.keym] : item[sec.keyz]) || '';
         const imgs = sectionImages(item, sec);
         const caps = Array.isArray(item[sec.caps]) ? item[sec.caps] : [];
-        const motionUrl = item[sec.motion];
         const tip = (tone === 'm' ? item[sec.tipm] : item[sec.tipz]) || '';
-        if (!text && !heading && !keyLine && !tip && !motionUrl && imgs.length === 0) return null;
+        if (!text && !heading && !keyLine && !tip && imgs.length === 0) return null;
         return (
-          <section key={i} id={`cur-sec-${sec.n}`} style={{ marginBottom: 26, fontFamily: F.body, scrollMarginTop: 12 }}>
+          <section key={i} id={`cur-sec-${sec.n}`} style={{ marginBottom: 30, fontFamily: F.body, scrollMarginTop: 12 }}>
             {heading && (
-              <h2 style={{ fontFamily: F.head, fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
-                margin: '0 0 12px', wordBreak: 'keep-all' }}>{heading}</h2>
-            )}
-            {/* 반복 동작 — 사진 대신 넣을 수 있다 */}
-            {motionUrl && (
-              <div style={{ margin: '0 0 12px', background: '#F6F4EF', borderRadius: 14, display: 'flex', justifyContent: 'center', padding: 6 }}>
-                <MotionFromUrl url={motionUrl} size={340} bg="#F6F4EF" />
-              </div>
+              <h2 style={{ fontFamily: F.head, fontSize: 18.5, fontWeight: 900, lineHeight: 1.45, letterSpacing: '-0.015em',
+                margin: '0 0 13px', wordBreak: 'keep-all' }}>{heading}</h2>
             )}
             <SectionImages imgs={imgs} caps={caps} alt={heading} />
             <Paras text={text} />
             {keyLine && (
               <p style={{ margin: '2px 0 0', padding: '2px 0 2px 14px', borderLeft: `4px solid ${KEY_BAR}`,
-                fontFamily: F.key, fontSize: 16.5, fontWeight: 800, lineHeight: 1.6, color: INK, wordBreak: 'keep-all' }}>
+                fontFamily: F.key, fontSize: 14.5, fontWeight: 500, lineHeight: 1.7, color: '#3F3A31', wordBreak: 'keep-all' }}>
                 {keyLine}
               </p>
             )}
             {/* 곁다리 팁 — 본문에서 살짝 비켜난 정보 */}
             {tip && (
-              <div style={{ marginTop: 16, background: '#F4F2EE', borderRadius: 13, padding: '14px 15px' }}>
+              <div style={{ marginTop: 16, background: '#fff', borderRadius: 13, padding: '14px 15px',
+                boxShadow: '0 2px 4px rgba(220,188,86,0.16), 0 8px 20px rgba(233,203,110,0.34)' }}>
                 <p style={{ fontSize: 13.5, lineHeight: 1.75, margin: 0, color: '#3F3A31', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
                   <Marked text={tip} />
                 </p>
               </div>
             )}
             {/* 마디가 끝났다는 시각적 쉼표 */}
-            <div aria-hidden="true" style={{ height: 2, margin: '26px 0 0', background: DOTS }} />
+            <div aria-hidden="true" style={{ height: 2, margin: '28px 0 0', background: DOTS }} />
           </section>
         );
       })}
@@ -318,7 +313,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
       {/* 글을 다 읽은 뒤 — 나중에 다시 보게 담아 둔다 */}
       <button type="button" onClick={() => { if (onSave) onSave(); }}
         style={{ width: '100%', marginTop: 16, padding: '14px 16px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
-          borderRadius: 999, border: 'none', background: '#F4F2EE', color: INK, cursor: 'pointer' }}>
+          borderRadius: 999, border: 'none', background: KEEP_BG, color: KEEP_INK, cursor: 'pointer' }}>
         보관하고 나중에 다시 보기
       </button>
 
