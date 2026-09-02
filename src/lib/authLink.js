@@ -70,9 +70,11 @@ export async function resumeAfterRedirect() {
  */
 export async function startKakaoAuth(redirectTo = window.location.origin + window.location.pathname) {
   try {
+    // 꼭 필요한 것만 요구한다 — 성별·연령대는 이미 카카오 SDK 쪽에서 받고 있다.
+    // (카카오 앱의 '동의항목'에 켜져 있지 않은 걸 요구하면 KOE205로 거절된다)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "kakao",
-      options: { redirectTo, scopes: "profile_nickname account_email" },
+      options: { redirectTo, scopes: "profile_nickname" },
     });
     if (error) { console.warn("[auth] 카카오 로그인 시작 실패:", error.message); return false; }
     return true;
