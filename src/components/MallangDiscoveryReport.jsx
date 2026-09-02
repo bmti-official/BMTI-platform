@@ -1206,6 +1206,19 @@ function FreeSignals({ signals }) {
   );
 }
 
+// 포도송이 아이콘 — 카드 제목 왼쪽에 붙는다
+function IconGrape({ size = 18 }) {
+  const b = [[9, 4.6, 1.5], [6.2, 7.4, 1.7], [11.8, 7.4, 1.7], [9, 8.9, 1.8],
+    [4.4, 10.6, 1.6], [9, 11.9, 1.7], [13.6, 10.6, 1.6], [6.6, 14.1, 1.5], [11.4, 14.1, 1.5], [9, 16.4, 1.4]];
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 20" fill="none" aria-hidden="true">
+      <path d="M9 4.4 Q9.3 2.6 11 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <ellipse cx="12.6" cy="1.5" rx="2.1" ry="1.05" fill="currentColor" opacity="0.55" transform="rotate(-22 12.6 1.5)" />
+      {b.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="currentColor" opacity={i === 3 ? 1 : 0.72} />)}
+    </svg>
+  );
+}
+
 // ── 몽글몽글 포도 송이: 운동함·쉬어감·무리함을 알알이 맺힌 포도로 ──
 // 많이 고른 항목일수록 알이 많아지고 송이가 커진다. 가로로 밀어 세 송이를 본다.
 const GRAPE = {
@@ -1214,58 +1227,82 @@ const GRAPE = {
   over: { label: "무리함", emoji: "💦", berry: "#EFB48A", deep: "#C4794A", soft: "#FBEFE5", stem: "#CE9670" },
 };
 
-// 알 자리 — 가운데 큰 알 하나를 두고 그 둘레로 작은 알들이 붙는다.
-function berryLayout(n) {
-  const out = [{ x: 0, y: 0, r: 1 }];
-  if (n <= 1) return out;
-  const rings = [
-    { count: 6, dist: 1.62, r: 0.74 },
-    { count: 11, dist: 2.86, r: 0.58 },
-    { count: 15, dist: 4.0, r: 0.46 },
-  ];
-  let left = n - 1;
-  rings.forEach((ring, ri) => {
-    const take = Math.min(left, ring.count);
-    for (let i = 0; i < take; i++) {
-      const a = (i / ring.count) * Math.PI * 2 + (ri % 2 ? Math.PI / ring.count : 0) - Math.PI / 2;
-      out.push({ x: Math.cos(a) * ring.dist, y: Math.sin(a) * ring.dist * 1.06, r: ring.r });
-    }
-    left -= take;
-  });
-  return out;
+// 알 개수 — 1일부터 시작해 이틀마다 한 알씩 는다(1·3·5·7일…에서 커진다).
+function berryCount(days) {
+  if (!days || days < 1) return 0;
+  return Math.min(16, Math.floor((days + 1) / 2));
 }
 
-function GrapeCluster({ kind, days, size = 132 }) {
+// 알 자리 — 가운데 큰 알에서 시작해 아래·옆으로 송이처럼 번져 나간다.
+// 자리를 손으로 정해 두어 알이 적을 때도 포도송이처럼 보이게 한다.
+const BERRY_SPOTS = [
+  [0, 0, 1],                                                   // 가운데
+  [-0.98, 0.82, 0.78], [0.98, 0.82, 0.78],                     // 아래 양옆
+  [-1.42, -0.24, 0.74], [1.42, -0.24, 0.74],                   // 옆
+  [-0.52, -1.32, 0.7], [0.52, -1.32, 0.7],                     // 위 양옆
+  [0, 1.72, 0.7],                                              // 맨 아래
+  [-1.9, 1.4, 0.62], [1.9, 1.4, 0.62],
+  [-2.3, 0.42, 0.6], [2.3, 0.42, 0.6],
+  [-1.62, -1.42, 0.58], [1.62, -1.42, 0.58],
+  [-0.86, 2.4, 0.56], [0.86, 2.4, 0.56],
+];
+function berryLayout(n) {
+  return BERRY_SPOTS.slice(0, Math.max(0, n)).map(([x, y, r]) => ({ x, y, r }));
+}
+
+function GrapeCluster({ kind, days, items = [], size = 132 }) {
   const g = GRAPE[kind];
-  const n = Math.max(0, Math.min(33, days));
+  const n = berryCount(days);
   const layout = berryLayout(n);
-  // 알이 많을수록 송이가 커진다 — 다만 화면을 넘지 않게 천천히 커진다.
-  const unit = size / (n <= 1 ? 5.2 : n <= 7 ? 8.2 : n <= 18 ? 11.4 : 13.2);
-  const C0 = size / 2;
+
+  // 알·꼭지·잎을 모두 담는 네모를 재어 한가운데에 딱 맞게 그린다.
+  const STEM = 1.0, LEAF = 1.55;                      // 꼭지 길이 · 잎까지 높이(알 단위)
+  const bx = layout.length ? layout : [{ x: 0, y: 0, r: 1 }];
+  const minX = Math.min(...bx.map((b) => b.x - b.r), 0);
+  const maxX = Math.max(...bx.map((b) => b.x + b.r)) + 0.5;   // 잎이 오른쪽으로 조금 나간다
+  const minY = Math.min(...bx.map((b) => b.y - b.r)) - LEAF;
+  const maxY = Math.max(...bx.map((b) => b.y + b.r));
+  const unit = Math.min(size / (maxX - minX), size / (maxY - minY)) * 0.92;
+  const CX = size / 2 - ((minX + maxX) / 2) * unit;
+  const CY = size / 2 - ((minY + maxY) / 2) * unit;
+  const top = Math.min(...bx.map((b) => b.y - b.r));   // 가장 위 알의 꼭대기
+  const markOf = (i) => (items.length ? items[i % items.length] : null);
+
   return (
     <svg viewBox={`0 0 ${size} ${size}`} style={{ width: size, height: size, display: "block" }} aria-hidden="true">
-      {/* 꼭지와 잎 */}
-      <path d={`M${C0} ${C0 - unit * 4.6} q ${unit * 0.5} ${-unit * 1.4} ${unit * 1.5} ${-unit * 1.7}`}
-        fill="none" stroke={g.stem} strokeWidth={Math.max(2, unit * 0.28)} strokeLinecap="round" />
-      <ellipse cx={C0 + unit * 1.9} cy={C0 - unit * 6.3} rx={unit * 1.15} ry={unit * 0.62}
-        fill={g.stem} opacity="0.75" transform={`rotate(-24 ${C0 + unit * 1.9} ${C0 - unit * 6.3})`} />
+      {/* 꼭지와 잎 — 가장 위 알에서 뻗어 나간다 */}
+      <path d={`M${CX} ${CY + top * unit} q ${unit * 0.3} ${-unit * STEM * 0.7} ${unit * 0.85} ${-unit * STEM}`}
+        fill="none" stroke={g.stem} strokeWidth={Math.max(2, unit * 0.16)} strokeLinecap="round" />
+      <ellipse cx={CX + unit * 1.15} cy={CY + (top - LEAF) * unit + unit * 0.32} rx={unit * 0.62} ry={unit * 0.34}
+        fill={g.stem} opacity="0.72"
+        transform={`rotate(-24 ${CX + unit * 1.15} ${CY + (top - LEAF) * unit + unit * 0.32})`} />
       {n === 0 ? (
-        <circle cx={C0} cy={C0} r={unit * 1.1} fill={g.soft} stroke={g.berry} strokeWidth="2" strokeDasharray="4 4" />
+        <circle cx={CX} cy={CY} r={unit * 0.95} fill={g.soft} stroke={g.berry} strokeWidth="2" strokeDasharray="4 4" />
       ) : (
-        layout.map((b, i) => (
-          <g key={i}>
-            <circle cx={C0 + b.x * unit} cy={C0 + b.y * unit} r={b.r * unit} fill={i === 0 ? g.deep : g.berry} />
-            <circle cx={C0 + b.x * unit - b.r * unit * 0.3} cy={C0 + b.y * unit - b.r * unit * 0.34}
-              r={b.r * unit * 0.28} fill="#fff" opacity="0.45" />
-          </g>
-        ))
+        layout.map((b, i) => {
+          const cx = CX + b.x * unit, cy = CY + b.y * unit, r = b.r * unit;
+          const mk = markOf(i);
+          return (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={r} fill={i === 0 ? g.deep : g.berry} />
+              <circle cx={cx - r * 0.32} cy={cy - r * 0.36} r={r * 0.26} fill="#fff" opacity="0.4" />
+              {mk?.icon && (
+                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={r * 1.0}>{mk.icon}</text>
+              )}
+              {!mk?.icon && mk?.word && (
+                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
+                  fontSize={Math.max(7, r * 0.5)} fontWeight="800" fill="#fff">{mk.word}</text>
+              )}
+            </g>
+          );
+        })
       )}
     </svg>
   );
 }
 
 // 포도 한 송이 카드 — 가로 스크롤 안에 한 칸씩 들어간다
-function GrapeSlide({ kind, days, topLabel, topEmoji }) {
+function GrapeSlide({ kind, days, items, topLabel, topEmoji }) {
   const g = GRAPE[kind];
   return (
     <div style={{ flex: "0 0 78%", scrollSnapAlign: "center", background: g.soft, borderRadius: 18, padding: "14px 12px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -1276,7 +1313,7 @@ function GrapeSlide({ kind, days, topLabel, topEmoji }) {
       <div style={{ fontSize: 11.5, fontWeight: 800, color: g.deep, marginTop: 2 }}>
         {days > 0 ? `${days}일` : "아직 없어요"}
       </div>
-      <div style={{ margin: "6px 0 2px" }}><GrapeCluster kind={kind} days={days} /></div>
+      <div style={{ margin: "6px 0 2px" }}><GrapeCluster kind={kind} days={days} items={items} /></div>
       {topLabel && (
         <div style={{ background: "#fff", borderRadius: 999, padding: "4px 11px", fontSize: 10.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
           {topEmoji} {topLabel} 1위
@@ -1287,17 +1324,24 @@ function GrapeSlide({ kind, days, topLabel, topEmoji }) {
 }
 
 // 세 송이를 가로로 — 실제/예시 공용
+// 운동 종목 이름을 알 안에 넣을 짧은 말로 줄인다 — '걷기/산책' → '걷기'
+const shortWord = (label) => String(label || "").split(/[/·]/)[0].trim().slice(0, 4);
+
 function buildGrapes(move, rest, over) {
   const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
   const exTop = move?.data?.byType?.[0];
   const restTop = rest?.data?.items?.[0];
   const overTop = over?.data?.items?.[0];
+  // 알 안에 얹을 표시 — 쉬어감·무리함은 아이콘, 운동함은 아직 아이콘이 없어 문구로 넣는다.
+  const moveItems = (move?.data?.byType || []).slice(0, 6).map((x) => ({ word: shortWord(x.label) })).filter((x) => x.word);
+  const restItems = (rest?.data?.items || []).slice(0, 6).map((x) => ({ icon: REASON_EMOJI[x.reason] })).filter((x) => x.icon);
+  const overItems = (over?.data?.items || []).slice(0, 6).map((x) => ({ icon: LOAD_EMOJI[x.load] })).filter((x) => x.icon);
   return {
     total: moveN + restN + overN,
     slides: [
-      { key: "move", days: moveN, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
-      { key: "rest", days: restN, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
-      { key: "over", days: overN, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
+      { key: "move", days: moveN, items: moveItems, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
+      { key: "rest", days: restN, items: restItems, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
+      { key: "over", days: overN, items: overItems, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
     ],
   };
 }
@@ -1307,7 +1351,7 @@ function GrapeRow({ slides }) {
     <>
       <div className="grape-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", padding: "2px 2px 6px" }}>
         {slides.map((sl) => (
-          <GrapeSlide key={sl.key} kind={sl.key} days={sl.days} topLabel={sl.bl} topEmoji={sl.be} />
+          <GrapeSlide key={sl.key} kind={sl.key} days={sl.days} items={sl.items} topLabel={sl.bl} topEmoji={sl.be} />
         ))}
       </div>
       <style>{`.grape-row{scrollbar-width:none;-ms-overflow-style:none}.grape-row::-webkit-scrollbar{display:none}`}</style>
@@ -1323,7 +1367,7 @@ function ActivityTrackCard({ move, rest, over, exMove, exRest, exOver }) {
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}><IconRun size={18} /></span>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}><IconGrape size={19} /></span>
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink, whiteSpace: "nowrap" }}>몽글몽글 포도 송이</span>
       </div>
       <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 10px" }}>많이 고른 만큼 알이 맺혀요. 옆으로 밀어 세 송이를 보세요 🍇</p>
