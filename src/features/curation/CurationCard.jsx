@@ -8,6 +8,7 @@ import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fon
 import { charBox } from '../../lib/charBox';
 import { MotionFromUrl } from './MotionPlayer';
 import { isClip } from './media';
+import AiNote from './AiNote';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#FBF3C4';   // 형광펜 연노랑
@@ -313,6 +314,8 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
           borderRadius: 999, border: 'none', background: '#F4F2EE', color: INK, cursor: 'pointer' }}>
         보관하고 나중에 다시 보기
       </button>
+
+      <AiNote align="center" />
     </article>
   );
 }

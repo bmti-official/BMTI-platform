@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import MotionPlayer from './MotionPlayer';
 import { CurationThumb } from './CurationCard';
+import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, finishRate } from './format';
 import { BodyPreview } from './CurationCard';
@@ -73,6 +74,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
           style={{ width: '100%', padding: 11, marginTop: 7, borderRadius: 13, border: `1px solid ${LINE}`, background: '#fff', color: SUB, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
           내 루틴으로 복사해 편집하기
         </button>
+        <AiNote top={10} />
         {script && (
           <details style={{ marginTop: 10 }}>
             <summary style={{ fontSize: 11.5, color: SUB, fontWeight: 700, cursor: 'pointer' }}>음성 안내 대본 보기</summary>

@@ -1,6 +1,7 @@
 // 손님에게 보이는 루틴(플레이리스트) — 총 소요시간·완주율·도구·타겟을 한눈에 보여주고
 // '바로 시작하기'와 '일단 구경하기'로 이어진다.
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
+import AiNote from './AiNote';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
@@ -86,6 +87,8 @@ export function RoutineDetail({ routine, cards, tone = 'z', onStart, onCopy }) {
         style={{ width: '100%', padding: 11, marginTop: 7, borderRadius: 13, border: `1px solid ${LINE}`, background: '#fff', color: SUB, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
         내 루틴으로 복사해 편집하기
       </button>
+
+      <AiNote />
     </div>
   );
 }
