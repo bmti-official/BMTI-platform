@@ -31,14 +31,16 @@ const REASON_PHRASE = {
   busy: "바빠서", tired: "피곤해서", sick: "몸이 안좋아서",
   rest: "그냥 쉬고 싶어서", forgot: "깜빡해서",
 };
-export const REASON_ICON = { busy: "clock", tired: "yawn", sick: "slump", rest: "sofa", forgot: "forgot" };
+// 다이어리 입력 화면(DiaryWriteFlow의 NO_EXERCISE_REASONS)과 같은 아이콘을 쓴다.
+export const REASON_ICON = { busy: "clock", tired: "yawn", sick: "bandage", rest: "blanket", forgot: "forgot" };
 
 // 무리한 까닭 → '~느라 / ~서 / ~며'
 const LOAD_PHRASE = {
   sit: "오래 앉아있느라", stand: "오래 서 있느라",
   walk: "많이 걸어서", lift: "무거운 물건을 들며",
 };
-export const LOAD_ICON = { sit: "chair", stand: "standing", walk: "walk", lift: "heavyLift" };
+// 다이어리 입력 화면(OVEREXERT_REASONS)과 같은 아이콘. 목록에 없는 것은 '기타'로 모은다.
+export const LOAD_ICON = { sit: "chair", stand: "standing", walk: "walk", lift: "heavyLift", etc: "gear" };
 
 // 한 줄 일기 갈래
 const NOTE_ICON = { "운동습관": "flex", "일상": "editPencil", "고민": "stress" };

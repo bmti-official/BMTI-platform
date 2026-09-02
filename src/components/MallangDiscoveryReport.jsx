@@ -1253,41 +1253,51 @@ function packBerries(radii) {
   return placed;
 }
 
-function GrapeCluster({ kind, items = [], width = 260, height = 190 }) {
+function GrapeCluster({ kind, items = [], width = 260, height = 205 }) {
   const g = GRAPE[kind];
   const list = (items || []).slice(0, 6);
+  const VINE_Y = 12, STEM = 20;              // 가로 줄기 높이 · 줄기에서 송이까지
+
+  // 가로로 길게 뻗은 줄기 — 송이는 늘 이 아래에 매달린다.
+  const vine = (
+    <path d={`M2 ${VINE_Y + 4} q ${width * 0.28} ${-6} ${width * 0.5} ${-2} q ${width * 0.22} ${4} ${width * 0.5 - 4} ${-2}`}
+      fill="none" stroke={g.stem} strokeWidth="3" strokeLinecap="round" opacity="0.85" />
+  );
+
   if (list.length === 0) {
     return (
-      <div style={{ width, height, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ width: 56, height: 56, borderRadius: "50%", background: g.soft, border: `2px dashed ${g.berry}`, boxSizing: "border-box" }} />
+      <div style={{ position: "relative", width, height }}>
+        <svg width={width} height={height} style={{ position: "absolute", inset: 0 }} aria-hidden="true">{vine}</svg>
+        <span style={{ position: "absolute", left: width / 2 - 28, top: VINE_Y + STEM,
+          width: 56, height: 56, borderRadius: "50%", background: g.soft, border: `2px dashed ${g.berry}`, boxSizing: "border-box" }} />
       </div>
     );
   }
 
   const radii = list.map((it) => berryRadius(it.count));
   const spots = packBerries(radii);
-  const LEAF = 22;                                    // 꼭지·잎이 차지하는 높이
   const minX = Math.min(...spots.map((b) => b.x - b.r));
-  const maxX = Math.max(...spots.map((b) => b.x + b.r), Math.min(...spots.map((q) => q.y - q.r)) === 0 ? 0 : 0) + 16;   // 잎이 오른쪽으로 조금 나간다
-  const minY = Math.min(...spots.map((b) => b.y - b.r)) - LEAF;
+  const maxX = Math.max(...spots.map((b) => b.x + b.r));
+  const minY = Math.min(...spots.map((b) => b.y - b.r));
   const maxY = Math.max(...spots.map((b) => b.y + b.r));
   // 정해진 크기를 그대로 쓰되, 상자를 넘칠 때만 줄인다.
-  const k = Math.min(1, width / (maxX - minX), height / (maxY - minY));
+  const k = Math.min(1, width / (maxX - minX + 8), (height - VINE_Y - STEM - 6) / (maxY - minY));
   const CX = width / 2 - ((minX + maxX) / 2) * k;
-  const CY = height / 2 - ((minY + maxY) / 2) * k;
-  // 꼭지는 가장 위에 있는 알의 정수리에 붙인다
+  const CY = VINE_Y + STEM - minY * k;                 // 줄기 아래에 매달리게
+  // 꼭지는 가장 위에 있는 알의 정수리에서 줄기까지 이어진다
   const head = spots.reduce((a, b) => (b.y - b.r < a.y - a.r ? b : a), spots[0]);
-  const top = head.y - head.r;
-  const headX = head.x;
+  const hx = CX + head.x * k, hy = CY + (head.y - head.r) * k;
 
   return (
     <div style={{ position: "relative", width, height }}>
-      {/* 꼭지와 잎 — 가장 위 알에서 뻗어 나간다 */}
       <svg width={width} height={height} style={{ position: "absolute", inset: 0 }} aria-hidden="true">
-        <path d={`M${CX + headX * k} ${CY + top * k} q ${6 * k} ${-13 * k} ${18 * k} ${-19 * k}`}
-          fill="none" stroke={g.stem} strokeWidth={Math.max(2.5, 4 * k)} strokeLinecap="round" />
-        <ellipse cx={CX + (headX + 25) * k} cy={CY + (top - 20) * k} rx={13 * k} ry={7 * k}
-          fill={g.stem} opacity="0.72" transform={`rotate(-24 ${CX + (headX + 25) * k} ${CY + (top - 20) * k})`} />
+        {vine}
+        {/* 줄기에서 송이로 내려오는 꼭지 */}
+        <path d={`M${hx} ${VINE_Y + 3} q ${-4} ${(hy - VINE_Y) * 0.6} ${0} ${hy - VINE_Y - 2}`}
+          fill="none" stroke={g.stem} strokeWidth="3.5" strokeLinecap="round" />
+        {/* 잎 */}
+        <ellipse cx={hx + 15} cy={VINE_Y + 12} rx={12} ry={6.5} fill={g.stem} opacity="0.72"
+          transform={`rotate(-22 ${hx + 15} ${VINE_Y + 12})`} />
       </svg>
 
       {spots.map((b, i) => {
@@ -1356,12 +1366,25 @@ function buildGrapes(move, rest, over) {
   // 알 하나가 항목 하나 — 같은 것끼리 이미 묶여 있고, 많이 고른 순으로 온다.
   // 쉬어감·무리함은 다이어리 아이콘, 운동함은 아직 아이콘이 없어 문구로 넣는다.
   const byCount = (a, b) => (b.count || 0) - (a.count || 0);
-  const moveItems = (move?.data?.byType || []).slice().sort(byCount).slice(0, 6)
-    .map((x) => ({ word: shortWord(x.label), label: "", count: x.count })).filter((x) => x.word);
-  const restItems = (rest?.data?.items || []).slice().sort(byCount).slice(0, 6)
-    .map((x) => ({ icon: REASON_ICON[x.reason], label: shortLabel(x.label), count: x.count })).filter((x) => x.icon);
-  const overItems = (over?.data?.items || []).slice().sort(byCount).slice(0, 6)
-    .map((x) => ({ icon: LOAD_ICON[x.load], label: shortLabel(x.label), count: x.count })).filter((x) => x.icon);
+  // 아는 항목은 그대로, 이름표가 없는 나머지는 '기타' 한 알로 모은다(버리지 않는다).
+  const pack = (rows, iconOf, labelOf) => {
+    const known = [], etc = [];
+    (rows || []).forEach((x) => {
+      const icon = iconOf(x);
+      if (icon) known.push({ icon, label: shortLabel(labelOf(x)), count: x.count || 1 });
+      else etc.push(x);
+    });
+    if (etc.length) known.push({ icon: "gear", label: "기타", count: etc.reduce((n, x) => n + (x.count || 1), 0) });
+    return known.sort(byCount).slice(0, 6);
+  };
+
+  const moveRows = (move?.data?.byType || []).slice().sort(byCount);
+  const moveItems = [
+    ...moveRows.slice(0, 5).map((x) => ({ word: shortWord(x.label), label: "", count: x.count })).filter((x) => x.word),
+    ...(moveRows.length > 5 ? [{ word: "기타", label: "", count: moveRows.slice(5).reduce((n, x) => n + (x.count || 1), 0) }] : []),
+  ];
+  const restItems = pack(rest?.data?.items, (x) => REASON_ICON[x.reason], (x) => x.label);
+  const overItems = pack(over?.data?.items, (x) => LOAD_ICON[x.load], (x) => x.label);
   return {
     total: moveN + restN + overN,
     slides: [
