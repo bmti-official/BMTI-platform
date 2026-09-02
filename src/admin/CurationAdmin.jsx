@@ -33,6 +33,7 @@ const EMPTY = {
     [`s${n}_z`, ''], [`s${n}_m`, ''],
     [`s${n}_key_z`, ''], [`s${n}_key_m`, ''],
     [`s${n}_tip_z`, ''], [`s${n}_tip_m`, ''],
+    [`s${n}_tipq_z`, ''], [`s${n}_tipq_m`, ''],
   ])),
   card_ids: [],
   body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
@@ -303,10 +304,20 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
                 <input style={input} placeholder="핵심 한 줄 · M (선택)" value={f[`s${n}_key_m`] || ''} onChange={(e) => set(`s${n}_key_m`)(e.target.value)} />
               </div>
 
-              {/* 곁다리 팁 — 마디마다 하나, 안 써도 된다 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
-                <HiliteBox placeholder="✨ 곁다리 팁 · Z (선택)" minHeight={56} value={f[`s${n}_tip_z`]} onChange={set(`s${n}_tip_z`)} />
-                <HiliteBox placeholder="✨ 곁다리 팁 · M (선택)" minHeight={56} value={f[`s${n}_tip_m`]} onChange={set(`s${n}_tip_m`)} />
+              {/* 곁다리 팁 — 질문 한 줄과 답변. 마디마다 하나, 안 써도 된다 */}
+              <div style={{ marginTop: 12, padding: 12, background: '#fff', borderRadius: 10, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 3 }}>곁다리 팁 <span style={{ fontWeight: 600, color: SUB }}>— 선택</span></div>
+                <div style={{ fontSize: 11.5, color: SUB, marginBottom: 9 }}>질문이 크게, 답변이 그 아래에 놓입니다. 답변에서 짚어 줄 말은 &lsquo;보라 글씨&rsquo;로 칠하세요.</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
+                  <input style={input} placeholder="질문 · Z (예: ✨ 계단이 무서운 날엔?)"
+                    value={f[`s${n}_tipq_z`] || ''} onChange={(e) => set(`s${n}_tipq_z`)(e.target.value)} />
+                  <input style={input} placeholder="질문 · M"
+                    value={f[`s${n}_tipq_m`] || ''} onChange={(e) => set(`s${n}_tipq_m`)(e.target.value)} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <HiliteBox placeholder="답변 · Z" minHeight={62} value={f[`s${n}_tip_z`]} onChange={set(`s${n}_tip_z`)} />
+                  <HiliteBox placeholder="답변 · M" minHeight={62} value={f[`s${n}_tip_m`]} onChange={set(`s${n}_tip_m`)} />
+                </div>
               </div>
 
             </div>

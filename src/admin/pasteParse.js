@@ -6,7 +6,7 @@ import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 
 const NOISE = /^(MD|\+\s*\d+|\d+\s*\/\s*\d+|-{3,}|={3,})$/;
 const HEADER = /^\[\s*([^\]]+?)\s*\]\s*(.*)$/;
-const KEY = /^(소제목|본문|핵심\s*한\s*줄|곁다리\s*팁|팁|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|썸네일|[1-4]\s*번\s*마디)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
+const KEY = /^(소제목|본문|핵심\s*한\s*줄|곁다리\s*팁\s*질문|곁다리\s*팁\s*답변|팁\s*질문|팁\s*답변|곁다리\s*팁|팁|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|썸네일|[1-4]\s*번\s*마디)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
 
 // AI가 형광펜을 **굵게** 나 <mark>로 줬어도 ==형광펜== 으로 받아들인다.
 const toHilite = (s) => String(s)
@@ -68,6 +68,8 @@ export function parseArticle(text) {
       if (t.name === '소제목') { put(`s${section}_h_${tone}`, t.value); continue; }
       if (t.name === '본문') { put(`s${section}_${tone}`, t.value); continue; }
       if (t.name === '핵심한줄') { put(`s${section}_key_${tone}`, t.value); continue; }
+      if (t.name === '곁다리팁질문' || t.name === '팁질문') { put(`s${section}_tipq_${tone}`, t.value); continue; }
+      if (t.name === '곁다리팁답변' || t.name === '팁답변') { put(`s${section}_tip_${tone}`, t.value); continue; }
       if (t.name === '곁다리팁' || t.name === '팁') { put(`s${section}_tip_${tone}`, t.value); continue; }
       continue;
     }
@@ -110,7 +112,7 @@ export function parseArticle(text) {
     has(/^s\d_h_/) ? `소제목 ${has(/^s\d_h_/)}` : null,
     has(/^s\d_[zm]$/) ? `본문 ${has(/^s\d_[zm]$/)}` : null,
     has(/^s\d_key_/) ? `핵심 한 줄 ${has(/^s\d_key_/)}` : null,
-    has(/^s\d_tip_/) ? `팁 ${has(/^s\d_tip_/)}` : null,
+    has(/^s\d_tipq?_/) ? `팁 ${has(/^s\d_tipq?_/)}` : null,
     has(/_caps$/) ? `사진 설명 ${has(/_caps$/)}` : null,
     has(/^(core_parts|related_parts|body_groups|tool_mode)$/) ? '검색 분류' : null,
   ].filter(Boolean);

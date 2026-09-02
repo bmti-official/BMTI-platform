@@ -12,6 +12,7 @@ import AiNote from './AiNote';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#E7E0F7';   // 형광펜 연보라
 const MARKER = '#FBEFB6';   // 목차에 대충 그은 옐로우 형광펜
+const PURPLE = '#7E6FC9';   // 답변에서 짚어 주는 연보라 글씨
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 
@@ -126,6 +127,7 @@ const SECTIONS = [1, 2, 3, 4].map((n) => ({
   hz: `s${n}_h_z`, hm: `s${n}_h_m`,
   keyz: `s${n}_key_z`, keym: `s${n}_key_m`,
   tipz: `s${n}_tip_z`, tipm: `s${n}_tip_m`,
+  tipqz: `s${n}_tipq_z`, tipqm: `s${n}_tipq_m`,
 }));
 
 // 마디에 딸린 사진들 — 여러 장 칸이 비어 있으면 옛 한 장짜리 칸을 쓴다.
@@ -191,12 +193,18 @@ function SectionImages({ imgs, caps, alt }) {
 
 const CAP = { fontSize: 11.5, color: SUB, fontWeight: 600, textAlign: 'center', marginTop: 7, lineHeight: 1.5, wordBreak: 'keep-all' };
 
-// 본문에 ==이렇게== 적은 곳은 연노랑 형광펜으로 칠한다.
-const Marked = ({ text }) => String(text).split(/(==[^=]+==)/g).filter(Boolean).map((chunk, i) => (
-  chunk.startsWith('==') && chunk.endsWith('==')
-    ? <mark key={i} style={{ background: HILITE, color: 'inherit', padding: '1px 2px', borderRadius: 3 }}>{chunk.slice(2, -2)}</mark>
-    : <span key={i}>{chunk}</span>
-));
+// 글 안의 두 가지 표시
+//   ==이렇게==  → 연보라 형광펜
+//   __이렇게__  → 연보라 글씨
+const Marked = ({ text }) => String(text).split(/(==[^=]+==|__[^_]+__)/g).filter(Boolean).map((chunk, i) => {
+  if (chunk.startsWith('==') && chunk.endsWith('==')) {
+    return <mark key={i} style={{ background: HILITE, color: 'inherit', padding: '1px 2px', borderRadius: 3 }}>{chunk.slice(2, -2)}</mark>;
+  }
+  if (chunk.startsWith('__') && chunk.endsWith('__')) {
+    return <span key={i} style={{ color: PURPLE, fontWeight: 800 }}>{chunk.slice(2, -2)}</span>;
+  }
+  return <span key={i}>{chunk}</span>;
+});
 
 // 관리자 화면에서 '이렇게 보여요'로 쓴다 — 손님 화면과 똑같은 규칙으로 그린다.
 export function BodyPreview({ text }) {
@@ -270,7 +278,8 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
         const imgs = sectionImages(item, sec);
         const caps = Array.isArray(item[sec.caps]) ? item[sec.caps] : [];
         const tip = (tone === 'm' ? item[sec.tipm] : item[sec.tipz]) || '';
-        if (!text && !heading && !keyLine && !tip && imgs.length === 0) return null;
+        const tipQ = (tone === 'm' ? item[sec.tipqm] : item[sec.tipqz]) || '';
+        if (!text && !heading && !keyLine && !tip && !tipQ && imgs.length === 0) return null;
         return (
           <section key={i} id={`cur-sec-${sec.n}`} style={{ marginBottom: 30, fontFamily: F.body, scrollMarginTop: 12 }}>
             {heading && (
@@ -286,12 +295,20 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
               </p>
             )}
             {/* 곁다리 팁 — 본문에서 살짝 비켜난 정보 */}
-            {tip && (
-              <div style={{ marginTop: 16, background: '#fff', borderRadius: 13, padding: '14px 15px',
+            {(tipQ || tip) && (
+              <div style={{ marginTop: 16, background: '#fff', borderRadius: 13, padding: '15px 16px',
                 boxShadow: '0 2px 4px rgba(220,188,86,0.16), 0 8px 20px rgba(233,203,110,0.34)' }}>
-                <p style={{ fontSize: 13.5, lineHeight: 1.75, margin: 0, color: '#3F3A31', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
-                  <Marked text={tip} />
-                </p>
+                {tipQ && (
+                  <p style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.55, margin: tip ? '0 0 8px' : 0,
+                    color: INK, wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                    <Marked text={tipQ} />
+                  </p>
+                )}
+                {tip && (
+                  <p style={{ fontSize: 13.5, lineHeight: 1.75, margin: 0, color: '#3F3A31', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                    <Marked text={tip} />
+                  </p>
+                )}
               </div>
             )}
             {/* 마디가 끝났다는 시각적 쉼표 */}

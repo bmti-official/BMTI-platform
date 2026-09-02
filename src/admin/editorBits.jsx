@@ -2,6 +2,7 @@
 // 형광펜 · 글자 수 · 이렇게 보여요 · 임시저장 표시.
 import { useRef } from 'react';
 import { SUB, area } from './theme';
+import { MARKS } from './editorState';
 
 export function DraftMark({ at }) {
   if (!at) return null;
@@ -30,40 +31,44 @@ export function CharCount({ a, b, maxPara = 200 }) {
   );
 }
 
-// ── 형광펜 버튼이 달린 글 상자 ───────────────────────────────
-// 칠하고 싶은 대목을 드래그해 고르고 버튼을 누르면 ==이렇게== 감싸진다.
-// 이미 칠해진 곳을 고르고 누르면 지워진다.
-export function HiliteBox({ value, onChange, placeholder, minHeight = 96, children }) {
+// ── 표시 버튼이 달린 글 상자 ────────────────────────────────
+// 칠하고 싶은 대목을 드래그해 고르고 버튼을 누르면 감싸진다.
+// 이미 칠해진 곳을 고르고 누르면 벗겨진다.
+//   ==글==  연보라 형광펜  ·  __글__  연보라 글씨
+export function HiliteBox({ value, onChange, placeholder, minHeight = 96, marks = MARKS, children }) {
   const ref = useRef(null);
   const v = String(value || '');
 
-  const toggle = () => {
+  // 고른 글을 표시로 감싼다. 이미 감싸져 있으면 벗긴다.
+  const toggle = (w) => {
     const el = ref.current;
     if (!el) return;
+    const n = w.length;
     let a = el.selectionStart, b = el.selectionEnd;
     if (a === b) { el.focus(); return; }
-    if (v.slice(a - 2, a) === '==' && v.slice(b, b + 2) === '==') { a -= 2; b += 2; }
+    if (v.slice(a - n, a) === w && v.slice(b, b + n) === w) { a -= n; b += n; }
     const sel = v.slice(a, b);
-    const on = sel.startsWith('==') && sel.endsWith('==') && sel.length > 4;
-    const inner = on ? sel.slice(2, -2) : sel;
-    const next = v.slice(0, a) + (on ? inner : `==${inner}==`) + v.slice(b);
+    const on = sel.startsWith(w) && sel.endsWith(w) && sel.length > n * 2;
+    const inner = on ? sel.slice(n, -n) : sel;
+    const next = v.slice(0, a) + (on ? inner : `${w}${inner}${w}`) + v.slice(b);
     onChange(next);
-    const end = a + (on ? inner.length : inner.length + 4);
+    const end = a + (on ? inner.length : inner.length + n * 2);
     setTimeout(() => { el.focus(); el.setSelectionRange(a, end); }, 0);
   };
 
-  const marks = (v.match(/==[^=]+==/g) || []).length;
+  const count = (w) => (v.match(new RegExp(`${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^${w[0]}]+${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')) || []).length;
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-        <button type="button" onClick={toggle}
-          style={{ padding: '4px 10px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 7, cursor: 'pointer',
-            border: 'none', background: '#FBF3C4', color: '#6B5B1F', boxShadow: 'inset 0 0 0 1px #EBDF9B' }}>
-          형광펜
-        </button>
-        <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>
-          {marks > 0 ? `${marks}군데 칠했어요` : '칠할 곳을 드래그해서 고른 뒤 누르세요'}
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+        {marks.map((m) => (
+          <button key={m.wrap} type="button" onClick={() => toggle(m.wrap)}
+            style={{ padding: '4px 10px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 7, cursor: 'pointer',
+              border: 'none', background: m.bg, color: m.fg, boxShadow: `inset 0 0 0 1px ${m.line}` }}>
+            {m.label}{count(m.wrap) > 0 ? ` ${count(m.wrap)}` : ''}
+          </button>
+        ))}
+        <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>칠할 곳을 드래그해서 고른 뒤 누르세요</span>
       </div>
       <textarea ref={ref} style={{ ...area, minHeight }} placeholder={placeholder}
         value={v} onChange={(e) => onChange(e.target.value)} />

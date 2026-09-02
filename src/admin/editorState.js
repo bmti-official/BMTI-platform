@@ -1,6 +1,13 @@
 // 편집 화면이 함께 쓰는 규칙과 저장 장치 — 화면 부품은 editorBits.jsx에 있다.
 import { useEffect, useRef, useState } from 'react';
 
+// 글에 칠할 수 있는 표시 두 가지
+//   ==글==  연보라 형광펜  ·  __글__  연보라 글씨
+export const MARKS = [
+  { wrap: '==', label: '형광펜', bg: '#E7E0F7', fg: '#4A3F7A', line: '#D6CCF0' },
+  { wrap: '__', label: '보라 글씨', bg: '#fff', fg: '#7E6FC9', line: '#D6CCF0' },
+];
+
 // AI가 '내가 준 정보에 없다'고 스스로 표시한 자리. 공개 전에 지워야 한다.
 export const NEEDS_CHECK = '〔확인 필요〕';
 export const countNeedsCheck = (f) =>
