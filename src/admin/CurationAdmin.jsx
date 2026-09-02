@@ -483,7 +483,7 @@ export default function CurationAdmin() {
                 </div>
                 <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
-                  <CurationDetail item={preview} tone={tone} cards={picked}
+                  <CurationDetail item={preview} tone={tone} cards={picked} charImages={charImages} charCodes={charCodes}
                     renderCard={(c) => <QuickCardView card={c} tone={tone} />} />
                 </div>
               </div>

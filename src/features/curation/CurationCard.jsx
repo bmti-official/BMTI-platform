@@ -11,40 +11,6 @@ const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#FBF3C4';   // 형광펜 연노랑
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 
-// 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-export function CurationThumb({ item, radius = 14, big = false }) {
-  const min = readMinutes(item);
-  return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
-      {item.cover_url
-        ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>대표 이미지 없음</div>}
-
-      {item.thumb_text && (() => {
-        const pos = thumbPos(item.thumb_pos);
-        const color = item.thumb_color || '#FFFFFF';
-        // 가독시간표는 오른쪽 아래에 있다. 문구가 아래쪽에 놓일 땐 그만큼 자리를 비워 둔다.
-        const pad = big ? 18 : 12;
-        const bottomPad = pos.align === 'flex-end' ? pad + (big ? 30 : 26) : pad;
-        return (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
-            padding: `${pad}px ${pad}px ${bottomPad}px` }}>
-            <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
-              textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color) }}>
-              {item.thumb_text}
-            </span>
-          </div>
-        );
-      })()}
-
-      {/* 우측 하단 평균 가독시간 */}
-      <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.78)', color: '#fff', fontSize: big ? 12.5 : 11.5, fontWeight: 700, borderRadius: 5, padding: '3px 8px', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
-        가독시간 {min}분
-      </span>
-    </div>
-  );
-}
-
 // 누끼 캐릭터 한 마리 — 그림 파일마다 다른 여백을 걷어내고 키를 맞춰 세운다.
 function CharPic({ src, code, h = 38 }) {
   const b = charBox(code);
@@ -58,8 +24,65 @@ function CharPic({ src, code, h = 38 }) {
   );
 }
 
+// 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
+export function CurationThumb({ item, radius = 14, big = false, chars = [], charCodes = [] }) {
+  const min = readMinutes(item);
+  return (
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
+      {item.cover_url
+        ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>대표 이미지 없음</div>}
+
+      {item.thumb_text && (() => {
+        const pos = thumbPos(item.thumb_pos);
+        const color = item.thumb_color || '#FFFFFF';
+        // 가독시간표는 오른쪽 아래에 있다. 문구가 아래쪽에 놓일 땐 그만큼 자리를 비워 둔다.
+        const pad = big ? 18 : 12;
+        // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
+        const bottomPad = pos.align === 'flex-end' ? pad + (chars.length ? 44 : 0) + (big ? 0 : 30) : pad;
+        return (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
+            padding: `${pad}px ${pad}px ${bottomPad}px` }}>
+            <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
+              textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color) }}>
+              {item.thumb_text}
+            </span>
+          </div>
+        );
+      })()}
+
+      {/* 우측 하단 평균 가독시간 — 목록에서만 보여 준다 */}
+      {!big && (
+        <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+          color: '#fff', borderRadius: 6, padding: '4px 7px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: '0.04em', opacity: 0.92 }}>가독시간</span>
+          <span style={{ fontSize: 12.5, fontWeight: 800 }}>{min}분</span>
+        </span>
+      )}
+
+      {/* 누끼 캐릭터 — 대표 이미지 왼쪽 아래에 올라선다 */}
+      {chars.length > 0 && (
+        <span style={{ position: 'absolute', left: big ? 14 : 10, bottom: 0, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
+          {chars.map((src, i) => <CharPic key={i} src={src} code={charCodes[i]} h={big ? 58 : 42} />)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// 보관하기 — 작고 끝이 둥근 버튼
+function KeepChip({ onSave }) {
+  return (
+    <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); }}
+      style={{ flexShrink: 0, padding: '5px 11px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 999,
+        border: 'none', background: '#F4F2EE', color: SUB, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      보관하기
+    </button>
+  );
+}
+
 // 목록 카드
-export default function CurationCard({ item, tone = 'z', charImage, charImages, charCodes, onOpen }) {
+export default function CurationCard({ item, tone = 'z', charImage, charImages, charCodes, onOpen, onSave }) {
   const { title } = pickCurationTone(item, tone);
   // 누끼 캐릭터는 최대 4개까지 — 여러 마리면 조금씩 겹쳐 세운다.
   const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
@@ -67,16 +90,8 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
   return (
     <button onClick={() => onOpen && onOpen(item)}
       style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: F.title }}>
-      <CurationThumb item={item} />
-      <div style={{ display: 'flex', gap: 10, padding: '11px 2px 0' }}>
-        {/* 유형 누끼 캐릭터 — 동그란 테두리 없이 그림만, 여러 개면 겹쳐서 */}
-        {chars.length > 0 && (
-          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
-            {chars.map((src, i) => (
-              <CharPic key={i} src={src} code={codes[i]} h={34} />
-            ))}
-          </span>
-        )}
+      <CurationThumb item={item} chars={chars} charCodes={codes} />
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 2px 0' }}>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 800, color: INK, lineHeight: 1.4, wordBreak: 'keep-all' }}>{title}</span>
           <span style={{ display: 'block', fontSize: 12, color: SUB, fontWeight: 600, marginTop: 5 }}>
@@ -84,6 +99,7 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
             {item.created_at ? ` · ${timeAgo(item.created_at)}` : ''}
           </span>
         </span>
+        <KeepChip onSave={onSave} />
       </div>
     </button>
   );
@@ -170,8 +186,10 @@ const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boo
 ));
 
 // 본문
-export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
+export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charImage, charImages, charCodes, onSave }) {
   const { title, body } = pickCurationTone(item, tone);
+  const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
+  const codes = charCodes || [];
   // 목차 — 소제목이 있는 마디만 줄지어 세운다.
   const toc = SECTIONS
     .map((sec) => ({ n: sec.n, label: (tone === 'm' ? item[sec.hm] : item[sec.hz]) || '' }))
@@ -180,12 +198,17 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
 
   return (
     <article style={{ fontFamily: F.title, color: INK }}>
-      <CurationThumb item={item} radius={16} big />
+      <CurationThumb item={item} radius={16} big chars={chars} charCodes={codes} />
 
-      <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.32, margin: '16px 0 8px', wordBreak: 'keep-all' }}>{title}</h1>
-      <div style={{ fontSize: 12, color: SUB, fontWeight: 600, marginBottom: 16 }}>
-        by. BMTI · 조회수 {fmtCount(item.view_count)}회 · 저장수 {fmtCount(item.save_count)}회
-        {item.created_at ? ` · ${timeAgo(item.created_at)}` : ''}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', margin: '16px 0 16px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.32, margin: '0 0 8px', wordBreak: 'keep-all' }}>{title}</h1>
+          <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
+            by. BMTI · 조회수 {fmtCount(item.view_count)}회 · 저장수 {fmtCount(item.save_count)}회
+            {item.created_at ? ` · ${timeAgo(item.created_at)}` : ''}
+          </div>
+        </div>
+        <KeepChip onSave={onSave} />
       </div>
 
       {/* 초록 자리 — 마디 소제목 목차. 누르면 그 마디로 내려간다 */}
@@ -259,6 +282,13 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard }) {
           ))}
         </div>
       )}
+
+      {/* 글을 다 읽은 뒤 — 나중에 다시 보게 담아 둔다 */}
+      <button type="button" onClick={() => { if (onSave) onSave(); }}
+        style={{ width: '100%', marginTop: 16, padding: '14px 16px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
+          borderRadius: 999, border: 'none', background: '#F4F2EE', color: INK, cursor: 'pointer' }}>
+        보관하고 나중에 다시 보기
+      </button>
     </article>
   );
 }

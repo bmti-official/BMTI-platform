@@ -4,6 +4,16 @@ import { INK, SUB, LINE, BG, box, label } from './theme';
 import { OnePicker } from './ui';
 import SearchFilter from '../features/curation/SearchFilter';
 import CurationCard from '../features/curation/CurationCard';
+import { CHARACTERS } from '../data';
+
+// 큐레이션에 골라 둔 누끼 캐릭터를 그림 주소로 바꿔 넘긴다.
+function charProps(item, tone) {
+  const codes = ((tone === 'm' ? item.chars_m : item.chars_z) || []).filter(Boolean);
+  return {
+    charCodes: codes,
+    charImages: codes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean),
+  };
+}
 import QuickCardView from '../features/curation/QuickCardView';
 import { buildRotation, pickByRotation } from '../features/curation/rotation';
 import { GROUP_LABEL, defaultTargetMode, defaultToolMode } from '../lib/bodyGroups';
@@ -130,7 +140,7 @@ export default function SearchPreview() {
                 <div key={`${item.id}-${i}`}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginBottom: 5 }}>{i + 1}번째 · {GROUP_LABEL[group] || group}</div>
                   {kind === 'curation'
-                    ? <CurationCard item={item} tone={tone} />
+                    ? <CurationCard item={item} tone={tone} {...charProps(item, tone)} />
                     : <QuickCardView card={item} tone={tone} />}
                 </div>
               ))}
