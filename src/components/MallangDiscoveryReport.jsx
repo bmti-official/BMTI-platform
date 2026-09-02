@@ -197,6 +197,9 @@ function buildBmti(bmtiCode) {
 // 잠금 미리보기 — 기록이 부족해 잠긴 박스에 '하드 유저' 예시를 블러로 보여주고,
 // 커서를 올리면(또는 탭하면) 블러가 풀리며 어떤 정보가 나오는지 확인할 수 있다.
 // ══════════════════════════════════════════════════════════════
+// 잠긴 박스에 공통으로 붙는 안내 — 한 곳에서만 고치면 모든 카드에 반영된다.
+export const LOCK_HINT = "이렇게 채워질 거예요 · 여기를 클릭해보세요";
+
 function LockedPreview({ children, label }) {
   const [reveal, setReveal] = useState(false);
   return (
@@ -214,7 +217,7 @@ function LockedPreview({ children, label }) {
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: reveal ? 0 : 1, transition: "opacity .25s ease" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: "rgba(28,26,23,0.74)", color: "#fff", padding: "10px 16px", borderRadius: 16, boxShadow: "0 4px 14px rgba(0,0,0,0.22)", backdropFilter: "blur(2px)", textAlign: "center" }}>
           <span style={{ fontSize: 12.5, fontWeight: 800 }}>아직 발견된 내용이 없어요.</span>
-          <span style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.92, whiteSpace: "nowrap" }}>🔒 {label || "이렇게 채워질 거예요 · 클릭해보세요"}</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.92, whiteSpace: "nowrap" }}>🔓 {label || LOCK_HINT}</span>
         </div>
       </div>
     </div>
@@ -1203,84 +1206,137 @@ function FreeSignals({ signals }) {
   );
 }
 
-// ── 활동량 요약: 무리·움직임·쉬어감을 3개의 단거리 트랙으로 ──
-// 단거리 트랙 한 레인 — 금메달 말랑이가 일수만큼 앞서 달리고, 머리 위 말풍선에 1위 종목/이유
-function ActLane({ emoji, label, days, maxDays, bubbleEmoji, bubbleLabel, mood }) {
-  const pos = days > 0 ? Math.min(88, 10 + 78 * (days / (maxDays || 1))) : 6;
+// ── 몽글몽글 포도 송이: 운동함·쉬어감·무리함을 알알이 맺힌 포도로 ──
+// 많이 고른 항목일수록 알이 많아지고 송이가 커진다. 가로로 밀어 세 송이를 본다.
+const GRAPE = {
+  move: { label: "운동함", emoji: "🏃‍♂️", berry: "#A9CE9F", deep: "#6E9C63", soft: "#EAF3E6", stem: "#8AA37E" },
+  rest: { label: "쉬어감", emoji: "🛌", berry: "#BDB4E4", deep: "#7E73B8", soft: "#EFECF8", stem: "#9A92C6" },
+  over: { label: "무리함", emoji: "💦", berry: "#EFB48A", deep: "#C4794A", soft: "#FBEFE5", stem: "#CE9670" },
+};
+
+// 알 자리 — 가운데 큰 알 하나를 두고 그 둘레로 작은 알들이 붙는다.
+function berryLayout(n) {
+  const out = [{ x: 0, y: 0, r: 1 }];
+  if (n <= 1) return out;
+  const rings = [
+    { count: 6, dist: 1.62, r: 0.74 },
+    { count: 11, dist: 2.86, r: 0.58 },
+    { count: 15, dist: 4.0, r: 0.46 },
+  ];
+  let left = n - 1;
+  rings.forEach((ring, ri) => {
+    const take = Math.min(left, ring.count);
+    for (let i = 0; i < take; i++) {
+      const a = (i / ring.count) * Math.PI * 2 + (ri % 2 ? Math.PI / ring.count : 0) - Math.PI / 2;
+      out.push({ x: Math.cos(a) * ring.dist, y: Math.sin(a) * ring.dist * 1.06, r: ring.r });
+    }
+    left -= take;
+  });
+  return out;
+}
+
+function GrapeCluster({ kind, days, size = 132 }) {
+  const g = GRAPE[kind];
+  const n = Math.max(0, Math.min(33, days));
+  const layout = berryLayout(n);
+  // 알이 많을수록 송이가 커진다 — 다만 화면을 넘지 않게 천천히 커진다.
+  const unit = size / (n <= 1 ? 5.2 : n <= 7 ? 8.2 : n <= 18 ? 11.4 : 13.2);
+  const C0 = size / 2;
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-      <div style={{ width: 62, flexShrink: 0, paddingBottom: 6 }}>
-        <div style={{ fontSize: 14 }}>{emoji}</div>
-        <div style={{ fontSize: 11, fontWeight: 800, color: C.ink }}>{label}</div>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.sub }}>{days}일</div>
+    <svg viewBox={`0 0 ${size} ${size}`} style={{ width: size, height: size, display: "block" }} aria-hidden="true">
+      {/* 꼭지와 잎 */}
+      <path d={`M${C0} ${C0 - unit * 4.6} q ${unit * 0.5} ${-unit * 1.4} ${unit * 1.5} ${-unit * 1.7}`}
+        fill="none" stroke={g.stem} strokeWidth={Math.max(2, unit * 0.28)} strokeLinecap="round" />
+      <ellipse cx={C0 + unit * 1.9} cy={C0 - unit * 6.3} rx={unit * 1.15} ry={unit * 0.62}
+        fill={g.stem} opacity="0.75" transform={`rotate(-24 ${C0 + unit * 1.9} ${C0 - unit * 6.3})`} />
+      {n === 0 ? (
+        <circle cx={C0} cy={C0} r={unit * 1.1} fill={g.soft} stroke={g.berry} strokeWidth="2" strokeDasharray="4 4" />
+      ) : (
+        layout.map((b, i) => (
+          <g key={i}>
+            <circle cx={C0 + b.x * unit} cy={C0 + b.y * unit} r={b.r * unit} fill={i === 0 ? g.deep : g.berry} />
+            <circle cx={C0 + b.x * unit - b.r * unit * 0.3} cy={C0 + b.y * unit - b.r * unit * 0.34}
+              r={b.r * unit * 0.28} fill="#fff" opacity="0.45" />
+          </g>
+        ))
+      )}
+    </svg>
+  );
+}
+
+// 포도 한 송이 카드 — 가로 스크롤 안에 한 칸씩 들어간다
+function GrapeSlide({ kind, days, topLabel, topEmoji }) {
+  const g = GRAPE[kind];
+  return (
+    <div style={{ flex: "0 0 78%", scrollSnapAlign: "center", background: g.soft, borderRadius: 18, padding: "14px 12px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 14 }}>{g.emoji}</span>
+        <span style={{ fontSize: 14, fontWeight: 900, color: C.ink }}>{g.label}</span>
       </div>
-      <div style={{ position: "relative", flex: 1, height: 62 }}>
-        {/* 트랙 라인 + 결승선 */}
-        <div style={{ position: "absolute", left: 0, right: 14, bottom: 11, borderTop: "2px dashed #E3DED4" }} />
-        <span style={{ position: "absolute", right: -2, bottom: 3, fontSize: 16 }}>🏁</span>
-        {days > 0 && (
-          <div style={{ position: "absolute", bottom: 5, left: `${pos}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2 }}>
-            {bubbleLabel && (
-              <div style={{ background: "#fff", border: "1px solid #EDE9E2", borderRadius: 10, padding: "2px 7px", fontSize: 9.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(0,0,0,.12)", marginBottom: 3 }}>
-                {bubbleEmoji} {bubbleLabel} 1위
-              </div>
-            )}
-            <div style={{ animation: "mallangRun .9s ease-in-out infinite" }}><Mallang v={mood} size={26} /></div>
-          </div>
-        )}
+      <div style={{ fontSize: 11.5, fontWeight: 800, color: g.deep, marginTop: 2 }}>
+        {days > 0 ? `${days}일` : "아직 없어요"}
       </div>
+      <div style={{ margin: "6px 0 2px" }}><GrapeCluster kind={kind} days={days} /></div>
+      {topLabel && (
+        <div style={{ background: "#fff", borderRadius: 999, padding: "4px 11px", fontSize: 10.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+          {topEmoji} {topLabel} 1위
+        </div>
+      )}
     </div>
   );
 }
-// 세 트랙 레인을 그린다 — 실제/예시 공용
-function buildActLanes(move, rest, over) {
+
+// 세 송이를 가로로 — 실제/예시 공용
+function buildGrapes(move, rest, over) {
   const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
   const exTop = move?.data?.byType?.[0];
   const restTop = rest?.data?.items?.[0];
   const overTop = over?.data?.items?.[0];
   return {
-    maxDays: Math.max(moveN, restN, overN, 1),
     total: moveN + restN + overN,
-    lanes: [
-      { key: "move", emoji: "🏃‍♂️", label: "운동함", days: moveN, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
-      { key: "rest", emoji: "🛌", label: "쉬어감", days: restN, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
-      { key: "over", emoji: "💦", label: "무리함", days: overN, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
+    slides: [
+      { key: "move", days: moveN, be: exTop ? (EX_EMOJI[exTop.label] || "🏃") : "", bl: exTop?.label },
+      { key: "rest", days: restN, be: restTop ? (REASON_EMOJI[restTop.reason] || "🛌") : "", bl: restTop?.label },
+      { key: "over", days: overN, be: overTop ? (LOAD_EMOJI[overTop.load] || "💦") : "", bl: overTop?.label },
     ],
   };
 }
-function ActLanes({ lanes, maxDays, mood }) {
+
+function GrapeRow({ slides }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {lanes.map(l => (
-        <ActLane key={l.key} emoji={l.emoji} label={l.label} days={l.days} maxDays={maxDays} bubbleEmoji={l.be} bubbleLabel={l.bl} mood={mood} />
-      ))}
-    </div>
+    <>
+      <div className="grape-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", padding: "2px 2px 6px" }}>
+        {slides.map((sl) => (
+          <GrapeSlide key={sl.key} kind={sl.key} days={sl.days} topLabel={sl.bl} topEmoji={sl.be} />
+        ))}
+      </div>
+      <style>{`.grape-row{scrollbar-width:none;-ms-overflow-style:none}.grape-row::-webkit-scrollbar{display:none}`}</style>
+    </>
   );
 }
-function ActivityTrackCard({ topMood, move, rest, over, exTopMood, exMove, exRest, exOver }) {
+
+function ActivityTrackCard({ move, rest, over, exMove, exRest, exOver }) {
   const t = getTypeAccent();
-  const mood = topMood || 4; // 이번 달 금메달 말랑이
-  const { maxDays, total, lanes } = buildActLanes(move, rest, over);
+  const { total, slides } = buildGrapes(move, rest, over);
   const has = total > 0;
-  const ex = buildActLanes(exMove, exRest, exOver);
+  const ex = buildGrapes(exMove, exRest, exOver);
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}><IconRun size={18} /></span>
-        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>활동량 요약</span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink, whiteSpace: "nowrap" }}>몽글몽글 포도 송이</span>
       </div>
-      <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 8px" }}>금메달 말랑이가 세 트랙을 달렸어요. 많이 한 트랙일수록 앞서 있어요 🏁</p>
+      <p style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, margin: "0 0 10px" }}>많이 고른 만큼 알이 맺혀요. 옆으로 밀어 세 송이를 보세요 🍇</p>
       {has ? (
-        <ActLanes lanes={lanes} maxDays={maxDays} mood={mood} />
+        <GrapeRow slides={slides} />
       ) : (
         <div>
           <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "6px 0 12px", textAlign: "center" }}>이번 달 활동 기록이 아직 없어요.</p>
-          <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">
-            <ActLanes lanes={ex.lanes} maxDays={ex.maxDays} mood={exTopMood || 4} />
+          <LockedPreview label={LOCK_HINT}>
+            <GrapeRow slides={ex.slides} />
           </LockedPreview>
         </div>
       )}
-      <style>{`@keyframes mallangRun{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}`}</style>
     </div>
   );
 }
@@ -1380,7 +1436,7 @@ function SoulmateCard({ entries, exampleEntries }) {
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>태그 피라미드</span>
         {!hasReal && <span style={{ marginLeft: "auto", fontSize: 12 }}>🔒</span>}
       </div>
-      {hasReal ? body : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{body}</LockedPreview>}
+      {hasReal ? body : <LockedPreview label={LOCK_HINT}>{body}</LockedPreview>}
       <style>{`@keyframes soulmateBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes soulmateHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}`}</style>
     </div>
   );
@@ -1418,7 +1474,7 @@ function SectionCard({ section: s, gender, entries, topMood, moments, distributi
           </div>
           {hasExample && (
             <div style={{ marginTop: 16 }}>
-              <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">
+              <LockedPreview label={LOCK_HINT}>
                 <SectionBody id={s.id} data={exampleSection.data} gender={gender} entries={EXAMPLE_ENTRIES} topMood={exTopMood} moments={exampleMoments} pdfMode={pdfMode} />
               </LockedPreview>
             </div>
@@ -2367,7 +2423,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
   const female = g.includes("female") || g.includes("여") || userData?.nickname === "BMTI";
   // 기록이 부족해 아직 못 찾은 발견은 하드 유저 예시를 블러로 보여주고, 커서를 올리면 풀린다.
-  const LK = "이렇게 채워질 거예요 · 클릭해보세요";
+  const LK = LOCK_HINT;
   const lock = (node) => <LockedPreview label={LK}>{node}</LockedPreview>;
   const profileSummary = buildProfileSummary(userData);
   const hasProfile = !!(profileSummary.freq || profileSummary.goals.length || profileSummary.posture || profileSummary.sore.length);
@@ -2380,16 +2436,25 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   };
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
-  items.push({ locked: false, node: <MallangNightCard key="night" entries={entries} nickname={nickname} pdfMode={pdfMode} /> }); // {닉네임}의 밤
+  // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.
+  const hasAny = (entries || []).length > 0;
+  const maybeLock = (node, exNode, ok) => (ok ? node : <LockedPreview label={LK}>{exNode}</LockedPreview>);
+  items.push({ locked: !hasAny, node: <Fragment key="night">{maybeLock(
+    <MallangNightCard entries={entries} nickname={nickname} pdfMode={pdfMode} />,
+    <MallangNightCard entries={EXAMPLE_ENTRIES} nickname={nickname} pdfMode={pdfMode} />, hasAny)}</Fragment> }); // {닉네임}의 밤
   add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
   if (female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
-  items.push({ locked: false, node: <WeatherFindingCards key="weather" entries={entries} onWeatherUpdated={onWeatherUpdated} /> });
+  items.push({ locked: !hasAny, node: <Fragment key="weather">{maybeLock(
+    <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />,
+    <WeatherFindingCards entries={EXAMPLE_ENTRIES} />, hasAny)}</Fragment> });
   const fcUnlocked = !!(ins.factcheck || hasProfile);
   if (fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
   else if (exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
-  items.push({ locked: false, node: <LetterCard key="letter" data={ins.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} /> });
+  items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
+    <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />,
+    <LetterCard data={exIns.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />, hasAny)}</Fragment> });
 
   const ordered = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
   return (
@@ -2779,7 +2844,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
     </div>
   );
 
-  return hasEnough ? card : <LockedPreview label="이렇게 채워질 거예요 · 클릭해보세요">{card}</LockedPreview>;
+  return hasEnough ? card : <LockedPreview label={LOCK_HINT}>{card}</LockedPreview>;
 }
 
 // {닉네임}의 밤 — 주간/일간 토글(기분·불편함 추이와 동일). 잠든 시간대=막대, 수면의 질=꺾은선(4가지 수면 아이콘).
