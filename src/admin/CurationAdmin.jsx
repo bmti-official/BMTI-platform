@@ -8,7 +8,7 @@ import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
-import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
+import CurationCard, { CurationDetail, CurationThumb, BodyPreview } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
@@ -86,6 +86,27 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// 적은 글이 손님에게 어떻게 보이는지 바로 아래에 그려 준다.
+// 줄바꿈(엔터)과 형광펜(==)이 그대로 반영되는지 여기서 확인하면 된다.
+function LiveBody({ text }) {
+  const [open, setOpen] = useState(true);
+  if (!String(text || '').trim()) return null;
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        style={{ padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 11,
+          fontWeight: 800, color: SUB, cursor: 'pointer' }}>
+        {open ? '▾' : '▸'} 이렇게 보여요
+      </button>
+      {open && (
+        <div style={{ marginTop: 6, padding: '10px 12px', background: '#fff', borderRadius: 9, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+          <BodyPreview text={text} />
+        </div>
+      )}
     </div>
   );
 }
@@ -384,9 +405,11 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <HiliteBox placeholder="Z 유형 본문" value={f[`s${n}_z`]} onChange={set(`s${n}_z`)}>
                   <CharCount a={f[`s${n}_z`]} b={f[`s${n}_m`]} />
+                  <LiveBody text={f[`s${n}_z`]} />
                 </HiliteBox>
                 <HiliteBox placeholder="M 유형 본문" value={f[`s${n}_m`]} onChange={set(`s${n}_m`)}>
                   <CharCount a={f[`s${n}_m`]} b={f[`s${n}_z`]} />
+                  <LiveBody text={f[`s${n}_m`]} />
                 </HiliteBox>
               </div>
 
@@ -409,17 +432,31 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
 
       {/* 추천 바로카드 3~4장 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <span style={label}>추천 바로카드 <span style={{ fontWeight: 600 }}>— 글 끝에 붙습니다. 3~4장 권장</span></span>
-        {allCards.length === 0
-          ? <div style={{ fontSize: 12.5, color: SUB }}>등록된 바로카드가 없습니다. ⚡ 바로카드에서 먼저 만들어 주세요.</div>
-          : (
+        <span style={label}>추천 바로카드 <span style={{ fontWeight: 600 }}>— 글 맨 끝 &lsquo;이 글과 함께 해보면 좋아요&rsquo;에 붙습니다. 3~4장 권장</span></span>
+        {allCards.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: SUB, lineHeight: 1.7, background: '#fff', borderRadius: 9, padding: '12px 14px', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+            아직 만들어 둔 바로카드가 없어서 고를 게 없습니다.<br />
+            위쪽 <b style={{ color: INK }}>⚡ 바로카드</b> 탭에서 한 장이라도 만들고 오시면 여기에 목록이 뜹니다.
+          </div>
+        ) : (
+          <>
             <PillPicker
               options={allCards.map((c) => ({ key: String(c.id), label: c.title_z }))}
               value={(f.card_ids || []).map(String)}
               onChange={(v) => set('card_ids')(v.map(Number))}
               max={4}
             />
-          )}
+            {(f.card_ids || []).length > 0 && (
+              <div style={{ marginTop: 10, fontSize: 12, color: SUB, lineHeight: 1.8 }}>
+                고른 순서대로 붙습니다 —{' '}
+                {(f.card_ids || []).map((id, i) => {
+                  const c = allCards.find((x) => x.id === id);
+                  return <span key={id}><b style={{ color: INK }}>{i + 1}. {c ? c.title_z : `#${id}`}</b>{i < f.card_ids.length - 1 ? ' · ' : ''}</span>;
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div style={{ marginBottom: 14 }}>

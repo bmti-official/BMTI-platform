@@ -157,6 +157,12 @@ const Marked = ({ text }) => String(text).split(/(==[^=]+==)/g).filter(Boolean).
     : <span key={i}>{chunk}</span>
 ));
 
+// 관리자 화면에서 '이렇게 보여요'로 쓴다 — 손님 화면과 똑같은 규칙으로 그린다.
+export function BodyPreview({ text }) {
+  if (!String(text || '').trim()) return null;
+  return <div style={{ fontFamily: F.body, color: INK }}><Paras text={text} /></div>;
+}
+
 const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boolean).map((p, i) => (
   <p key={i} style={{ fontSize: 14.5, lineHeight: 1.85, margin: '0 0 15px', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
     <Marked text={p} />
