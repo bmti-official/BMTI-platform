@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authMode, linkAccount, endAuth } from './lib/authLink';
 import { supabase } from './lib/supabaseClient';
 import { track, trackScreen } from './lib/analytics';
 import { syncSleepSettingFromServer } from './lib/mallangProfile';
@@ -180,6 +181,7 @@ function App() {
       setIsLoggedIn(false); // logout
       setUserProfile(null);
       localStorage.removeItem('bmti_user');
+      endAuth();                     // Supabase 로그인 세션도 함께 정리한다
       setCurrentView('home');
     } else {
       setShowSignup(true); // open signup modal
@@ -189,6 +191,11 @@ function App() {
   // Called when signup is completed
   const handleSignupComplete = async (userData) => {
     console.log('✅ User signed up:', userData);
+    // 로그인 세션이 있으면 이 회원 줄에 이어 붙인다(켜져 있을 때만).
+    // 실패해도 가입 흐름은 그대로 이어진다.
+    if (authMode() === 'on' && userData?.kakaoId) {
+      try { await linkAccount(userData.kakaoId); } catch { /* 무시 */ }
+    }
     
     // Save to Supabase
     try {

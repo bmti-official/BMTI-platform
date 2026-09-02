@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState } from 'react';
+import { authMode, startKakaoAuth, currentAuthId } from '../lib/authLink';
 import { supabase } from '../lib/supabaseClient';
 import { isReservedNickname } from '../data';
 
@@ -86,7 +87,15 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
 
 
 
-  const handleKakaoLogin = () => {
+  const handleKakaoLogin = async () => {
+    // 서버가 '이 사람이 누구인지' 알 수 있도록 Supabase 로그인을 먼저 받는다.
+    // 켜져 있고 아직 세션이 없을 때만 — 카카오로 넘어갔다가 이 화면으로 돌아온다.
+    if (authMode() === 'on' && !(await currentAuthId())) {
+      const went = await startKakaoAuth();
+      if (went) return;             // 페이지가 카카오로 넘어간다
+      // 실패하면(대시보드 설정 전) 아래 기존 방식으로 그대로 진행한다
+    }
+
     if (!window.Kakao) {
       alert('카카오 SDK가 로드되지 않았습니다.');
       return;

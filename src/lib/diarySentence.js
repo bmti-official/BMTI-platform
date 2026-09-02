@@ -115,11 +115,16 @@ export function buildDiaryParagraphs(entry) {
   }
 
   // ── 3. 한 줄 일기 ──
+  // 적은 글에 이미 '오늘'이 들어 있으면 앞의 '오늘'을 빼서 겹쳐 읽히지 않게 한다.
   if (e.note?.text) {
     const cat = e.note.category || "일상";
+    const said = /오늘/.test(e.note.text);
     out.push({
       icons: [{ kind: "svg", name: NOTE_ICON[cat] || "editPencil" }],
-      segs: [{ t: "오늘 " }, { hi: cat }, { t: `${euRo(cat)}는 ` }, { t: e.note.text }],
+      segs: [
+        ...(said ? [] : [{ t: "오늘 " }]),
+        { hi: cat }, { t: `${euRo(cat)}는 ` }, { t: e.note.text },
+      ],
     });
   }
 
