@@ -239,8 +239,8 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
 
       {/* 초록 자리 — 마디 소제목 목차. 누르면 그 마디로 내려간다 */}
       {toc.length > 0 && (
-        <nav style={{ background: '#fff', borderRadius: 14, padding: '8px 8px', margin: '0 0 26px',
-          boxShadow: 'inset 0 0 0 1px #EFEBE3' }}>
+        <nav style={{ background: '#fff', borderRadius: 14, padding: '2px 8px 8px', margin: '0 0 26px' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: SUB, padding: '0 10px 4px' }}>소제목 바로가기</div>
           {toc.map((t) => (
             <button key={t.n} type="button"
               onClick={() => document.getElementById(`cur-sec-${t.n}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
@@ -281,7 +281,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
             <Paras text={text} />
             {keyLine && (
               <p style={{ margin: '2px 0 0', padding: '2px 0 2px 14px', borderLeft: `4px solid ${KEY_BAR}`,
-                fontFamily: F.key, fontSize: 14.5, fontWeight: 500, fontStyle: 'italic', lineHeight: 1.7, color: '#3F3A31', wordBreak: 'keep-all' }}>
+                fontFamily: F.key, fontSize: 14.5, fontWeight: 800, fontStyle: 'italic', lineHeight: 1.7, color: INK, wordBreak: 'keep-all' }}>
                 {keyLine}
               </p>
             )}
