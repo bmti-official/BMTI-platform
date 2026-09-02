@@ -11,7 +11,8 @@
 import { supabase } from "./supabaseClient";
 
 const MODE_KEY = "bmti_auth_mode";
-const TRIED_KEY = "bmti_auth_tried";      // 이 기기에서 한 번 시도했는지 (되풀이 방지)
+const TRIED_KEY = "bmti_auth_tried";      // 마지막으로 시도한 시각 (되풀이 방지)
+const RETRY_AFTER = 24 * 60 * 60 * 1000;  // 실패했더라도 하루 뒤에는 한 번 더 해본다
 
 // 기본값 'on' — 이미 로그인해 둔 회원도 다음 방문 때 한 번 이어 붙는다.
 // 문제가 생기면 콘솔에서 'off'로 바꿔 되돌릴 수 있다.
@@ -119,9 +120,14 @@ export async function endAuth() {
  */
 export async function migrateOnce() {
   if (authMode() !== "on") return;
-  try { if (localStorage.getItem(TRIED_KEY)) return; } catch { return; }
+  try {
+    const last = Number(localStorage.getItem(TRIED_KEY) || 0);
+    // 방금 해봤으면 또 하지 않는다. 다만 하루가 지나면 다시 한 번 해본다 —
+    // 한 번 실패했다고 영영 못 이어지면, 문을 잠근 뒤 그 손님만 앱을 못 쓰게 된다.
+    if (last && Date.now() - last < RETRY_AFTER) return;
+  } catch { return; }
   if (await currentAuthId()) return;
-  try { localStorage.setItem(TRIED_KEY, "1"); } catch { /* 무시 */ }
+  try { localStorage.setItem(TRIED_KEY, String(Date.now())); } catch { /* 무시 */ }
   await startKakaoAuth();
 }
 
