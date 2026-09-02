@@ -1231,25 +1231,27 @@ const BERRY_MIN = 27, BERRY_STEP = 5.5, BERRY_MAX = 52, BERRY_GAP = 2.5;
 const berryRadius = (count) => Math.min(BERRY_MAX, BERRY_MIN + BERRY_STEP * (Math.max(1, count) - 1));
 
 // 알들을 서로 겹치지 않게 붙여 놓는다.
-// 큰 알을 가운데 두고, 나머지는 가까운 자리부터 돌려가며 빈 곳을 찾는다.
+// 가장 많이 고른 알을 맨 위에 두고, 나머지는 그 아래로만 붙인다 —
+// 그래야 꼭지가 늘 '제일 큰 알'에 달린다.
 function packBerries(radii) {
-  const placed = [];
-  radii.forEach((r, idx) => {
-    if (idx === 0) { placed.push({ x: 0, y: 0, r }); return; }
+  const placed = [{ x: 0, y: 0, r: radii[0] }];
+  // 가운데 아래쪽만 훑는다(위로는 붙이지 않는다)
+  const SWEEP = [0, 0.34, -0.34, 0.66, -0.66, 0.95, -0.95, 1.2, -1.2];
+  for (let idx = 1; idx < radii.length; idx++) {
+    const r = radii[idx];
     let best = null;
-    for (let ring = 1; ring <= 60 && !best; ring++) {
-      const dist = r + radii[0] + BERRY_GAP + (ring - 1) * 6;
-      const steps = 12 + ring * 2;
-      for (let k = 0; k < steps; k++) {
-        // 아래쪽부터 채워 포도송이처럼 늘어지게 한다
-        const a = Math.PI / 2 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * ((Math.PI * 2) / steps);
-        const x = Math.cos(a) * dist, y = Math.sin(a) * dist * 0.92;
+    for (let ring = 1; ring <= 40 && !best; ring++) {
+      const dist = r + radii[0] + BERRY_GAP + (ring - 1) * 5;
+      for (const t of SWEEP) {
+        const a = Math.PI / 2 + t;                       // π/2 = 바로 아래
+        const x = Math.cos(a) * dist, y = Math.sin(a) * dist * 0.9;
         const hit = placed.some((q) => Math.hypot(q.x - x, q.y - y) < q.r + r + BERRY_GAP - 0.01);
-        if (!hit) { best = { x, y, r }; break; }
+        // 맨 위 알보다 위로는 올라가지 않게 한다
+        if (!hit && y - r > -radii[0] * 0.35) { best = { x, y, r }; break; }
       }
     }
-    placed.push(best || { x: 0, y: 0, r });
-  });
+    placed.push(best || { x: 0, y: radii[0] + r + BERRY_GAP, r });
+  }
   return placed;
 }
 
@@ -1284,8 +1286,8 @@ function GrapeCluster({ kind, items = [], width = 260, height = 205 }) {
   const k = Math.min(1, width / (maxX - minX + 8), (height - VINE_Y - STEM - 6) / (maxY - minY));
   const CX = width / 2 - ((minX + maxX) / 2) * k;
   const CY = VINE_Y + STEM - minY * k;                 // 줄기 아래에 매달리게
-  // 꼭지는 가장 위에 있는 알의 정수리에서 줄기까지 이어진다
-  const head = spots.reduce((a, b) => (b.y - b.r < a.y - a.r ? b : a), spots[0]);
+  // 꼭지는 '가장 많이 고른 알'(첫 번째 알)의 정수리에서 줄기까지 이어진다
+  const head = spots[0];
   const hx = CX + head.x * k, hy = CY + (head.y - head.r) * k;
 
   return (
