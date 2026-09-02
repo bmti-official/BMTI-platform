@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 import { PART_KEY } from '../lib/diaryEntryLabels';
@@ -8,14 +8,13 @@ import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
-import CurationCard, { CurationDetail, CurationThumb, BodyPreview } from '../features/curation/CurationCard';
+import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
+import { CharCount, HiliteBox, LiveBody, DraftMark } from './editorBits';
+import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
 import QuickCardView from '../features/curation/QuickCardView';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-
-// AI가 '내가 준 정보에 없다'고 스스로 표시한 자리. 공개 전에 지워야 한다.
-export const NEEDS_CHECK = '〔확인 필요〕';
 
 // 부위 선택지 — 다이어리에서 쓰는 부위 코드를 그대로 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
@@ -90,114 +89,14 @@ function CharPicker({ suffix, value, onChange, max = 4 }) {
   );
 }
 
-// 적은 글이 손님에게 어떻게 보이는지 바로 아래에 그려 준다.
-// 줄바꿈(엔터)과 형광펜(==)이 그대로 반영되는지 여기서 확인하면 된다.
-function LiveBody({ text }) {
-  const [open, setOpen] = useState(true);
-  if (!String(text || '').trim()) return null;
-  return (
-    <div style={{ marginTop: 8 }}>
-      <button type="button" onClick={() => setOpen((v) => !v)}
-        style={{ padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 11,
-          fontWeight: 800, color: SUB, cursor: 'pointer' }}>
-        {open ? '▾' : '▸'} 이렇게 보여요
-      </button>
-      {open && (
-        <div style={{ marginTop: 6, padding: '10px 12px', background: '#fff', borderRadius: 9, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-          <BodyPreview text={text} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// 형광펜 버튼이 달린 글 상자.
-// 글에서 칠하고 싶은 대목을 드래그해 고르고 버튼을 누르면 ==이렇게== 감싸진다.
-// 이미 칠해진 곳을 고르고 누르면 지워진다.
-function HiliteBox({ value, onChange, placeholder, minHeight = 96, children }) {
-  const ref = useRef(null);
-  const v = String(value || '');
-
-  const toggle = () => {
-    const el = ref.current;
-    if (!el) return;
-    let a = el.selectionStart, b = el.selectionEnd;
-    if (a === b) { el.focus(); return; }
-    // 고른 범위 양옆에 이미 ==가 있으면 그것까지 포함해서 본다
-    if (v.slice(a - 2, a) === '==' && v.slice(b, b + 2) === '==') { a -= 2; b += 2; }
-    const sel = v.slice(a, b);
-    const on = sel.startsWith('==') && sel.endsWith('==') && sel.length > 4;
-    const inner = on ? sel.slice(2, -2) : sel;
-    const next = v.slice(0, a) + (on ? inner : `==${inner}==`) + v.slice(b);
-    onChange(next);
-    const end = a + (on ? inner.length : inner.length + 4);
-    setTimeout(() => { el.focus(); el.setSelectionRange(a, end); }, 0);
-  };
-
-  const marks = (v.match(/==[^=]+==/g) || []).length;
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-        <button type="button" onClick={toggle}
-          style={{ padding: '4px 10px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 7, cursor: 'pointer',
-            border: 'none', background: '#FBF3C4', color: '#6B5B1F', boxShadow: 'inset 0 0 0 1px #EBDF9B' }}>
-          형광펜
-        </button>
-        <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>
-          {marks > 0 ? `${marks}군데 칠했어요` : '칠할 곳을 드래그해서 고른 뒤 누르세요'}
-        </span>
-      </div>
-      <textarea ref={ref} style={{ ...area, minHeight }} placeholder={placeholder}
-        value={v} onChange={(e) => onChange(e.target.value)} />
-      {children}
-    </div>
-  );
-}
-
-// Z·M 두 벌은 길이가 비슷해야 한다. 한쪽이 많이 짧으면 눈에 띄게 알려 준다.
-function CharCount({ a, b }) {
-  const la = String(a || '').length, lb = String(b || '').length;
-  if (la === 0 && lb === 0) return null;
-  const off = lb > 0 && la > 0 && Math.abs(la - lb) / Math.max(la, lb) > 0.3;
-  // 한 문단이 길면 읽기 어렵다. 200자를 넘는 문단이 있으면 알려 준다.
-  const longPara = String(a || '').split(/\n{2,}/).filter((p) => p.trim().length > 200).length;
-  const warn = off || longPara > 0;
-  const msg = [
-    off ? '반대쪽과 길이 차이가 큽니다' : null,
-    longPara ? `${longPara}개 문단이 200자를 넘어요 — 두세 문장으로 끊어 주세요` : null,
-  ].filter(Boolean).join(' · ');
-  return (
-    <div style={{ fontSize: 11, fontWeight: 700, color: warn ? '#B23B36' : SUB, marginTop: 4, textAlign: 'right', lineHeight: 1.5 }}>
-      {la}자{msg ? ` · ${msg}` : ''}
-    </div>
-  );
-}
-
-// 자동 임시저장 — 브라우저에만 담아 두고, 저장하면 지운다.
-const draftKey = (row) => `bmti_admin_draft_curation_${row?.id || 'new'}`;
-
 function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
-  const [f, setF] = useState(() => {
-    const base = normalize(row);
-    try {
-      const raw = localStorage.getItem(draftKey(row));
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d?.at && d?.form && window.confirm(`저장하지 않고 나간 내용이 있어요 (${new Date(d.at).toLocaleString('ko-KR')}).\n이어서 쓸까요?\n\n취소를 누르면 그 내용은 버립니다.`)) {
-          return { ...base, ...d.form };
-        }
-        localStorage.removeItem(draftKey(row));
-      }
-    } catch { /* 브라우저가 막아 두었으면 그냥 넘어간다 */ }
-    return base;
-  });
+  const [f, setF] = useState(() => withDraft(normalize(row), 'curation', row));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
-  const [draftAt, setDraftAt] = useState(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [pasteNote, setPasteNote] = useState('');
-  const first = useRef(true);
+  const draftAt = useAutoDraft('curation', row, f);
 
   // 통째로 붙여넣은 원고를 칸마다 나눠 담는다.
   const applyPaste = () => {
@@ -207,7 +106,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
       return;
     }
     setF((prev) => ({ ...prev, ...fields }));
-    const need = Object.values(fields).filter((v) => typeof v === 'string' && v.includes(NEEDS_CHECK)).length;
+    const need = countNeedsCheck(fields);
     setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 저장해 주세요.`
       + (need ? ` / ${NEEDS_CHECK} 표시가 ${need}군데 있습니다. 사실을 확인하고 표시를 지워야 공개할 수 있어요.` : ''));
     setPasteOpen(false);
@@ -216,24 +115,11 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
   useUnsavedGuard(f);
 
-  // 고칠 때마다 1.5초 뒤에 브라우저에 조용히 담아 둔다.
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    const t = setTimeout(() => {
-      try {
-        const at = Date.now();
-        localStorage.setItem(draftKey(row), JSON.stringify({ at, form: f }));
-        setDraftAt(at);
-      } catch { /* 담아 둘 수 없으면 그냥 넘어간다 */ }
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [f, row]);
-
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
     // AI가 '내가 준 정보에 없는 내용'이라고 표시해 둔 곳은 공개 전에 반드시 확인한다.
-    const unchecked = Object.values(f).filter((v) => typeof v === 'string' && v.includes(NEEDS_CHECK)).length;
+    const unchecked = countNeedsCheck(f);
     if (f.published && unchecked > 0) {
       setErr(`'${NEEDS_CHECK}' 표시가 ${unchecked}군데 남아 있습니다. 사실을 확인하고 표시를 지운 뒤 공개해 주세요.`);
       return;
@@ -247,7 +133,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
     const { error } = await q;
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
-    try { localStorage.removeItem(draftKey(row)); } catch { /* 무시 */ }
+    dropDraft('curation', row?.id);
     onSaved();
   };
 
@@ -499,11 +385,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
         <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
-        {draftAt && (
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginLeft: 4 }}>
-            임시저장됨 {new Date(draftAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
+        <DraftMark at={draftAt} />
         {f.id && (
           <button onClick={() => onDelete(f.id)}
             style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36', boxShadow: 'inset 0 0 0 1px #E7C3C0' }}>
@@ -553,7 +435,7 @@ export default function CurationAdmin() {
       alert('삭제되지 않았습니다. 관리자 계정으로 로그인했는지 확인해 주세요.');
       return;
     }
-    try { localStorage.removeItem(`bmti_admin_draft_curation_${id}`); } catch { /* 무시 */ }
+    dropDraft('curation', id);
     if (after) after();
     load();
   };

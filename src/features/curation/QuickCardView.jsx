@@ -1,14 +1,16 @@
 // 손님에게 보이는 바로카드 — 인스타 게시물처럼 위에 정보, 가운데 영상, 아래에 지표와 원클릭 버튼.
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
 import { GROUP_LABEL } from '../../lib/bodyGroups';
+import MotionPlayer from './MotionPlayer';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, finishRate } from './format';
+import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
-export default function QuickCardView({ card, tone = 'z', onStart, onCopy }) {
+export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onCopy }) {
   const { title, script } = pickCardTone(card, tone);
   const rate = finishRate(card);
   const core = partLabels(card.core_parts);
@@ -41,9 +43,11 @@ export default function QuickCardView({ card, tone = 'z', onStart, onCopy }) {
       </div>
 
       <div style={{ width: '100%', aspectRatio: '1 / 1', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {card.video_url
-          ? <video src={card.video_url} controls playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <span style={{ color: SUB, fontSize: 13, fontWeight: 700 }}>영상 없음</span>}
+        {motion
+          ? <MotionPlayer motion={motion} size={520} bg="#F3F1EC" />
+          : card.video_url
+            ? <video src={card.video_url} controls playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <span style={{ color: SUB, fontSize: 13, fontWeight: 700 }}>동작이 아직 없어요</span>}
       </div>
 
       <div style={{ padding: '12px 15px 15px' }}>
@@ -62,7 +66,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onCopy }) {
         {script && (
           <details style={{ marginTop: 10 }}>
             <summary style={{ fontSize: 11.5, color: SUB, fontWeight: 700, cursor: 'pointer' }}>음성 안내 대본 보기</summary>
-            <p style={{ fontSize: 13, lineHeight: 1.7, color: INK, whiteSpace: 'pre-line', margin: '8px 0 0' }}>{script}</p>
+            <div style={{ fontSize: 13, margin: '8px 0 0' }}><BodyPreview text={script} /></div>
           </details>
         )}
       </div>

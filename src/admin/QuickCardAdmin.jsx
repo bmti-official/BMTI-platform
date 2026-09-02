@@ -6,6 +6,10 @@ import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './th
 import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
+import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
+import { CharCount, HiliteBox, LiveBody, DraftMark } from './editorBits';
+import { parseCard } from './pasteCard';
+import MotionInput from './MotionInput';
 import QuickCardView from '../features/curation/QuickCardView';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
 
@@ -16,18 +20,43 @@ const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label
 const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
   title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', duration_sec: 0,
+  motion_url: '',
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
 
-function Editor({ row, onSaved, onCancel, onPreview }) {
-  const [f, setF] = useState(row || EMPTY);
+function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
+  const [f, setF] = useState(() => withDraft({ ...EMPTY, ...(row || {}) }, 'card', row));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteNote, setPasteNote] = useState('');
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
+  const draftAt = useAutoDraft('card', row, f);
   useUnsavedGuard(f);
+
+  // 통째로 붙여넣은 대본을 칸마다 나눠 담는다.
+  const applyPaste = () => {
+    const { fields, report, count } = parseCard(pasteText);
+    if (!count) {
+      setPasteNote('형식을 알아보지 못했습니다. [제목 · Z] 처럼 대괄호 머리말이 들어 있는지 확인해 주세요.');
+      return;
+    }
+    setF((prev) => ({ ...prev, ...fields }));
+    const need = countNeedsCheck(fields);
+    setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 저장해 주세요.`
+      + (need ? ` / ${NEEDS_CHECK} 표시가 ${need}군데 있습니다. 사실을 확인하고 표시를 지워야 공개할 수 있어요.` : ''));
+    setPasteOpen(false);
+    setPasteText('');
+  };
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
+    const unchecked = countNeedsCheck(f);
+    if (f.published && unchecked > 0) {
+      setErr(`'${NEEDS_CHECK}' 표시가 ${unchecked}군데 남아 있습니다. 사실을 확인하고 표시를 지운 뒤 공개해 주세요.`);
+      return;
+    }
     setSaving(true); setErr('');
     const payload = { ...f, updated_at: new Date().toISOString() };
     ['view_count', 'save_count', 'finish_count', 'start_count', 'created_at'].forEach((k) => delete payload[k]);
@@ -37,14 +66,48 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
     const { error } = await q;
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
+    dropDraft('card', row?.id);
     onSaved();
   };
 
   return (
     <div style={{ ...box, marginBottom: 16 }}>
-      <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 14 }}>
-        {f.id ? `바로카드 #${f.id} 수정` : '새 바로카드'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>
+          {f.id ? `바로카드 #${f.id} 수정` : '새 바로카드'}
+        </div>
+        <button onClick={() => { setPasteNote(''); setPasteOpen(true); }} style={{ ...btn(false), marginLeft: 'auto' }}>
+          📋 대본 붙여넣기
+        </button>
       </div>
+
+      {pasteNote && (
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: pasteNote.startsWith('형식') ? '#B23B36' : '#2E7D50',
+          background: pasteNote.startsWith('형식') ? '#FDECEA' : '#EDF7F0', borderRadius: 9, padding: '10px 12px', marginBottom: 14, lineHeight: 1.5 }}>
+          {pasteNote}
+        </div>
+      )}
+
+      {pasteOpen && (
+        <div onClick={(e) => { if (e.target === e.currentTarget) setPasteOpen(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,14,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>대본 붙여넣기</div>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
+              AI에게 받은 대본을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·대본·종류·소요 시간·도구·검색 분류가 각 칸으로 들어갑니다.
+              <br />채팅창에서 딸려오는 <b>MD</b>, <b>+ 1</b> 같은 줄은 알아서 버립니다. 동작 데이터는 따로 올려 주세요.
+            </div>
+            <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
+              placeholder={'[제목 · Z] …\n[제목 · M] …\n종류: 스트레칭\n소요 시간: 3분\n[대본 · Z] …'}
+              style={{ ...area, flex: 1, minHeight: 320, fontSize: 12.5, lineHeight: 1.6 }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
+              <button onClick={() => setPasteOpen(false)} style={btn(false)}>닫기</button>
+              <span style={{ fontSize: 11.5, color: SUB, alignSelf: 'center', marginLeft: 'auto' }}>이미 적은 칸은 새 내용으로 바뀝니다</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', marginBottom: 14, flexWrap: 'wrap' }}>
         <div>
@@ -71,17 +134,27 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
         </div>
         <div>
           <span style={label}>음성 대본 · Z 유형</span>
-          <textarea style={area} value={f.script_z || ''} onChange={(e) => set('script_z')(e.target.value)} />
+          <HiliteBox placeholder="바르게 앉아 어깨를 내립니다." minHeight={120} value={f.script_z} onChange={set('script_z')}>
+            <CharCount a={f.script_z} b={f.script_m} maxPara={160} />
+            <LiveBody text={f.script_z} />
+          </HiliteBox>
         </div>
         <div>
           <span style={label}>음성 대본 · M 유형</span>
-          <textarea style={area} value={f.script_m || ''} onChange={(e) => set('script_m')(e.target.value)} />
+          <HiliteBox placeholder="편하게 앉아서 어깨에 힘을 빼 보세요." minHeight={120} value={f.script_m} onChange={set('script_m')}>
+            <CharCount a={f.script_m} b={f.script_z} maxPara={160} />
+            <LiveBody text={f.script_m} />
+          </HiliteBox>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <span style={label}>반복 동작 <span style={{ fontWeight: 600 }}>— 카드 가운데에서 계속 돌아갑니다</span></span>
+          <MotionInput value={f.motion_url} onChange={set('motion_url')} />
+        </div>
         <div>
-          <span style={label}>영상 주소</span>
+          <span style={label}>영상 주소 <span style={{ fontWeight: 600 }}>— 동작 대신 영상을 쓸 때만</span></span>
           <input style={input} value={f.video_url || ''} onChange={(e) => set('video_url')(e.target.value)} placeholder="https://..." />
         </div>
         <div>
@@ -129,6 +202,13 @@ function Editor({ row, onSaved, onCancel, onPreview }) {
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>
         <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
+        <DraftMark at={draftAt} />
+        {f.id && (
+          <button onClick={() => onDelete(f.id)}
+            style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36', boxShadow: 'inset 0 0 0 1px #E7C3C0' }}>
+            이 바로카드 삭제
+          </button>
+        )}
       </div>
     </div>
   );
@@ -140,6 +220,17 @@ export default function QuickCardAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [previewMotion, setPreviewMotion] = useState(null);
+
+  // 미리보기를 열면 그 카드의 동작 데이터도 함께 읽어 온다.
+  useEffect(() => {
+    let alive = true;
+    (preview?.motion_url ? fetch(preview.motion_url) : Promise.reject(new Error('없음')))
+      .then((r) => r.json())
+      .then((m) => { if (alive) setPreviewMotion(m); })
+      .catch(() => { if (alive) setPreviewMotion(null); });
+    return () => { alive = false; };
+  }, [preview]);
 
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
@@ -157,10 +248,14 @@ export default function QuickCardAdmin() {
     return () => { alive = false; };
   }, [tick]);
 
-  const remove = async (id) => {
+  const remove = async (id, after) => {
     if (!window.confirm(`바로카드 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
-    const { error } = await supabase.from('quick_cards').delete().eq('id', id);
+    // select()를 붙여야 정말 지워졌는지 알 수 있다.
+    const { data, error } = await supabase.from('quick_cards').delete().eq('id', id).select('id');
     if (error) { alert('삭제 실패: ' + error.message); return; }
+    if (!data || data.length === 0) { alert('삭제되지 않았습니다. 관리자 계정으로 로그인했는지 확인해 주세요.'); return; }
+    dropDraft('card', id);
+    if (after) after();
     load();
   };
 
@@ -190,12 +285,13 @@ export default function QuickCardAdmin() {
 
       {editing && (
         <Editor row={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }}
+          onDelete={(id) => remove(id, () => setEditing(null))}
           onPreview={(draft) => setPreview(draft)} />
       )}
 
       {preview && (
         <PreviewModal title="바로카드 미리보기" onClose={() => setPreview(null)}>
-          {(tone) => <QuickCardView card={preview} tone={tone} />}
+          {(tone) => <QuickCardView card={preview} tone={tone} motion={previewMotion} />}
         </PreviewModal>
       )}
 
