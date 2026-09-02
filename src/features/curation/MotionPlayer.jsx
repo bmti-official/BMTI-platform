@@ -2,6 +2,7 @@
 // 캐릭터 파츠가 준비되면 이 부품 안쪽만 그림으로 바꾸면 된다.
 import { useEffect, useRef, useState } from 'react';
 import { poseAt, LINKS, fitMotion } from '../../lib/motionPose';
+import { checkMotion } from '../../lib/motionPose';
 
 export default function MotionPlayer({ motion, size = 320, bg = '#F6F4EF', color = '#9C6F26', head = '#D9B96A', playing = true }) {
   const ref = useRef(null);
@@ -29,4 +30,22 @@ export default function MotionPlayer({ motion, size = 320, bg = '#F6F4EF', color
 
   if (!motion) return null;
   return <canvas ref={ref} width={size} height={size} style={{ width: '100%', maxWidth: size, aspectRatio: '1 / 1', display: 'block', borderRadius: 12 }} />;
+}
+
+/**
+ * 동작 데이터 주소만 주면 읽어 와서 돌려 준다.
+ * 읽지 못하면 아무것도 그리지 않는다(글은 그대로 보인다).
+ */
+export function MotionFromUrl({ url, ...rest }) {
+  const [motion, setMotion] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    (url ? fetch(url) : Promise.reject(new Error('없음')))
+      .then((r) => r.json())
+      .then((m) => { if (alive) setMotion(checkMotion(m) ? null : m); })
+      .catch(() => { if (alive) setMotion(null); });
+    return () => { alive = false; };
+  }, [url]);
+  if (!motion) return null;
+  return <MotionPlayer motion={motion} {...rest} />;
 }

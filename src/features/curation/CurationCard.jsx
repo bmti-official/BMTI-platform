@@ -6,6 +6,7 @@ import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
 import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
 import { charBox } from '../../lib/charBox';
+import { MotionFromUrl } from './MotionPlayer';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#FBF3C4';   // 형광펜 연노랑
@@ -110,7 +111,7 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
 
 const SECTIONS = [1, 2, 3, 4].map((n) => ({
   n,
-  imgs: `s${n}_imgs`, img: `s${n}_img`, caps: `s${n}_caps`,
+  imgs: `s${n}_imgs`, img: `s${n}_img`, caps: `s${n}_caps`, motion: `s${n}_motion`,
   z: `s${n}_z`, m: `s${n}_m`,
   hz: `s${n}_h_z`, hm: `s${n}_h_m`,
   keyz: `s${n}_key_z`, keym: `s${n}_key_m`,
@@ -238,13 +239,20 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
         const keyLine = (tone === 'm' ? item[sec.keym] : item[sec.keyz]) || '';
         const imgs = sectionImages(item, sec);
         const caps = Array.isArray(item[sec.caps]) ? item[sec.caps] : [];
+        const motionUrl = item[sec.motion];
         const tip = (tone === 'm' ? item[sec.tipm] : item[sec.tipz]) || '';
-        if (!text && !heading && !keyLine && !tip && imgs.length === 0) return null;
+        if (!text && !heading && !keyLine && !tip && !motionUrl && imgs.length === 0) return null;
         return (
           <section key={i} id={`cur-sec-${sec.n}`} style={{ marginBottom: 26, fontFamily: F.body, scrollMarginTop: 12 }}>
             {heading && (
               <h2 style={{ fontFamily: F.head, fontSize: 19, fontWeight: 900, lineHeight: 1.4, letterSpacing: '-0.01em',
                 margin: '0 0 12px', wordBreak: 'keep-all' }}>{heading}</h2>
+            )}
+            {/* 반복 동작 — 사진 대신 넣을 수 있다 */}
+            {motionUrl && (
+              <div style={{ margin: '0 0 12px', background: '#F6F4EF', borderRadius: 14, display: 'flex', justifyContent: 'center', padding: 6 }}>
+                <MotionFromUrl url={motionUrl} size={340} bg="#F6F4EF" />
+              </div>
             )}
             <SectionImages imgs={imgs} caps={caps} alt={heading} />
             <Paras text={text} />
