@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authMode, linkAccount, endAuth, resumeAfterRedirect } from './lib/authLink';
+import { authMode, linkAccount, endAuth, resumeAfterRedirect, migrateOnce, currentAuthId } from './lib/authLink';
 import { supabase } from './lib/supabaseClient';
 import { track, trackScreen } from './lib/analytics';
 import { syncSleepSettingFromServer } from './lib/mallangProfile';
@@ -95,6 +95,25 @@ function App() {
       localStorage.setItem('bmti_code', bmtiCode);
     }
   }, [bmtiCode]);
+
+  // 이미 로그인해 둔 회원인데 서버 세션이 아직 없으면, 한 번만 조용히 이어 붙인다.
+  useEffect(() => {
+    if (authMode() !== 'on') return;
+    const saved = localStorage.getItem('bmti_user');
+    if (!saved) return;
+    let alive = true;
+    (async () => {
+      const authId = await currentAuthId();
+      if (!alive) return;
+      if (authId) {
+        // 세션이 있으면 이 회원 줄에 매단다(이미 매달려 있으면 아무 일도 없다)
+        try { await linkAccount(JSON.parse(saved)?.kakaoId || JSON.parse(saved)?.kakao_id); } catch { /* 무시 */ }
+      } else {
+        migrateOnce();
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
   // 카카오에서 돌아온 직후 — 세션만 있고 아직 로그인 상태가 아니면 여기서 마무리한다.
   // (스위치가 꺼져 있으면 아무 일도 하지 않는다)
@@ -210,8 +229,12 @@ function App() {
     console.log('✅ User signed up:', userData);
     // 로그인 세션이 있으면 이 회원 줄에 이어 붙인다(켜져 있을 때만).
     // 실패해도 가입 흐름은 그대로 이어진다.
+    let myAuthId = null;
     if (authMode() === 'on' && userData?.kakaoId) {
-      try { await linkAccount(userData.kakaoId); } catch { /* 무시 */ }
+      try {
+        myAuthId = await currentAuthId();
+        await linkAccount(userData.kakaoId);
+      } catch { /* 무시 */ }
     }
     
     // Save to Supabase
@@ -222,6 +245,9 @@ function App() {
         .upsert(
           {
             kakao_id: userData.kakaoId,
+            // 새로 가입하는 사람도 곧바로 로그인 계정과 이어 둔다.
+            // (이게 없으면 문을 잠근 뒤 가입이 막힌다)
+            ...(myAuthId ? { auth_id: myAuthId } : {}),
             nickname: userData.nickname,
             kakao_gender: userData.kakaoGender,
             kakao_age: userData.kakaoAge,

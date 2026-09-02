@@ -11,9 +11,12 @@
 import { supabase } from "./supabaseClient";
 
 const MODE_KEY = "bmti_auth_mode";
+const TRIED_KEY = "bmti_auth_tried";      // 이 기기에서 한 번 시도했는지 (되풀이 방지)
 
+// 기본값 'on' — 이미 로그인해 둔 회원도 다음 방문 때 한 번 이어 붙는다.
+// 문제가 생기면 콘솔에서 'off'로 바꿔 되돌릴 수 있다.
 export function authMode() {
-  try { return localStorage.getItem(MODE_KEY) || "off"; } catch { return "off"; }
+  try { return localStorage.getItem(MODE_KEY) || "on"; } catch { return "off"; }
 }
 export function setAuthMode(v) {
   try { localStorage.setItem(MODE_KEY, v === "on" ? "on" : "off"); } catch { /* 무시 */ }
@@ -105,7 +108,21 @@ export async function linkAccount(kakaoId) {
 
 /** 로그아웃할 때 Supabase 세션도 함께 정리한다. */
 export async function endAuth() {
+  try { localStorage.removeItem(TRIED_KEY); } catch { /* 무시 */ }
   try { await supabase.auth.signOut(); } catch { /* 무시 */ }
+}
+
+/**
+ * 이미 로그인해 둔 회원인데 아직 서버 세션이 없으면, 조용히 한 번만 카카오를 다녀온다.
+ * 카카오에 이미 동의해 둔 사람은 화면이 잠깐 넘어갔다 바로 돌아온다.
+ * 실패하거나 이미 시도했으면 아무 일도 하지 않는다(예전 방식으로 계속 쓸 수 있다).
+ */
+export async function migrateOnce() {
+  if (authMode() !== "on") return;
+  try { if (localStorage.getItem(TRIED_KEY)) return; } catch { return; }
+  if (await currentAuthId()) return;
+  try { localStorage.setItem(TRIED_KEY, "1"); } catch { /* 무시 */ }
+  await startKakaoAuth();
 }
 
 /**
