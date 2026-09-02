@@ -31,14 +31,14 @@ const REASON_PHRASE = {
   busy: "바빠서", tired: "피곤해서", sick: "몸이 안좋아서",
   rest: "그냥 쉬고 싶어서", forgot: "깜빡해서",
 };
-const REASON_ICON = { busy: "clock", tired: "yawn", sick: "slump", rest: "sofa", forgot: "forgot" };
+export const REASON_ICON = { busy: "clock", tired: "yawn", sick: "slump", rest: "sofa", forgot: "forgot" };
 
 // 무리한 까닭 → '~느라 / ~서 / ~며'
 const LOAD_PHRASE = {
   sit: "오래 앉아있느라", stand: "오래 서 있느라",
   walk: "많이 걸어서", lift: "무거운 물건을 들며",
 };
-const LOAD_ICON = { sit: "chair", stand: "standing", walk: "walk", lift: "heavyLift" };
+export const LOAD_ICON = { sit: "chair", stand: "standing", walk: "walk", lift: "heavyLift" };
 
 // 한 줄 일기 갈래
 const NOTE_ICON = { "운동습관": "flex", "일상": "editPencil", "고민": "stress" };
