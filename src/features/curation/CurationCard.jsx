@@ -10,7 +10,8 @@ import { isClip } from './media';
 import AiNote from './AiNote';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
-const HILITE = '#FBF3C4';   // 형광펜 연노랑
+const HILITE = '#E7E0F7';   // 형광펜 연보라
+const MARKER = '#FBEFB6';   // 목차에 대충 그은 옐로우 형광펜
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 
@@ -238,7 +239,8 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
 
       {/* 초록 자리 — 마디 소제목 목차. 누르면 그 마디로 내려간다 */}
       {toc.length > 0 && (
-        <nav style={{ background: '#FBF7EC', borderRadius: 14, padding: '8px 8px', margin: '0 0 26px' }}>
+        <nav style={{ background: '#fff', borderRadius: 14, padding: '8px 8px', margin: '0 0 26px',
+          boxShadow: 'inset 0 0 0 1px #EFEBE3' }}>
           {toc.map((t) => (
             <button key={t.n} type="button"
               onClick={() => document.getElementById(`cur-sec-${t.n}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
@@ -247,7 +249,14 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
                 borderTop: t.n === 1 ? 'none' : '1px solid rgba(0,0,0,0.045)' }}>
               <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: 6, background: '#EFE4C6', color: '#8A6E2F',
                 fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{t.n}</span>
-              <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, wordBreak: 'keep-all' }}>{t.label}</span>
+              <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                <span style={{
+                  // 손으로 대충 그은 형광펜처럼 — 양 끝이 흐리고 글자 아래쪽만 덮는다
+                  background: `linear-gradient(101deg, ${MARKER}00 0.4%, ${MARKER} 2.4%, ${MARKER} 96%, ${MARKER}00 99.4%)`,
+                  backgroundSize: '100% 62%', backgroundPosition: '0 82%', backgroundRepeat: 'no-repeat',
+                  padding: '0 2px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
+                }}>{t.label}</span>
+              </span>
               <span style={{ flexShrink: 0, color: '#C4BCAE', fontSize: 13 }}>›</span>
             </button>
           ))}
@@ -266,13 +275,13 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
           <section key={i} id={`cur-sec-${sec.n}`} style={{ marginBottom: 30, fontFamily: F.body, scrollMarginTop: 12 }}>
             {heading && (
               <h2 style={{ fontFamily: F.head, fontSize: 18.5, fontWeight: 900, lineHeight: 1.45, letterSpacing: '-0.015em',
-                margin: '0 0 13px', wordBreak: 'keep-all' }}>{heading}</h2>
+                margin: '0 0 13px', wordBreak: 'keep-all' }}>{sec.n}. {heading}</h2>
             )}
             <SectionImages imgs={imgs} caps={caps} alt={heading} />
             <Paras text={text} />
             {keyLine && (
               <p style={{ margin: '2px 0 0', padding: '2px 0 2px 14px', borderLeft: `4px solid ${KEY_BAR}`,
-                fontFamily: F.key, fontSize: 14.5, fontWeight: 500, lineHeight: 1.7, color: '#3F3A31', wordBreak: 'keep-all' }}>
+                fontFamily: F.key, fontSize: 14.5, fontWeight: 500, fontStyle: 'italic', lineHeight: 1.7, color: '#3F3A31', wordBreak: 'keep-all' }}>
                 {keyLine}
               </p>
             )}
