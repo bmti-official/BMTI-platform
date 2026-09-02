@@ -1220,84 +1220,96 @@ function IconGrape({ size = 18 }) {
 // ── 몽글몽글 포도 송이: 운동함·쉬어감·무리함을 알알이 맺힌 포도로 ──
 // 많이 고른 항목일수록 알이 많아지고 송이가 커진다. 가로로 밀어 세 송이를 본다.
 const GRAPE = {
-  move: { label: "운동함", icon: "flex",   berry: "#A9CE9F", deep: "#6E9C63", soft: "#EAF3E6", stem: "#8AA37E" },
-  rest: { label: "쉬어감", icon: "restNo", berry: "#BDB4E4", deep: "#7E73B8", soft: "#EFECF8", stem: "#9A92C6" },
+  move: { label: "운동함", icon: "walk",   berry: "#A9CE9F", deep: "#6E9C63", soft: "#EAF3E6", stem: "#8AA37E" },
+  rest: { label: "쉬어감", icon: "sofa",   berry: "#BDB4E4", deep: "#7E73B8", soft: "#EFECF8", stem: "#9A92C6" },
   over: { label: "무리함", icon: "warn",   berry: "#EFB48A", deep: "#C4794A", soft: "#FBEFE5", stem: "#CE9670" },
 };
 
-// 알 개수 — 1일부터 시작해 이틀마다 한 알씩 는다(1·3·5·7일…에서 커진다).
-function berryCount(days) {
-  if (!days || days < 1) return 0;
-  return Math.min(16, Math.floor((days + 1) / 2));
+// 알 하나 = 항목 하나. 많이 고른 항목일수록 알이 커진다.
+// 크기는 화면에 맞춰 늘였다 줄였다 하지 않고, 개수에 따라 정해진 값을 쓴다(절대 크기).
+const BERRY_MIN = 27, BERRY_STEP = 5.5, BERRY_MAX = 52, BERRY_GAP = 2.5;
+const berryRadius = (count) => Math.min(BERRY_MAX, BERRY_MIN + BERRY_STEP * (Math.max(1, count) - 1));
+
+// 알들을 서로 겹치지 않게 붙여 놓는다.
+// 큰 알을 가운데 두고, 나머지는 가까운 자리부터 돌려가며 빈 곳을 찾는다.
+function packBerries(radii) {
+  const placed = [];
+  radii.forEach((r, idx) => {
+    if (idx === 0) { placed.push({ x: 0, y: 0, r }); return; }
+    let best = null;
+    for (let ring = 1; ring <= 60 && !best; ring++) {
+      const dist = r + radii[0] + BERRY_GAP + (ring - 1) * 6;
+      const steps = 12 + ring * 2;
+      for (let k = 0; k < steps; k++) {
+        // 아래쪽부터 채워 포도송이처럼 늘어지게 한다
+        const a = Math.PI / 2 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * ((Math.PI * 2) / steps);
+        const x = Math.cos(a) * dist, y = Math.sin(a) * dist * 0.92;
+        const hit = placed.some((q) => Math.hypot(q.x - x, q.y - y) < q.r + r + BERRY_GAP - 0.01);
+        if (!hit) { best = { x, y, r }; break; }
+      }
+    }
+    placed.push(best || { x: 0, y: 0, r });
+  });
+  return placed;
 }
 
-// 알 자리 — 가운데 큰 알에서 시작해 아래·옆으로 송이처럼 번져 나간다.
-// 자리를 손으로 정해 두어 알이 적을 때도 포도송이처럼 보이게 한다.
-const BERRY_SPOTS = [
-  [0, 0, 1],                                                   // 가운데
-  [-0.98, 0.82, 0.78], [0.98, 0.82, 0.78],                     // 아래 양옆
-  [-1.42, -0.24, 0.74], [1.42, -0.24, 0.74],                   // 옆
-  [-0.52, -1.32, 0.7], [0.52, -1.32, 0.7],                     // 위 양옆
-  [0, 1.72, 0.7],                                              // 맨 아래
-  [-1.9, 1.4, 0.62], [1.9, 1.4, 0.62],
-  [-2.3, 0.42, 0.6], [2.3, 0.42, 0.6],
-  [-1.62, -1.42, 0.58], [1.62, -1.42, 0.58],
-  [-0.86, 2.4, 0.56], [0.86, 2.4, 0.56],
-];
-function berryLayout(n) {
-  return BERRY_SPOTS.slice(0, Math.max(0, n)).map(([x, y, r]) => ({ x, y, r }));
-}
-
-function GrapeCluster({ kind, days, items = [], size = 132 }) {
+function GrapeCluster({ kind, items = [], width = 260, height = 190 }) {
   const g = GRAPE[kind];
-  const n = berryCount(days);
-  const layout = berryLayout(n);
+  const list = (items || []).slice(0, 6);
+  if (list.length === 0) {
+    return (
+      <div style={{ width, height, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ width: 56, height: 56, borderRadius: "50%", background: g.soft, border: `2px dashed ${g.berry}`, boxSizing: "border-box" }} />
+      </div>
+    );
+  }
 
-  // 알·꼭지·잎을 모두 담는 네모를 재어 한가운데에 딱 맞게 그린다.
-  const LEAF = 1.55;                                   // 잎까지 높이(알 단위)
-  const bx = layout.length ? layout : [{ x: 0, y: 0, r: 1 }];
-  const minX = Math.min(...bx.map((b) => b.x - b.r), 0);
-  const maxX = Math.max(...bx.map((b) => b.x + b.r)) + 0.5;
-  const minY = Math.min(...bx.map((b) => b.y - b.r)) - LEAF;
-  const maxY = Math.max(...bx.map((b) => b.y + b.r));
-  const unit = Math.min(size / (maxX - minX), size / (maxY - minY)) * 0.92;
-  const CX = size / 2 - ((minX + maxX) / 2) * unit;
-  const CY = size / 2 - ((minY + maxY) / 2) * unit;
-  const top = Math.min(...bx.map((b) => b.y - b.r));
-  const markOf = (i) => (items.length ? items[i % items.length] : null);
+  const radii = list.map((it) => berryRadius(it.count));
+  const spots = packBerries(radii);
+  const LEAF = 22;                                    // 꼭지·잎이 차지하는 높이
+  const minX = Math.min(...spots.map((b) => b.x - b.r));
+  const maxX = Math.max(...spots.map((b) => b.x + b.r), Math.min(...spots.map((q) => q.y - q.r)) === 0 ? 0 : 0) + 16;   // 잎이 오른쪽으로 조금 나간다
+  const minY = Math.min(...spots.map((b) => b.y - b.r)) - LEAF;
+  const maxY = Math.max(...spots.map((b) => b.y + b.r));
+  // 정해진 크기를 그대로 쓰되, 상자를 넘칠 때만 줄인다.
+  const k = Math.min(1, width / (maxX - minX), height / (maxY - minY));
+  const CX = width / 2 - ((minX + maxX) / 2) * k;
+  const CY = height / 2 - ((minY + maxY) / 2) * k;
+  // 꼭지는 가장 위에 있는 알의 정수리에 붙인다
+  const head = spots.reduce((a, b) => (b.y - b.r < a.y - a.r ? b : a), spots[0]);
+  const top = head.y - head.r;
+  const headX = head.x;
 
   return (
-    <div style={{ position: "relative", width: size, height: size }}>
-      {/* 꼭지와 잎 */}
-      <svg width={size} height={size} style={{ position: "absolute", inset: 0 }} aria-hidden="true">
-        <path d={`M${CX} ${CY + top * unit} q ${unit * 0.3} ${-unit * 0.7} ${unit * 0.85} ${-unit}`}
-          fill="none" stroke={g.stem} strokeWidth={Math.max(2, unit * 0.16)} strokeLinecap="round" />
-        <ellipse cx={CX + unit * 1.15} cy={CY + (top - LEAF) * unit + unit * 0.32} rx={unit * 0.62} ry={unit * 0.34}
-          fill={g.stem} opacity="0.72"
-          transform={`rotate(-24 ${CX + unit * 1.15} ${CY + (top - LEAF) * unit + unit * 0.32})`} />
+    <div style={{ position: "relative", width, height }}>
+      {/* 꼭지와 잎 — 가장 위 알에서 뻗어 나간다 */}
+      <svg width={width} height={height} style={{ position: "absolute", inset: 0 }} aria-hidden="true">
+        <path d={`M${CX + headX * k} ${CY + top * k} q ${6 * k} ${-13 * k} ${18 * k} ${-19 * k}`}
+          fill="none" stroke={g.stem} strokeWidth={Math.max(2.5, 4 * k)} strokeLinecap="round" />
+        <ellipse cx={CX + (headX + 25) * k} cy={CY + (top - 20) * k} rx={13 * k} ry={7 * k}
+          fill={g.stem} opacity="0.72" transform={`rotate(-24 ${CX + (headX + 25) * k} ${CY + (top - 20) * k})`} />
       </svg>
 
-      {n === 0 ? (
-        <span style={{ position: "absolute", left: CX - unit * 0.95, top: CY - unit * 0.95, width: unit * 1.9, height: unit * 1.9,
-          borderRadius: "50%", background: g.soft, border: `2px dashed ${g.berry}`, boxSizing: "border-box" }} />
-      ) : (
-        layout.map((b, i) => {
-          const r = b.r * unit;
-          const mk = markOf(i);
-          return (
-            <span key={i} style={{ position: "absolute", left: CX + b.x * unit - r, top: CY + b.y * unit - r,
-              width: r * 2, height: r * 2, borderRadius: "50%", background: i === 0 ? g.deep : g.berry,
-              display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
-              boxShadow: "inset 2px -3px 6px rgba(0,0,0,0.10), inset -3px 3px 5px rgba(255,255,255,0.45)" }}>
-              {/* 다이어리에서 쓰는 아이콘을 그대로 얹는다 */}
-              {mk?.icon && <DiaryIcon name={mk.icon} size={Math.round(r * 1.15)} />}
-              {!mk?.icon && mk?.word && (
-                <span style={{ fontSize: Math.max(7.5, r * 0.5), fontWeight: 800, color: "#fff", lineHeight: 1, whiteSpace: "nowrap" }}>{mk.word}</span>
-              )}
-            </span>
-          );
-        })
-      )}
+      {spots.map((b, i) => {
+        const it = list[i];
+        const r = b.r * k;
+        const icoSize = Math.round(r * (it.label ? 0.92 : 1.2));
+        return (
+          <span key={i} style={{ position: "absolute", left: CX + b.x * k - r, top: CY + b.y * k - r,
+            width: r * 2, height: r * 2, borderRadius: "50%", background: i === 0 ? g.deep : g.berry,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
+            padding: r * 0.18, boxSizing: "border-box", overflow: "hidden",
+            boxShadow: "inset 2px -3px 6px rgba(0,0,0,0.10), inset -3px 3px 5px rgba(255,255,255,0.45)" }}>
+            {it.icon
+              ? <DiaryIcon name={it.icon} size={icoSize} />
+              : <span style={{ fontSize: Math.max(9, r * 0.32), fontWeight: 900, color: "#fff", lineHeight: 1.15, textAlign: "center", wordBreak: "keep-all" }}>{it.word}</span>}
+            {it.label && (
+              <span style={{ fontSize: Math.max(7.5, r * 0.23), fontWeight: 800, color: i === 0 ? "#fff" : "#4A4438",
+                lineHeight: 1.1, textAlign: "center", wordBreak: "keep-all", maxWidth: "100%" }}>{it.label}</span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -1314,7 +1326,7 @@ function GrapeSlide({ kind, days, items, topLabel, topIcon }) {
       <div style={{ fontSize: 11.5, fontWeight: 800, color: g.deep, marginTop: 2 }}>
         {days > 0 ? `${days}일` : "아직 없어요"}
       </div>
-      <div style={{ margin: "6px 0 2px" }}><GrapeCluster kind={kind} days={days} items={items} /></div>
+      <div style={{ margin: "4px 0 2px" }}><GrapeCluster kind={kind} items={items} /></div>
       {topLabel && (
         <div style={{ background: "#fff", borderRadius: 999, padding: "4px 11px 4px 7px", display: "flex", alignItems: "center", gap: 4,
           fontSize: 10.5, fontWeight: 800, color: C.ink, whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
@@ -1329,16 +1341,27 @@ function GrapeSlide({ kind, days, items, topLabel, topIcon }) {
 // 세 송이를 가로로 — 실제/예시 공용
 // 운동 종목 이름을 알 안에 넣을 짧은 말로 줄인다 — '걷기/산책' → '걷기'
 const shortWord = (label) => String(label || "").split(/[/·]/)[0].trim().slice(0, 4);
+// 알 안에 들어갈 이름표 — 길면 알을 넘치므로 줄여 쓴다
+const SHORT_LABEL = {
+  "그냥 쉬고 싶었어요": "쉬고 싶어", "몸이 안 좋아요": "몸이 안 좋아",
+  "무거운 물건 들기": "무거운 짐", "오래 선 자세": "오래 서 있음",
+};
+const shortLabel = (label) => SHORT_LABEL[label] || String(label || "");
 
 function buildGrapes(move, rest, over) {
   const moveN = move?.data?.days || 0, restN = rest?.data?.days || 0, overN = over?.data?.days || 0;
   const exTop = move?.data?.byType?.[0];
   const restTop = rest?.data?.items?.[0];
   const overTop = over?.data?.items?.[0];
-  // 알 안에 얹을 표시 — 쉬어감·무리함은 아이콘, 운동함은 아직 아이콘이 없어 문구로 넣는다.
-  const moveItems = (move?.data?.byType || []).slice(0, 6).map((x) => ({ word: shortWord(x.label) })).filter((x) => x.word);
-  const restItems = (rest?.data?.items || []).slice(0, 6).map((x) => ({ icon: REASON_ICON[x.reason] })).filter((x) => x.icon);
-  const overItems = (over?.data?.items || []).slice(0, 6).map((x) => ({ icon: LOAD_ICON[x.load] })).filter((x) => x.icon);
+  // 알 하나가 항목 하나 — 같은 것끼리 이미 묶여 있고, 많이 고른 순으로 온다.
+  // 쉬어감·무리함은 다이어리 아이콘, 운동함은 아직 아이콘이 없어 문구로 넣는다.
+  const byCount = (a, b) => (b.count || 0) - (a.count || 0);
+  const moveItems = (move?.data?.byType || []).slice().sort(byCount).slice(0, 6)
+    .map((x) => ({ word: shortWord(x.label), label: "", count: x.count })).filter((x) => x.word);
+  const restItems = (rest?.data?.items || []).slice().sort(byCount).slice(0, 6)
+    .map((x) => ({ icon: REASON_ICON[x.reason], label: shortLabel(x.label), count: x.count })).filter((x) => x.icon);
+  const overItems = (over?.data?.items || []).slice().sort(byCount).slice(0, 6)
+    .map((x) => ({ icon: LOAD_ICON[x.load], label: shortLabel(x.label), count: x.count })).filter((x) => x.icon);
   return {
     total: moveN + restN + overN,
     slides: [
