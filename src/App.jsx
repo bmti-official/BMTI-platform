@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authMode, linkAccount, endAuth } from './lib/authLink';
+import { authMode, linkAccount, endAuth, resumeAfterRedirect } from './lib/authLink';
 import { supabase } from './lib/supabaseClient';
 import { track, trackScreen } from './lib/analytics';
 import { syncSleepSettingFromServer } from './lib/mallangProfile';
@@ -95,6 +95,23 @@ function App() {
       localStorage.setItem('bmti_code', bmtiCode);
     }
   }, [bmtiCode]);
+
+  // 카카오에서 돌아온 직후 — 세션만 있고 아직 로그인 상태가 아니면 여기서 마무리한다.
+  // (스위치가 꺼져 있으면 아무 일도 하지 않는다)
+  useEffect(() => {
+    if (authMode() !== 'on' || localStorage.getItem('bmti_user')) return;
+    let alive = true;
+    resumeAfterRedirect().then((row) => {
+      if (!alive || !row) return;
+      const merged = { ...row, appNotification: row.app_notification ?? false };
+      localStorage.setItem('bmti_user', JSON.stringify(merged));
+      setUserProfile(merged);
+      setIsLoggedIn(true);
+      if (row.bmti_type) setBmtiCode(row.bmti_type);
+      if (row.bmti_answers) setBmtiAnswers(row.bmti_answers);
+    });
+    return () => { alive = false; };
+  }, []);
 
   // Load session on mount
   useEffect(() => {

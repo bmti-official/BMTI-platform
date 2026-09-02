@@ -27,6 +27,43 @@ export async function currentAuthId() {
   } catch { return null; }
 }
 
+/** 로그인 세션에 들어 있는 카카오 회원번호 — 카카오에서 돌아온 직후에 쓴다 */
+export async function authKakaoId() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const u = data?.session?.user;
+    if (!u) return null;
+    const fromIdentity = (u.identities || []).find((i) => i.provider === "kakao")?.id;
+    return String(fromIdentity || u.user_metadata?.provider_id || u.user_metadata?.sub || "") || null;
+  } catch { return null; }
+}
+
+/**
+ * 카카오에서 돌아온 직후 — 세션만 있고 아직 이어 붙이지 않았다면 여기서 마무리한다.
+ * 로그인 버튼을 두 번 누르지 않아도 되게 한다.
+ * 돌려주는 값: 이어 붙인 users 행 (없으면 null)
+ */
+export async function resumeAfterRedirect() {
+  if (authMode() !== "on") return null;
+  const authId = await currentAuthId();
+  if (!authId) return null;
+  try {
+    // 이미 이어져 있으면 그 회원을 그대로 데려온다
+    const { data: mine } = await supabase.from("users").select("*").eq("auth_id", authId).maybeSingle();
+    if (mine) return mine;
+
+    const kakaoId = await authKakaoId();
+    if (!kakaoId) return null;
+    const linkedId = await linkAccount(kakaoId);
+    if (!linkedId) return null;                    // 아직 가입 안 한 사람 — 가입 절차로 보낸다
+    const { data } = await supabase.from("users").select("*").eq("id", linkedId).maybeSingle();
+    return data || null;
+  } catch (e) {
+    console.warn("[auth] 돌아온 뒤 잇기 실패:", e?.message || e);
+    return null;
+  }
+}
+
 /**
  * 카카오로 Supabase 로그인을 시작한다. 페이지가 카카오로 넘어갔다가 돌아온다.
  * Supabase 대시보드에서 카카오 로그인을 켜 두지 않았으면 실패하고 false를 돌려준다.
