@@ -7,6 +7,7 @@ import { pickCurationTone, fmtCount } from './format';
 import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
 import { charBox } from '../../lib/charBox';
 import { MotionFromUrl } from './MotionPlayer';
+import { isClip } from './media';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#FBF3C4';   // 형광펜 연노랑
@@ -125,7 +126,18 @@ const sectionImages = (item, sec) => {
   return item[sec.img] ? [item[sec.img]] : [];
 };
 
-// 마디에 딸린 사진 — 한 장이면 그대로, 여러 장이면 가로로 넘겨 본다.
+// 사진 한 장 또는 영상 한 편 — 영상은 소리 없이 저절로 반복된다.
+function Shot({ src, alt, style }) {
+  if (isClip(src)) {
+    return (
+      <video src={src} autoPlay loop muted playsInline preload="metadata"
+        style={{ width: '100%', display: 'block', background: '#EDE9E2', ...style }} />
+    );
+  }
+  return <img src={src} alt={alt || ''} style={{ width: '100%', display: 'block', ...style }} />;
+}
+
+// 마디에 딸린 사진·영상 — 하나면 그대로, 여럿이면 가로로 넘겨 본다.
 function SectionImages({ imgs, caps, alt }) {
   const ref = useRef(null);
   const [at, setAt] = useState(0);
@@ -134,7 +146,7 @@ function SectionImages({ imgs, caps, alt }) {
   if (imgs.length === 1) {
     return (
       <figure style={{ margin: '0 0 12px' }}>
-        <img src={imgs[0]} alt={caps[0] || alt || ''} style={{ width: '100%', borderRadius: 14, display: 'block' }} />
+        <Shot src={imgs[0]} alt={caps[0] || alt} style={{ borderRadius: 14 }} />
         {caps[0] && <figcaption style={CAP}>{caps[0]}</figcaption>}
       </figure>
     );
@@ -152,7 +164,7 @@ function SectionImages({ imgs, caps, alt }) {
         style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', borderRadius: 14, WebkitOverflowScrolling: 'touch' }}>
         {imgs.map((src, k) => (
           <span key={k} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', display: 'block' }}>
-            <img src={src} alt={caps[k] || alt || ''} style={{ width: '100%', display: 'block' }} />
+            <Shot src={src} alt={caps[k] || alt} />
           </span>
         ))}
       </div>

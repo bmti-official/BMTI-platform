@@ -4,11 +4,15 @@
 import { useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, ACCENT, input } from './theme';
+import { isClip } from '../features/curation/media';
 
 export const BUCKET = 'curation';
 
-const MAX_MB = 5;
+const MAX_MB = 5;          // 사진
+const MAX_VIDEO_MB = 20;   // 반복 영상
 const OK_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+const OK_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
+
 
 // 파일 이름은 한글·공백이 섞여도 안전하게 새로 지어 준다.
 function safeName(file) {
@@ -18,10 +22,13 @@ function safeName(file) {
   return `${ym}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 }
 
-// 한 장을 올리고 { url } 또는 { err }를 돌려준다.
-async function uploadOne(file) {
-  if (!OK_TYPES.includes(file.type)) return { err: `'${file.name}'은 사진 파일이 아니에요 (jpg · png · webp · gif).` };
-  if (file.size > MAX_MB * 1024 * 1024) return { err: `'${file.name}'이 ${MAX_MB}MB보다 큽니다.` };
+// 한 장(또는 한 편)을 올리고 { url } 또는 { err }를 돌려준다.
+async function uploadOne(file, allowVideo = false) {
+  const video = OK_VIDEO.includes(file.type) || /\.(mp4|webm|mov)$/i.test(file.name);
+  if (video && !allowVideo) return { err: `'${file.name}'은 영상이라 이 칸에는 넣을 수 없어요.` };
+  if (!video && !OK_TYPES.includes(file.type)) return { err: `'${file.name}'은 사진·영상 파일이 아니에요 (jpg · png · webp · mp4 · webm).` };
+  const cap = video ? MAX_VIDEO_MB : MAX_MB;
+  if (file.size > cap * 1024 * 1024) return { err: `'${file.name}'이 ${cap}MB보다 큽니다.` };
   const path = safeName(file);
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { cacheControl: '31536000', upsert: false });
   if (error) {
@@ -99,7 +106,7 @@ export default function ImageInput({ value, onChange, placeholder = 'https://...
 
 // ── 여러 장짜리 (본문 마디) ───────────────────────────────────────
 // 올린 순서대로 글에 위에서 아래로 들어간다. ←→로 순서를 바꾸고 ×로 뺀다.
-export function ImageListInput({ value, onChange, hint, captions, onCaptions }) {
+export function ImageListInput({ value, onChange, hint, captions, onCaptions, allowVideo = true }) {
   const list = Array.isArray(value) ? value : (value ? [value] : []);
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
@@ -113,7 +120,7 @@ export function ImageListInput({ value, onChange, hint, captions, onCaptions }) 
     const added = [];
     const bad = [];
     for (const file of files) {
-      const r = await uploadOne(file);
+      const r = await uploadOne(file, allowVideo);
       if (r.err) bad.push(r.err); else added.push(r.url);
     }
     setBusy(false);
@@ -163,7 +170,9 @@ export function ImageListInput({ value, onChange, hint, captions, onCaptions }) 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
           {list.map((src, i) => (
             <span key={`${src}-${i}`} style={{ width: onCaptions ? 150 : 92, borderRadius: 9, overflow: 'hidden', background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-              <img src={src} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block' }} />
+              {isClip(src)
+                ? <video src={src} muted playsInline preload="metadata" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block', background: '#000' }} />
+                : <img src={src} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block' }} />}
               {onCaptions && (
                 <input value={capAt(i)} onChange={(e) => setCap(i, e.target.value)} placeholder="사진 설명 (선택)"
                   style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderTop: `1px solid ${LINE}`, padding: '5px 6px', fontSize: 11, fontFamily: 'inherit', color: INK, outline: 'none' }} />
@@ -189,9 +198,9 @@ export function ImageListInput({ value, onChange, hint, captions, onCaptions }) 
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }} />
         {url.trim() && <button type="button" onClick={addUrl} style={{ ...uploadBtn(false), background: '#fff', color: SUB, boxShadow: `inset 0 0 0 1px ${LINE}` }}>주소 추가</button>}
         <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} style={uploadBtn(busy)}>
-          {busy ? '올리는 중…' : '사진 올리기'}
+          {busy ? '올리는 중…' : '사진·영상 올리기'}
         </button>
-        <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+        <input ref={fileRef} type="file" accept={allowVideo ? 'image/*,video/mp4,video/webm,video/quicktime' : 'image/*'} multiple style={{ display: 'none' }}
           onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} />
       </div>
       {(hint || err) && <div style={err ? errStyle : hintStyle}>{err || hint}</div>}
