@@ -1,7 +1,9 @@
 // 손님에게 보이는 바로카드 — 인스타 게시물처럼 위에 정보, 가운데 영상, 아래에 지표와 원클릭 버튼.
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
+import { useState } from 'react';
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import MotionPlayer from './MotionPlayer';
+import { CurationThumb } from './CurationCard';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, finishRate } from './format';
 import { BodyPreview } from './CurationCard';
@@ -12,6 +14,9 @@ const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
 export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onCopy }) {
   const { title, script } = pickCardTone(card, tone);
+  // 처음엔 4:5 썸네일을 보여 주고, 시작을 누르면 9:16 동작으로 바뀐다.
+  const [started, setStarted] = useState(false);
+  const hasPlay = !!(motion || card.video_url);
   const rate = finishRate(card);
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
@@ -42,22 +47,27 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
         )}
       </div>
 
-      <div style={{ width: '100%', aspectRatio: '1 / 1', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {motion
-          ? <MotionPlayer motion={motion} size={520} bg="#F3F1EC" />
-          : card.video_url
-            ? <video src={card.video_url} controls playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ color: SUB, fontSize: 13, fontWeight: 700 }}>동작이 아직 없어요</span>}
-      </div>
+      {started && hasPlay ? (
+        // 실제 동작 — 쇼츠 비율(9:16)
+        <div style={{ width: '100%', aspectRatio: '9 / 16', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {motion
+            ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
+            : <video src={card.video_url} controls autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        </div>
+      ) : (
+        // 표지 — 인스타 게시물 비율(4:5)
+        <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false}
+          badge={card.duration_sec > 0 ? { label: '소요시간', value: mmss(card.duration_sec) } : null} />
+      )}
 
       <div style={{ padding: '12px 15px 15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: SUB, fontWeight: 600, marginBottom: 12 }}>
           <span>조회 {fmt(card.view_count)}</span><span style={{ color: LINE }}>·</span><span>저장 {fmt(card.save_count)}</span>
           {groups.length > 0 && <span style={{ marginLeft: 'auto' }}>{groups.join(' · ')}</span>}
         </div>
-        <button onClick={onStart}
+        <button onClick={() => { setStarted(true); if (onStart) onStart(); }}
           style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: GOLD, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-          바로 시작하기 →
+          {started ? '다시 보기 ↻' : '바로 시작하기 →'}
         </button>
         <button onClick={onCopy}
           style={{ width: '100%', padding: 11, marginTop: 7, borderRadius: 13, border: `1px solid ${LINE}`, background: '#fff', color: SUB, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>

@@ -25,10 +25,9 @@ function CharPic({ src, code, h = 38 }) {
 }
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-export function CurationThumb({ item, radius = 14, big = false, chars = [], charCodes = [] }) {
-  const min = readMinutes(item);
+export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true }) {
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
+    <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
       {item.cover_url
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>대표 이미지 없음</div>}
@@ -39,7 +38,7 @@ export function CurationThumb({ item, radius = 14, big = false, chars = [], char
         // 가독시간표는 오른쪽 아래에 있다. 문구가 아래쪽에 놓일 땐 그만큼 자리를 비워 둔다.
         const pad = big ? 18 : 12;
         // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
-        const bottomPad = pos.align === 'flex-end' ? pad + (chars.length ? 44 : 0) + (big ? 0 : 30) : pad;
+        const bottomPad = pos.align === 'flex-end' && (badge || showRead) ? pad + 30 : pad;
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
             padding: `${pad}px ${pad}px ${bottomPad}px` }}>
@@ -51,21 +50,24 @@ export function CurationThumb({ item, radius = 14, big = false, chars = [], char
         );
       })()}
 
-      {/* 우측 하단 평균 가독시간 — 목록에서만 보여 준다 */}
-      {!big && (
+      {/* 우측 하단 표 — 큐레이션은 가독시간, 바로카드는 소요 시간 */}
+      {(badge || (showRead && !big)) && (
         <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
           color: '#fff', borderRadius: 6, padding: '4px 7px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05, whiteSpace: 'nowrap' }}>
-          <span style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: '0.04em', opacity: 0.92 }}>가독시간</span>
-          <span style={{ fontSize: 12.5, fontWeight: 800 }}>{min}분</span>
+          <span style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: '0.04em', opacity: 0.92 }}>{badge ? badge.label : '가독시간'}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 800 }}>{badge ? badge.value : `${readMinutes(item)}분`}</span>
         </span>
       )}
+    </div>
+  );
+}
 
-      {/* 누끼 캐릭터 — 대표 이미지 왼쪽 아래에 올라선다 */}
-      {chars.length > 0 && (
-        <span style={{ position: 'absolute', left: big ? 14 : 10, bottom: 0, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
-          {chars.map((src, i) => <CharPic key={i} src={src} code={charCodes[i]} h={big ? 58 : 42} />)}
-        </span>
-      )}
+// 누끼 캐릭터 줄 — 대표 이미지 바로 위에, 겹치지 않게 세운다.
+export function CharRow({ chars = [], codes = [], h = 40 }) {
+  if (!chars.length) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, padding: '0 2px 7px' }}>
+      {chars.map((src, i) => <CharPic key={i} src={src} code={codes[i]} h={h} />)}
     </div>
   );
 }
@@ -90,7 +92,8 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
   return (
     <button onClick={() => onOpen && onOpen(item)}
       style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: F.title }}>
-      <CurationThumb item={item} chars={chars} charCodes={codes} />
+      <CharRow chars={chars} codes={codes} h={40} />
+      <CurationThumb item={item} />
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 2px 0' }}>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 800, color: INK, lineHeight: 1.4, wordBreak: 'keep-all' }}>{title}</span>
@@ -198,7 +201,8 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
 
   return (
     <article style={{ fontFamily: F.title, color: INK }}>
-      <CurationThumb item={item} radius={16} big chars={chars} charCodes={codes} />
+      <CharRow chars={chars} codes={codes} h={52} />
+      <CurationThumb item={item} radius={16} big />
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', margin: '16px 0 16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
