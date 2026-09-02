@@ -65,12 +65,17 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
   );
 }
 
-// 누끼 캐릭터 줄 — 대표 이미지 바로 위에, 겹치지 않게 세운다.
-export function CharRow({ chars = [], codes = [], h = 40 }) {
+// 누끼 캐릭터 줄 — 대표 이미지와 제목 사이에 선다.
+export function CharRow({ chars = [], codes = [], h = 30 }) {
   if (!chars.length) return null;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, padding: '0 2px 7px' }}>
-      {chars.map((src, i) => <CharPic key={i} src={src} code={codes[i]} h={h} />)}
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, padding: '9px 2px 3px' }}>
+      <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 800, color: SUB, paddingBottom: 2, whiteSpace: 'nowrap' }}>
+        추천 유형
+      </span>
+      <span style={{ display: 'flex', alignItems: 'flex-end', gap: 3 }}>
+        {chars.map((src, i) => <CharPic key={i} src={src} code={codes[i]} h={h} />)}
+      </span>
     </div>
   );
 }
@@ -79,9 +84,11 @@ export function CharRow({ chars = [], codes = [], h = 40 }) {
 function KeepChip({ onSave }) {
   return (
     <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); }}
-      style={{ flexShrink: 0, padding: '5px 11px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 999,
-        border: 'none', background: '#F4F2EE', color: SUB, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-      보관하기
+      style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
+        border: 'none', background: '#F4F2EE', color: SUB, cursor: 'pointer', lineHeight: 1.2,
+        display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <span>보관</span>
+      <span>하기</span>
     </button>
   );
 }
@@ -95,9 +102,9 @@ export default function CurationCard({ item, tone = 'z', charImage, charImages, 
   return (
     <button onClick={() => onOpen && onOpen(item)}
       style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: 0, cursor: onOpen ? 'pointer' : 'default', fontFamily: F.title }}>
-      <CharRow chars={chars} codes={codes} h={40} />
       <CurationThumb item={item} />
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 2px 0' }}>
+      <CharRow chars={chars} codes={codes} h={30} />
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '2px 2px 0' }}>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 800, color: INK, lineHeight: 1.4, wordBreak: 'keep-all' }}>{title}</span>
           <span style={{ display: 'block', fontSize: 12, color: SUB, fontWeight: 600, marginTop: 5 }}>
@@ -215,10 +222,10 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
 
   return (
     <article style={{ fontFamily: F.title, color: INK }}>
-      <CharRow chars={chars} codes={codes} h={52} />
       <CurationThumb item={item} radius={16} big />
+      <CharRow chars={chars} codes={codes} h={36} />
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', margin: '16px 0 16px' }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', margin: '4px 0 16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.32, margin: '0 0 8px', wordBreak: 'keep-all' }}>{title}</h1>
           <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
