@@ -22,8 +22,27 @@ const toPartKeys = (s) => splitList(s).map((ko) => PART_KEY[ko.replace(/\(.*\)/,
 const toGroupIds = (s) => splitList(s).map((ko) => BODY_GROUPS.find((g) => g.label === ko)?.id).filter(Boolean);
 const toToolMode = (s) => TOOL_MODES.find((t) => t.label === String(s || '').trim())?.id || null;
 
+
+// 채팅에서 복사하면 줄바꿈이 사라져 표지가 문장 끝에 붙는 일이 잦다.
+//   ...담당합니다.본문 M: 걷기...   /   ...생기는 일[1. 문제제기]
+// 그래서 읽기 전에 표지 앞에서 줄을 끊어 준다.
+//
+// 이름이 긴 표지는 다른 표지 안에 들어갈 일이 없어 아무 글자 뒤에서나 끊는다.
+// 짧은 표지('본문' '팁' '제목' …)는 '소제목' 안의 '제목'처럼 남의 이름 속에 들어 있을 수
+// 있어서, 문장이 끝난 자리(. ! ? … ])에서만 끊는다.
+const LONG_LABELS = '소제목|핵심\\s*한\\s*줄|곁다리\\s*팁\\s*질문|곁다리\\s*팁\\s*답변|곁다리\\s*팁|숫자\\s*카드|핵심\\s*부위|연관\\s*부위|부위\\s*그룹|도구\\s*성향|소요\\s*시간|그림\\s*프롬프트|사진\\s*설명';
+const SHORT_LABELS = '본문|제목|대본|종류|도구|썸네일|팁';
+const TAIL = '\\s*[ZMzm]?\\s*[:：]';
+
+function unglue(text) {
+  return String(text || '')
+    .replace(/(?<=\S)[ \t]*(?=\[[^\]\n]{1,40}\])/g, '\n')
+    .replace(new RegExp(`(?<=\\S)[ \\t]*(?=(?:${LONG_LABELS})${TAIL})`, 'g'), '\n')
+    .replace(new RegExp(`(?<=[.!?…\\]])[ \\t]*(?=(?:${SHORT_LABELS})${TAIL})`, 'g'), '\n');
+}
+
 function tokenize(text) {
-  const lines = String(text || '').replace(/\r/g, '').split('\n')
+  const lines = unglue(text).replace(/\r/g, '').split('\n')
     .map((l) => l.replace(/[ \t]+$/, ''))
     .filter((l) => !NOISE.test(l.trim()));
   const out = [];
