@@ -15,3 +15,14 @@ export const CODE_KO = {
   OCDZ: '오씨디지', OCDM: '오씨디엠', OCQZ: '오씨큐지', OCQM: '오씨큐엠',
   OLDZ: '올디지', OLDM: '올디엠', OLQZ: '올큐지', OLQM: '올큐엠',
 };
+
+// 진짜 BMTI 유형 코드인지 가린다.
+// 카카오 로그인에서 돌아올 때 주소 끝에 붙는 #access_token=... 같은 것을
+// 유형 코드로 착각하지 않도록, 아는 코드 16개와 대조한다.
+// 'OLQM' 또는 'OLQM-1' 처럼 뒤에 짧은 꼬리가 붙은 것까지 받아 준다.
+export function isBmtiCode(v) {
+  const s = String(v || '').trim().toUpperCase();
+  if (!s || s.length > 12) return false;
+  const head = s.split('-')[0];
+  return Object.prototype.hasOwnProperty.call(CHARACTER_NAMES, head);
+}

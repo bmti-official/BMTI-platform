@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authMode, linkAccount, endAuth, resumeAfterRedirect, migrateOnce, currentAuthId } from './lib/authLink';
+import { isBmtiCode } from './lib/bmtiTypes';
 import { supabase } from './lib/supabaseClient';
 import { track, trackScreen } from './lib/analytics';
 import { syncSleepSettingFromServer } from './lib/mallangProfile';
@@ -13,11 +14,25 @@ import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
 import KakaoChannelPrompt from './components/KakaoChannelPrompt';
+// 카카오 로그인에서 돌아오면 주소 끝에 #access_token=... 이 붙는다.
+// 그대로 두면 유형 코드로 오해받고 화면에도 남으므로, 읽자마자 지운다.
+function takeHash() {
+  try {
+    const h = window.location.hash.replace('#', '');
+    if (/access_token|refresh_token|provider_token|error_description/.test(h)) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      return '';
+    }
+    return h;
+  } catch { return ''; }
+}
+
 function App() {
-  const initialHash = window.location.hash.replace('#', '');
+  const initialHash = takeHash();
   // 공유 링크(#example-XXXX) — 공유받은 사람은 곧바로 설문(첫 질문)으로 보낸다.
   const exampleCode = initialHash.startsWith('example-') ? initialHash.slice('example-'.length) : null;
-  const hashCode = (initialHash && initialHash !== 'quiz' && !exampleCode) ? initialHash : null;
+  // 유형 코드 모양일 때만 받아들인다(모르는 값이면 무시).
+  const hashCode = (initialHash && initialHash !== 'quiz' && !exampleCode && isBmtiCode(initialHash)) ? initialHash : null;
   // 재방문(다이어리 온보딩을 마친) 유저는 첫 화면을 다이어리로 연다. 단, 링크에 해시가 있으면 그 화면 우선.
   const isReturningDiaryUser = (() => { try { return localStorage.getItem('bmti_diary_onboarded') === '1'; } catch { return false; } })();
   const [currentView, setCurrentView] = useState(
@@ -30,6 +45,8 @@ function App() {
   const [bmtiCode, setBmtiCode] = useState(() => {
     if (hashCode) return hashCode;
     const saved = localStorage.getItem('bmti_code');
+    // 예전에 잘못 저장된 값(토큰 등)이 남아 있으면 지우고 없던 일로 한다.
+    if (saved && !isBmtiCode(saved)) { try { localStorage.removeItem('bmti_code'); } catch { /* 무시 */ } return ''; }
     return saved || '';
   }); // e.g. "ALDZ-Tl"
   const [bmtiAnswers, setBmtiAnswers] = useState(() => {
@@ -91,7 +108,7 @@ function App() {
 
   // Save bmtiCode to localStorage
   useEffect(() => {
-    if (bmtiCode) {
+    if (bmtiCode && isBmtiCode(bmtiCode)) {
       localStorage.setItem('bmti_code', bmtiCode);
     }
   }, [bmtiCode]);
@@ -175,7 +192,7 @@ function App() {
 
   // Update Supabase when quiz is completed
   useEffect(() => {
-    if (isLoggedIn && userProfile && bmtiCode && quizCompleted) {
+    if (isLoggedIn && userProfile && bmtiCode && isBmtiCode(bmtiCode) && quizCompleted) {
       const updateBmti = async () => {
         try {
           let { error } = await supabase
