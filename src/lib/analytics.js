@@ -37,6 +37,15 @@ function scheduleFlush() {
   flushTimer = setTimeout(() => { flushTimer = null; flush(); }, 1500);
 }
 
+/**
+ * 오류는 아니지만 '이러면 안 되는데' 싶은 순간을 남긴다.
+ * 앱이 멈추지 않고 조용히 잘못 도는 일을 잡으려는 것이다.
+ * 예: 주소에 로그인 토큰이 붙어 왔다 · 저장된 유형 코드가 이상하다
+ */
+export function trackAnomaly(kind, meta = {}) {
+  track("anomaly", { kind, ...meta });
+}
+
 /** 행동 한 건을 남긴다. track('quiz_done', { code: 'OLQM' }) */
 export function track(name, meta = {}) {
   if (!name) return;

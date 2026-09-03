@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { authMode, linkAccount, endAuth, resumeAfterRedirect, migrateOnce, currentAuthId, watchAndCleanUrl } from './lib/authLink';
 import { isBmtiCode } from './lib/bmtiTypes';
 import { supabase } from './lib/supabaseClient';
-import { track, trackScreen } from './lib/analytics';
+import { track, trackScreen, trackAnomaly } from './lib/analytics';
 import { syncSleepSettingFromServer } from './lib/mallangProfile';
 import Navbar from './components/Navbar';
 import HomeView from './components/HomeView';
@@ -20,7 +20,10 @@ import KakaoChannelPrompt from './components/KakaoChannelPrompt';
 function takeHash() {
   try {
     const h = window.location.hash.replace('#', '');
-    if (/access_token|refresh_token|provider_token|error_description/.test(h)) return '';
+    if (/access_token|refresh_token|provider_token|error_description/.test(h)) {
+      trackAnomaly('auth_hash');   // 로그인 부스러기가 주소에 붙어 왔다
+      return '';
+    }
     return h;
   } catch { return ''; }
 }
@@ -44,7 +47,11 @@ function App() {
     if (hashCode) return hashCode;
     const saved = localStorage.getItem('bmti_code');
     // 예전에 잘못 저장된 값(토큰 등)이 남아 있으면 지우고 없던 일로 한다.
-    if (saved && !isBmtiCode(saved)) { try { localStorage.removeItem('bmti_code'); } catch { /* 무시 */ } return ''; }
+    if (saved && !isBmtiCode(saved)) {
+      trackAnomaly('bad_saved_code', { len: saved.length });   // 저장돼 있던 유형 코드가 이상하다
+      try { localStorage.removeItem('bmti_code'); } catch { /* 무시 */ }
+      return '';
+    }
     return saved || '';
   }); // e.g. "ALDZ-Tl"
   const [bmtiAnswers, setBmtiAnswers] = useState(() => {

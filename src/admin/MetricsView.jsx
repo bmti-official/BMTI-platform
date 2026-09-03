@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, box } from './theme';
 import { PARTS } from '../lib/mallangReportEngine';
 import { GROUP_LABEL, groupsOfPart } from '../lib/bodyGroups';
+import { isBmtiCode } from '../lib/bmtiTypes';
 
 // 📈 지표 — 다이어리 기록(지금 바로 되는 것)과 행동 기록(app_events)을 함께 본다.
 const GOLD = '#9C6F26';
@@ -292,7 +293,15 @@ export default function MetricsView() {
     return { months: ms, rows, growth, last };
   }, [users, diary, events]);
 
-  // ⑤ 행동 기록에서 뽑는 것들
+  // ⑤ 자가 점검 — 오류로 잡히지 않는 '조용한 이상'을 찾는다
+  const health = useMemo(() => {
+    const badCode = users.filter((u) => u.bmti_type && !isBmtiCode(u.bmti_type));
+    const noNick = users.filter((u) => !String(u.nickname || '').trim());
+    const linked = users.filter((u) => u.auth_id).length;
+    return { badCode, noNick, linked, total: users.length };
+  }, [users]);
+
+  // ⑥ 행동 기록에서 뽑는 것들
   const ev = useMemo(() => {
     const of = (n) => events.filter((e) => e.name === n);
     const uniq = (rows) => new Set(rows.map((r) => r.anon_id)).size;
@@ -338,6 +347,10 @@ export default function MetricsView() {
       r7: { n: retained(7), d: eligible(7).length },
       r30: { n: retained(30), d: eligible(30).length },
       errors: of('js_error').slice(0, 12),
+      // 오류는 아니지만 '이러면 안 되는데' 싶은 신호
+      anomalies: Object.entries(of('anomaly').reduce((m, e) => {
+        const k = e.meta?.kind || '알 수 없음'; m[k] = (m[k] || 0) + 1; return m;
+      }, {})).sort((a, b) => b[1] - a[1]).map(([label, n]) => ({ label, n })),
       inflow: Object.entries(of('session_start').reduce((m, e) => {
         const k = inflowLabel(e.meta?.ref); m[k] = (m[k] || 0) + 1; return m;
       }, {})).sort((a, b) => b[1] - a[1]).map(([label, n]) => ({ label, n })),
@@ -471,6 +484,34 @@ export default function MetricsView() {
         <Bars title="연속 기록이 끊긴 지점" note="며칠째에 그만두는지 — 알림 시점을 정하는 근거" rows={streaks} />
         <Bars title="부위 묶음별 기록" note="큐레이션·바로카드를 어느 부위부터 만들지" rows={parts.byGroup} />
         <Bars title="부위별 기록" rows={parts.byPart} />
+      </div>
+
+      {/* 자가 점검 — 오류로는 안 잡히는 조용한 이상 */}
+      <div style={box}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>자가 점검</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          앱이 멈추지는 않았지만 이상한 값이 들어간 곳을 찾습니다.
+          아래 오류 목록은 <b>앱이 멈췄을 때만</b> 쌓이므로, 조용히 잘못 도는 문제는 여기서 봅니다.
+        </div>
+        {[
+          { label: '유형 코드가 이상한 회원', n: health.badCode.length,
+            hint: health.badCode.slice(0, 3).map((u) => `${u.nickname || '이름없음'}: ${String(u.bmti_type).slice(0, 24)}`).join(' · ') },
+          { label: '닉네임이 비어 있는 회원', n: health.noNick.length, hint: '' },
+          { label: '로그인 계정이 아직 안 이어진 회원', n: health.total - health.linked,
+            hint: `전체 ${health.total}명 중 ${health.linked}명 이어짐 — 다 이어지면 문을 잠글 수 있어요`, soft: true },
+          ...ev.anomalies.map((a) => ({
+            label: `이상 신호 · ${a.label === 'auth_hash' ? '주소에 로그인 부스러기' : a.label === 'bad_saved_code' ? '저장된 유형 코드 이상' : a.label}`,
+            n: a.n, hint: '' })),
+        ].map((r) => (
+          <div key={r.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 0', borderBottom: `1px solid ${LINE}` }}>
+            <span style={{ flexShrink: 0, width: 18, fontSize: 13 }}>{r.n === 0 ? '✅' : r.soft ? '⏳' : '⚠️'}</span>
+            <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, color: INK }}>
+              {r.label}
+              {r.hint && <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: SUB, marginTop: 2 }}>{r.hint}</span>}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: r.n === 0 ? '#2F7A4F' : r.soft ? SUB : '#B23B36' }}>{r.n}</span>
+          </div>
+        ))}
       </div>
 
       {/* 오류 */}
