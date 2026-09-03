@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authMode, linkAccount, endAuth, resumeAfterRedirect, migrateOnce, currentAuthId } from './lib/authLink';
+import { authMode, linkAccount, endAuth, resumeAfterRedirect, migrateOnce, currentAuthId, watchAndCleanUrl } from './lib/authLink';
 import { isBmtiCode } from './lib/bmtiTypes';
 import { supabase } from './lib/supabaseClient';
 import { track, trackScreen } from './lib/analytics';
@@ -15,14 +15,12 @@ import AiChatHub from './components/AiChatHub';
 import SavePromptModal from './components/SavePromptModal';
 import KakaoChannelPrompt from './components/KakaoChannelPrompt';
 // 카카오 로그인에서 돌아오면 주소 끝에 #access_token=... 이 붙는다.
-// 그대로 두면 유형 코드로 오해받고 화면에도 남으므로, 읽자마자 지운다.
+// 여기서는 '못 본 척'만 한다 — 곧바로 지우면 Supabase가 읽기 전에 사라져
+// 로그인이 조용히 실패한다. 지우는 일은 세션이 자리잡은 뒤 watchAndCleanUrl이 맡는다.
 function takeHash() {
   try {
     const h = window.location.hash.replace('#', '');
-    if (/access_token|refresh_token|provider_token|error_description/.test(h)) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      return '';
-    }
+    if (/access_token|refresh_token|provider_token|error_description/.test(h)) return '';
     return h;
   } catch { return ''; }
 }
@@ -113,6 +111,9 @@ function App() {
     }
   }, [bmtiCode]);
 
+  // 카카오에서 돌아온 흔적을 세션이 자리잡은 뒤 지운다(토큰이 주소에 남지 않게).
+  useEffect(() => { watchAndCleanUrl(); }, []);
+
   // 이미 로그인해 둔 회원인데 서버 세션이 아직 없으면, 한 번만 조용히 이어 붙인다.
   useEffect(() => {
     if (authMode() !== 'on') return;
@@ -138,7 +139,9 @@ function App() {
     if (authMode() !== 'on' || localStorage.getItem('bmti_user')) return;
     let alive = true;
     resumeAfterRedirect().then((row) => {
-      if (!alive || !row) return;
+      if (!alive) return;
+      // 카카오는 다녀왔는데 아직 우리 회원이 아니면 가입 절차로 이어 준다.
+      if (!row) { currentAuthId().then((id) => { if (alive && id) setShowSignup(true); }); return; }
       const merged = { ...row, appNotification: row.app_notification ?? false };
       localStorage.setItem('bmti_user', JSON.stringify(merged));
       setUserProfile(merged);

@@ -23,6 +23,27 @@ export function setAuthMode(v) {
   try { localStorage.setItem(MODE_KEY, v === "on" ? "on" : "off"); } catch { /* 무시 */ }
 }
 
+/**
+ * 주소 끝에 남은 로그인 부스러기(#access_token=...)를 지운다.
+ * ⚠️ Supabase가 그 값을 읽어 세션을 만든 '뒤에' 불러야 한다.
+ *    먼저 지워 버리면 로그인이 조용히 실패한다.
+ */
+export function cleanAuthUrl() {
+  try {
+    if (!/access_token|refresh_token|provider_token|error_description/.test(window.location.hash)) return;
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  } catch { /* 무시 */ }
+}
+
+/**
+ * 뒷정리 — 로그인이 잘 됐다면 Supabase가 알아서 주소를 치운다.
+ * 여기서는 '로그인이 실패해서 부스러기가 남은 경우'만 몇 초 뒤에 지운다.
+ * 이벤트를 기다리지 않고 시간을 두는 쪽이, 읽기 전에 지워 버릴 위험이 없어 안전하다.
+ */
+export function watchAndCleanUrl(delay = 2500) {
+  setTimeout(cleanAuthUrl, delay);
+}
+
 /** 지금 Supabase 로그인 세션이 있는지 */
 export async function currentAuthId() {
   try {
