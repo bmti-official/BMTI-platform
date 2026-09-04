@@ -211,8 +211,10 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <MotionInput value={f.motion_url} onChange={set('motion_url')} />
         </div>
         <div>
-          <span style={label}>영상 주소 <span style={{ fontWeight: 600 }}>— 동작 대신 영상을 쓸 때만</span></span>
-          <input style={input} value={f.video_url || ''} onChange={(e) => set('video_url')(e.target.value)} placeholder="https://..." />
+          <span style={label}>영상 <span style={{ fontWeight: 600 }}>— 동작 대신 영상을 쓸 때만 (선택)</span></span>
+          <ImageInput allowVideo value={f.video_url} onChange={set('video_url')}
+            placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
+            hint="mp4·webm 파일을 올릴 수 있어요. 세로 9:16, 20MB 이하를 권합니다." />
         </div>
         <div>
           <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 쉼표로 구분</span></span>

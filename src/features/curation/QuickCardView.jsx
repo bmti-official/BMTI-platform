@@ -53,7 +53,8 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
         <div style={{ width: '100%', aspectRatio: '9 / 16', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {motion
             ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
-            : <video src={card.video_url} controls autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+            : <video src={card.video_url} controls autoPlay loop muted playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
         </div>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5)

@@ -63,7 +63,7 @@ const errStyle = { fontSize: 11.5, fontWeight: 700, color: '#C0392B', marginTop:
 const hintStyle = { fontSize: 11.5, fontWeight: 600, color: SUB, marginTop: 5, lineHeight: 1.5 };
 
 // ── 한 장짜리 (대표 이미지) ───────────────────────────────────────
-export default function ImageInput({ value, onChange, placeholder = 'https://... (또는 사진을 끌어다 놓으세요)', hint }) {
+export default function ImageInput({ value, onChange, placeholder = 'https://... (또는 사진을 끌어다 놓으세요)', hint, allowVideo = false }) {
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -73,7 +73,7 @@ export default function ImageInput({ value, onChange, placeholder = 'https://...
     const file = files[0];
     if (!file) return;
     setErr(''); setBusy(true);
-    const r = await uploadOne(file);
+    const r = await uploadOne(file, allowVideo);
     setBusy(false);
     if (r.err) { setErr(r.err); return; }
     onChange(r.url);
@@ -83,21 +83,23 @@ export default function ImageInput({ value, onChange, placeholder = 'https://...
     <DropZone over={over} setOver={setOver} onFiles={onFiles}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
         <span style={{ width: 62, height: 40, flexShrink: 0, borderRadius: 7, overflow: 'hidden', background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: SUB }}>
-          {value ? <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '없음'}
+          {!value ? '없음' : isClip(value)
+            ? <video src={value} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }} />
+            : <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
         </span>
         <input style={{ ...input, flex: 1 }} value={value || ''} placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)} />
         <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} style={uploadBtn(busy)}>
-          {busy ? '올리는 중…' : '사진 올리기'}
+          {busy ? '올리는 중…' : allowVideo ? '영상 올리기' : '사진 올리기'}
         </button>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+        <input ref={fileRef} type="file" accept={allowVideo ? 'video/mp4,video/webm,video/quicktime' : 'image/*'} style={{ display: 'none' }}
           onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} />
       </div>
       {(hint || err) && <div style={err ? errStyle : hintStyle}>{err || hint}</div>}
       {value && !err && (
         <button type="button" onClick={() => onChange('')}
           style={{ marginTop: 5, padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, color: INK, cursor: 'pointer', textDecoration: 'underline' }}>
-          사진 비우기
+          {allowVideo ? '영상 비우기' : '사진 비우기'}
         </button>
       )}
     </DropZone>
