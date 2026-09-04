@@ -6,7 +6,7 @@ import SearchFilter from '../features/curation/SearchFilter';
 import CurationCard from '../features/curation/CurationCard';
 import { CHARACTERS } from '../data';
 
-// 큐레이션에 골라 둔 누끼 캐릭터를 그림 주소로 바꿔 넘긴다.
+// 큐레이션·바로카드에 골라 둔 누끼 캐릭터를 그림 주소로 바꿔 넘긴다.
 function charProps(item, tone) {
   const codes = ((tone === 'm' ? item.chars_m : item.chars_z) || []).filter(Boolean);
   return {
@@ -141,7 +141,7 @@ export default function SearchPreview() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginBottom: 5 }}>{i + 1}번째 · {GROUP_LABEL[group] || group}</div>
                   {kind === 'curation'
                     ? <CurationCard item={item} tone={tone} {...charProps(item, tone)} />
-                    : <QuickCardView card={item} tone={tone} />}
+                    : <QuickCardView card={item} tone={tone} {...charProps(item, tone)} />}
                 </div>
               ))}
             </div>

@@ -108,7 +108,7 @@ export function CharRow({ chars = [], codes = [], h = 30 }) {
 }
 
 // 보관하기 — 작고 끝이 둥근 버튼
-function KeepChip({ onSave }) {
+export function KeepChip({ onSave }) {
   return (
     <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); }}
       style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,

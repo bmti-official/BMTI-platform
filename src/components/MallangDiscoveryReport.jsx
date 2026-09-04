@@ -1315,7 +1315,7 @@ function GrapeCluster({ kind, items = [], width = 260, height = 205 }) {
             boxShadow: "inset 2px -3px 6px rgba(0,0,0,0.10), inset -3px 3px 5px rgba(255,255,255,0.45)" }}>
             {it.icon
               ? <DiaryIcon name={it.icon} size={icoSize} />
-              : <span style={{ fontSize: Math.max(9, r * 0.32), fontWeight: 900, color: "#fff", lineHeight: 1.15, textAlign: "center", wordBreak: "keep-all" }}>{it.word}</span>}
+              : <span style={{ fontSize: Math.max(9, r * 0.3), fontWeight: 900, color: "#fff", lineHeight: 1.12, textAlign: "center", wordBreak: "keep-all" }}>{it.word}</span>}
             {it.label && (
               <span style={{ fontSize: Math.max(7.5, r * 0.23), fontWeight: 800, color: i === 0 ? "#fff" : "#4A4438",
                 lineHeight: 1.1, textAlign: "center", wordBreak: "keep-all", maxWidth: "100%" }}>{it.label}</span>
@@ -1352,8 +1352,9 @@ function GrapeSlide({ kind, days, items, topLabel, topIcon }) {
 }
 
 // 세 송이를 가로로 — 실제/예시 공용
-// 운동 종목 이름을 알 안에 넣을 짧은 말로 줄인다 — '걷기/산책' → '걷기'
-const shortWord = (label) => String(label || "").split(/[/·]/)[0].trim().slice(0, 4);
+// 운동 종목 이름은 있는 그대로 다 적는다 — '걷기/산책', '러닝·조깅'.
+// 다만 알 안이 좁으니 구분 기호 뒤에서 줄이 바뀔 수 있게 보이지 않는 틈을 넣어 준다.
+const fullWord = (label) => String(label || "").trim().replace(/([/·])/g, "$1\u200B");
 // 알 안에 들어갈 이름표 — 길면 알을 넘치므로 줄여 쓴다
 const SHORT_LABEL = {
   "그냥 쉬고 싶었어요": "쉬고 싶어", "몸이 안 좋아요": "몸이 안 좋아",
@@ -1383,7 +1384,7 @@ function buildGrapes(move, rest, over) {
 
   const moveRows = (move?.data?.byType || []).slice().sort(byCount);
   const moveItems = [
-    ...moveRows.slice(0, 5).map((x) => ({ word: shortWord(x.label), label: "", count: x.count })).filter((x) => x.word),
+    ...moveRows.slice(0, 5).map((x) => ({ word: fullWord(x.label), label: "", count: x.count })).filter((x) => x.word),
     ...(moveRows.length > 5 ? [{ word: "기타", label: "", count: moveRows.slice(5).reduce((n, x) => n + (x.count || 1), 0) }] : []),
   ];
   const restItems = pack(rest?.data?.items, (x) => REASON_ICON[x.reason], (x) => x.label);

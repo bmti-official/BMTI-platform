@@ -15,6 +15,8 @@ import { CurationThumb } from '../features/curation/CurationCard';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
+import CharPicker from './CharPicker';
+import { CHARACTERS } from '../data';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
 
 // 바로카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
@@ -27,6 +29,7 @@ const EMPTY = {
   motion_url: '', thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
+  chars_z: [], chars_m: [],
 };
 
 // 아홉 칸 자리에서 문구를 조금 더 미세하게 밀고, 크기도 손보는 슬라이더
@@ -62,7 +65,11 @@ function ThumbNudge({ dx, dy, scale, onDx, onDy, onScale }) {
 }
 
 function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
-  const [f, setF] = useState(() => withDraft({ ...EMPTY, ...(row || {}) }, 'card', row));
+  const [f, setF] = useState(() => {
+    const base = withDraft({ ...EMPTY, ...(row || {}) }, 'card', row);
+    ['chars_z', 'chars_m'].forEach((k) => { if (!Array.isArray(base[k])) base[k] = []; });
+    return base;
+  });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -206,6 +213,20 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
             <CurationThumb item={f} ratio="4 / 5" showRead={false} clip={f.video_url || ''} emptyText="동작 영상을 올리면 보여요"
               badge={f.duration_sec > 0 ? { label: '소요시간', value: `${Math.floor(f.duration_sec / 60)}:${String(f.duration_sec % 60).padStart(2, '0')}` } : null} />
           </div>
+        </div>
+      </div>
+
+      {/* 표지 위에 세울 누끼 캐릭터 — Z/M 각각 최대 4개 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>누끼 캐릭터</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>표지 바로 위, 제목 아래에 &lsquo;추천 유형&rsquo;으로 놓입니다 · 유형마다 최대 4개</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {[['chars_z', 'Z 유형', 'Z'], ['chars_m', 'M 유형', 'M']].map(([key, lb, suffix]) => (
+            <div key={key}>
+              <span style={label}>{lb} <span style={{ color: SUB, fontWeight: 700 }}>({(f[key] || []).length}/4)</span></span>
+              <CharPicker suffix={suffix} value={f[key] || []} onChange={set(key)} />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -379,7 +400,11 @@ export default function QuickCardAdmin() {
 
       {preview && (
         <PreviewModal title="바로카드 미리보기" onClose={() => setPreview(null)}>
-          {(tone) => <QuickCardView card={preview} tone={tone} motion={previewMotion} />}
+          {(tone) => {
+            const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];
+            const charImages = charCodes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean);
+            return <QuickCardView card={preview} tone={tone} motion={previewMotion} charImages={charImages} charCodes={charCodes} />;
+          }}
         </PreviewModal>
       )}
 
