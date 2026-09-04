@@ -165,10 +165,10 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         </div>
       </div>
 
-      {/* 썸네일 — 인스타 게시물 비율(4:5). 실제 동작은 쇼츠 비율(9:16)로 따로 나갑니다 */}
+      {/* 썸네일 — 인스타 게시물 비율(4:5). 표지도 재생도 같은 4:5입니다 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>썸네일 <span style={{ fontWeight: 600, color: SUB }}>— 세로 4:5</span></div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 보이는 표지입니다. 아래 &lsquo;동작 영상&rsquo;의 0~5초가 소리 없이 돌아갑니다. &lsquo;바로 따라하기&rsquo;를 누르면 9:16 동작으로 바뀝니다.</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 보이는 표지입니다. 아래 &lsquo;동작 영상&rsquo;의 0~5초가 소리 없이 돌아갑니다. &lsquo;바로 따라하기&rsquo;를 눌러도 같은 4:5로 이어집니다.</div>
         <div style={{ marginBottom: 12 }}>
           <span style={label}>동작 이름 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 표지와 제목 옆에 함께 나옵니다</span></span>
           <input style={{ ...input, fontSize: 16, fontWeight: 800, padding: '12px 14px' }} value={f.thumb_text || ''}
@@ -264,7 +264,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <span style={label}>영상 <span style={{ fontWeight: 600 }}>— 동작 대신 영상을 쓸 때만 (선택)</span></span>
           <ImageInput allowVideo value={f.video_url} onChange={set('video_url')}
             placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
-            hint="mp4·webm 파일을 올릴 수 있어요. 세로 9:16, 20MB 이하를 권합니다." />
+            hint="mp4·webm 파일을 올릴 수 있어요. 세로 4:5, 20MB 이하를 권합니다." />
         </div>
         <div>
           <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 쉼표로 구분</span></span>

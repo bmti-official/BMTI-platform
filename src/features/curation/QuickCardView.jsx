@@ -11,10 +11,11 @@ import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
-const PURPLE = '#7E6FC9';                 // 타겟 부위 · 도구를 짚어 주는 연보라
+const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
 const GLASS = 'rgba(253,242,206,0.82)';   // 표지 위 글씨를 받쳐 주는 반투명 연한 옐로우
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
+const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
 
 // 전체 화면일 때는 가로에 맞추면 세로 영상이 지나치게 커진다.
 // 높이에 맞춰 담기게(contain) 되돌린다.
@@ -34,10 +35,16 @@ const overlay = (side) => ({
   textAlign: side === 'right' ? 'right' : 'left', wordBreak: 'keep-all',
 });
 
+const SETS = [1, 2, 3, 4, 5];
+
 export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onSave, charImages, charCodes }) {
   const { title, script } = pickCardTone(card, tone);
-  // 처음엔 4:5 표지를 보여 주고, 따라하기를 누르면 9:16 동작으로 바뀐다.
+  // 처음엔 4:5 표지를 보여 주고, 따라하기를 누르면 같은 4:5 동작으로 바뀐다.
   const [started, setStarted] = useState(false);
+  // 몇 세트 할지는 손님이 정한다. 시작한 뒤에는 몇 세트째인지 센다.
+  const [sets, setSets] = useState(1);
+  const [done, setDone] = useState(0);
+  const allDone = started && done >= sets;
   const hasPlay = !!(motion || card.video_url);
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
@@ -71,8 +78,8 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
       </div>
 
       {started && hasPlay ? (
-        // 실제 동작 — 쇼츠 비율(9:16)
-        <div style={{ width: '100%', aspectRatio: '9 / 16', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        // 실제 동작 — 표지와 같은 4:5
+        <div style={{ width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {motion
             ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
             : <video className="bmti-clip" src={card.video_url} controls autoPlay loop muted playsInline
@@ -86,12 +93,12 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
           {/* 왼쪽 위 — 타겟 부위(연보라) / 연관 부위(검정) */}
           {(core.length > 0 || related.length > 0) && (
             <div style={overlay('left')}>
-              {core.length > 0 && <div style={{ color: PURPLE }}>{core.join(', ')}</div>}
-              {related.length > 0 && <div style={{ color: INK }}>{related.join(', ')}</div>}
+              {core.length > 0 && <div style={{ color: GOLD }}>{core.join(', ')}</div>}
+              {related.length > 0 && <div style={{ color: INK, fontSize: 10.5, fontWeight: 700 }}>({related.join(', ')})</div>}
             </div>
           )}
-          {/* 오른쪽 위 — 도구(연보라) */}
-          {tools.length > 0 && <div style={{ ...overlay('right'), color: PURPLE }}>{tools.join(', ')}</div>}
+          {/* 오른쪽 위 — 도구(골드) */}
+          {tools.length > 0 && <div style={{ ...overlay('right'), color: GOLD }}>{tools.join(', ')}</div>}
         </div>
       )}
 
@@ -100,10 +107,44 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
           <span>조회 {fmt(card.view_count)}</span><span style={{ color: LINE }}>·</span><span>저장 {fmt(card.save_count)}</span>
           <span style={{ marginLeft: 'auto' }}><KeepChip onSave={onSave} /></span>
         </div>
-        <button onClick={() => { setStarted(true); if (onStart) onStart(); }}
+        {/* 몇 세트 할지 — 시작 전엔 고르고, 시작한 뒤엔 몇 세트째인지 센다 */}
+        {!started ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>세트</span>
+            <span style={{ display: 'flex', gap: 4 }}>
+              {SETS.map((n) => (
+                <button key={n} type="button" onClick={() => setSets(n)}
+                  style={{ width: 30, height: 28, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 12.5, fontWeight: 800, color: n === sets ? SET_INK : SUB,
+                    background: n === sets ? SET_BG : '#fff', boxShadow: n === sets ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+                  {n}
+                </button>
+              ))}
+            </span>
+            {card.duration_sec > 0 && (
+              <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                모두 {mmss(card.duration_sec * sets)}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, background: SET_BG, borderRadius: 11, padding: '8px 11px' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: SET_INK }}>
+              {allDone ? `${sets}세트 다 끝냈어요` : `${sets}세트 중 ${done + 1}세트째`}
+            </span>
+            {!allDone && (
+              <button type="button" onClick={() => setDone((n) => n + 1)}
+                style={{ marginLeft: 'auto', border: 'none', background: '#fff', color: SET_INK, borderRadius: 999,
+                  padding: '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {done + 1 >= sets ? '다 했어요 ✓' : '다음 세트 →'}
+              </button>
+            )}
+          </div>
+        )}
+        <button onClick={() => { if (started) { setDone(0); } else { setStarted(true); if (onStart) onStart(); } }}
           style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
-          {started ? '다시 보기 ↻' : '바로 따라하기 →'}
+          {started ? '처음부터 다시 ↻' : '바로 따라하기 →'}
         </button>
         <AiNote top={10} />
         {script && (
