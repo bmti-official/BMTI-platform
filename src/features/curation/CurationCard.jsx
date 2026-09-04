@@ -30,7 +30,7 @@ function CharPic({ src, code, h = 38 }) {
 }
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', peekSec = 5 }) {
+export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', peekSec = 5, emptyText = '대표 이미지 없음' }) {
   // 표지에 영상을 깔면, 화면에 들어올 때 0~5초를 소리 없이 돌려 준다.
   const boxRef = useRef(null);
   const vidRef = useRef(null);
@@ -56,11 +56,13 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       ) : item.cover_url
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>대표 이미지 없음</div>}
+        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>{emptyText}</div>}
 
       {item.thumb_text && (() => {
         const pos = thumbPos(item.thumb_pos);
         const color = item.thumb_color || '#FFFFFF';
+        // 사장님이 정한 문구 크기 — 100이 기본이고, 목록/본문 기준 크기에 곱해 준다.
+        const scale = Math.min(200, Math.max(50, Number(item.thumb_scale) || 100)) / 100;
         // 가독시간표는 오른쪽 아래에 있다. 문구가 아래쪽에 놓일 땐 그만큼 자리를 비워 둔다.
         const pad = big ? 18 : 12;
         // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
@@ -68,7 +70,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
             padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
-            <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
+            <span style={{ fontSize: Math.round((big ? 30 : 21) * scale), fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
               // 아홉 칸 자리에서 가로·세로로 조금씩 더 민다
               transform: `translate(${Number(item.thumb_dx) || 0}%, ${Number(item.thumb_dy) || 0}%)` }}>

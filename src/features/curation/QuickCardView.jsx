@@ -66,7 +66,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
         </div>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5). 영상이 있으면 0~5초가 소리 없이 돌아간다.
-        <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false} clip={card.video_url || ''}
+        <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false} clip={card.video_url || ''} emptyText="동작 영상 없음"
           badge={card.duration_sec > 0 ? { label: '소요시간', value: mmss(card.duration_sec) } : null} />
       )}
 

@@ -25,7 +25,7 @@ const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', cover_url: '',
   thumb_text: '', read_min: 0,
-  thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0,
+  thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   chars_z: [], chars_m: [],
   ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [
     [`s${n}_imgs`, []], [`s${n}_caps`, []],
@@ -48,27 +48,32 @@ const PARTS_OF_ARTICLE = [
 ];
 
 // 예전에 한 개만 고르던 char_z/char_m 값을 배열 칸으로 옮겨 읽는다.
-// 아홉 칸 자리에서 조금 더 미세하게 미는 슬라이더
-function ThumbNudge({ dx, dy, onDx, onDy }) {
-  const row = (label, v, on) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-      <span style={{ width: 34, flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB }}>{label}</span>
-      <input type="range" min={-40} max={40} step={2} value={Number(v) || 0}
-        onChange={(e) => on(Number(e.target.value))} style={{ flex: 1, minWidth: 0, accentColor: ACCENT }} />
-      <span style={{ width: 34, flexShrink: 0, fontSize: 11, fontWeight: 800, color: INK, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-        {Number(v) || 0}
-      </span>
-    </div>
-  );
+// 아홉 칸 자리에서 문구를 조금 더 미세하게 밀고, 크기도 손보는 슬라이더
+function ThumbNudge({ dx, dy, scale, onDx, onDy, onScale }) {
+  const row = (label, v, on, opt = {}) => {
+    const { min = -40, max = 40, step = 2, base = 0, unit = '' } = opt;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <span style={{ width: 34, flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB }}>{label}</span>
+        <input type="range" min={min} max={max} step={step} value={Number(v) || base}
+          onChange={(e) => on(Number(e.target.value))} style={{ flex: 1, minWidth: 0, accentColor: ACCENT }} />
+        <span style={{ width: 40, flexShrink: 0, fontSize: 11, fontWeight: 800, color: INK, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+          {Number(v) || base}{unit}
+        </span>
+      </div>
+    );
+  };
+  const moved = Number(dx) || Number(dy) || (Number(scale) || 100) !== 100;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 7 }}>
       {row('좌우', dx, onDx)}
       {row('위아래', dy, onDy)}
-      {(Number(dx) || Number(dy)) ? (
-        <button type="button" onClick={() => { onDx(0); onDy(0); }}
+      {row('크기', scale, onScale, { min: 60, max: 180, step: 5, base: 100, unit: '%' })}
+      {moved ? (
+        <button type="button" onClick={() => { onDx(0); onDy(0); onScale(100); }}
           style={{ alignSelf: 'flex-start', padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit',
             fontSize: 11, fontWeight: 700, color: SUB, cursor: 'pointer', textDecoration: 'underline' }}>
-          가운데로 되돌리기
+          처음 자리·크기로 되돌리기
         </button>
       ) : null}
     </div>
@@ -267,7 +272,8 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
                   );
                 })}
               </div>
-              <ThumbNudge dx={f.thumb_dx} dy={f.thumb_dy} onDx={set('thumb_dx')} onDy={set('thumb_dy')} />
+              <ThumbNudge dx={f.thumb_dx} dy={f.thumb_dy} scale={f.thumb_scale}
+                onDx={set('thumb_dx')} onDy={set('thumb_dy')} onScale={set('thumb_scale')} />
             </div>
           </div>
 
