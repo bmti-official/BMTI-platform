@@ -168,23 +168,23 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
       {/* 썸네일 — 인스타 게시물 비율(4:5). 실제 동작은 쇼츠 비율(9:16)로 따로 나갑니다 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>썸네일 <span style={{ fontWeight: 600, color: SUB }}>— 세로 4:5</span></div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 보이는 표지입니다. 아래 &lsquo;동작 영상&rsquo;의 0~5초가 소리 없이 돌아갑니다. &lsquo;바로 시작하기&rsquo;를 누르면 9:16 동작으로 바뀝니다.</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 보이는 표지입니다. 아래 &lsquo;동작 영상&rsquo;의 0~5초가 소리 없이 돌아갑니다. &lsquo;바로 따라하기&rsquo;를 누르면 9:16 동작으로 바뀝니다.</div>
         <div style={{ marginBottom: 12 }}>
-          <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
+          <span style={label}>동작 이름 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 표지와 제목 옆에 함께 나옵니다</span></span>
           <input style={{ ...input, fontSize: 16, fontWeight: 800, padding: '12px 14px' }} value={f.thumb_text || ''}
-            onChange={(e) => set('thumb_text')(e.target.value)} placeholder="굳은 어깨 1분에 풀기" />
+            onChange={(e) => set('thumb_text')(e.target.value)} placeholder="어깨 벽 밀기" />
         </div>
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 300px', minWidth: 260, display: 'grid', gridTemplateColumns: '1fr 132px', gap: 12 }}>
             <div>
-              <span style={label}>썸네일 글씨체</span>
+              <span style={label}>이름 글씨체</span>
               <select value={f.thumb_font || 'pretendard'} onChange={(e) => set('thumb_font')(e.target.value)}
                 style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.thumb_font) }}>
                 {THUMB_FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
               </select>
             </div>
             <div>
-              <span style={label}>문구 색</span>
+              <span style={label}>이름 색</span>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input type="color" value={f.thumb_color || '#FFFFFF'} onChange={(e) => set('thumb_color')(e.target.value)}
                   style={{ width: 38, height: 38, padding: 2, border: `1px solid ${LINE}`, borderRadius: 8, background: '#fff', cursor: 'pointer', flexShrink: 0 }} />
@@ -193,7 +193,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
               </div>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
-              <span style={label}>문구 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
+              <span style={label}>이름 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 4 }}>
                 {THUMB_POS.map((tp) => {
                   const on = (f.thumb_pos || 'tl') === tp.key;

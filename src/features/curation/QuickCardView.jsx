@@ -7,12 +7,14 @@ import MotionPlayer from './MotionPlayer';
 import { CurationThumb, CharRow, KeepChip } from './CurationCard';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, finishRate } from './format';
+import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const PURPLE = '#7E6FC9';                 // 타겟 부위 · 도구를 짚어 주는 연보라
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
+const GLASS = 'rgba(253,242,206,0.82)';   // 표지 위 글씨를 받쳐 주는 반투명 연한 옐로우
+const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 
 // 전체 화면일 때는 가로에 맞추면 세로 영상이 지나치게 커진다.
 // 높이에 맞춰 담기게(contain) 되돌린다.
@@ -23,12 +25,13 @@ const FULLSCREEN_FIX = `
 
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
-// 표지 모서리에 얹는 글씨 — 사진 위에서도 읽히게 옅은 그늘을 깐다.
+// 표지 모서리에 얹는 글씨 — 사진 위에서도 읽히게 끝이 둥근 반투명 연한 옐로우를 깐다.
 const overlay = (side) => ({
-  position: 'absolute', top: 10, [side]: 12, zIndex: 2, pointerEvents: 'none',
+  position: 'absolute', top: 10, [side]: 10, zIndex: 2, pointerEvents: 'none',
+  background: GLASS, borderRadius: 10, padding: '5px 9px',
+  backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
   fontSize: 12, fontWeight: 800, lineHeight: 1.35, letterSpacing: '-0.01em',
   textAlign: side === 'right' ? 'right' : 'left', wordBreak: 'keep-all',
-  textShadow: '0 1px 3px rgba(255,255,255,0.85), 0 0 8px rgba(255,255,255,0.7)',
 });
 
 export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onSave, charImages, charCodes }) {
@@ -36,7 +39,6 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
   // 처음엔 4:5 표지를 보여 주고, 따라하기를 누르면 9:16 동작으로 바뀐다.
   const [started, setStarted] = useState(false);
   const hasPlay = !!(motion || card.video_url);
-  const rate = finishRate(card);
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
   const tools = card.tools || [];
@@ -45,20 +47,27 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
   return (
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       <style>{FULLSCREEN_FIX}</style>
-      <div style={{ padding: '14px 15px 10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '3px 9px' }}>
-            {KIND_LABEL[card.kind] || card.kind}
+      <div style={{ padding: '12px 15px 10px' }}>
+        {/* 추천 유형 누끼 캐릭터, 그 오른쪽에 종류와 소요 시간 */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, minHeight: 30 }}>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            {chars.length > 0 && <CharRow chars={chars} codes={charCodes || []} h={30} />}
           </span>
-          {card.duration_sec > 0 && <span style={{ fontSize: 11.5, color: SUB, fontWeight: 700 }}>{mmss(card.duration_sec)}</span>}
+          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, paddingBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '3px 9px' }}>
+              {KIND_LABEL[card.kind] || card.kind}
+            </span>
+            {card.duration_sec > 0 && <span style={{ fontSize: 11.5, color: SUB, fontWeight: 700 }}>{mmss(card.duration_sec)}</span>}
+          </span>
         </div>
-        <h3 style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h3>
-        <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
-          {rate != null ? `완주율 ${rate}%` : '아직 기록이 쌓이지 않았어요'}
-          {card.finish_count > 0 && ` · 완주 ${fmt(card.finish_count)}회`}
+        {/* 동작 이름표(Z·M 공통) + 제목 */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 8, flexWrap: 'wrap' }}>
+          {card.thumb_text && (
+            <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: NAME_INK, background: NAME_BG,
+              borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap' }}>{card.thumb_text}</span>
+          )}
+          <h3 style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: 0, wordBreak: 'keep-all' }}>{title}</h3>
         </div>
-        {/* 표지 바로 위 — 이 카드를 추천하는 유형들 */}
-        {chars.length > 0 && <CharRow chars={chars} codes={charCodes || []} h={30} />}
       </div>
 
       {started && hasPlay ? (
