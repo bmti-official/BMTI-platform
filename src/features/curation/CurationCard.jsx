@@ -1,7 +1,7 @@
 // 손님에게 보이는 큐레이션 —
 //  목록 카드: 가로로 꽉 찬 썸네일(문구 + 우측 하단 가독시간) → 아래에 누끼 캐릭터 + 제목 → 지표 줄
 //  본문:     같은 썸네일 → 제목 → 초록 → 네 마디(이미지+글) → 추천 바로카드
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount } from './format';
 import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
@@ -30,10 +30,31 @@ function CharPic({ src, code, h = 38 }) {
 }
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true }) {
+export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', peekSec = 5 }) {
+  // 표지에 영상을 깔면, 화면에 들어올 때 0~5초를 소리 없이 돌려 준다.
+  const boxRef = useRef(null);
+  const vidRef = useRef(null);
+  useEffect(() => {
+    if (!clip) return undefined;
+    const box = boxRef.current;
+    if (!box || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(([e]) => {
+      const v = vidRef.current;
+      if (!v) return;
+      if (e.isIntersecting) { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } }
+      else { try { v.pause(); } catch { /* 무시 */ } }
+    }, { threshold: 0.35 });
+    io.observe(box);
+    return () => io.disconnect();
+  }, [clip]);
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
-      {item.cover_url
+    <div ref={boxRef} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
+      {clip ? (
+        <video ref={vidRef} src={clip} muted playsInline autoPlay preload="metadata"
+          poster={item.cover_url || undefined}
+          onTimeUpdate={(e) => { if (e.currentTarget.currentTime >= peekSec) { try { e.currentTarget.currentTime = 0; } catch { /* 무시 */ } } }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      ) : item.cover_url
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>대표 이미지 없음</div>}
 
@@ -46,9 +67,11 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         const bottomPad = pos.align === 'flex-end' && (badge || showRead) ? pad + 30 : pad;
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
-            padding: `${pad}px ${pad}px ${bottomPad}px` }}>
+            padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
             <span style={{ fontSize: big ? 30 : 21, fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
-              textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color) }}>
+              textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
+              // 아홉 칸 자리에서 가로·세로로 조금씩 더 민다
+              transform: `translate(${Number(item.thumb_dx) || 0}%, ${Number(item.thumb_dy) || 0}%)` }}>
               {item.thumb_text}
             </span>
           </div>

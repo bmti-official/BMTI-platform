@@ -25,9 +25,36 @@ const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
   title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', duration_sec: 0,
   motion_url: '', cover_url: '', thumb_text: '',
-  thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF',
+  thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
+
+// 아홉 칸 자리에서 조금 더 미세하게 미는 슬라이더
+function ThumbNudge({ dx, dy, onDx, onDy }) {
+  const row = (label, v, on) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+      <span style={{ width: 34, flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB }}>{label}</span>
+      <input type="range" min={-40} max={40} step={2} value={Number(v) || 0}
+        onChange={(e) => on(Number(e.target.value))} style={{ flex: 1, minWidth: 0, accentColor: ACCENT }} />
+      <span style={{ width: 34, flexShrink: 0, fontSize: 11, fontWeight: 800, color: INK, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+        {Number(v) || 0}
+      </span>
+    </div>
+  );
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 7 }}>
+      {row('좌우', dx, onDx)}
+      {row('위아래', dy, onDy)}
+      {(Number(dx) || Number(dy)) ? (
+        <button type="button" onClick={() => { onDx(0); onDy(0); }}
+          style={{ alignSelf: 'flex-start', padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit',
+            fontSize: 11, fontWeight: 700, color: SUB, cursor: 'pointer', textDecoration: 'underline' }}>
+          가운데로 되돌리기
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => withDraft({ ...EMPTY, ...(row || {}) }, 'card', row));
@@ -170,11 +197,12 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
                   );
                 })}
               </div>
+              <ThumbNudge dx={f.thumb_dx} dy={f.thumb_dy} onDx={set('thumb_dx')} onDy={set('thumb_dy')} />
             </div>
           </div>
           <div style={{ flex: '0 0 200px', maxWidth: '100%' }}>
             <span style={label}>썸네일 미리보기 <span style={{ fontWeight: 600 }}>— 4:5</span></span>
-            <CurationThumb item={f} ratio="4 / 5" showRead={false}
+            <CurationThumb item={f} ratio="4 / 5" showRead={false} clip={f.video_url || ''}
               badge={f.duration_sec > 0 ? { label: '소요시간', value: `${Math.floor(f.duration_sec / 60)}:${String(f.duration_sec % 60).padStart(2, '0')}` } : null} />
           </div>
         </div>
