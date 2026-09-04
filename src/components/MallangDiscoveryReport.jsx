@@ -28,6 +28,7 @@ import bodyMaleFront from "../assets/3d_body/male_front.png";
 import bodyMaleBack from "../assets/3d_body/male_back.png";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
 import { getRecordMessage } from "../lib/recordMessage";
+import { pickBy, toneKey, HELLO, MOOD_LINES, BODY_SLEEP, BODY_SORE, BODY_RECOVER, HABIT_MOVE, HABIT_TAG, HABIT_NOTE, TONE, BYE } from "../lib/letterVoice";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -431,7 +432,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
 
   // 잠긴 박스의 블러 미리보기용 — 하드 유저 예시를 같은 파이프라인에 태운다.
   const exReport = useMemo(() => buildMonthlyReport(EXAMPLE_ENTRIES, buildProfile(EXAMPLE_USER), { year: EX_Y, month: EX_M, bmti: buildBmti("OCDM"), empathy: null, recentDiscoveryIds: [] }), []);
-  const exIns = useMemo(() => computeInsights(EXAMPLE_ENTRIES, EXAMPLE_USER, exReport), [exReport]);
+  const exIns = useMemo(() => computeInsights(EXAMPLE_ENTRIES, EXAMPLE_USER, exReport, "OCDM"), [exReport]);
 
   if (report.discovery.found) recordDiscovery(monthKey, report.discovery.id);
 
@@ -1220,7 +1221,7 @@ function IconGrape({ size = 18 }) {
 // ── 몽글몽글 포도 송이: 운동함·쉬어감·무리함을 알알이 맺힌 포도로 ──
 // 많이 고른 항목일수록 알이 많아지고 송이가 커진다. 가로로 밀어 세 송이를 본다.
 const GRAPE = {
-  move: { label: "운동함", icon: "walk",   berry: "#A9CE9F", deep: "#6E9C63", soft: "#EAF3E6", stem: "#8AA37E" },
+  move: { label: "운동/산책/스트레칭 했어요", icon: "walk",   berry: "#A9CE9F", deep: "#6E9C63", soft: "#EAF3E6", stem: "#8AA37E" },
   rest: { label: "쉬어감", icon: "sofa",   berry: "#BDB4E4", deep: "#7E73B8", soft: "#EFECF8", stem: "#9A92C6" },
   over: { label: "무리함", icon: "warn",   berry: "#EFB48A", deep: "#C4794A", soft: "#FBEFE5", stem: "#CE9670" },
 };
@@ -1331,9 +1332,9 @@ function GrapeSlide({ kind, days, items, topLabel, topIcon }) {
   const g = GRAPE[kind];
   return (
     <div style={{ flex: "0 0 78%", scrollSnapAlign: "center", background: g.soft, borderRadius: 18, padding: "14px 12px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <DiaryIcon name={g.icon} size={20} />
-        <span style={{ fontSize: 14, fontWeight: 900, color: C.ink }}>{g.label}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%" }}>
+        <span style={{ flexShrink: 0, display: "flex" }}><DiaryIcon name={g.icon} size={20} /></span>
+        <span style={{ fontSize: 13.5, fontWeight: 900, color: C.ink, lineHeight: 1.25, wordBreak: "keep-all", textAlign: "center" }}>{g.label}</span>
       </div>
       <div style={{ fontSize: 11.5, fontWeight: 800, color: g.deep, marginTop: 2 }}>
         {days > 0 ? `${days}일` : "아직 없어요"}
@@ -1387,14 +1388,15 @@ function buildGrapes(move, rest, over) {
   ];
   const restItems = pack(rest?.data?.items, (x) => REASON_ICON[x.reason], (x) => x.label);
   const overItems = pack(over?.data?.items, (x) => LOAD_ICON[x.load], (x) => x.label);
-  return {
-    total: moveN + restN + overN,
-    slides: [
-      { key: "move", days: moveN, items: moveItems, bi: null, bl: exTop?.label },
-      { key: "rest", days: restN, items: restItems, bi: restTop ? REASON_ICON[restTop.reason] : null, bl: restTop?.label },
-      { key: "over", days: overN, items: overItems, bi: overTop ? LOAD_ICON[overTop.load] : null, bl: overTop?.label },
-    ],
-  };
+  const slides = [
+    { key: "move", days: moveN, items: moveItems, bi: null, bl: exTop?.label },
+    { key: "rest", days: restN, items: restItems, bi: restTop ? REASON_ICON[restTop.reason] : null, bl: restTop?.label },
+    { key: "over", days: overN, items: overItems, bi: overTop ? LOAD_ICON[overTop.load] : null, bl: overTop?.label },
+  ];
+  // 기록이 있는 송이를 앞으로 당긴다 — 한두 송이만 열렸을 때 빈 송이부터 보이지 않게.
+  // 같은 처지끼리는 원래 차례(운동 → 쉬어감 → 무리함)를 지킨다.
+  slides.sort((a, b) => (b.days > 0) - (a.days > 0));
+  return { total: moveN + restN + overN, slides };
 }
 
 function GrapeRow({ slides }) {
@@ -2172,7 +2174,7 @@ const RAIN_CODES2 = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82,
 
 function topOf(map) { let k = null, n = 0; for (const [key, v] of Object.entries(map)) if (v > n) { n = v; k = key; } return k == null ? null : { key: k, n }; }
 
-function computeInsights(entries, userData, report) {
+function computeInsights(entries, userData, report, bmtiCode) {
   const days = [...(entries || [])].filter(e => e && typeof e.mood === "number").sort((a, b) => a.date.localeCompare(b.date));
   const byDate = Object.fromEntries(days.map(d => [d.date, d]));
   const nextOf = (ds) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() + 1); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; return byDate[iso]; };
@@ -2382,9 +2384,9 @@ function computeInsights(entries, userData, report) {
     const freq = userData?.exercise_frequency;
     if (freq && ONB_FREQ_LABEL[freq]) {
       const expect = { none: 0, sometimes: 4, weekly: 10, daily: 22 }[freq] ?? 8;
-      if (moveN >= expect + 4) rows.push({ icon: "📌", text: `평소 운동은 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨는데, 이번 달은 ${moveN}번이나 몸을 움직이셨어요. 평소보다 훨씬 부지런했네요!` });
-      else if (moveN > 0) rows.push({ icon: "📌", text: `평소 운동을 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨죠. 이번 달은 ${moveN}번 몸을 움직이셨어요.` });
-      else rows.push({ icon: "📌", text: `평소 운동을 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨어요. 이번 달은 운동 기록이 아직 없지만, 다음 달 첫 기록을 응원할게요!` });
+      if (moveN >= expect + 4) rows.push({ icon: "freq", text: `평소 운동은 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨는데, 이번 달은 ${moveN}번이나 몸을 움직이셨어요. 평소보다 훨씬 부지런했네요!` });
+      else if (moveN > 0) rows.push({ icon: "freq", text: `평소 운동을 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨죠. 이번 달은 ${moveN}번 몸을 움직이셨어요.` });
+      else rows.push({ icon: "freq", text: `평소 운동을 '${ONB_FREQ_LABEL[freq]}' 한다고 하셨어요. 이번 달은 운동 기록이 아직 없지만, 다음 달 첫 기록을 응원할게요!` });
     }
     // 2) 운동 목적 ↔ 불편함 강도 변화(월초→월말)
     const goals = userData?.exercise_goals || [];
@@ -2393,17 +2395,17 @@ function computeInsights(entries, userData, report) {
       const half = Math.floor(days.length / 2);
       const lv = (arr) => { const xs = arr.flatMap(d => (d.soreness || []).map(s => s.level)); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
       const a = lv(days.slice(0, half)), b = lv(days.slice(half));
-      if (a != null && b != null && a - b >= 0.6) rows.push({ icon: "⚖️", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨죠. 다행히 불편함 강도가 월초 평균 ${a.toFixed(1)}점에서 월말 ${b.toFixed(1)}점으로 줄어들었어요.` });
-      else if (a != null && b != null) rows.push({ icon: "⚖️", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨어요. 이번 달 불편함 강도는 월초 ${a.toFixed(1)}점, 월말 ${b.toFixed(1)}점으로 꾸준히 지켜보는 중이에요.` });
-      else rows.push({ icon: "⚖️", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨죠. 불편함 기록이 조금 더 쌓이면 강도 변화를 짚어드릴게요.` });
+      if (a != null && b != null && a - b >= 0.6) rows.push({ icon: "goal", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨죠. 다행히 불편함 강도가 월초 평균 ${a.toFixed(1)}점에서 월말 ${b.toFixed(1)}점으로 줄어들었어요.` });
+      else if (a != null && b != null) rows.push({ icon: "goal", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨어요. 이번 달 불편함 강도는 월초 ${a.toFixed(1)}점, 월말 ${b.toFixed(1)}점으로 꾸준히 지켜보는 중이에요.` });
+      else rows.push({ icon: "goal", text: `몸 관리에서 '${goalLabel}'를 신경 쓴다고 하셨죠. 불편함 기록이 조금 더 쌓이면 강도 변화를 짚어드릴게요.` });
     }
     // 3) 자주 하는 자세 ↔ 활동량(무리하게 부담이 실린 날)
     const loadC = {}; days.forEach(d => (d.overwork?.loads || []).forEach(l => { loadC[l] = (loadC[l] || 0) + 1; }));
     const tl = topOf(loadC);
     const posture = userData?.common_posture;
     if (posture && ONB_POSTURE_LABEL[posture]) {
-      if (tl) rows.push({ icon: "📌", text: `'${ONB_POSTURE_LABEL[posture]}'라고 하셨던 자세대로, 이번 달은 '${LOADS[tl.key] || tl.key}'으로 무리한 날이 ${tl.n}일로 가장 많았어요. 그 부담을 덜어주는 관리가 필요해요.` });
-      else rows.push({ icon: "📌", text: `'${ONB_POSTURE_LABEL[posture]}'라고 하셨죠. 이번 달은 무리하게 부담이 실린 날이 많지 않아 몸을 잘 아껴주셨어요.` });
+      if (tl) rows.push({ icon: "posture", text: `'${ONB_POSTURE_LABEL[posture]}'라고 하셨던 자세대로, 이번 달은 '${LOADS[tl.key] || tl.key}'으로 무리한 날이 ${tl.n}일로 가장 많았어요. 그 부담을 덜어주는 관리가 필요해요.` });
+      else rows.push({ icon: "posture", text: `'${ONB_POSTURE_LABEL[posture]}'라고 하셨죠. 이번 달은 무리하게 부담이 실린 날이 많지 않아 몸을 잘 아껴주셨어요.` });
     }
     // 4) 불편한 부위 ↔ 그 부위의 이번 달 기록
     const soreProfile = (userData?.mallang_sore || []).map(s => s?.part).filter(Boolean);
@@ -2413,8 +2415,8 @@ function computeInsights(entries, userData, report) {
       const profLabel = soreProfile[0];
       const key = labelToKey[profLabel] || profLabel;
       const cnt = soreC[key] || 0;
-      if (cnt > 0) rows.push({ icon: "⚖️", text: `평소 '${profLabel}'${iga(profLabel)} 불편하다고 하셨는데, 이번 달도 ${cnt}번 신호를 보냈어요. 그 부위를 조금만 더 아껴주기로 해요.` });
-      else rows.push({ icon: "⚖️", text: `평소 '${profLabel}'${iga(profLabel)} 불편하다고 하셨죠. 다행히 이번 달은 '${profLabel}' 불편함 기록이 많지 않았어요!` });
+      if (cnt > 0) rows.push({ icon: "spot", text: `평소 '${profLabel}'${iga(profLabel)} 불편하다고 하셨는데, 이번 달도 ${cnt}번 신호를 보냈어요. 그 부위를 조금만 더 아껴주기로 해요.` });
+      else rows.push({ icon: "spot", text: `평소 '${profLabel}'${iga(profLabel)} 불편하다고 하셨죠. 다행히 이번 달은 '${profLabel}' 불편함 기록이 많지 않았어요!` });
     }
     return rows.length ? rows.slice(0, 4) : null;
   })();
@@ -2433,29 +2435,33 @@ function computeInsights(entries, userData, report) {
 
     // 받침 유무에 따른 조사
     const josa = (w, a, b) => { const s = String(w || ""); const c = s.charCodeAt(s.length - 1); const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; return has ? a : b; };
+
+    // 자리마다 문장 후보가 여럿이다. '닉네임 + 이번 달'로 하나가 정해지므로,
+    // 달이 바뀌면 편지도 바뀌고 같은 달을 다시 열면 늘 같은 편지가 나온다.
+    const seed = `${nm}|${days[0]?.date?.slice(0, 7) || ""}|${bmtiCode || ""}`;
+    const ch = CHARACTER_NAMES[String(bmtiCode || "").split("-")[0]]
+      ? String(CHARACTER_NAMES[String(bmtiCode || "").split("-")[0]]).replace(/\n/g, " ")
+      : "말랑이";
+    const say = (salt, bank, ctx) => { const f = pickBy(seed, salt, bank); return f ? f({ nm, ch, j: josa, ...ctx }) : null; };
+
     const P = [];
     // 1) 인사 + 성실도
-    P.push(`${nm}님, 안녕하세요.${days.length ? ` 이번 달 ${days.length}일 동안 하루하루를 남겨주셨네요.` : ""} 바쁜 와중에도 자신의 몸과 마음을 들여다본 그 시간이 저는 참 뭉클했어요.`);
-    // 2) 가장 많던 기분 (개인화)
-    const moodLine = {
-      1: `이번 달은 '힘들었어요' 말랑이가 자주 찾아왔죠. 그런 날에도 기록을 놓지 않은 ${nm}님이 정말 대단해요.`,
-      2: `'지쳤어요' 말랑이가 유난히 자주 보였어요. 조금 지쳐도 스스로를 챙긴 한 달이었어요.`,
-      3: `잔잔하게 '그냥저냥'인 날이 많았어요. 그 평온함도 잘 지내온 증거예요.`,
-      4: `'괜찮았어요' 말랑이가 가장 많이 웃어준 달이었어요. 그 균형이 참 보기 좋더라고요.`,
-      5: `'좋았어요' 말랑이가 제일 자주 찾아온 반짝이는 한 달이었네요!`,
-    }[topMood];
-    if (moodLine) P.push(moodLine);
+    P.push(say("hello", HELLO, { n: days.length }));
+    // 2) 가장 많던 기분
+    if (MOOD_LINES[topMood]) P.push(say(`mood${topMood}`, MOOD_LINES[topMood], {}));
     // 3) 몸 신호
-    if (butterfly && butterfly.topSore) P.push(`기록을 보니 잘 못 잔 다음 날 유독 ${butterfly.topSore}${josa(butterfly.topSore, "이", "가")} 힘들어했어요. 몸은 밤사이 가장 많이 회복된다고 하니, 다음 달엔 잠을 먼저 챙겨주면 어떨까요.`);
-    else if (topSore) P.push(`이번 달엔 ${topSore}${josa(topSore, "이", "가")} 자주 신호를 보냈어요. 다음 달엔 그 부위를 조금만 더 아껴주기로 해요.`);
-    else if (recovery && recovery.recovered) P.push(`힘든 날에도 평균 ${recovery.avgDays || 2}일 만에 다시 일어선 회복력, 곁에서 지켜보며 감탄했어요.`);
+    if (butterfly && butterfly.topSore) P.push(say("sleep", BODY_SLEEP, { part: butterfly.topSore }));
+    else if (topSore) P.push(say("sore", BODY_SORE, { part: topSore }));
+    else if (recovery && recovery.recovered) P.push(say("recover", BODY_RECOVER, { n: recovery.avgDays || 2 }));
     // 4) 습관
-    if (moveN >= 3) P.push(`이번 달 ${moveN}일이나 몸을 움직였어요. 그 꾸준함, 분명 몸이 먼저 알아줄 거예요.`);
-    else if (topTag) P.push(`'#${topTag}'와 함께한 날이 많았죠. 나를 이루는 작은 습관 하나까지 살펴본 한 달이었어요.`);
-    else if (noteN >= 3) P.push(`짧게라도 남겨준 ${noteN}편의 일기에서 ${nm}님의 하루하루가 고스란히 느껴졌어요.`);
-    // 5) 마무리
-    P.push(`다음 달에도 ${nm}님의 몸과 마음 곁에서 함께 걸을게요. 우리, 또 만나요!`);
-    return { nickname: nm, body: P.join(" ") };
+    if (moveN >= 3) P.push(say("move", HABIT_MOVE, { n: moveN }));
+    else if (topTag) P.push(say("tag", HABIT_TAG, { tag: topTag }));
+    else if (noteN >= 3) P.push(say("note", HABIT_NOTE, { n: noteN }));
+    // 5) 내 유형 파트너의 말투 한 마디 — 팩트파 D / 궁금파 Q, 담백 Z / 다정 M
+    P.push(say("tone", TONE[toneKey(bmtiCode)] || TONE.DM, {}));
+    // 6) 마무리
+    P.push(say("bye", BYE, {}));
+    return { nickname: nm, body: P.filter(Boolean).join(" ") };
   })();
 
   // ── 여성 전용: 생리 전(PMS) 마법의 D-Day ──
@@ -2513,7 +2519,7 @@ function Insight({ children }) {
 }
 
 function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated }) {
-  const ins = computeInsights(entries, userData, report);
+  const ins = computeInsights(entries, userData, report, bmtiCode);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
   const female = g.includes("female") || g.includes("여") || userData?.nickname === "BMTI";
@@ -3312,7 +3318,40 @@ function LampClockCard({ data, nickname }) {
 }
 
 // 7. 초심 저울(프로필 팩트체크) — 최근 저장한 '일상 정보' 선택을 보여주고, 그대로 이번 달이 어땠는지 이어본다
-const FACT_CAT_ICON = { "운동 빈도": "🔁", "운동 목적": "🎯", "자주 하는 자세": "🧍", "불편한 부위": "📍" };
+// 네 항목마다 뜻이 보이는 아이콘을 직접 그렸다 —
+// 운동 빈도(달력+체크) · 운동 목적(과녁+화살) · 자주 하는 자세(책상 앞 옆모습) · 불편한 부위(몸에 찍힌 자리)
+function FactIcon({ name, size = 16, color = "currentColor" }) {
+  const P = { fill: "none", stroke: color, strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
+  const svg = (children) => <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{children}</svg>;
+  if (name === "freq") return svg(<>
+    {/* 달력에 찍힌 체크 — 이만큼 하기로 했던 횟수 */}
+    <rect x="3.4" y="5" width="17.2" height="15.4" rx="3" {...P} />
+    <path d="M3.4 9.6h17.2M8 3.2v3.4M16 3.2v3.4" {...P} />
+    <path d="M8.4 14.6l2.3 2.4 4.9-5" {...P} strokeWidth={2} />
+  </>);
+  if (name === "goal") return svg(<>
+    {/* 과녁 한가운데 꽂힌 화살 — 내가 정한 목적 */}
+    <circle cx="11" cy="13" r="8.2" {...P} />
+    <circle cx="11" cy="13" r="4.4" {...P} />
+    <circle cx="11" cy="13" r="1.1" fill={color} stroke="none" />
+    <path d="M13.4 10.6l7.2-7.2M17.6 3.4h3v3" {...P} />
+  </>);
+  if (name === "posture") return svg(<>
+    {/* 구부정하게 앉은 옆모습 — 자주 하는 자세 */}
+    <circle cx="9.6" cy="4.9" r="2.7" {...P} />
+    <path d="M9.6 7.9c-2.6 2.1-3.1 4.2-2 6.2" {...P} />
+    <path d="M7.6 14.1h6.6v5.6" {...P} />
+    <path d="M4 19.9h15.4" {...P} />
+  </>);
+  if (name === "spot") return svg(<>
+    {/* 몸에서 신호가 울리는 자리 — 평소 불편한 부위 */}
+    <circle cx="8.6" cy="4.6" r="2.6" {...P} />
+    <path d="M8.6 7.6c-2.7 0-4.4 1.7-4.4 4.3v8.2M8.6 7.6c2.7 0 4.4 1.7 4.4 4.3v8.2" {...P} />
+    <path d="M4.2 13.9h8.8" {...P} />
+    <path d="M15.9 8.3a3.6 3.6 0 0 1 0 5.1M18.6 6.2a7.3 7.3 0 0 1 0 9.3" {...P} />
+  </>);
+  return svg(<circle cx="12" cy="12" r="8" {...P} />);
+}
 // 팩트체크 코멘트에서 핵심 문구(숫자·따옴표로 감싼 내가 정한 내용)를 연보라로 강조.
 const FACT_HL = "#8B7BD8";
 function hlFact(text) {
@@ -3344,7 +3383,9 @@ function FactCheckCard({ rows = [], profile, userInfo, isLoggedIn }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {rows.map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 11, alignItems: "flex-start", background: "#FBFAF6", borderRadius: 13, padding: "13px 14px", borderLeft: `3px solid ${t.accent}` }}>
-              <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>{typeof r === "string" ? "⚖️" : r.icon}</span>
+              <span style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", color: t.accentDeep, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+                <FactIcon name={typeof r === "string" ? "goal" : r.icon} size={16} />
+              </span>
               <p style={{ fontSize: 12.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.6, margin: 0, wordBreak: "keep-all", paddingTop: 2 }}>{hlFact(typeof r === "string" ? r : r.text)}</p>
             </div>
           ))}
