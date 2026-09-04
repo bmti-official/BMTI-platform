@@ -16,6 +16,7 @@ import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
 import CharPicker from './CharPicker';
+import AudioInput, { AudioListInput } from './AudioInput';
 import { CHARACTERS } from '../data';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
 
@@ -30,6 +31,7 @@ const EMPTY = {
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
   chars_z: [], chars_m: [],
+  has_side: false, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
 };
 
 // 아홉 칸 자리에서 문구를 조금 더 미세하게 밀고, 크기도 손보는 슬라이더
@@ -67,7 +69,7 @@ function ThumbNudge({ dx, dy, scale, onDx, onDy, onScale }) {
 function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => {
     const base = withDraft({ ...EMPTY, ...(row || {}) }, 'card', row);
-    ['chars_z', 'chars_m'].forEach((k) => { if (!Array.isArray(base[k])) base[k] = []; });
+    ['chars_z', 'chars_m', 'voice_sets_z', 'voice_sets_m'].forEach((k) => { if (!Array.isArray(base[k])) base[k] = []; });
     return base;
   });
   const [saving, setSaving] = useState(false);
@@ -159,9 +161,17 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <OnePicker options={KIND_OPTIONS} value={f.kind} onChange={set('kind')} />
         </div>
         <div>
-          <span style={label}>소요 시간(초)</span>
+          <span style={label}>소요 시간(초) <span style={{ fontWeight: 600 }}>— 한 세트 기준</span></span>
           <input style={{ ...input, width: 110 }} type="number" value={f.duration_sec}
             onChange={(e) => set('duration_sec')(Number(e.target.value) || 0)} />
+        </div>
+        <div>
+          <span style={label}>좌우</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '9px 12px', borderRadius: 9,
+            background: f.has_side ? '#fff' : 'transparent', boxShadow: `inset 0 0 0 ${f.has_side ? 2 : 1}px ${f.has_side ? ACCENT : LINE}` }}>
+            <input type="checkbox" checked={!!f.has_side} onChange={(e) => set('has_side')(e.target.checked)} style={{ accentColor: ACCENT }} />
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: f.has_side ? INK : SUB }}>좌우가 나뉘는 동작이에요</span>
+          </label>
         </div>
       </div>
 
@@ -225,6 +235,28 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
             <div key={key}>
               <span style={label}>{lb} <span style={{ color: SUB, fontWeight: 700 }}>({(f[key] || []).length}/4)</span></span>
               <CharPicker suffix={suffix} value={f[key] || []} onChange={set(key)} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI 음성 — 오프닝 한 편 + 세트마다 다른 멘트 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>AI 음성</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.6 }}>
+          영상 소리는 손님 화면에서 늘 꺼집니다. 들리는 건 여기 올린 음성뿐입니다.
+          <br />오프닝이 먼저 흐르고, 끝나면 1세트째 멘트로 넘어갑니다. 세트 수보다 적게 올리면 마지막 것을 이어서 씁니다.
+          <br />mp3 · m4a · wav, 한 편에 8MB까지.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {[['z', 'Z 유형'], ['m', 'M 유형']].map(([t, lb]) => (
+            <div key={t}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>{lb}</div>
+              <span style={label}>오프닝 멘트 <span style={{ fontWeight: 600 }}>— 준비 자세 → &lsquo;천천히 시작합니다&rsquo;</span></span>
+              <AudioInput value={f[`voice_open_${t}`] || ''} onChange={set(`voice_open_${t}`)} />
+              <div style={{ height: 12 }} />
+              <span style={label}>세트 멘트 <span style={{ fontWeight: 600 }}>— 올린 차례대로 1세트째부터</span></span>
+              <AudioListInput value={f[`voice_sets_${t}`] || []} onChange={set(`voice_sets_${t}`)} max={5} />
             </div>
           ))}
         </div>

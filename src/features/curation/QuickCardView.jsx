@@ -2,7 +2,7 @@
 //  ① 종류·시간·제목·완주율  ② 추천 유형 누끼 캐릭터  ③ 4:5 표지(부위·도구를 모서리에 얹는다)
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MotionPlayer from './MotionPlayer';
 import { CurationThumb, CharRow, KeepChip } from './CurationCard';
 import AiNote from './AiNote';
@@ -13,7 +13,7 @@ import { BodyPreview } from './CurationCard';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
-const GLASS = 'rgba(253,242,206,0.82)';   // 표지 위 글씨를 받쳐 주는 반투명 연한 옐로우
+const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
 
@@ -30,21 +30,44 @@ const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 const overlay = (side) => ({
   position: 'absolute', top: 10, [side]: 10, zIndex: 2, pointerEvents: 'none',
   background: GLASS, borderRadius: 10, padding: '5px 9px',
-  backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
   fontSize: 12, fontWeight: 800, lineHeight: 1.35, letterSpacing: '-0.01em',
   textAlign: side === 'right' ? 'right' : 'left', wordBreak: 'keep-all',
 });
 
-const SETS = [1, 2, 3, 4, 5];
+const SETS = [3, 4, 5];
+const SIDES = [['left', '좌'], ['right', '우'], ['both', '둘 다']];
 
 export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onSave, charImages, charCodes }) {
   const { title, script } = pickCardTone(card, tone);
   // 처음엔 4:5 표지를 보여 주고, 따라하기를 누르면 같은 4:5 동작으로 바뀐다.
   const [started, setStarted] = useState(false);
   // 몇 세트 할지는 손님이 정한다. 시작한 뒤에는 몇 세트째인지 센다.
-  const [sets, setSets] = useState(1);
+  const [sets, setSets] = useState(3);
   const [done, setDone] = useState(0);
   const allDone = started && done >= sets;
+  // 좌우가 나뉘는 동작이면 어느 쪽을 할지 고른다.
+  const [side, setSide] = useState('both');
+  // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
+  const openUrl = (tone === 'm' ? card.voice_open_m : card.voice_open_z) || '';
+  const setClips = ((tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || []).filter(Boolean);
+  const hasVoice = !!(openUrl || setClips.length);
+  const [phase, setPhase] = useState('open');
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [vol, setVol] = useState(0.85);
+  const audioRef = useRef(null);
+  const nowVoice = !started ? ''
+    : phase === 'open' && openUrl ? openUrl
+      : (setClips[Math.min(done, setClips.length - 1)] || '');
+
+  // 멘트가 바뀌면 처음부터 다시 틀어 준다.
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a || !nowVoice) return;
+    a.volume = vol;
+    a.muted = !voiceOn;
+    if (!voiceOn) return;
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
+  }, [nowVoice, voiceOn, vol]);
   const hasPlay = !!(motion || card.video_url);
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
@@ -82,7 +105,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
         <div style={{ width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {motion
             ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
-            : <video className="bmti-clip" src={card.video_url} controls autoPlay loop muted playsInline
+            : <video className="bmti-clip" src={card.video_url} autoPlay loop muted playsInline
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
         </div>
       ) : (
@@ -99,6 +122,25 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
           )}
           {/* 오른쪽 위 — 도구(골드) */}
           {tools.length > 0 && <div style={{ ...overlay('right'), color: GOLD }}>{tools.join(', ')}</div>}
+        </div>
+      )}
+
+      {/* AI 음성 — 화면에는 조절 막대만 두고, 소리는 이 태그가 낸다 */}
+      {started && hasVoice && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
+          <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
+            onEnded={() => { if (phase === 'open') setPhase('set'); }} style={{ display: 'none' }} />
+          <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
+            style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,
+              background: voiceOn ? SET_BG : '#fff', boxShadow: voiceOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+            {voiceOn ? '🔊' : '🔇'}
+          </button>
+          <input type="range" min={0} max={100} step={5} value={Math.round(vol * 100)} aria-label="음성 크기"
+            onChange={(e) => { setVol(Number(e.target.value) / 100); setVoiceOn(true); }}
+            style={{ flex: 1, minWidth: 0, accentColor: '#C9A227' }} />
+          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB, width: 62, textAlign: 'right' }}>
+            {phase === 'open' && openUrl ? '준비 멘트' : '동작 멘트'}
+          </span>
         </div>
       )}
 
@@ -121,19 +163,31 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
                 </button>
               ))}
             </span>
-            {card.duration_sec > 0 && (
+            {card.has_side ? (
+              <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+                {SIDES.map(([k, lb]) => (
+                  <button key={k} type="button" onClick={() => setSide(k)}
+                    style={{ padding: '0 9px', height: 28, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: k === side ? SET_INK : SUB,
+                      background: k === side ? SET_BG : '#fff', boxShadow: k === side ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+                    {lb}
+                  </button>
+                ))}
+              </span>
+            ) : card.duration_sec > 0 ? (
               <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
                 모두 {mmss(card.duration_sec * sets)}
               </span>
-            )}
+            ) : null}
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, background: SET_BG, borderRadius: 11, padding: '8px 11px' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: SET_INK }}>
               {allDone ? `${sets}세트 다 끝냈어요` : `${sets}세트 중 ${done + 1}세트째`}
+              {card.has_side && !allDone && ` · ${SIDES.find(([k]) => k === side)?.[1]}`}
             </span>
             {!allDone && (
-              <button type="button" onClick={() => setDone((n) => n + 1)}
+              <button type="button" onClick={() => { setDone((n) => n + 1); setPhase('set'); }}
                 style={{ marginLeft: 'auto', border: 'none', background: '#fff', color: SET_INK, borderRadius: 999,
                   padding: '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {done + 1 >= sets ? '다 했어요 ✓' : '다음 세트 →'}
@@ -141,7 +195,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
             )}
           </div>
         )}
-        <button onClick={() => { if (started) { setDone(0); } else { setStarted(true); if (onStart) onStart(); } }}
+        <button onClick={() => { setDone(0); setPhase('open'); if (!started) { setStarted(true); if (onStart) onStart(); } }}
           style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
           {started ? '처음부터 다시 ↻' : '바로 따라하기 →'}

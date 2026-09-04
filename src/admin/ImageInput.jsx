@@ -2,43 +2,9 @@
 // Supabase Storage의 'curation' 버킷에 올리고, 공개 주소를 그대로 칸에 채운다.
 // 주소를 직접 붙여넣던 방식도 그대로 쓸 수 있다.
 import { useRef, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, ACCENT, input } from './theme';
 import { isClip } from '../features/curation/media';
-
-export const BUCKET = 'curation';
-
-const MAX_MB = 5;          // 사진
-const MAX_VIDEO_MB = 20;   // 반복 영상
-const OK_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
-const OK_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
-
-
-// 파일 이름은 한글·공백이 섞여도 안전하게 새로 지어 준다.
-function safeName(file) {
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
-  const d = new Date();
-  const ym = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
-  return `${ym}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-}
-
-// 한 장(또는 한 편)을 올리고 { url } 또는 { err }를 돌려준다.
-async function uploadOne(file, allowVideo = false) {
-  const video = OK_VIDEO.includes(file.type) || /\.(mp4|webm|mov)$/i.test(file.name);
-  if (video && !allowVideo) return { err: `'${file.name}'은 영상이라 이 칸에는 넣을 수 없어요.` };
-  if (!video && !OK_TYPES.includes(file.type)) return { err: `'${file.name}'은 사진·영상 파일이 아니에요 (jpg · png · webp · mp4 · webm).` };
-  const cap = video ? MAX_VIDEO_MB : MAX_MB;
-  if (file.size > cap * 1024 * 1024) return { err: `'${file.name}'이 ${cap}MB보다 큽니다.` };
-  const path = safeName(file);
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { cacheControl: '31536000', upsert: false });
-  if (error) {
-    const m = String(error.message || '');
-    if (/not found|does not exist/i.test(m)) return { err: `'${BUCKET}' 저장소가 아직 없어요. 04_storage.sql을 한 번 실행해 주세요.` };
-    if (/policy|permission|unauthorized/i.test(m)) return { err: '올릴 권한이 없어요. 04_storage.sql을 한 번 실행해 주세요.' };
-    return { err: '올리기 실패: ' + m };
-  }
-  return { url: supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl };
-}
+import { uploadOne } from './upload';
 
 // 끌어다 놓는 자리 공통 껍데기
 function DropZone({ over, setOver, onFiles, children }) {
