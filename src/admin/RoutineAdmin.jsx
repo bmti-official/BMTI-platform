@@ -10,7 +10,7 @@ import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curati
 
 // 플레이리스트(루틴) 등록 화면 — 바로카드를 골라 순서를 정하면 하나의 루틴이 된다.
 // 총 소요시간·도구·타겟 부위는 담긴 카드에서 자동으로 계산되므로 따로 입력하지 않는다.
-const EMPTY = { published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '' };
+const EMPTY = { published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true };
 
 const BMTI_OPTIONS = Object.keys(CHARACTER_NAMES);
 
@@ -83,6 +83,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
       published: f.published, sort_order: f.sort_order,
       title_z: f.title_z, title_m: f.title_m,
       bmti_code: f.bmti_code || null,
+      skip_opening: f.skip_opening !== false,
       owner_id: null,                        // 관리자가 만드는 공식 추천 루틴
       updated_at: new Date().toISOString(),
     };
@@ -153,6 +154,10 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
         <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 800, color: INK, cursor: 'pointer', paddingBottom: 9 }}>
           <input type="checkbox" checked={f.published} onChange={(e) => set('published')(e.target.checked)} />
           공개 <span style={{ fontWeight: 600, color: SUB }}>(체크해야 이용자에게 보입니다)</span>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 800, color: INK, cursor: 'pointer', paddingBottom: 9 }}>
+          <input type="checkbox" checked={f.skip_opening !== false} onChange={(e) => set('skip_opening')(e.target.checked)} />
+          오프닝 건너뛰기 <span style={{ fontWeight: 600, color: SUB }}>(이어서 하니 동작마다 설명을 다시 듣지 않아요)</span>
         </label>
       </div>
 

@@ -17,7 +17,7 @@ const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 �
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 
 // 누끼 캐릭터 한 마리 — 그림 파일마다 다른 여백을 걷어내고 키를 맞춰 세운다.
-function CharPic({ src, code, h = 38 }) {
+export function CharPic({ src, code, h = 38 }) {
   const b = charBox(code);
   if (!b) return <img src={src} alt="" style={{ width: h, height: h, objectFit: 'contain', display: 'block' }} />;
   const full = h * b.size;   // 그림 영역이 h가 되도록 파일 전체를 키운 크기

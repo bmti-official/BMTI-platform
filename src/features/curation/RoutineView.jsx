@@ -59,6 +59,7 @@ export function RoutineDetail({ routine, cards, tone = 'z', onStart, onCopy }) {
       <div style={{ fontSize: 12, color: SUB, fontWeight: 600, marginBottom: 14 }}>
         {s.durationSec > 0 ? mmss(s.durationSec) : '시간 미정'} · 동작 {s.count}개
         {s.tools.length > 0 && ` · ${s.tools.join(', ')}`}
+        {routine.skip_opening !== false && ' · 오프닝 설명은 건너뜁니다'}
       </div>
 
       <ol style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
