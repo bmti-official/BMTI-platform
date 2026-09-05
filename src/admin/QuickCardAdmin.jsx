@@ -9,7 +9,6 @@ import { useUnsavedGuard, confirmLeave } from './dirty';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
 import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
-import MotionInput from './MotionInput';
 import ImageInput from './ImageInput';
 import { CurationThumb } from '../features/curation/CurationCard';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
@@ -27,7 +26,7 @@ const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label
 const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
   title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', duration_sec: 0,
-  motion_url: '', thumb_text: '',
+  thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
   chars_z: [], chars_m: [],
@@ -161,9 +160,21 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <OnePicker options={KIND_OPTIONS} value={f.kind} onChange={set('kind')} />
         </div>
         <div>
-          <span style={label}>소요 시간(초) <span style={{ fontWeight: 600 }}>— 한 세트 기준</span></span>
-          <input style={{ ...input, width: 110 }} type="number" value={f.duration_sec}
+          <span style={label}>동작 한 번 길이(초) <span style={{ fontWeight: 600 }}>— 영상에서 저절로 읽습니다</span></span>
+          <input style={{ ...input, width: 150, background: f.video_url ? BG : '#fff', color: f.video_url ? SUB : INK }}
+            type="number" value={f.duration_sec} readOnly={!!f.video_url}
             onChange={(e) => set('duration_sec')(Number(e.target.value) || 0)} />
+          {/* 올린 영상의 길이를 읽어 초 단위로 반올림해 채운다 */}
+          {f.video_url && (
+            <video src={f.video_url} preload="metadata" muted style={{ display: 'none' }}
+              onLoadedMetadata={(e) => {
+                const d = Math.round(e.currentTarget.duration);
+                if (d > 0 && Number.isFinite(d) && d !== f.duration_sec) set('duration_sec')(d);
+              }} />
+          )}
+          <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>
+            {f.video_url ? '영상을 올리면 자동으로 채워집니다' : '영상을 올리면 자동으로 채워집니다 (지금은 직접 적을 수 있어요)'}
+          </div>
         </div>
         <div>
           <span style={label}>좌우</span>
@@ -302,12 +313,8 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div style={{ gridColumn: '1 / -1' }}>
-          <span style={label}>반복 동작 <span style={{ fontWeight: 600 }}>— 카드 가운데에서 계속 돌아갑니다</span></span>
-          <MotionInput value={f.motion_url} onChange={set('motion_url')} />
-        </div>
         <div>
-          <span style={label}>영상 <span style={{ fontWeight: 600 }}>— 동작 대신 영상을 쓸 때만 (선택)</span></span>
+          <span style={label}>동작 영상 <span style={{ fontWeight: 600 }}>— 구글 플로우로 뽑은 8초짜리 한 편</span></span>
           <ImageInput allowVideo value={f.video_url} onChange={set('video_url')}
             placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
             hint="mp4·webm 파일을 올릴 수 있어요. 세로 4:5, 20MB 이하를 권합니다." />
@@ -375,18 +382,6 @@ export default function QuickCardAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [previewMotion, setPreviewMotion] = useState(null);
-
-  // 미리보기를 열면 그 카드의 동작 데이터도 함께 읽어 온다.
-  useEffect(() => {
-    let alive = true;
-    (preview?.motion_url ? fetch(preview.motion_url) : Promise.reject(new Error('없음')))
-      .then((r) => r.json())
-      .then((m) => { if (alive) setPreviewMotion(m); })
-      .catch(() => { if (alive) setPreviewMotion(null); });
-    return () => { alive = false; };
-  }, [preview]);
-
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
 
@@ -449,7 +444,7 @@ export default function QuickCardAdmin() {
           {(tone) => {
             const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];
             const charImages = charCodes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean);
-            return <QuickCardView card={preview} tone={tone} motion={previewMotion} charImages={charImages} charCodes={charCodes} />;
+            return <QuickCardView card={preview} tone={tone} charImages={charImages} charCodes={charCodes} />;
           }}
         </PreviewModal>
       )}

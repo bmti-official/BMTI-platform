@@ -30,8 +30,8 @@ export function CharPic({ src, code, h = 38 }) {
 }
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', peekSec = 5, emptyText = '대표 이미지 없음' }) {
-  // 표지에 영상을 깔면, 화면에 들어올 때 0~5초를 소리 없이 돌려 준다.
+export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', emptyText = '대표 이미지 없음' }) {
+  // 표지에 영상을 깔면, 화면에 들어올 때 소리 없이 처음부터 끝까지 돌려 준다.
   const boxRef = useRef(null);
   const vidRef = useRef(null);
   useEffect(() => {
@@ -50,9 +50,8 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
   return (
     <div ref={boxRef} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
       {clip ? (
-        <video ref={vidRef} src={clip} muted playsInline autoPlay preload="metadata"
+        <video ref={vidRef} src={clip} muted playsInline autoPlay loop preload="metadata"
           poster={item.cover_url || undefined}
-          onTimeUpdate={(e) => { if (e.currentTarget.currentTime >= peekSec) { try { e.currentTarget.currentTime = 0; } catch { /* 무시 */ } } }}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       ) : item.cover_url
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />

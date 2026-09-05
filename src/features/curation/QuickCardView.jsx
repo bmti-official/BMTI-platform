@@ -3,7 +3,6 @@
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
 import { useEffect, useRef, useState } from 'react';
-import MotionPlayer from './MotionPlayer';
 import { CurationThumb, CharRow, CharPic, KeepChip } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import AiNote from './AiNote';
@@ -45,7 +44,7 @@ const SETS = [3, 4, 5];
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onSave, charImages, charCodes, skipOpening = false }) {
+export default function QuickCardView({ card, tone = 'z', onStart, onSave, charImages, charCodes, skipOpening = false }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -66,7 +65,8 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
   const mirrored = card.has_side && (side === 'left' || (side === 'both' && secondSide) || (side === 'alt' && altFlip));
   // 한 번 도는 데 걸리는 시간을 영상에서 직접 읽어 온다(없으면 관리자가 적은 값을 쓴다).
   const [clipSec, setClipSec] = useState(0);
-  const perSet = clipSec > 0 ? Math.round(clipSec * reps) : card.duration_sec;
+  const oneRep = clipSec > 0 ? clipSec : card.duration_sec;
+  const perSet = oneRep > 0 ? Math.round(oneRep * reps) : 0;
   const totalSec = perSet > 0 ? perSet * sets * (twoPhase ? 2 : 1) : 0;
 
   // 다음 세트 — '한쪽씩 둘 다'는 오른쪽을 마치면 왼쪽 1세트째로 넘어간다.
@@ -112,7 +112,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
     const t = setTimeout(() => setStage('move'), 20000);
     return () => clearTimeout(t);
   }, [stage]);
-  const hasPlay = !!(motion || card.video_url);
+  const hasPlay = !!card.video_url;
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
   const tools = card.tools || [];
@@ -161,9 +161,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5
         <div style={{ width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {motion
-            ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
-            : <video className="bmti-clip" src={card.video_url} autoPlay muted playsInline
+          <video className="bmti-clip" src={card.video_url} autoPlay muted playsInline
                 loop={side !== 'alt'}
                 onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
                 onEnded={(e) => {
@@ -175,13 +173,18 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
                 }}
                 style={{ width: '100%', height: '100%', objectFit: 'cover',
                   // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
-                  transform: mirrored ? 'scaleX(-1)' : 'none' }} />}
+                  transform: mirrored ? 'scaleX(-1)' : 'none' }} />
         </div>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5). 영상이 있으면 0~5초가 소리 없이 돌아간다.
         <div style={{ position: 'relative' }}>
-          <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false} clip={card.video_url || ''} emptyText="동작 영상 없음"
-            badge={card.duration_sec > 0 ? { label: '소요시간', value: mmss(card.duration_sec) } : null} />
+          <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false} clip={card.video_url || ''} emptyText="동작 영상 없음" />
+          {/* 오른쪽 아래 — 조회·저장 */}
+          <div style={{ position: 'absolute', right: 10, bottom: 10, zIndex: 2, pointerEvents: 'none',
+            background: GLASS, borderRadius: 10, padding: '5px 9px', color: INK,
+            fontSize: 11, fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+            조회 {fmt(card.view_count)} · 저장 {fmt(card.save_count)}
+          </div>
           {/* 왼쪽 위 — 타겟 부위(연보라) / 연관 부위(검정) */}
           {(core.length > 0 || related.length > 0) && (
             <div style={overlay('left')}>
@@ -190,7 +193,11 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
             </div>
           )}
           {/* 오른쪽 위 — 도구(골드) */}
-          {tools.length > 0 && <div style={{ ...overlay('right'), color: GOLD }}>{tools.join(', ')}</div>}
+          {tools.length > 0 && (
+            <div style={{ ...overlay('right'), color: GOLD }}>
+              {tools.map((t, i) => <div key={i}>{t}</div>)}
+            </div>
+          )}
         </div>
       )}
 
@@ -214,13 +221,10 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
       )}
 
       <div style={{ padding: '12px 15px 15px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: SUB, fontWeight: 600, marginBottom: 12 }}>
-          <span>조회 {fmt(card.view_count)}</span><span style={{ color: LINE }}>·</span><span>저장 {fmt(card.save_count)}</span>
-          <span style={{ marginLeft: 'auto' }}><KeepChip onSave={onSave} /></span>
-        </div>
-        {/* 몇 세트 할지 — 시작 전엔 고르고, 시작한 뒤엔 몇 세트째인지 센다 */}
+        {/* 몇 번·몇 세트 할지 — 시작 전엔 고르고, 시작한 뒤엔 몇 세트째인지 센다 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 10 }}>
         {stage !== 'move' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 10 }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>횟수</span>
               <select value={reps} onChange={(e) => setReps(Number(e.target.value))} style={dropdown}>
@@ -251,7 +255,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
             )}
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, background: SET_BG, borderRadius: 11, padding: '8px 11px' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, background: SET_BG, borderRadius: 11, padding: '8px 11px' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: SET_INK }}>
               {allDone
                 ? (twoPhase ? '양쪽 다 끝냈어요' : `${sets}세트 다 끝냈어요`)
@@ -267,6 +271,8 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
             )}
           </div>
         )}
+          <KeepChip onSave={onSave} />
+        </div>
         <button onClick={() => { if (started) { restart(); setStage('move'); } else start(); }}
           style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
