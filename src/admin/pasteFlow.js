@@ -21,6 +21,18 @@ export function toolPhrase(ids) {
 
 const bare = (s) => String(s || '').replace(/\s+/g, '');
 
+// AI가 끼워 넣는 각주 자국을 걷어낸다 — [cite: 1] · 【1】 · [1] 같은 것들.
+// 그대로 두면 영상 프롬프트에 섞여 들어가 화면에 글씨가 생기기도 한다.
+export function stripCites(text) {
+  return String(text || '')
+    .replace(/\[\s*cite[^\]]*\]/gi, '')
+    .replace(/【[^】]*】/g, '')
+    .replace(/\[\s*\d+(?:\s*,\s*\d+)*\s*\]/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([.,、·])/g, '$1')
+    .trim();
+}
+
 // 여섯 줄은 번호(①~⑥ · 1~6)로도, 이름으로도 받는다.
 const LINE_KEYS = [
   ['a', /^(①|1[.)]?|시작\s*자세)$/],
@@ -31,7 +43,7 @@ const LINE_KEYS = [
   ['f', /^(⑥|6[.)]?|움직이지\s*않는\s*곳|고정)$/],
 ];
 
-const HEAD = '캐릭터|성별|카메라\\s*각도|각도|도구|동작\\s*이름|시작\\s*자세|무엇이\\s*움직이나|움직이는\\s*곳|얼마나|얼마만큼|끝\\s*자세|되돌아오기|돌아오기|움직이지\\s*않는\\s*곳|고정';
+const HEAD = '캐릭터|성별|카메라\\s*각도|각도|도구|동작\\s*이름|영어\\s*이름|영문\\s*이름|시작\\s*자세|무엇이\\s*움직이나|움직이는\\s*곳|얼마나|얼마만큼|끝\\s*자세|되돌아오기|돌아오기|움직이지\\s*않는\\s*곳|고정';
 const NUM = '[①②③④⑤⑥]|[1-6][.)]';
 
 // 채팅에서 복사하면 줄바꿈이 사라져 표지가 문장 끝에 붙는다. 읽기 전에 끊어 준다.
@@ -48,7 +60,7 @@ export function parseFlow(text) {
   const filled = [];
   const put = (k, v) => { if (v) { out[k] = v; filled.push(k); } };
 
-  const lines = unglue(text).replace(/\r/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = unglue(stripCites(text)).replace(/\r/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
   const move = {};
 
   for (const line of lines) {
@@ -77,6 +89,7 @@ export function parseFlow(text) {
       continue;
     }
     if (tag === '동작이름') { put('name', val); continue; }
+    if (tag === '영어이름' || tag === '영문이름') { put('nameEn', val); continue; }
   }
 
   const got = Object.keys(move);
@@ -87,6 +100,7 @@ export function parseFlow(text) {
     filled.includes('angle') ? '카메라 각도' : null,
     filled.includes('tools') ? '도구' : null,
     filled.includes('name') ? '동작 이름' : null,
+    filled.includes('nameEn') ? '영어 이름' : null,
     got.length ? `설명 ${got.length}줄` : null,
   ].filter(Boolean);
 

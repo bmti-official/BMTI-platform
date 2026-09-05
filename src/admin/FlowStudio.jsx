@@ -47,7 +47,7 @@ function checkWords(text) {
 
 // ── 프롬프트 전문 ─────────────────────────────────────────────
 // 플로우 '프레임' 칸에 넣을 시작 그림 — 동영상이 아니라 정지 그림 한 장을 뽑는다.
-function buildStartImage({ gender, angle, tools, move }) {
+function buildStartImage({ gender, angle, tools, move, nameEn }) {
   const g = gender === 'male' ? 'male' : 'female';
   const equip = toolPhrase(tools);
   const pose = (move.a || '').trim();
@@ -70,20 +70,26 @@ Keep the entire body inside the middle 70% of the frame height.
 The top 15% and the bottom 15% of the frame must contain only empty black background.
 
 THE POSE — completely at rest
-${pose || '[① 시작 자세를 채우면 여기에 들어갑니다]'}
+${nameEn.trim() ? `The starting position of a standard ${nameEn.trim()}.\n` : ''}${pose || '[① 시작 자세를 채우면 여기에 들어갑니다]'}
 Equipment visible in the shot: ${equip}
 The character holds this starting pose still. No motion, no motion blur.
 
 DO NOT
 - Do not add text, numbers, logo, or watermark.
-- Do not add any prop beyond the listed equipment.
-- Do not crop the head or the feet.`;
+- Do not add a pillow, cushion, blanket, towel, chair, or any furniture.
+- Do not add any prop beyond the equipment listed above.
+- Do not crop the head or the feet.
+- Do not straighten or change the joint angles described in the pose.`;
 }
 
-function buildPrompt({ gender, angle, tools, move }) {
+function buildPrompt({ gender, angle, tools, move, nameEn }) {
   const g = gender === 'male' ? 'male' : 'female';
   const equip = toolPhrase(tools);
-  const body = LINES.map((l) => (move[l.k] || '').trim()).filter(Boolean).join(' ');
+  // ①(시작 자세)과 ⑥(움직이지 않는 곳)은 문단에 묻으면 무시된다. 따로 세운다.
+  const startPose = (move.a || '').trim();
+  const body = ['b', 'c', 'd', 'e'].map((k) => (move[k] || '').trim()).filter(Boolean).join(' ');
+  const hold = (move.f || '').trim();
+  const named = nameEn.trim() ? `This is a standard ${nameEn.trim()}. Follow the textbook form of that exercise.\n` : '';
   return `Create a seamlessly looping 8-second exercise demonstration video.
 
 CHARACTER — match the attached reference images exactly
@@ -110,10 +116,13 @@ The video will be center-cropped to a 4:5 vertical frame, so anything in those
 top and bottom bands will be cut off.
 Nothing may leave that middle band at any point in the movement.
 
-THE MOVEMENT — exactly one movement, nothing else
-${body || '[여섯 줄을 채우면 여기에 들어갑니다]'}
-If the movement uses one side of the body, always demonstrate it on the RIGHT side.
+STARTING POSE — the clip begins and ends here
+${startPose || '[① 시작 자세를 채우면 여기에 들어갑니다]'}
 Equipment: ${equip}
+If the movement uses one side of the body, always demonstrate it on the RIGHT side.
+
+THE MOVEMENT — exactly one movement, nothing else
+${named}${body || '[② ~ ⑤를 채우면 여기에 들어갑니다]'}
 
 TIMING — 8 seconds total, one full repetition only
 0.0-0.5s  Hold the starting pose completely still.
@@ -131,7 +140,13 @@ No breathing motion, no idle sway, no hair movement, no blinking at the start or
 The clip will be played on repeat, so any difference between the first and last frame
 will show up as a visible jump.
 
+MUST NOT MOVE — check this in every single frame
+${hold || '[⑥ 움직이지 않는 곳을 채우면 여기에 들어갑니다]'}
+These parts stay exactly as they are in the starting pose for the whole 8 seconds.
+If any of them moves, the clip is wrong.
+
 DO NOT
+- Do not move the parts listed under MUST NOT MOVE.
 - Do not add a second repetition or a second exercise.
 - Do not speed up, ease in, or ease out. Keep one constant slow speed.
 - Do not move the camera at any point.
@@ -182,6 +197,7 @@ export default function FlowStudio() {
   const [angle, setAngle] = useState('front view');
   const [tools, setTools] = useState(['none']);
   const [name, setName] = useState('');
+  const [nameEn, setNameEn] = useState('');
   const [move, setMove] = useState({ a: '', b: '', c: '', d: '', e: '', f: '' });
   const setLine = (k) => (v) => setMove((p) => ({ ...p, [k]: v }));
   // '없음'을 고르면 나머지가 풀리고, 다른 걸 고르면 '없음'이 풀린다.
@@ -205,15 +221,17 @@ export default function FlowStudio() {
     if (fields.angle) setAngle(fields.angle);
     if (fields.tools) setTools(fields.tools);
     if (fields.name) setName(fields.name);
+    if (fields.nameEn) setNameEn(fields.nameEn);
     if (fields.move) setMove((p) => ({ ...p, ...fields.move }));
     setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 프롬프트를 복사하세요.`);
   };
 
   const filled = LINES.filter((l) => (move[l.k] || '').trim()).length;
-  const prompt = useMemo(() => buildPrompt({ gender, angle, tools, move }), [gender, angle, tools, move]);
-  const startImg = useMemo(() => buildStartImage({ gender, angle, tools, move }), [gender, angle, tools, move]);
+  const prompt = useMemo(() => buildPrompt({ gender, angle, tools, move, nameEn }), [gender, angle, tools, move, nameEn]);
+  const startImg = useMemo(() => buildStartImage({ gender, angle, tools, move, nameEn }), [gender, angle, tools, move, nameEn]);
   const needOwnStart = tools.some((t) => t !== 'none');
   const translate = useMemo(() => buildTranslate(move), [move]);
+  const hasKorean = useMemo(() => LINES.some((l) => /[가-힣]/.test(move[l.k] || '')), [move]);
   const warns = useMemo(() => {
     const all = LINES.flatMap((l) => checkWords(move[l.k]).map((b) => ({ ...b, at: `${l.n} ${l.t}` })));
     const seen = new Set();
@@ -307,9 +325,15 @@ export default function FlowStudio() {
             </div>
           </div>
         </div>
-        <div>
-          <span style={label}>동작 이름 <span style={{ fontWeight: 600 }}>— 내가 알아보려고 적는 메모입니다</span></span>
-          <input style={{ ...input, maxWidth: 320 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="뒤꿈치 들기" />
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 240px' }}>
+            <span style={label}>동작 이름 <span style={{ fontWeight: 600 }}>— 내가 알아보려고 적는 메모입니다</span></span>
+            <input style={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="클램쉘" />
+          </div>
+          <div style={{ flex: '1 1 240px' }}>
+            <span style={label}>영어 이름 <span style={{ color: '#B23B36' }}>★ 있으면 자세가 훨씬 정확해집니다</span></span>
+            <input style={input} value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="clamshell exercise" />
+          </div>
         </div>
       </div>
 
@@ -339,6 +363,15 @@ export default function FlowStudio() {
           예시(뒤꿈치 들기)로 채워 보기
         </button>
 
+        {hasKorean && (
+          <div style={{ marginTop: 12, background: '#FDF0EE', borderRadius: 11, padding: '11px 13px' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: WARN, marginBottom: 6 }}>한국어로 넣으면 자세가 틀어질 수 있어요</div>
+            <div style={{ fontSize: 11.5, color: '#7A3B36', fontWeight: 600, lineHeight: 1.8 }}>
+              플로우는 영어를 훨씬 잘 알아듣습니다. 아래 <b>6번</b>에서 영어로 바꾼 뒤 프롬프트에 갈아 끼우면 실패가 크게 줄어요.
+              {!nameEn.trim() && <><br />그리고 위 <b>영어 이름</b> 칸을 꼭 채우세요. 이름 하나가 여섯 줄보다 정확할 때가 많습니다.</>}
+            </div>
+          </div>
+        )}
         {warns.length > 0 && (
           <div style={{ marginTop: 12, background: '#FDF0EE', borderRadius: 11, padding: '11px 13px' }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: WARN, marginBottom: 6 }}>이런 말은 빼는 게 좋아요</div>
@@ -367,6 +400,14 @@ export default function FlowStudio() {
             : '도구가 없는 동작입니다. 같은 자세 계열(선 자세 · 앉은 자세 · 옆으로 누운 자세 · 바로 누운 자세)로 남녀 한 장씩 만들어 두면 다른 카드에도 돌려 쓸 수 있습니다.'}
         </div>
         <textarea readOnly value={startImg} style={{ ...area, minHeight: 200, fontSize: 11.5, lineHeight: 1.65, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }} />
+        <div style={{ fontSize: 11.5, color: SUB, marginTop: 12, lineHeight: 1.9, background: BG, borderRadius: 10, padding: '11px 13px' }}>
+          <b style={{ color: INK }}>그림을 쓰기 전에 이걸 보세요</b> — 여기서 어긋나면 영상이 통째로 어긋납니다.
+          <br />· <b>관절이 굽은 각도</b>가 ①에 적은 대로인가요? 무릎을 굽히라 했는데 펴져 있으면 다시 뽑으세요
+          <br />· <b>맞닿아야 할 곳</b>이 붙어 있나요? 발뒤꿈치·손바닥·무릎처럼 &lsquo;붙인다&rsquo;고 적은 곳
+          <br />· <b>도구가 제자리</b>에 있나요? 밴드 높이, 폼롤러 위치
+          <br />· 적지 않은 <b>소품</b>(베개·쿠션·수건)이 끼어들지 않았나요?
+          <br />· <b>배경</b>이 영상 프롬프트와 같은가요? 시작 그림이 흰 배경이면 영상 프롬프트도 흰 배경이어야 합니다
+        </div>
       </div>
 
       {/* 5. 완성된 프롬프트 */}
