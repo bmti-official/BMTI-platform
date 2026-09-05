@@ -60,14 +60,16 @@ Same face, same hair, same body proportions, same skin tone as the reference.
 Calm, gently smiling expression.
 
 BACKGROUND
-Pure solid black (#000000). Completely empty. No floor line, no shadow on the wall,
-no furniture, no gradient, no particles. Only a soft contact shadow directly under the body.
+Pure solid white (#FFFFFF). Completely empty. No floor line, no horizon line, no wall,
+no shadow on the wall, no furniture, no gradient, no vignette, no particles.
+Only a soft light-grey contact shadow directly under the body.
+Ignore the background of the reference images — copy the character, not their background.
 
 CAMERA
 Camera angle: ${angle}
 Framing: full body, head to feet, vertical 9:16 frame.
 Keep the entire body inside the middle 70% of the frame height.
-The top 15% and the bottom 15% of the frame must contain only empty black background.
+The top 15% and the bottom 15% of the frame must contain only empty white background.
 
 THE POSE — completely at rest
 ${nameEn.trim() ? `The starting position of a standard ${nameEn.trim()}.\n` : ''}${pose || '[① 시작 자세를 채우면 여기에 들어갑니다]'}
@@ -100,8 +102,10 @@ Calm, gently smiling expression that does not change through the clip.
 No text, no logo, no watermark, no extra props beyond the listed equipment.
 
 BACKGROUND
-Pure solid black (#000000). Completely empty. No floor line, no shadow on the wall,
-no furniture, no gradient, no particles. Only a soft contact shadow directly under the body.
+Pure solid white (#FFFFFF). Completely empty. No floor line, no horizon line, no wall,
+no shadow on the wall, no furniture, no gradient, no vignette, no particles.
+Only a soft light-grey contact shadow directly under the body.
+Ignore the background of the reference images — copy the character, not their background.
 
 CAMERA — locked off
 A single fixed camera. No pan, no zoom, no dolly, no handheld shake, no cuts.
@@ -111,7 +115,7 @@ Lighting stays identical from the first frame to the last.
 
 CROP-SAFE FRAMING
 Keep the entire body inside the middle 70% of the frame height.
-The top 15% and the bottom 15% of the frame must contain only empty black background.
+The top 15% and the bottom 15% of the frame must contain only empty white background.
 The video will be center-cropped to a 4:5 vertical frame, so anything in those
 top and bottom bands will be cut off.
 Nothing may leave that middle band at any point in the movement.
@@ -406,7 +410,7 @@ export default function FlowStudio() {
           <br />· <b>맞닿아야 할 곳</b>이 붙어 있나요? 발뒤꿈치·손바닥·무릎처럼 &lsquo;붙인다&rsquo;고 적은 곳
           <br />· <b>도구가 제자리</b>에 있나요? 밴드 높이, 폼롤러 위치
           <br />· 적지 않은 <b>소품</b>(베개·쿠션·수건)이 끼어들지 않았나요?
-          <br />· <b>배경</b>이 영상 프롬프트와 같은가요? 시작 그림이 흰 배경이면 영상 프롬프트도 흰 배경이어야 합니다
+          <br />· <b>배경이 새하얀가요?</b> 바닥선이나 벽 그림자가 보이면 다시 뽑으세요
         </div>
       </div>
 
@@ -453,7 +457,7 @@ export default function FlowStudio() {
           <br />· 동작을 두 번 한다 → <code>one full repetition only</code>를 프롬프트 맨 앞으로
           <br />· 온몸이 같이 흔들린다 → <b>⑥ 움직이지 않는 곳</b>을 더 자세히
           <br />· 얼굴이 참고 그림과 다르다 → 참고 그림을 정면 한 장만 넣고 다시
-          <br />· 배경에 바닥선·가구가 생긴다 → <code>Completely empty</code>를 한 번 더 적기
+          <br />· 배경에 바닥선·가구가 생긴다 → <code>Pure solid white (#FFFFFF). Completely empty.</code>를 한 번 더 적기
         </div>
       </div>
     </div>
