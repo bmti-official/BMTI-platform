@@ -43,3 +43,20 @@ export function routineSummary(cards) {
     relatedParts: uniq(list.flatMap((c) => c.related_parts || [])).filter((p) => !core.includes(p)),
   };
 }
+
+// 동작 이름이 다섯 글자를 넘으면 이름표 안에서 줄을 바꾼다.
+// 띄어쓰기가 있으면 한가운데에 가장 가까운 띄어쓰기에서, 없으면 반으로 나눈다.
+export function nameLines(text) {
+  const t = String(text || '').trim();
+  const letters = t.replace(/\s/g, '').length;
+  if (letters < 5) return [t];
+  const mid = t.length / 2;
+  let cut = -1;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] !== ' ') continue;
+    if (cut < 0 || Math.abs(i - mid) < Math.abs(cut - mid)) cut = i;
+  }
+  if (cut > 0) return [t.slice(0, cut), t.slice(cut + 1)];
+  const half = Math.ceil(t.length / 2);
+  return [t.slice(0, half), t.slice(half)];
+}

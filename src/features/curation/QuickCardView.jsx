@@ -7,7 +7,7 @@ import MotionPlayer from './MotionPlayer';
 import { CurationThumb, CharRow, KeepChip } from './CurationCard';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss } from './format';
+import { pickCardTone, fmtCount as fmt, mmss, nameLines } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -78,23 +78,16 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       <style>{FULLSCREEN_FIX}</style>
       <div style={{ padding: '12px 15px 10px' }}>
-        {/* 추천 유형 누끼 캐릭터, 그 오른쪽에 종류와 소요 시간 */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, minHeight: 30 }}>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            {chars.length > 0 && <CharRow chars={chars} codes={charCodes || []} h={30} />}
-          </span>
-          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, paddingBottom: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '3px 9px' }}>
-              {KIND_LABEL[card.kind] || card.kind}
-            </span>
-            {card.duration_sec > 0 && <span style={{ fontSize: 11.5, color: SUB, fontWeight: 700 }}>{mmss(card.duration_sec)}</span>}
-          </span>
-        </div>
+        {/* 추천 유형 누끼 캐릭터 */}
+        {chars.length > 0 && <CharRow chars={chars} codes={charCodes || []} h={30} />}
         {/* 동작 이름표(Z·M 공통) + 제목 */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
           {card.thumb_text && (
             <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: NAME_INK, background: NAME_BG,
-              borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap' }}>{card.thumb_text}</span>
+              borderRadius: nameLines(card.thumb_text).length > 1 ? 15 : 999, padding: '5px 11px',
+              lineHeight: 1.25, textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
+              {nameLines(card.thumb_text).map((ln, i) => <span key={i}>{ln}</span>)}
+            </span>
           )}
           <h3 style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: 0, wordBreak: 'keep-all' }}>{title}</h3>
         </div>
