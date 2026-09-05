@@ -3,7 +3,7 @@
 
 export const FLOW_TOOLS = [
   ['none', '없음', 'none'],
-  ['mat', '요가매트', 'a yoga mat'],
+  ['mat', '운동매트', 'a yoga mat'],
   ['roller', '폼롤러', 'a black foam roller'],
   ['ball', '마사지볼', 'a massage ball'],
   ['band', '밴드', 'a resistance band'],
@@ -12,7 +12,8 @@ export const FLOW_TOOLS = [
   ['wall', '벽', 'a wall'],
 ];
 
-// 고른 도구들을 영어 한 줄로 — '요가매트, 밴드' → 'a yoga mat and a resistance band'
+// 고른 도구들을 영어 한 줄로 — '운동매트, 밴드' → 'a yoga mat and a resistance band'
+// 영어는 'a yoga mat' 그대로 둔다. 영상 AI가 가장 잘 알아듣는 말이다.
 export function toolPhrase(ids) {
   const list = (ids || []).filter((x) => x && x !== 'none')
     .map((id) => FLOW_TOOLS.find(([k]) => k === id)?.[2]).filter(Boolean);
@@ -91,7 +92,10 @@ export function parseFlow(text) {
       continue;
     }
     if (tag === '도구') {
-      const picked = FLOW_TOOLS.filter(([id, ko]) => id !== 'none' && val.includes(ko)).map(([id]) => id);
+      // 예전 이름(요가매트)으로 적어 와도 같은 칸으로 받는다.
+      const ALIAS = { mat: ['요가매트', '매트'] };
+      const picked = FLOW_TOOLS.filter(([id, ko]) =>
+        id !== 'none' && (val.includes(ko) || (ALIAS[id] || []).some((a) => val.includes(a)))).map(([id]) => id);
       put('tools', picked.length ? picked : ['none']);
       continue;
     }

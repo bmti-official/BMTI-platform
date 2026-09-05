@@ -282,7 +282,7 @@ export default function FlowStudio() {
               AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 캐릭터·각도·도구·동작 이름과 여섯 줄이 각 칸으로 들어갑니다.
             </div>
             <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-              placeholder={'캐릭터: 여자\n카메라 각도: 정면\n도구: 요가매트, 밴드\n동작 이름: 클램쉘\n\n① 시작 자세: …\n② 무엇이 움직이나: …'}
+              placeholder={'캐릭터: 여자\n카메라 각도: 정면\n도구: 운동매트, 밴드\n동작 이름: 클램쉘\n\n① 시작 자세: …\n② 무엇이 움직이나: …'}
               style={{ ...area, flex: 1, minHeight: 300, fontSize: 12.5, lineHeight: 1.6 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
