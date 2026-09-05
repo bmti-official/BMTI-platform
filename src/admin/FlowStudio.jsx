@@ -46,6 +46,40 @@ function checkWords(text) {
 }
 
 // ── 프롬프트 전문 ─────────────────────────────────────────────
+// 플로우 '프레임' 칸에 넣을 시작 그림 — 동영상이 아니라 정지 그림 한 장을 뽑는다.
+function buildStartImage({ gender, angle, tools, move }) {
+  const g = gender === 'male' ? 'male' : 'female';
+  const equip = toolPhrase(tools);
+  const pose = (move.a || '').trim();
+  return `Create a single still image, not a video.
+
+CHARACTER — match the attached reference images exactly
+A friendly 3D-animated Pixar-style character, ${g}.
+Plain black short-sleeve t-shirt, plain black shorts, bare feet.
+Same face, same hair, same body proportions, same skin tone as the reference.
+Calm, gently smiling expression.
+
+BACKGROUND
+Pure solid black (#000000). Completely empty. No floor line, no shadow on the wall,
+no furniture, no gradient, no particles. Only a soft contact shadow directly under the body.
+
+CAMERA
+Camera angle: ${angle}
+Framing: full body, head to feet, vertical 9:16 frame.
+Keep the entire body inside the middle 70% of the frame height.
+The top 15% and the bottom 15% of the frame must contain only empty black background.
+
+THE POSE — completely at rest
+${pose || '[① 시작 자세를 채우면 여기에 들어갑니다]'}
+Equipment visible in the shot: ${equip}
+The character holds this starting pose still. No motion, no motion blur.
+
+DO NOT
+- Do not add text, numbers, logo, or watermark.
+- Do not add any prop beyond the listed equipment.
+- Do not crop the head or the feet.`;
+}
+
 function buildPrompt({ gender, angle, tools, move }) {
   const g = gender === 'male' ? 'male' : 'female';
   const equip = toolPhrase(tools);
@@ -177,6 +211,8 @@ export default function FlowStudio() {
 
   const filled = LINES.filter((l) => (move[l.k] || '').trim()).length;
   const prompt = useMemo(() => buildPrompt({ gender, angle, tools, move }), [gender, angle, tools, move]);
+  const startImg = useMemo(() => buildStartImage({ gender, angle, tools, move }), [gender, angle, tools, move]);
+  const needOwnStart = tools.some((t) => t !== 'none');
   const translate = useMemo(() => buildTranslate(move), [move]);
   const warns = useMemo(() => {
     const all = LINES.flatMap((l) => checkWords(move[l.k]).map((b) => ({ ...b, at: `${l.n} ${l.t}` })));
@@ -206,8 +242,9 @@ export default function FlowStudio() {
           ))}
         </div>
         <div style={{ fontSize: 11.5, color: SUB, marginTop: 11, lineHeight: 1.7, background: '#FBF4DE', borderRadius: 10, padding: '10px 12px' }}>
-          <b style={{ color: GOLD }}>시작 그림</b>은 카드마다 새로 만들지 않습니다. 자세 계열로 몇 장 만들어 돌려 쓰세요 —
-          선 자세 · 앉은 자세 · 옆으로 누운 자세 · 바로 누운 자세, 남녀 각각이면 여덟 장입니다.
+          <b style={{ color: GOLD }}>시작 그림</b>은 <b>동작마다 한 장</b> 필요합니다(아래 4번에서 프롬프트를 만들어 줍니다).
+          도구가 없는 동작끼리는 자세 계열로 돌려 쓸 수 있지만, <b>도구를 쓰는 동작은 그 동작 전용</b>으로 만들어야 합니다 —
+          매트나 밴드가 그림 안에 보여야 하니까요.
           <br /><b style={{ color: GOLD }}>좌우가 나뉘는 동작</b>은 <b>오른쪽만</b> 찍으세요. 손님이 왼쪽을 고르면 화면이 알아서 좌우를 뒤집어 보여 줍니다.
         </div>
       </div>
@@ -312,10 +349,30 @@ export default function FlowStudio() {
         )}
       </div>
 
-      {/* 4. 완성된 프롬프트 */}
+      {/* 4. 시작 그림 */}
       <div style={{ ...box, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>4. 플로우에 붙여넣을 프롬프트</div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>4. 시작 그림 만들기</div>
+          <span style={{ marginLeft: 'auto' }}><CopyBtn text={startImg}>시작 그림 프롬프트 복사</CopyBtn></span>
+        </div>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.8 }}>
+          플로우 <b>프레임</b> 칸에는 그림 한 장이 필요합니다. 이걸로 먼저 <b>정지 그림</b>을 뽑고,
+          그 그림을 <b>시작 프레임과 끝 프레임에 똑같이</b> 넣으세요.
+          <br />플로우 <b>이미지</b> 모드에 캐릭터 참고 그림과 함께 넣으면 됩니다.
+        </div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.8, borderRadius: 10, padding: '11px 13px',
+          background: needOwnStart ? '#FDF0EE' : '#FBF4DE', color: needOwnStart ? '#7A3B36' : '#6E5A1C', marginBottom: 12 }}>
+          {needOwnStart
+            ? '이 동작은 도구를 씁니다. 도구가 놓인 모습이 그림에 들어가야 하니, 이 동작 전용 시작 그림을 새로 만들어야 합니다.'
+            : '도구가 없는 동작입니다. 같은 자세 계열(선 자세 · 앉은 자세 · 옆으로 누운 자세 · 바로 누운 자세)로 남녀 한 장씩 만들어 두면 다른 카드에도 돌려 쓸 수 있습니다.'}
+        </div>
+        <textarea readOnly value={startImg} style={{ ...area, minHeight: 200, fontSize: 11.5, lineHeight: 1.65, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }} />
+      </div>
+
+      {/* 5. 완성된 프롬프트 */}
+      <div style={{ ...box, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>5. 플로우에 붙여넣을 동영상 프롬프트</div>
           <span style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
             <CopyBtn text={prompt}>프롬프트 복사</CopyBtn>
           </span>
@@ -329,7 +386,7 @@ export default function FlowStudio() {
       {/* 5. 영어로 바꾸기 */}
       <div style={{ ...box, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>5. 여섯 줄을 영어로 바꾸기 <span style={{ fontSize: 12, fontWeight: 600, color: SUB }}>— 선택</span></div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>6. 여섯 줄을 영어로 바꾸기 <span style={{ fontSize: 12, fontWeight: 600, color: SUB }}>— 선택</span></div>
           <span style={{ marginLeft: 'auto' }}><CopyBtn text={filled ? translate : ''}>번역 요청문 복사</CopyBtn></span>
         </div>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.7 }}>
@@ -341,7 +398,7 @@ export default function FlowStudio() {
 
       {/* 6. 받은 뒤 */}
       <div style={{ ...box }}>
-        <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 10 }}>6. 영상을 받은 뒤</div>
+        <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 10 }}>7. 영상을 받은 뒤</div>
         <ol style={{ margin: 0, paddingLeft: 20, fontSize: 12.5, color: INK, fontWeight: 600, lineHeight: 2 }}>
           <li><b>첫 프레임과 마지막 프레임을 나란히 놓고 봅니다.</b> 다르면 다시 뽑으세요. 화면에서 계속 툭툭 튑니다.</li>
           <li><b>0~5초 안에 동작이 한눈에 보이는지</b> 봅니다. 그 구간이 그대로 표지가 됩니다.</li>
