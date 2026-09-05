@@ -136,7 +136,9 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
           {motion
             ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
             : <video className="bmti-clip" src={card.video_url} autoPlay loop muted playsInline
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                style={{ width: '100%', height: '100%', objectFit: 'cover',
+                  // 영상은 늘 오른쪽으로 찍는다. 왼쪽을 고르면 화면에서 좌우를 뒤집어 보여 준다.
+                  transform: card.has_side && side === 'left' ? 'scaleX(-1)' : 'none' }} />}
         </div>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5). 영상이 있으면 0~5초가 소리 없이 돌아간다.
@@ -214,7 +216,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, background: SET_BG, borderRadius: 11, padding: '8px 11px' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: SET_INK }}>
               {allDone ? `${sets}세트 다 끝냈어요` : `${sets}세트 중 ${done + 1}세트째`}
-              {card.has_side && !allDone && ` · ${SIDES.find(([k]) => k === side)?.[1]}`}
+              {card.has_side && !allDone && ` · ${SIDES.find(([k]) => k === side)?.[1]}쪽`}
             </span>
             {!allDone && (
               <button type="button" onClick={() => { setDone((n) => n + 1); setStage('move'); }}

@@ -4,6 +4,7 @@ import CurationAdmin from './CurationAdmin';
 import QuickCardAdmin from './QuickCardAdmin';
 import RoutineAdmin from './RoutineAdmin';
 import SearchPreview from './SearchPreview';
+import FlowStudio from './FlowStudio';
 import MetricsView from './MetricsView';
 import { confirmLeave } from './dirty';
 
@@ -268,6 +269,7 @@ function Dashboard({ session }) {
           {tabBtn('cards', '⚡ 바로카드')}
           {tabBtn('routines', '🎵 플레이리스트')}
           {tabBtn('search', '🔎 검색 분류')}
+          {tabBtn('flow', '🎬 동작 영상')}
         </div>
         {tab === 'stats' && <StatsView users={users} loading={loading} />}
         {tab === 'metrics' && <MetricsView />}
@@ -276,6 +278,7 @@ function Dashboard({ session }) {
         {tab === 'cards' && <QuickCardAdmin />}
         {tab === 'routines' && <RoutineAdmin />}
         {tab === 'search' && <SearchPreview />}
+        {tab === 'flow' && <FlowStudio />}
       </main>
     </div>
   );
