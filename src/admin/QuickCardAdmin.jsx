@@ -31,7 +31,7 @@ const EMPTY = {
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
   chars_z: [], chars_m: [],
-  has_side: false, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
+  has_side: false, can_alternate: false, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
 };
 
 // 아홉 칸 자리에서 문구를 조금 더 미세하게 밀고, 크기도 손보는 슬라이더
@@ -167,11 +167,25 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         </div>
         <div>
           <span style={label}>좌우</span>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '9px 12px', borderRadius: 9,
-            background: f.has_side ? '#fff' : 'transparent', boxShadow: `inset 0 0 0 ${f.has_side ? 2 : 1}px ${f.has_side ? ACCENT : LINE}` }}>
-            <input type="checkbox" checked={!!f.has_side} onChange={(e) => set('has_side')(e.target.checked)} style={{ accentColor: ACCENT }} />
-            <span style={{ fontSize: 12.5, fontWeight: 800, color: f.has_side ? INK : SUB }}>좌우가 나뉘는 동작이에요</span>
-          </label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '9px 12px', borderRadius: 9,
+              background: f.has_side ? '#fff' : 'transparent', boxShadow: `inset 0 0 0 ${f.has_side ? 2 : 1}px ${f.has_side ? ACCENT : LINE}` }}>
+              <input type="checkbox" checked={!!f.has_side}
+                onChange={(e) => { set('has_side')(e.target.checked); if (!e.target.checked) set('can_alternate')(false); }} style={{ accentColor: ACCENT }} />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: f.has_side ? INK : SUB }}>좌우가 나뉘는 동작이에요</span>
+            </label>
+            <label title={f.has_side ? '' : '먼저 왼쪽 칸을 켜 주세요'}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: f.has_side ? 'pointer' : 'default', padding: '9px 12px', borderRadius: 9,
+                opacity: f.has_side ? 1 : 0.4,
+                background: f.can_alternate ? '#fff' : 'transparent', boxShadow: `inset 0 0 0 ${f.can_alternate ? 2 : 1}px ${f.can_alternate ? ACCENT : LINE}` }}>
+              <input type="checkbox" disabled={!f.has_side} checked={!!f.can_alternate}
+                onChange={(e) => set('can_alternate')(e.target.checked)} style={{ accentColor: ACCENT }} />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: f.can_alternate ? INK : SUB }}>좌우를 번갈아 해도 되는 동작이에요</span>
+            </label>
+          </div>
+          <div style={{ fontSize: 11, color: SUB, marginTop: 5, lineHeight: 1.6 }}>
+            한쪽을 다 하고 반대쪽으로 넘어가야 하는 동작이면 오른쪽 칸은 꺼 두세요.
+          </div>
         </div>
       </div>
 

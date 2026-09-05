@@ -17,6 +17,10 @@ const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리�
 const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
+const dropdown = {
+  height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+  fontSize: 12.5, fontWeight: 800, color: SET_INK, background: SET_BG, padding: '0 8px',
+};
 
 // 전체 화면일 때는 가로에 맞추면 세로 영상이 지나치게 커진다.
 // 높이에 맞춰 담기게(contain) 되돌린다.
@@ -35,20 +39,43 @@ const overlay = (side) => ({
   textAlign: side === 'right' ? 'right' : 'left', wordBreak: 'keep-all',
 });
 
+const REPS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const SETS = [3, 4, 5];
-const SIDES = [['left', '좌'], ['right', '우'], ['both', '둘 다']];
+// right/left  한쪽만 · both  오른쪽을 다 하고 왼쪽으로 · alt  한 번 할 때마다 좌우가 바뀐다
+const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
+const SIDE_KO = Object.fromEntries(SIDES);
 
 export default function QuickCardView({ card, tone = 'z', motion = null, onStart, onSave, charImages, charCodes, skipOpening = false }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
   const started = stage !== 'cover';
-  // 몇 세트 할지는 손님이 정한다. 시작한 뒤에는 몇 세트째인지 센다.
+  // 몇 번, 몇 세트 할지는 손님이 정한다. 시작한 뒤에는 몇 세트째인지 센다.
+  const [reps, setReps] = useState(15);
   const [sets, setSets] = useState(3);
   const [done, setDone] = useState(0);
-  const allDone = started && done >= sets;
   // 좌우가 나뉘는 동작이면 어느 쪽을 할지 고른다.
   const [side, setSide] = useState('both');
+  // '한쪽씩 둘 다'는 오른쪽을 다 하고 왼쪽으로 넘어간다. 지금 왼쪽 차례인가.
+  const [secondSide, setSecondSide] = useState(false);
+  // '좌우 번갈아'는 영상이 한 번 돌 때마다 좌우가 바뀐다.
+  const [altFlip, setAltFlip] = useState(false);
+  const twoPhase = card.has_side && side === 'both';
+  const allDone = started && done >= sets && (!twoPhase || secondSide);
+  // 화면에서 영상을 좌우로 뒤집어야 하는가
+  const mirrored = card.has_side && (side === 'left' || (side === 'both' && secondSide) || (side === 'alt' && altFlip));
+  // 한 번 도는 데 걸리는 시간을 영상에서 직접 읽어 온다(없으면 관리자가 적은 값을 쓴다).
+  const [clipSec, setClipSec] = useState(0);
+  const perSet = clipSec > 0 ? Math.round(clipSec * reps) : card.duration_sec;
+  const totalSec = perSet > 0 ? perSet * sets * (twoPhase ? 2 : 1) : 0;
+
+  // 다음 세트 — '한쪽씩 둘 다'는 오른쪽을 마치면 왼쪽 1세트째로 넘어간다.
+  const nextSet = () => {
+    setStage('move');
+    if (twoPhase && !secondSide && done + 1 >= sets) { setSecondSide(true); setDone(0); setAltFlip(false); return; }
+    setDone((n) => n + 1);
+  };
+  const restart = () => { setDone(0); setSecondSide(false); setAltFlip(false); };
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
   const openUrl = (tone === 'm' ? card.voice_open_m : card.voice_open_z) || '';
   const setClips = ((tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || []).filter(Boolean);
@@ -64,7 +91,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
 
   const beginOpening = !skipOpening && !heardOpening && !!openUrl;
   const start = () => {
-    setDone(0);
+    restart();
     if (beginOpening) { setHeardOpening(true); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
@@ -91,6 +118,7 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
   const tools = card.tools || [];
   const chars = (charImages || []).slice(0, 4);
   const openName = String(CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
+  const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
   return (
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
@@ -135,10 +163,19 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
         <div style={{ width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {motion
             ? <MotionPlayer motion={motion} size={640} bg="#F3F1EC" />
-            : <video className="bmti-clip" src={card.video_url} autoPlay loop muted playsInline
+            : <video className="bmti-clip" src={card.video_url} autoPlay muted playsInline
+                loop={side !== 'alt'}
+                onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
+                onEnded={(e) => {
+                  // '좌우 번갈아' — 한 번 돌 때마다 좌우를 바꿔 다시 튼다.
+                  if (side !== 'alt') return;
+                  setAltFlip((f) => !f);
+                  const v = e.currentTarget;
+                  try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ }
+                }}
                 style={{ width: '100%', height: '100%', objectFit: 'cover',
-                  // 영상은 늘 오른쪽으로 찍는다. 왼쪽을 고르면 화면에서 좌우를 뒤집어 보여 준다.
-                  transform: card.has_side && side === 'left' ? 'scaleX(-1)' : 'none' }} />}
+                  // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
+                  transform: mirrored ? 'scaleX(-1)' : 'none' }} />}
         </div>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5). 영상이 있으면 0~5초가 소리 없이 돌아간다.
@@ -183,51 +220,54 @@ export default function QuickCardView({ card, tone = 'z', motion = null, onStart
         </div>
         {/* 몇 세트 할지 — 시작 전엔 고르고, 시작한 뒤엔 몇 세트째인지 센다 */}
         {stage !== 'move' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>세트</span>
-            <span style={{ display: 'flex', gap: 4 }}>
-              {SETS.map((n) => (
-                <button key={n} type="button" onClick={() => setSets(n)}
-                  style={{ width: 30, height: 28, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    fontSize: 12.5, fontWeight: 800, color: n === sets ? SET_INK : SUB,
-                    background: n === sets ? SET_BG : '#fff', boxShadow: n === sets ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
-                  {n}
-                </button>
-              ))}
-            </span>
-            {card.has_side ? (
-              <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-                {SIDES.map(([k, lb]) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>횟수</span>
+              <select value={reps} onChange={(e) => setReps(Number(e.target.value))} style={dropdown}>
+                {REPS.map((n) => <option key={n} value={n}>{n}회</option>)}
+              </select>
+              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>세트</span>
+              <select value={sets} onChange={(e) => setSets(Number(e.target.value))} style={dropdown}>
+                {SETS.map((n) => <option key={n} value={n}>{n}세트</option>)}
+              </select>
+              {totalSec > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  모두 {mmss(totalSec)}
+                </span>
+              )}
+            </div>
+            {card.has_side && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>좌우</span>
+                {sideOpts.map(([k, lb]) => (
                   <button key={k} type="button" onClick={() => setSide(k)}
-                    style={{ padding: '0 9px', height: 28, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    style={{ padding: '0 10px', height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: k === side ? SET_INK : SUB,
                       background: k === side ? SET_BG : '#fff', boxShadow: k === side ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
                     {lb}
                   </button>
                 ))}
-              </span>
-            ) : card.duration_sec > 0 ? (
-              <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                모두 {mmss(card.duration_sec * sets)}
-              </span>
-            ) : null}
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, background: SET_BG, borderRadius: 11, padding: '8px 11px' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: SET_INK }}>
-              {allDone ? `${sets}세트 다 끝냈어요` : `${sets}세트 중 ${done + 1}세트째`}
-              {card.has_side && !allDone && ` · ${SIDES.find(([k]) => k === side)?.[1]}쪽`}
+              {allDone
+                ? (twoPhase ? '양쪽 다 끝냈어요' : `${sets}세트 다 끝냈어요`)
+                : `${reps}회 · ${sets}세트 중 ${done + 1}세트째`}
+              {card.has_side && !allDone && ` · ${twoPhase ? (secondSide ? '왼쪽' : '오른쪽') : SIDE_KO[side]}`}
             </span>
             {!allDone && (
-              <button type="button" onClick={() => { setDone((n) => n + 1); setStage('move'); }}
+              <button type="button" onClick={nextSet}
                 style={{ marginLeft: 'auto', border: 'none', background: '#fff', color: SET_INK, borderRadius: 999,
                   padding: '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {done + 1 >= sets ? '다 했어요 ✓' : '다음 세트 →'}
+                {done + 1 >= sets ? (twoPhase && !secondSide ? '반대쪽으로 →' : '다 했어요 ✓') : '다음 세트 →'}
               </button>
             )}
           </div>
         )}
-        <button onClick={() => { if (started) { setDone(0); setStage('move'); } else start(); }}
+        <button onClick={() => { if (started) { restart(); setStage('move'); } else start(); }}
           style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
           {started ? '처음부터 다시 ↻' : '바로 따라하기 →'}
