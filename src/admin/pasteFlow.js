@@ -55,12 +55,19 @@ function unglue(text) {
 
 const KEY = new RegExp(`^\\s*(?:(${NUM})\\s*)?(${HEAD})?\\s*[:：]?\\s*(.*)$`);
 
+// ``` 로 감싼 덩어리가 있으면 그 안만 읽는다.
+// 그래야 AI가 블록 밖에 한국어 확인용 설명을 덧붙여도 뒤섞이지 않는다.
+function onlyBlock(text) {
+  const m = String(text || '').match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+  return m ? m[1] : text;
+}
+
 export function parseFlow(text) {
   const out = {};
   const filled = [];
   const put = (k, v) => { if (v) { out[k] = v; filled.push(k); } };
 
-  const lines = unglue(stripCites(text)).replace(/\r/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = unglue(stripCites(onlyBlock(text))).replace(/\r/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
   const move = {};
 
   for (const line of lines) {
