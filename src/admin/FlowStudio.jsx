@@ -2,6 +2,7 @@
 // 여섯 줄만 적으면 프롬프트 전문이 완성되고, 통째로 복사해 플로우에 붙여넣으면 된다.
 import { useMemo, useState } from 'react';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn } from './theme';
+import { parseFlow, FLOW_TOOLS, toolPhrase } from './pasteFlow';
 
 const GOLD = '#B08635', WARN = '#B23B36';
 
@@ -11,13 +12,7 @@ const ANGLES = [
   ['side view', '측면', '앞뒤로 굽히거나 젖히는 동작'],
   ['back view', '뒷면', '어깨뼈·등을 모으는 동작'],
 ];
-const TOOLS = [
-  ['none', '없음'],
-  ['a black foam roller', '폼롤러'],
-  ['a yoga mat', '요가매트'],
-  ['a massage ball', '마사지볼'],
-  ['a resistance band', '밴드'],
-];
+
 
 // 여섯 줄 — 이 순서와 예시는 문서와 같다.
 const LINES = [
@@ -51,9 +46,9 @@ function checkWords(text) {
 }
 
 // ── 프롬프트 전문 ─────────────────────────────────────────────
-function buildPrompt({ gender, angle, tool, move }) {
+function buildPrompt({ gender, angle, tools, move }) {
   const g = gender === 'male' ? 'male' : 'female';
-  const equip = tool === 'none' ? 'none' : tool;
+  const equip = toolPhrase(tools);
   const body = LINES.map((l) => (move[l.k] || '').trim()).filter(Boolean).join(' ');
   return `Create a seamlessly looping 8-second exercise demonstration video.
 
@@ -151,13 +146,37 @@ const STEPS = [
 export default function FlowStudio() {
   const [gender, setGender] = useState('female');
   const [angle, setAngle] = useState('front view');
-  const [tool, setTool] = useState('none');
+  const [tools, setTools] = useState(['none']);
   const [name, setName] = useState('');
   const [move, setMove] = useState({ a: '', b: '', c: '', d: '', e: '', f: '' });
   const setLine = (k) => (v) => setMove((p) => ({ ...p, [k]: v }));
+  // '없음'을 고르면 나머지가 풀리고, 다른 걸 고르면 '없음'이 풀린다.
+  const toggleTool = (k) => setTools((prev) => {
+    if (k === 'none') return ['none'];
+    const next = prev.includes(k) ? prev.filter((x) => x !== k) : [...prev.filter((x) => x !== 'none'), k];
+    return next.length ? next : ['none'];
+  });
+
+  // 📋 원고 붙여넣기
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteNote, setPasteNote] = useState('');
+  const applyPaste = () => {
+    const { fields, report, count } = parseFlow(pasteText);
+    if (!count) {
+      setPasteNote('형식을 알아보지 못했습니다. \u2018① 시작 자세: …\u2019 처럼 번호나 이름 뒤에 쌍점이 있는지 확인해 주세요.');
+      return;
+    }
+    if (fields.gender) setGender(fields.gender);
+    if (fields.angle) setAngle(fields.angle);
+    if (fields.tools) setTools(fields.tools);
+    if (fields.name) setName(fields.name);
+    if (fields.move) setMove((p) => ({ ...p, ...fields.move }));
+    setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 프롬프트를 복사하세요.`);
+  };
 
   const filled = LINES.filter((l) => (move[l.k] || '').trim()).length;
-  const prompt = useMemo(() => buildPrompt({ gender, angle, tool, move }), [gender, angle, tool, move]);
+  const prompt = useMemo(() => buildPrompt({ gender, angle, tools, move }), [gender, angle, tools, move]);
   const translate = useMemo(() => buildTranslate(move), [move]);
   const warns = useMemo(() => {
     const all = LINES.flatMap((l) => checkWords(move[l.k]).map((b) => ({ ...b, at: `${l.n} ${l.t}` })));
@@ -193,9 +212,41 @@ export default function FlowStudio() {
         </div>
       </div>
 
+      {/* 원고 붙여넣기 창 */}
+      {pasteOpen && (
+        <div onClick={() => setPasteOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(23,21,15,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>원고 붙여넣기</div>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
+              AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 캐릭터·각도·도구·동작 이름과 여섯 줄이 각 칸으로 들어갑니다.
+            </div>
+            <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
+              placeholder={'캐릭터: 여자\n카메라 각도: 정면\n도구: 요가매트, 밴드\n동작 이름: 클램쉘\n\n① 시작 자세: …\n② 무엇이 움직이나: …'}
+              style={{ ...area, flex: 1, minHeight: 300, fontSize: 12.5, lineHeight: 1.6 }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
+              <button onClick={() => setPasteOpen(false)} style={btn(false)}>닫기</button>
+              <span style={{ fontSize: 11.5, color: SUB, alignSelf: 'center', marginLeft: 'auto' }}>이미 적은 칸은 새 내용으로 바뀝니다</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. 이번 동작 */}
       <div style={{ ...box, marginBottom: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 12 }}>2. 이번 동작</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>2. 이번 동작</div>
+          <button type="button" onClick={() => { setPasteNote(''); setPasteOpen(true); }} style={{ ...btn(false), marginLeft: 'auto' }}>
+            📋 원고 붙여넣기
+          </button>
+        </div>
+        {pasteNote && (
+          <div style={{ fontSize: 12, fontWeight: 700, color: ACCENT, background: BG, borderRadius: 10, padding: '10px 12px', marginBottom: 12, lineHeight: 1.6 }}>
+            {pasteNote}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginBottom: 14 }}>
           <div>
             <span style={label}>캐릭터</span>
@@ -211,9 +262,11 @@ export default function FlowStudio() {
             <div style={{ fontSize: 11, color: SUB, marginTop: 5 }}>{ANGLES.find(([k]) => k === angle)?.[2]}</div>
           </div>
           <div>
-            <span style={label}>도구</span>
+            <span style={label}>도구 <span style={{ fontWeight: 600 }}>— 여러 개 고를 수 있어요</span></span>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {TOOLS.map(([k, lb]) => <button key={k} type="button" onClick={() => setTool(k)} style={pick(tool === k)}>{lb}</button>)}
+              {FLOW_TOOLS.map(([k, lb]) => (
+                <button key={k} type="button" onClick={() => toggleTool(k)} style={pick(tools.includes(k))}>{lb}</button>
+              ))}
             </div>
           </div>
         </div>
