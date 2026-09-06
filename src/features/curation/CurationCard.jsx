@@ -243,7 +243,8 @@ const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boo
 ));
 
 // 본문
-export function CurationDetail({ item, tone = 'z', cards = [], onOpenCard, charImage, charImages, charCodes, onSave }) {
+export function CurationDetail({ item, tone = 'z', cards = [], onFollow, onMakeRoutine, charImage, charImages, charCodes, onSave }) {
+  const [askCard, setAskCard] = useState(null);   // 어떤 바로카드를 눌렀는지
   const { title, body } = pickCurationTone(item, tone);
   const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
   const codes = charCodes || [];
@@ -343,26 +344,6 @@ export function CurationDetail({ item, tone = 'z', cards = [], onOpenCard, charI
 
       {body && <section style={{ marginBottom: 22, fontFamily: F.body }}><Paras text={body} /></section>}
 
-      {cards.length > 0 && (
-        <section style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
-          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 12 }}>이 글과 함께 해보면 좋아요</div>
-          <div className="card-row" style={{ display: 'flex', gap: 10, overflowX: 'auto', scrollSnapType: 'x mandatory', padding: '2px 2px 6px', margin: '0 -2px' }}>
-            {cards.map((c) => (
-              <button key={c.id} type="button" onClick={() => onOpenCard && onOpenCard(c)}
-                style={{ flex: '0 0 48%', scrollSnapAlign: 'start', border: 'none', background: 'transparent', padding: 0,
-                  cursor: onOpenCard ? 'pointer' : 'default', fontFamily: 'inherit', textAlign: 'left' }}>
-                <CurationThumb item={c} radius={12} ratio="4 / 5" showRead={false} clip={c.video_url || ''} emptyText="동작 영상 없음" />
-                {/* 표지 아래 — 조회·저장만 */}
-                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: SUB, marginTop: 6, whiteSpace: 'nowrap' }}>
-                  조회 {fmtCount(c.view_count)} · 저장 {fmtCount(c.save_count)}
-                </span>
-              </button>
-            ))}
-          </div>
-          <style>{'.card-row{scrollbar-width:none;-ms-overflow-style:none}.card-row::-webkit-scrollbar{display:none}'}</style>
-        </section>
-      )}
-
       {groups.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 18 }}>
           {groups.map((g) => (
@@ -379,6 +360,56 @@ export function CurationDetail({ item, tone = 'z', cards = [], onOpenCard, charI
       </button>
 
       <AiNote align="center" />
+
+      {cards.length > 0 && (
+        <section style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18, marginTop: 18 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 12 }}>이 글과 함께 해보면 좋아요</div>
+          <div className="card-row" style={{ display: 'flex', gap: 10, overflowX: 'auto', scrollSnapType: 'x mandatory', padding: '2px 2px 6px', margin: '0 -2px' }}>
+            {cards.map((c) => (
+              <button key={c.id} type="button" onClick={() => setAskCard(c)}
+                style={{ flex: '0 0 48%', scrollSnapAlign: 'start', border: 'none', background: 'transparent', padding: 0,
+                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                <CurationThumb item={c} radius={12} ratio="4 / 5" showRead={false} clip={c.video_url || ''} emptyText="동작 영상 없음" />
+                {/* 표지 아래 — 조회·저장만 */}
+                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: SUB, marginTop: 6, whiteSpace: 'nowrap' }}>
+                  조회 {fmtCount(c.view_count)} · 저장 {fmtCount(c.save_count)}
+                </span>
+              </button>
+            ))}
+          </div>
+          <style>{'.card-row{scrollbar-width:none;-ms-overflow-style:none}.card-row::-webkit-scrollbar{display:none}'}</style>
+        </section>
+      )}
+
+      {/* 바로카드를 누르면 — 지금 따라할지, 플리에 담을지 */}
+      {askCard && (
+        <div onClick={() => setAskCard(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(23,21,15,0.5)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 380, background: '#fff', borderRadius: 20, padding: '18px 16px 16px' }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 3, wordBreak: 'keep-all' }}>
+              {askCard.thumb_text || pickCurationTone(askCard, tone).title}
+            </div>
+            <div style={{ fontSize: 12, color: SUB, fontWeight: 600, marginBottom: 14 }}>어떻게 할까요?</div>
+            <button type="button" onClick={() => { const c = askCard; setAskCard(null); if (onFollow) onFollow(c); }}
+              style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: '#fff', color: INK,
+                fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+              바로 따라하기 →
+            </button>
+            <button type="button" onClick={() => { const c = askCard; setAskCard(null); if (onMakeRoutine) onMakeRoutine(c); }}
+              style={{ width: '100%', marginTop: 8, padding: 14, borderRadius: 14, border: 'none', background: KEEP_BG, color: KEEP_INK,
+                fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              플리 루틴 만들기 ＋
+            </button>
+            <button type="button" onClick={() => setAskCard(null)}
+              style={{ width: '100%', marginTop: 8, padding: 12, borderRadius: 14, border: 'none', background: 'transparent', color: SUB,
+                fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

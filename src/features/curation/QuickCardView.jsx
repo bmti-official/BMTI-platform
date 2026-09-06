@@ -3,7 +3,7 @@
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
 import { useEffect, useRef, useState } from 'react';
-import { CurationThumb, CharRow, CharPic, KeepChip } from './CurationCard';
+import { CurationThumb, CharRow, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { loadVoiceAssets, voiceKey } from './voiceCommon';
 import AiNote from './AiNote';
@@ -15,9 +15,11 @@ const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
 const PURPLE = '#8B7BD8';                 // 세트·횟수에서 앞자리를 짚어 주는 연보라
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
+const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';           // 보관하기 버튼
 const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
+const BOX_BG = '#F7F5F0';                                  // 펼쳤을 때 머리말 바탕
 // 영상 안 모서리에 붙는 글씨 — 몇 세트째 · 몇 번째. 배경 없이 글씨만 얹는다.
 const corner = {
   position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
@@ -219,18 +221,21 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const optSummary = `${reps}회 · ${sets}세트 · ${restSec}초 쉼 · ${guide ? '설명 들으며' : '숫자만'}`
     + (card.has_side ? ` · ${SIDE_KO[side]}` : '');
   const optBox = (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 10 }}>
-      <div style={{ flex: 1, minWidth: 0, background: SET_BG, borderRadius: 12, padding: '3px 3px 3px' }}>
+    <div style={{ marginBottom: 10 }}>
       <button type="button" onClick={() => setOptOpen((o) => !o)}
-        style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 9px', borderRadius: 10,
-          border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', textAlign: 'left' }}>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, color: SET_INK, lineHeight: 1.45, wordBreak: 'keep-all' }}>
+        style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '9px 11px', borderRadius: 11,
+          border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+          background: optOpen ? BOX_BG : SET_BG }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, lineHeight: 1.45, wordBreak: 'keep-all',
+          color: optOpen ? INK : SET_INK }}>
           {optSummary}
         </span>
-        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SET_INK, opacity: 0.7, paddingTop: 1 }}>{optOpen ? '접기 ▴' : '바꾸기 ▾'}</span>
+        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, paddingTop: 1, color: optOpen ? SUB : SET_INK, opacity: optOpen ? 1 : 0.7 }}>
+          {optOpen ? '접기 ▴' : '바꾸기 ▾'}
+        </span>
       </button>
       {optOpen && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '4px 9px 10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '9px 2px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {label('횟수')}
             <select value={reps} onChange={(e) => change(setReps)(Number(e.target.value))} style={dropdown}>
@@ -266,8 +271,6 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
           )}
         </div>
       )}
-      </div>
-      <KeepChip onSave={onSave} />
     </div>
   );
 
@@ -419,11 +422,21 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
 
       <div style={{ padding: '12px 15px 15px' }}>
         {stage !== 'move' && optBox}
-        <button onClick={() => { if (started) { if (onMakeRoutine) onMakeRoutine(card); } else start(); }}
-          style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
-            fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
-          {started ? '플리 루틴 만들기 ＋' : '바로 따라하기 →'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 8 }}>
+          <button onClick={() => { if (started) { if (onMakeRoutine) onMakeRoutine(card); } else start(); }}
+            style={{ flex: 1, minWidth: 0, padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
+              fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
+            {started ? '플리 루틴 만들기 ＋' : '바로 따라하기 →'}
+          </button>
+          {!started && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); }}
+              style={{ flexShrink: 0, padding: '0 16px', borderRadius: 13, border: 'none', background: KEEP_BG, color: KEEP_INK,
+                fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.25,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span>보관</span><span>하기</span>
+            </button>
+          )}
+        </div>
         {stage === 'move' && <div style={{ marginTop: 10 }}>{optBox}</div>}
         <AiNote top={10} />
         {script && (
