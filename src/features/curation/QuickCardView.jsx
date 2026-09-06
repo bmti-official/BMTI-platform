@@ -15,8 +15,8 @@ const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
 const PURPLE = '#8B7BD8';                 // 세트·횟수에서 앞자리를 짚어 주는 연보라
 // 동작 이름표 글씨 — 종류마다 색이 다르다.
-// 연한 노랑은 흰 바탕에서 안 보여서, 노랑 느낌은 살리되 읽히는 만큼만 진하게 잡았다.
-const KIND_INK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#D9A82C' };
+// 표지 형광펜과 같은 갈래의 색을 쓰되, 흰 바탕에서 읽히는 만큼만 진하게 잡았다.
+const KIND_INK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#6FAE6A' };
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';           // 보관하기 버튼
 // 배경 없이 얹는 글씨가 어떤 그림 위에서도 읽히게 하는 옅은 흰 그늘

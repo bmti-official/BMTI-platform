@@ -12,6 +12,14 @@ import AiNote from './AiNote';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#E7E0F7';   // 형광펜 연보라
 const MARKER = '#FBEFB6';   // 목차에 대충 그은 옐로우 형광펜
+// 바로카드 종류마다 표지 문구에 그어 주는 형광펜 색
+const KIND_MARK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#7FB77E' };
+// 손으로 대충 그은 형광펜 — 양 끝이 흐리고 글자 아래쪽만 덮는다
+const markPaint = (c) => ({
+  background: `linear-gradient(101deg, ${c}00 0.4%, ${c} 2.4%, ${c} 96%, ${c}00 99.4%)`,
+  backgroundSize: '100% 62%', backgroundPosition: '0 82%', backgroundRepeat: 'no-repeat',
+  padding: '0 4px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
+});
 const PURPLE = '#7E6FC9';   // 답변에서 짚어 주는 연보라 글씨
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
@@ -66,6 +74,8 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         const pad = big ? 18 : 12;
         // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
         const bottomPad = pos.align === 'flex-end' && (badge || showRead) ? pad + 30 : pad;
+        // 바로카드는 종류마다 다른 형광펜이 문구 아래에 대충 그어진다.
+        const mark = KIND_MARK[item.kind];
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
             padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
@@ -73,7 +83,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
               // 아홉 칸 자리에서 가로·세로로 조금씩 더 민다
               transform: `translate(${Number(item.thumb_dx) || 0}%, ${Number(item.thumb_dy) || 0}%)` }}>
-              {item.thumb_text}
+              {mark ? <span style={markPaint(mark)}>{item.thumb_text}</span> : item.thumb_text}
             </span>
           </div>
         );
@@ -284,12 +294,7 @@ export function CurationDetail({ item, tone = 'z', cards = [], onFollow, onMakeR
               <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: 6, background: '#EFE4C6', color: '#8A6E2F',
                 fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{t.n}</span>
               <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, wordBreak: 'keep-all' }}>
-                <span style={{
-                  // 손으로 대충 그은 형광펜처럼 — 양 끝이 흐리고 글자 아래쪽만 덮는다
-                  background: `linear-gradient(101deg, ${MARKER}00 0.4%, ${MARKER} 2.4%, ${MARKER} 96%, ${MARKER}00 99.4%)`,
-                  backgroundSize: '100% 62%', backgroundPosition: '0 82%', backgroundRepeat: 'no-repeat',
-                  padding: '0 2px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
-                }}>{t.label}</span>
+                <span style={{ ...markPaint(MARKER), padding: '0 2px' }}>{t.label}</span>
               </span>
               <span style={{ flexShrink: 0, color: '#C4BCAE', fontSize: 13 }}>›</span>
             </button>
