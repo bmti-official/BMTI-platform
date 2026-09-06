@@ -14,9 +14,13 @@ import { BodyPreview } from './CurationCard';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
 const PURPLE = '#8B7BD8';                 // 세트·횟수에서 앞자리를 짚어 주는 연보라
+// 동작 이름표 글씨 — 종류마다 색이 다르다.
+// 연한 노랑은 흰 바탕에서 안 보여서, 노랑 느낌은 살리되 읽히는 만큼만 진하게 잡았다.
+const KIND_INK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#D9A82C' };
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';           // 보관하기 버튼
-const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
+// 배경 없이 얹는 글씨가 어떤 그림 위에서도 읽히게 하는 옅은 흰 그늘
+const SHADE = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)';
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
 const BOX_BG = '#F7F5F0';                                  // 펼쳤을 때 머리말 바탕
@@ -24,7 +28,7 @@ const BOX_BG = '#F7F5F0';                                  // 펼쳤을 때 머�
 const corner = {
   position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
   fontSize: 18, fontWeight: 900, color: INK, whiteSpace: 'nowrap', letterSpacing: '-0.01em',
-  textShadow: '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)',
+  textShadow: SHADE,
 };
 const dropdown = {
   height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
@@ -42,10 +46,10 @@ const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
 // 표지 모서리에 얹는 글씨 — 사진 위에서도 읽히게 끝이 둥근 반투명 연한 옐로우를 깐다.
 const overlay = (side) => ({
-  position: 'absolute', top: 10, [side]: 10, zIndex: 2, pointerEvents: 'none',
-  background: GLASS, borderRadius: 10, padding: '5px 9px',
+  position: 'absolute', top: 12, [side]: 12, zIndex: 2, pointerEvents: 'none',
   fontSize: 12, fontWeight: 800, lineHeight: 1.35, letterSpacing: '-0.01em',
   textAlign: side === 'right' ? 'center' : 'left', wordBreak: 'keep-all',
+  textShadow: SHADE,
 });
 
 const REPS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
@@ -218,14 +222,9 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     background: on ? SET_BG : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}`,
   });
   const label = (t) => <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>{t}</span>;
-  // 접혀 있을 때는 꼭 알아야 할 것만 — 숫자는 연보라로 짚어 준다.
-  const num = (v) => <b style={{ color: PURPLE, fontWeight: 900 }}>{v}</b>;
-  const optSummary = (
-    <>
-      기본 설정: {num(reps)}회 · {num(sets)}세트
-      {totalSec > 0 && <> ㅣ 모두 {num(Math.floor(totalSec / 60))}분 {num(String(totalSec % 60).padStart(2, '0'))}초</>}
-    </>
-  );
+  // 접혀 있을 때는 꼭 알아야 할 것만.
+  const optSummary = `기본 설정: ${reps}회 · ${sets}세트`
+    + (totalSec > 0 ? ` ㅣ 모두 ${mmss(totalSec)}` : '');
   const optBox = (
     <div style={{ marginBottom: 10 }}>
       <button type="button" onClick={() => setOptOpen((o) => !o)}
@@ -290,7 +289,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
         {/* 동작 이름표(Z·M 공통) + 제목 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
           {card.thumb_text && (
-            <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 900, color: PURPLE,
+            <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 900, color: KIND_INK[card.kind] || PURPLE,
+              background: '#fff', borderRadius: 10, padding: '5px 10px', boxShadow: `inset 0 0 0 1px ${LINE}`,
               lineHeight: 1.25, textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
               {nameLines(card.thumb_text).map((ln, i) => <span key={i}>{ln}</span>)}
             </span>
@@ -384,9 +384,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
         <div style={{ position: 'relative' }}>
           <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false} clip={card.video_url || ''} emptyText="동작 영상 없음" />
           {/* 오른쪽 아래 — 조회·저장 */}
-          <div style={{ position: 'absolute', right: 10, bottom: 10, zIndex: 2, pointerEvents: 'none',
-            background: GLASS, borderRadius: 10, padding: '5px 9px', color: INK,
-            fontSize: 11, fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+          <div style={{ position: 'absolute', right: 12, bottom: 12, zIndex: 2, pointerEvents: 'none', color: INK,
+            fontSize: 11.5, fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap', textShadow: SHADE }}>
             조회 {fmt(card.view_count)} · 저장 {fmt(card.save_count)}
           </div>
           {/* 왼쪽 위 — 타겟 부위(연보라) / 연관 부위(검정) */}
