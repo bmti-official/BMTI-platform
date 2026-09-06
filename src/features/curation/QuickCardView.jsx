@@ -76,6 +76,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   // '좌우 번갈아'는 영상이 한 번 돌 때마다 좌우가 바뀐다.
   const [altFlip, setAltFlip] = useState(false);
   const twoPhase = card.has_side && side === 'both';
+  // 지금이 몇 번째 세트인지 나타내는 이름표 — 멘트를 다 들었는지 이걸로 가린다.
+  const setKey = `${secondSide ? 'L' : 'R'}${done}`;
   const allDone = started && done >= sets && (!twoPhase || secondSide);
   // 화면에서 영상을 좌우로 뒤집어야 하는가
   const mirrored = card.has_side && (side === 'left' || (side === 'both' && secondSide) || (side === 'alt' && altFlip));
@@ -86,7 +88,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const rounds = sets * (twoPhase ? 2 : 1);
   const totalSec = perSet > 0 ? perSet * rounds + restSec * Math.max(0, rounds - 1) : 0;
 
-  const restart = () => { setDone(0); setRep(0); setRest(0); setSecondSide(false); setAltFlip(false); };
+  const restart = () => { setDone(0); setRep(0); setRest(0); setSecondSide(false); setAltFlip(false); setMentDone(''); };
 
   // 영상 한 바퀴가 끝날 때마다 — 세고, 필요하면 세트를 넘기고, 다시 튼다.
   const onRepEnd = (e) => {
@@ -103,26 +105,28 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
   const openUrl = (tone === 'm' ? card.voice_open_m : card.voice_open_z) || '';
   const setClips = ((tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || []).filter(Boolean);
-  const hasVoice = !!(openUrl || setClips.length || Object.keys(common).length);
   const [voiceOn, setVoiceOn] = useState(true);
   const [vol, setVol] = useState(0.85);
   const audioRef = useRef(null);
   // 설명을 들으며 할지, 숫자만 들을지 — 손님이 고른다.
   const [guide, setGuide] = useState(true);
-  // 세트 멘트가 흐르는 동안에는 숫자를 세지 않는다.
-  const [mentOn, setMentOn] = useState(false);
+  // 세트 멘트가 흐르는 동안에는 숫자를 세지 않는다. 멘트를 다 들은 세트를 적어 둔다.
+  const [mentDone, setMentDone] = useState('');
   // 모든 카드가 함께 쓰는 소리 — 숫자·쉬는 시간·마무리
   const [common, setCommon] = useState({});
   const countRef = useRef(null);
   useEffect(() => { let alive = true; loadVoiceAssets().then((m) => { if (alive) setCommon(m); }); return () => { alive = false; }; }, []);
   const commonAt = (kind, n) => common[voiceKey(kind, tone === 'm' ? 'm' : 'z', n)] || '';
+  // 지금 세트 멘트가 흐르는 중인가 — 설명 모드이고, 아직 다 듣지 않았을 때만.
+  const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !!setClips.length && mentDone !== setKey;
+  const hasVoice = !!(openUrl || setClips.length || Object.keys(common).length);
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
   const nowVoice = !started ? ''
     : stage === 'open' ? openUrl
       : rest > 0 ? commonAt('rest', restSec)
         : allDone ? commonAt('finish', 0)
-          : (guide ? (setClips[Math.min(done, setClips.length - 1)] || '') : '');
+          : (mentOn ? (setClips[Math.min(done, setClips.length - 1)] || '') : '');
 
   const beginOpening = !skipOpening && !heardOpening && !!openUrl;
   const start = () => {
@@ -140,13 +144,6 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     if (!voiceOn) return;
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
   }, [nowVoice, voiceOn, vol]);
-
-  // 세트가 바뀌면 그 세트의 멘트가 처음부터 흐른다(설명 모드일 때만).
-  useEffect(() => {
-    if (stage !== 'move') return;
-    setMentOn(guide && rest === 0 && !allDone && !!setClips.length);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done, secondSide, stage, guide]);
 
   // 숫자 세기 — 멘트가 끝난 뒤부터, 한 바퀴마다 하나씩.
   useEffect(() => {
@@ -312,7 +309,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       {started && hasVoice && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
           <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
-            onEnded={() => { if (stage === 'open') setStage('move'); else setMentOn(false); }} style={{ display: 'none' }} />
+            onEnded={() => { if (stage === 'open') setStage('move'); else setMentDone(setKey); }} style={{ display: 'none' }} />
           <audio ref={countRef} src={commonAt('count', rep + 1) || undefined} preload="auto" style={{ display: 'none' }} />
           <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
             style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,
