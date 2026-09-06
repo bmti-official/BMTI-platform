@@ -20,7 +20,7 @@ const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 �
 // 영상 안 모서리에 붙는 글씨 — 몇 세트째 · 몇 번째. 배경 없이 글씨만 얹는다.
 const corner = {
   position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
-  fontSize: 14.5, fontWeight: 900, color: INK, whiteSpace: 'nowrap', letterSpacing: '-0.01em',
+  fontSize: 18, fontWeight: 900, color: INK, whiteSpace: 'nowrap', letterSpacing: '-0.01em',
   textShadow: '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)',
 };
 const dropdown = {
@@ -223,12 +223,12 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
-          <span style={{ ...corner, left: 12 }}>
+          <span style={{ ...corner, left: '50%', transform: 'translateX(-50%)' }}>
             {allDone ? '다 끝냈어요' : (
               <>
                 <b style={{ color: PURPLE, fontWeight: 900 }}>
                   {twoPhase ? (secondSide ? '왼쪽 ' : '오른쪽 ') : ''}{done + 1}
-                </b>세트째
+                </b> 세트 중
               </>
             )}
           </span>
