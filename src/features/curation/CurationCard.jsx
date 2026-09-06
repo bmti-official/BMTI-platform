@@ -12,17 +12,25 @@ import AiNote from './AiNote';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
 const HILITE = '#E7E0F7';   // 형광펜 연보라
 const MARKER = '#FBEFB6';   // 목차에 대충 그은 옐로우 형광펜
-// 바로카드 종류마다 표지 문구에 그어 주는 형광펜 색
-const KIND_MARK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#7FB77E' };
-// 손으로 대충 그은 형광펜 — 양 끝이 흐리고 글자 아래쪽만 덮는다
-const markPaint = (c) => ({
-  background: `linear-gradient(101deg, ${c}00 0.4%, ${c} 2.4%, ${c} 96%, ${c}00 99.4%)`,
-  backgroundSize: '100% 62%', backgroundPosition: '0 82%', backgroundRepeat: 'no-repeat',
-  padding: '0 4px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
-});
 const PURPLE = '#7E6FC9';   // 답변에서 짚어 주는 연보라 글씨
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
+// 바로카드 종류마다 표지 문구에 그어 주는 형광펜 색
+const KIND_MARK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#7FB77E' };
+// 손으로 대충 그은 형광펜 — 글자 아래쪽만 덮되, 양 끝은 붓이 삐져나간 것처럼 지저분하게.
+// 몸통 한 겹 위에 붓 자국 세 겹을 얹었다. 자국은 타원으로 번지게 해 네모나 보이지 않는다.
+const markPaint = (c) => ({
+  backgroundImage: [
+    `radial-gradient(closest-side, ${c}E6 30%, ${c}00 100%)`,   // 왼쪽 — 위로 튄 자국
+    `radial-gradient(closest-side, ${c}D9 26%, ${c}00 100%)`,   // 오른쪽 — 아래로 흘러 빠진 자국
+    `radial-gradient(closest-side, ${c}B3 20%, ${c}00 100%)`,   // 오른쪽 위로 한 번 더 스친 자국
+    `linear-gradient(101deg, ${c}00 0%, ${c}73 3%, ${c} 8%, ${c} 92%, ${c}66 97%, ${c}00 100%)`,
+  ].join(', '),
+  backgroundSize: '24% 52%, 28% 46%, 15% 30%, 100% 62%',
+  backgroundPosition: '-7% 24%, 107% 118%, 104% 30%, 0 82%',
+  backgroundRepeat: 'no-repeat',
+  padding: '0 4px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
+});
 
 // 누끼 캐릭터 한 마리 — 그림 파일마다 다른 여백을 걷어내고 키를 맞춰 세운다.
 export function CharPic({ src, code, h = 38 }) {
