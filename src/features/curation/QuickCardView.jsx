@@ -218,8 +218,14 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     background: on ? SET_BG : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}`,
   });
   const label = (t) => <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>{t}</span>;
-  const optSummary = `${reps}회 · ${sets}세트 · ${restSec}초 쉼 · ${guide ? '설명 들으며' : '숫자만'}`
-    + (card.has_side ? ` · ${SIDE_KO[side]}` : '');
+  // 접혀 있을 때는 꼭 알아야 할 것만 — 숫자는 연보라로 짚어 준다.
+  const num = (v) => <b style={{ color: PURPLE, fontWeight: 900 }}>{v}</b>;
+  const optSummary = (
+    <>
+      기본 설정: {num(reps)}회 · {num(sets)}세트
+      {totalSec > 0 && <> ㅣ 모두 {num(Math.floor(totalSec / 60))}분 {num(String(totalSec % 60).padStart(2, '0'))}초</>}
+    </>
+  );
   const optBox = (
     <div style={{ marginBottom: 10 }}>
       <button type="button" onClick={() => setOptOpen((o) => !o)}
@@ -284,8 +290,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
         {/* 동작 이름표(Z·M 공통) + 제목 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
           {card.thumb_text && (
-            <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: NAME_INK, background: NAME_BG,
-              borderRadius: nameLines(card.thumb_text).length > 1 ? 15 : 999, padding: '5px 11px',
+            <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 900, color: PURPLE,
               lineHeight: 1.25, textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
               {nameLines(card.thumb_text).map((ln, i) => <span key={i}>{ln}</span>)}
             </span>
