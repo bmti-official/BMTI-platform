@@ -18,6 +18,7 @@ const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리�
 const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
+const BOX_BG = '#F7F5F0';                                  // 접혀 있는 고르는 칸의 바탕
 // 영상 안 모서리에 붙는 글씨 — 몇 세트째 · 몇 번째. 배경 없이 글씨만 얹는다.
 const corner = {
   position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
@@ -88,7 +89,27 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const rounds = sets * (twoPhase ? 2 : 1);
   const totalSec = perSet > 0 ? perSet * rounds + restSec * Math.max(0, rounds - 1) : 0;
 
-  const restart = () => { setDone(0); setRep(0); setRest(0); setSecondSide(false); setAltFlip(false); setMentDone(''); };
+  const restart = () => { setDone(0); setRep(0); setRest(0); setSecondSide(false); setAltFlip(false); setMentDone(''); setPaused(false); };
+
+  // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
+  const togglePause = () => {
+    const next = !paused;
+    setPaused(next);
+    const v = clipRef.current, a = audioRef.current, c = countRef.current;
+    [v, a, c].forEach((el) => { if (!el) return; try { if (next) el.pause(); } catch { /* 무시 */ } });
+    if (!next && v && rest === 0 && !allDone) { try { v.play().catch(() => {}); } catch { /* 무시 */ } }
+  };
+
+  // 따라하는 중에 설정을 바꾸면 처음부터 다시 시작한다 — 먼저 물어본다.
+  const change = (fn) => (v) => {
+    if (stage === 'move') {
+      if (!window.confirm('설정을 바꾸면 처음부터 다시 시작해요. 바꿀까요?')) return;
+      fn(v);
+      restart();
+      return;
+    }
+    fn(v);
+  };
 
   // 영상 한 바퀴가 끝날 때마다 — 세고, 필요하면 세트를 넘기고, 다시 튼다.
   const onRepEnd = (e) => {
@@ -109,7 +130,10 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const [vol, setVol] = useState(0.85);
   const audioRef = useRef(null);
   // 설명을 들으며 할지, 숫자만 들을지 — 손님이 고른다.
-  const [guide, setGuide] = useState(true);
+  const [guide, setGuide] = useState(true);   // 기본은 '설명 들으며'
+  // 고르는 칸은 접어 두고, 바꾸고 싶은 사람만 펼친다.
+  const [optOpen, setOptOpen] = useState(false);
+  const [paused, setPaused] = useState(false);
   // 세트 멘트가 흐르는 동안에는 숫자를 세지 않는다. 멘트를 다 들은 세트를 적어 둔다.
   const [mentDone, setMentDone] = useState('');
   // 모든 카드가 함께 쓰는 소리 — 숫자·쉬는 시간·마무리
@@ -160,6 +184,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   useEffect(() => {
     if (rest > 0) {
       resting.current = true;
+      if (paused) return undefined;
       const t = setTimeout(() => setRest((n) => n - 1), 1000);
       return () => clearTimeout(t);
     }
@@ -169,7 +194,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       if (v) { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } }
     }
     return undefined;
-  }, [rest]);
+  }, [rest, paused]);
 
   // 소리가 막혀 오프닝이 끝나지 않는 경우를 대비해, 스무 해 세고는 동작으로 넘어간다.
   useEffect(() => {
@@ -184,6 +209,68 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const chars = (charImages || []).slice(0, 4);
   const openName = String(CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
+
+  // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
+  const pillBtn = (on) => ({
+    padding: '0 10px', height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+    fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: on ? SET_INK : SUB,
+    background: on ? SET_BG : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}`,
+  });
+  const label = (t) => <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>{t}</span>;
+  const optSummary = `${reps}회 · ${sets}세트 · ${restSec}초 쉼 · ${guide ? '설명 들으며' : '숫자만'}`
+    + (card.has_side ? ` · ${SIDE_KO[side]}` : '');
+  const optBox = (
+    <div style={{ marginBottom: 10 }}>
+      <button type="button" onClick={() => setOptOpen((o) => !o)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 11,
+          border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: BOX_BG, textAlign: 'left' }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {optSummary}
+        </span>
+        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>{optOpen ? '접기 ▴' : '바꾸기 ▾'}</span>
+      </button>
+      {optOpen && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '9px 2px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {label('횟수')}
+            <select value={reps} onChange={(e) => change(setReps)(Number(e.target.value))} style={dropdown}>
+              {REPS.map((n) => <option key={n} value={n}>{n}회</option>)}
+            </select>
+            {label('세트')}
+            <select value={sets} onChange={(e) => change(setSets)(Number(e.target.value))} style={dropdown}>
+              {SETS.map((n) => <option key={n} value={n}>{n}세트</option>)}
+            </select>
+            {label('쉬는 시간')}
+            <select value={restSec} onChange={(e) => change(setRestSec)(Number(e.target.value))} style={dropdown}>
+              {RESTS.map((n) => <option key={n} value={n}>{n}초</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {label('안내')}
+            {[[true, '설명 들으며'], [false, '숫자만']].map(([g, lb]) => (
+              <button key={lb} type="button" onClick={() => change(setGuide)(g)} style={pillBtn(g === guide)}>{lb}</button>
+            ))}
+            {totalSec > 0 && (
+              <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                모두 {mmss(totalSec)}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {card.has_side && (
+              <>
+                {label('좌우')}
+                {sideOpts.map(([k, lb]) => (
+                  <button key={k} type="button" onClick={() => change(setSide)(k)} style={pillBtn(k === side)}>{lb}</button>
+                ))}
+              </>
+            )}
+            <span style={{ marginLeft: 'auto' }}><KeepChip onSave={onSave} /></span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
@@ -210,8 +297,15 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       {stage === 'move' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 15px 10px' }}>
           <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: INK, wordBreak: 'keep-all' }}>
-            총 {reps}회 · {sets}세트{card.has_side ? ` · ${SIDE_KO[side]}` : ''}
+            총 {reps}회 · {sets}세트{card.has_side ? ` · ${SIDE_KO[side]}` : ''}{paused ? ' · 멈춤' : ''}
           </span>
+          <button type="button" onClick={togglePause}
+            style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
+              border: 'none', background: paused ? SET_BG : '#fff', color: paused ? SET_INK : SUB,
+              boxShadow: paused ? 'none' : `inset 0 0 0 1px ${LINE}`, cursor: 'pointer', lineHeight: 1.2,
+              display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span>{paused ? '이어서' : '일시'}</span><span>{paused ? '하기' : '정지'}</span>
+          </button>
           <button type="button" onClick={() => { restart(); setStage('move'); }}
             style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
               border: 'none', background: NAME_BG, color: NAME_INK, cursor: 'pointer', lineHeight: 1.2,
@@ -250,14 +344,13 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
+          {card.has_side && !allDone && (
+            <span style={{ ...corner, left: 12, color: PURPLE }}>
+              {twoPhase ? (secondSide ? '왼쪽' : '오른쪽') : SIDE_KO[side]}
+            </span>
+          )}
           <span style={{ ...corner, left: '50%', transform: 'translateX(-50%)' }}>
-            {allDone ? '다 끝냈어요' : (
-              <>
-                <b style={{ color: PURPLE, fontWeight: 900 }}>
-                  {twoPhase ? (secondSide ? '왼쪽 ' : '오른쪽 ') : ''}{done + 1}
-                </b> 세트 중
-              </>
-            )}
+            {allDone ? '다 끝냈어요' : (<><b style={{ color: PURPLE, fontWeight: 900 }}>{done + 1}</b> 세트 중</>)}
           </span>
           <span style={{ ...corner, right: 12, fontVariantNumeric: 'tabular-nums' }}>
             <b style={{ color: PURPLE, fontWeight: 900 }}>{Math.min(rep + 1, reps)}</b>/{reps}
@@ -326,62 +419,13 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       )}
 
       <div style={{ padding: '12px 15px 15px' }}>
-        {/* 몇 번·몇 세트 할지 — 시작 전에만 고른다 */}
-        {stage !== 'move' && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 10 }}>
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>횟수</span>
-              <select value={reps} onChange={(e) => setReps(Number(e.target.value))} style={dropdown}>
-                {REPS.map((n) => <option key={n} value={n}>{n}회</option>)}
-              </select>
-              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>세트</span>
-              <select value={sets} onChange={(e) => setSets(Number(e.target.value))} style={dropdown}>
-                {SETS.map((n) => <option key={n} value={n}>{n}세트</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>쉬는 시간</span>
-              <select value={restSec} onChange={(e) => setRestSec(Number(e.target.value))} style={dropdown}>
-                {RESTS.map((n) => <option key={n} value={n}>{n}초</option>)}
-              </select>
-              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>안내</span>
-              {[[true, '설명 들으며'], [false, '숫자만']].map(([g, lb]) => (
-                <button key={lb} type="button" onClick={() => setGuide(g)}
-                  style={{ padding: '0 10px', height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: g === guide ? SET_INK : SUB,
-                    background: g === guide ? SET_BG : '#fff', boxShadow: g === guide ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
-                  {lb}
-                </button>
-              ))}
-            </div>
-            {card.has_side && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>좌우</span>
-                {sideOpts.map(([k, lb]) => (
-                  <button key={k} type="button" onClick={() => setSide(k)}
-                    style={{ padding: '0 10px', height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: k === side ? SET_INK : SUB,
-                      background: k === side ? SET_BG : '#fff', boxShadow: k === side ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
-                    {lb}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-            <KeepChip onSave={onSave} />
-            {totalSec > 0 && (
-              <span style={{ fontSize: 11, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>모두 {mmss(totalSec)}</span>
-            )}
-          </div>
-        </div>
-        )}
+        {stage !== 'move' && optBox}
         <button onClick={() => { if (started) { if (onMakeRoutine) onMakeRoutine(card); } else start(); }}
           style={{ width: '100%', padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
           {started ? '플리 루틴 만들기 ＋' : '바로 따라하기 →'}
         </button>
+        {stage === 'move' && <div style={{ marginTop: 10 }}>{optBox}</div>}
         <AiNote top={10} />
         {script && (
           <details style={{ marginTop: 10 }}>
