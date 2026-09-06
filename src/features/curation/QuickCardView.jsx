@@ -18,7 +18,6 @@ const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리�
 const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
-const BOX_BG = '#F7F5F0';                                  // 접혀 있는 고르는 칸의 바탕
 // 영상 안 모서리에 붙는 글씨 — 몇 세트째 · 몇 번째. 배경 없이 글씨만 얹는다.
 const corner = {
   position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
@@ -220,17 +219,18 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const optSummary = `${reps}회 · ${sets}세트 · ${restSec}초 쉼 · ${guide ? '설명 들으며' : '숫자만'}`
     + (card.has_side ? ` · ${SIDE_KO[side]}` : '');
   const optBox = (
-    <div style={{ marginBottom: 10 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 10 }}>
+      <div style={{ flex: 1, minWidth: 0, background: SET_BG, borderRadius: 12, padding: '3px 3px 3px' }}>
       <button type="button" onClick={() => setOptOpen((o) => !o)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 11,
-          border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: BOX_BG, textAlign: 'left' }}>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 9px', borderRadius: 10,
+          border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', textAlign: 'left' }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, color: SET_INK, lineHeight: 1.45, wordBreak: 'keep-all' }}>
           {optSummary}
         </span>
-        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>{optOpen ? '접기 ▴' : '바꾸기 ▾'}</span>
+        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SET_INK, opacity: 0.7, paddingTop: 1 }}>{optOpen ? '접기 ▴' : '바꾸기 ▾'}</span>
       </button>
       {optOpen && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '9px 2px 0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '4px 9px 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {label('횟수')}
             <select value={reps} onChange={(e) => change(setReps)(Number(e.target.value))} style={dropdown}>
@@ -256,19 +256,18 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
               </span>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {card.has_side && (
-              <>
-                {label('좌우')}
-                {sideOpts.map(([k, lb]) => (
-                  <button key={k} type="button" onClick={() => change(setSide)(k)} style={pillBtn(k === side)}>{lb}</button>
-                ))}
-              </>
-            )}
-            <span style={{ marginLeft: 'auto' }}><KeepChip onSave={onSave} /></span>
-          </div>
+          {card.has_side && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {label('좌우')}
+              {sideOpts.map(([k, lb]) => (
+                <button key={k} type="button" onClick={() => change(setSide)(k)} style={pillBtn(k === side)}>{lb}</button>
+              ))}
+            </div>
+          )}
         </div>
       )}
+      </div>
+      <KeepChip onSave={onSave} />
     </div>
   );
 

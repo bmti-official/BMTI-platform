@@ -11,7 +11,6 @@ import { parseArticle } from './pasteParse';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
 import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
-import QuickCardView from '../features/curation/QuickCardView';
 import CharPicker from './CharPicker';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
@@ -497,8 +496,7 @@ export default function CurationAdmin() {
                 </div>
                 <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
-                  <CurationDetail item={preview} tone={tone} cards={picked} charImages={charImages} charCodes={charCodes}
-                    renderCard={(c) => <QuickCardView card={c} tone={tone} />} />
+                  <CurationDetail item={preview} tone={tone} cards={picked} charImages={charImages} charCodes={charCodes} />
                 </div>
               </div>
             );

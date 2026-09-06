@@ -243,7 +243,7 @@ const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boo
 ));
 
 // 본문
-export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charImage, charImages, charCodes, onSave }) {
+export function CurationDetail({ item, tone = 'z', cards = [], onOpenCard, charImage, charImages, charCodes, onSave }) {
   const { title, body } = pickCurationTone(item, tone);
   const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
   const codes = charCodes || [];
@@ -346,9 +346,20 @@ export function CurationDetail({ item, tone = 'z', cards = [], renderCard, charI
       {cards.length > 0 && (
         <section style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
           <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 12 }}>이 글과 함께 해보면 좋아요</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {cards.map((c) => <div key={c.id}>{renderCard ? renderCard(c) : null}</div>)}
+          <div className="card-row" style={{ display: 'flex', gap: 10, overflowX: 'auto', scrollSnapType: 'x mandatory', padding: '2px 2px 6px', margin: '0 -2px' }}>
+            {cards.map((c) => (
+              <button key={c.id} type="button" onClick={() => onOpenCard && onOpenCard(c)}
+                style={{ flex: '0 0 48%', scrollSnapAlign: 'start', border: 'none', background: 'transparent', padding: 0,
+                  cursor: onOpenCard ? 'pointer' : 'default', fontFamily: 'inherit', textAlign: 'left' }}>
+                <CurationThumb item={c} radius={12} ratio="4 / 5" showRead={false} clip={c.video_url || ''} emptyText="동작 영상 없음" />
+                {/* 표지 아래 — 조회·저장만 */}
+                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: SUB, marginTop: 6, whiteSpace: 'nowrap' }}>
+                  조회 {fmtCount(c.view_count)} · 저장 {fmtCount(c.save_count)}
+                </span>
+              </button>
+            ))}
           </div>
+          <style>{'.card-row{scrollbar-width:none;-ms-overflow-style:none}.card-row::-webkit-scrollbar{display:none}'}</style>
         </section>
       )}
 
