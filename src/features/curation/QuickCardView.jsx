@@ -12,15 +12,16 @@ import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
+const PURPLE = '#8B7BD8';                 // 세트·횟수에서 앞자리를 짚어 주는 연보라
 const KEEP_SHADOW = '0 3px 10px rgba(217,185,106,0.45)';   // 버튼에 깔리는 연한 옐로우 그림자
 const GLASS = '#FDF2CE';                  // 표지 위 글씨를 받쳐 주는 연한 옐로우(불투명)
 const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 이름표
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
-// 영상 안 모서리에 붙는 작은 표 — 몇 세트째 · 몇 번째
+// 영상 안 모서리에 붙는 글씨 — 몇 세트째 · 몇 번째. 배경 없이 글씨만 얹는다.
 const corner = {
-  position: 'absolute', top: 10, zIndex: 2, pointerEvents: 'none',
-  background: GLASS, borderRadius: 10, padding: '5px 9px',
-  fontSize: 11.5, fontWeight: 800, color: NAME_INK, whiteSpace: 'nowrap',
+  position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
+  fontSize: 14.5, fontWeight: 900, color: INK, whiteSpace: 'nowrap', letterSpacing: '-0.01em',
+  textShadow: '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)',
 };
 const dropdown = {
   height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
@@ -46,6 +47,7 @@ const overlay = (side) => ({
 
 const REPS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const SETS = [3, 4, 5];
+const RESTS = [5, 10, 15, 20];
 // right/left  한쪽만 · both  오른쪽을 다 하고 왼쪽으로 · alt  한 번 할 때마다 좌우가 바뀐다
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
@@ -61,6 +63,11 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const [done, setDone] = useState(0);
   // 영상이 한 바퀴 돌 때마다 한 번씩 세고, 정한 횟수를 채우면 다음 세트로 넘어간다.
   const [rep, setRep] = useState(0);
+  // 세트 사이 쉬는 시간 — 고른 초만큼 세다가 저절로 다음 세트를 시작한다.
+  const [restSec, setRestSec] = useState(10);
+  const [rest, setRest] = useState(0);
+  const clipRef = useRef(null);
+  const resting = useRef(false);
   // 좌우가 나뉘는 동작이면 어느 쪽을 할지 고른다.
   const [side, setSide] = useState('both');
   // '한쪽씩 둘 다'는 오른쪽을 다 하고 왼쪽으로 넘어간다. 지금 왼쪽 차례인가.
@@ -75,18 +82,21 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const [clipSec, setClipSec] = useState(0);
   const oneRep = clipSec > 0 ? clipSec : card.duration_sec;
   const perSet = oneRep > 0 ? Math.round(oneRep * reps) : 0;
-  const totalSec = perSet > 0 ? perSet * sets * (twoPhase ? 2 : 1) : 0;
+  const rounds = sets * (twoPhase ? 2 : 1);
+  const totalSec = perSet > 0 ? perSet * rounds + restSec * Math.max(0, rounds - 1) : 0;
 
-  const restart = () => { setDone(0); setRep(0); setSecondSide(false); setAltFlip(false); };
+  const restart = () => { setDone(0); setRep(0); setRest(0); setSecondSide(false); setAltFlip(false); };
 
   // 영상 한 바퀴가 끝날 때마다 — 세고, 필요하면 세트를 넘기고, 다시 튼다.
   const onRepEnd = (e) => {
     const v = e.currentTarget;
     const again = () => { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } };
+    // 세트를 넘길 땐 곧장 잇지 않고, 고른 만큼 쉬었다 간다.
+    const breathe = () => { try { v.pause(); } catch { /* 무시 */ } setRest(restSec); };
     if (side === 'alt') setAltFlip((f) => !f);
     if (rep + 1 < reps) { setRep(rep + 1); again(); return; }
-    if (done + 1 < sets) { setRep(0); setDone(done + 1); again(); return; }
-    if (twoPhase && !secondSide) { setRep(0); setDone(0); setSecondSide(true); setAltFlip(false); again(); return; }
+    if (done + 1 < sets) { setRep(0); setDone(done + 1); breathe(); return; }
+    if (twoPhase && !secondSide) { setRep(0); setDone(0); setSecondSide(true); setAltFlip(false); breathe(); return; }
     setRep(reps); setDone(sets);      // 다 채웠다. 여기서 멈춘다
   };
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
@@ -118,6 +128,21 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     if (!voiceOn) return;
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
   }, [nowVoice, voiceOn, vol]);
+
+  // 한 해씩 줄이다가 0이 되면 다음 세트를 저절로 시작한다.
+  useEffect(() => {
+    if (rest > 0) {
+      resting.current = true;
+      const t = setTimeout(() => setRest((n) => n - 1), 1000);
+      return () => clearTimeout(t);
+    }
+    if (resting.current) {
+      resting.current = false;
+      const v = clipRef.current;
+      if (v) { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } }
+    }
+    return undefined;
+  }, [rest]);
 
   // 소리가 막혀 오프닝이 끝나지 않는 경우를 대비해, 스무 해 세고는 동작으로 넘어간다.
   useEffect(() => {
@@ -191,19 +216,41 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5
         <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <video className="bmti-clip" src={card.video_url} autoPlay muted playsInline
+          <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
             onEnded={onRepEnd}
             style={{ width: '100%', height: '100%', objectFit: 'cover',
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
-          <span style={{ ...corner, left: 10 }}>
-            {allDone ? '다 끝냈어요' : `${twoPhase ? (secondSide ? '왼쪽 ' : '오른쪽 ') : ''}${done + 1}세트째`}
+          <span style={{ ...corner, left: 12 }}>
+            {allDone ? '다 끝냈어요' : (
+              <>
+                <b style={{ color: PURPLE, fontWeight: 900 }}>
+                  {twoPhase ? (secondSide ? '왼쪽 ' : '오른쪽 ') : ''}{done + 1}
+                </b>세트째
+              </>
+            )}
           </span>
-          <span style={{ ...corner, right: 10, fontVariantNumeric: 'tabular-nums' }}>
-            {Math.min(rep + 1, reps)}/{reps}
+          <span style={{ ...corner, right: 12, fontVariantNumeric: 'tabular-nums' }}>
+            <b style={{ color: PURPLE, fontWeight: 900 }}>{Math.min(rep + 1, reps)}</b>/{reps}
           </span>
+          {/* 쉬는 시간 — 영상을 멈추고 남은 초를 센다 */}
+          {rest > 0 && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: 'rgba(255,255,255,0.86)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: SUB }}>쉬는 시간</span>
+              <span style={{ fontSize: 54, fontWeight: 900, color: PURPLE, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{rest}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: SUB }}>
+                다음은 {twoPhase ? (secondSide ? '왼쪽 ' : '오른쪽 ') : ''}{done + 1}세트째예요
+              </span>
+              <button type="button" onClick={() => setRest(0)}
+                style={{ marginTop: 6, border: 'none', background: NAME_BG, color: NAME_INK, borderRadius: 999,
+                  padding: '7px 15px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                바로 시작 →
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5). 영상이 있으면 0~5초가 소리 없이 돌아간다.
@@ -263,6 +310,10 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
               <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>세트</span>
               <select value={sets} onChange={(e) => setSets(Number(e.target.value))} style={dropdown}>
                 {SETS.map((n) => <option key={n} value={n}>{n}세트</option>)}
+              </select>
+              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>쉬는 시간</span>
+              <select value={restSec} onChange={(e) => setRestSec(Number(e.target.value))} style={dropdown}>
+                {RESTS.map((n) => <option key={n} value={n}>{n}초</option>)}
               </select>
             </div>
             {card.has_side && (
