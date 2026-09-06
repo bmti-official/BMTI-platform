@@ -55,6 +55,8 @@ const overlay = (side) => ({
 const REPS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const SETS = [3, 4, 5];
 const RESTS = [5, 10, 15, 20];
+// 오른쪽을 다 하고 왼쪽으로 넘어갈 땐 자세를 고쳐 누워야 해서 넉넉히 쉰다.
+const SWITCH_REST = 20;
 // right/left  한쪽만 · both  오른쪽을 다 하고 왼쪽으로 · alt  한 번 할 때마다 좌우가 바뀐다
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
@@ -73,6 +75,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   // 세트 사이 쉬는 시간 — 고른 초만큼 세다가 저절로 다음 세트를 시작한다.
   const [restSec, setRestSec] = useState(10);
   const [rest, setRest] = useState(0);
+  // 지금 쉬는 시간이 몇 초짜리인지 — 멘트를 고를 때 쓴다(자리 바꿀 땐 20초).
+  const [restLen, setRestLen] = useState(10);
   const clipRef = useRef(null);
   const resting = useRef(false);
   // 좌우가 나뉘는 동작이면 어느 쪽을 할지 고른다.
@@ -92,9 +96,10 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const oneRep = clipSec > 0 ? clipSec : card.duration_sec;
   const perSet = oneRep > 0 ? Math.round(oneRep * reps) : 0;
   const rounds = sets * (twoPhase ? 2 : 1);
-  const totalSec = perSet > 0 ? perSet * rounds + restSec * Math.max(0, rounds - 1) : 0;
+  const restTotal = twoPhase ? restSec * (sets - 1) * 2 + SWITCH_REST : restSec * Math.max(0, sets - 1);
+  const totalSec = perSet > 0 ? perSet * rounds + restTotal : 0;
 
-  const restart = () => { setDone(0); setRep(0); setRest(0); setSecondSide(false); setAltFlip(false); setMentDone(''); setPaused(false); };
+  const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSecondSide(false); setAltFlip(false); setMentDone(''); setPaused(false); };
 
   // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
   const togglePause = () => {
@@ -121,11 +126,11 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     const v = e.currentTarget;
     const again = () => { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } };
     // 세트를 넘길 땐 곧장 잇지 않고, 고른 만큼 쉬었다 간다.
-    const breathe = () => { try { v.pause(); } catch { /* 무시 */ } setRest(restSec); };
+    const breathe = (n) => { try { v.pause(); } catch { /* 무시 */ } setRestLen(n); setRest(n); };
     if (side === 'alt') setAltFlip((f) => !f);
     if (rep + 1 < reps) { setRep(rep + 1); again(); return; }
-    if (done + 1 < sets) { setRep(0); setDone(done + 1); breathe(); return; }
-    if (twoPhase && !secondSide) { setRep(0); setDone(0); setSecondSide(true); setAltFlip(false); breathe(); return; }
+    if (done + 1 < sets) { setRep(0); setDone(done + 1); breathe(restSec); return; }
+    if (twoPhase && !secondSide) { setRep(0); setDone(0); setSecondSide(true); setAltFlip(false); breathe(SWITCH_REST); return; }
     setRep(reps); setDone(sets);      // 다 채웠다. 여기서 멈춘다
   };
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
@@ -153,7 +158,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const [heardOpening, setHeardOpening] = useState(false);
   const nowVoice = !started ? ''
     : stage === 'open' ? openUrl
-      : rest > 0 ? commonAt('rest', restSec)
+      : rest > 0 ? commonAt('rest', restLen)
         : allDone ? commonAt('finish', 0)
           : (mentOn ? (setClips[Math.min(done, setClips.length - 1)] || '') : '');
 
@@ -230,12 +235,11 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       <button type="button" onClick={() => setOptOpen((o) => !o)}
         style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '9px 11px', borderRadius: 11,
           border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-          background: optOpen ? BOX_BG : SET_BG }}>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, lineHeight: 1.45, wordBreak: 'keep-all',
-          color: optOpen ? INK : SET_INK }}>
+          background: optOpen ? BOX_BG : '#fff', boxShadow: optOpen ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, lineHeight: 1.45, wordBreak: 'keep-all', color: INK }}>
           {optSummary}
         </span>
-        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, paddingTop: 1, color: optOpen ? SUB : SET_INK, opacity: optOpen ? 1 : 0.7 }}>
+        <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, paddingTop: 1, color: SUB }}>
           {optOpen ? '접기 ▴' : '바꾸기 ▾'}
         </span>
       </button>
@@ -366,7 +370,9 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
           {rest > 0 && (
             <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: 'rgba(255,255,255,0.86)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: SUB }}>쉬는 시간</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: SUB }}>
+                {twoPhase && secondSide && done === 0 ? '자리 바꾸는 시간' : '쉬는 시간'}
+              </span>
               <span style={{ fontSize: 54, fontWeight: 900, color: PURPLE, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{rest}</span>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: SUB }}>
                 다음은 {twoPhase ? (secondSide ? '왼쪽 ' : '오른쪽 ') : ''}{done + 1}세트째예요
