@@ -5,6 +5,7 @@ import QuickCardAdmin from './QuickCardAdmin';
 import RoutineAdmin from './RoutineAdmin';
 import SearchPreview from './SearchPreview';
 import FlowStudio from './FlowStudio';
+import VoiceCommon from './VoiceCommon';
 import MetricsView from './MetricsView';
 import { confirmLeave } from './dirty';
 
@@ -270,6 +271,7 @@ function Dashboard({ session }) {
           {tabBtn('routines', '🎵 플레이리스트')}
           {tabBtn('search', '🔎 검색 분류')}
           {tabBtn('flow', '🎬 동작 영상')}
+          {tabBtn('voice', '🔊 공통 음성')}
         </div>
         {tab === 'stats' && <StatsView users={users} loading={loading} />}
         {tab === 'metrics' && <MetricsView />}
@@ -279,6 +281,7 @@ function Dashboard({ session }) {
         {tab === 'routines' && <RoutineAdmin />}
         {tab === 'search' && <SearchPreview />}
         {tab === 'flow' && <FlowStudio />}
+        {tab === 'voice' && <VoiceCommon />}
       </main>
     </div>
   );

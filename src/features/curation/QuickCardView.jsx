@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CurationThumb, CharRow, CharPic, KeepChip } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
+import { loadVoiceAssets, voiceKey } from './voiceCommon';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { pickCardTone, fmtCount as fmt, mmss, nameLines } from './format';
@@ -102,15 +103,26 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
   const openUrl = (tone === 'm' ? card.voice_open_m : card.voice_open_z) || '';
   const setClips = ((tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || []).filter(Boolean);
-  const hasVoice = !!(openUrl || setClips.length);
+  const hasVoice = !!(openUrl || setClips.length || Object.keys(common).length);
   const [voiceOn, setVoiceOn] = useState(true);
   const [vol, setVol] = useState(0.85);
   const audioRef = useRef(null);
+  // 설명을 들으며 할지, 숫자만 들을지 — 손님이 고른다.
+  const [guide, setGuide] = useState(true);
+  // 세트 멘트가 흐르는 동안에는 숫자를 세지 않는다.
+  const [mentOn, setMentOn] = useState(false);
+  // 모든 카드가 함께 쓰는 소리 — 숫자·쉬는 시간·마무리
+  const [common, setCommon] = useState({});
+  const countRef = useRef(null);
+  useEffect(() => { let alive = true; loadVoiceAssets().then((m) => { if (alive) setCommon(m); }); return () => { alive = false; }; }, []);
+  const commonAt = (kind, n) => common[voiceKey(kind, tone === 'm' ? 'm' : 'z', n)] || '';
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
   const nowVoice = !started ? ''
     : stage === 'open' ? openUrl
-      : (setClips[Math.min(done, setClips.length - 1)] || '');
+      : rest > 0 ? commonAt('rest', restSec)
+        : allDone ? commonAt('finish', 0)
+          : (guide ? (setClips[Math.min(done, setClips.length - 1)] || '') : '');
 
   const beginOpening = !skipOpening && !heardOpening && !!openUrl;
   const start = () => {
@@ -128,6 +140,24 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     if (!voiceOn) return;
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
   }, [nowVoice, voiceOn, vol]);
+
+  // 세트가 바뀌면 그 세트의 멘트가 처음부터 흐른다(설명 모드일 때만).
+  useEffect(() => {
+    if (stage !== 'move') return;
+    setMentOn(guide && rest === 0 && !allDone && !!setClips.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done, secondSide, stage, guide]);
+
+  // 숫자 세기 — 멘트가 끝난 뒤부터, 한 바퀴마다 하나씩.
+  useEffect(() => {
+    if (stage !== 'move' || rest > 0 || allDone || !voiceOn || mentOn) return;
+    const url = commonAt('count', rep + 1);
+    const a = countRef.current;
+    if (!a || !url) return;
+    a.volume = vol;
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rep, done, secondSide, stage, rest, mentOn, voiceOn]);
 
   // 한 해씩 줄이다가 0이 되면 다음 세트를 저절로 시작한다.
   useEffect(() => {
@@ -282,7 +312,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       {started && hasVoice && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
           <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
-            onEnded={() => { if (stage === 'open') setStage('move'); }} style={{ display: 'none' }} />
+            onEnded={() => { if (stage === 'open') setStage('move'); else setMentOn(false); }} style={{ display: 'none' }} />
+          <audio ref={countRef} src={commonAt('count', rep + 1) || undefined} preload="auto" style={{ display: 'none' }} />
           <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
             style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,
               background: voiceOn ? SET_BG : '#fff', boxShadow: voiceOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
@@ -292,7 +323,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
             onChange={(e) => { setVol(Number(e.target.value) / 100); setVoiceOn(true); }}
             style={{ flex: 1, minWidth: 0, accentColor: '#C9A227' }} />
           <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB, width: 62, textAlign: 'right' }}>
-            {stage === 'open' ? '준비 멘트' : '동작 멘트'}
+            {stage === 'open' ? '준비 멘트' : rest > 0 ? '쉬는 멘트' : mentOn ? '동작 멘트' : '숫자 세기'}
           </span>
         </div>
       )}
@@ -311,10 +342,21 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
               <select value={sets} onChange={(e) => setSets(Number(e.target.value))} style={dropdown}>
                 {SETS.map((n) => <option key={n} value={n}>{n}세트</option>)}
               </select>
-              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>쉬는 시간</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB }}>쉬는 시간</span>
               <select value={restSec} onChange={(e) => setRestSec(Number(e.target.value))} style={dropdown}>
                 {RESTS.map((n) => <option key={n} value={n}>{n}초</option>)}
               </select>
+              <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: SUB, marginLeft: 6 }}>안내</span>
+              {[[true, '설명 들으며'], [false, '숫자만']].map(([g, lb]) => (
+                <button key={lb} type="button" onClick={() => setGuide(g)}
+                  style={{ padding: '0 10px', height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: g === guide ? SET_INK : SUB,
+                    background: g === guide ? SET_BG : '#fff', boxShadow: g === guide ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+                  {lb}
+                </button>
+              ))}
             </div>
             {card.has_side && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
