@@ -99,7 +99,7 @@ export default function VoiceCommon() {
               style={{ ...btn(tone === t), opacity: 1 }}>{lb}</button>
           ))}
           <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            숫자 {countDone}/{COUNT_MAX} · 쉬는 시간 {restDone}/{REST_LENS.length} · 마무리 {at('finish', 0) ? 1 : 0}/1
+            숫자 {countDone}/{COUNT_MAX} · 쉬는 시간 {restDone}/{REST_LENS.length} · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -125,6 +125,16 @@ export default function VoiceCommon() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
           {REST_LENS.map((n) => slot('rest', n, `${n}초 쉼`))}
         </div>
+      </div>
+
+      <div style={{ ...box, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>자리 바꾸기 멘트</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          &lsquo;한쪽씩 둘 다&rsquo;로 하다가 <b>오른쪽을 마치고 왼쪽으로 넘어갈 때</b> 한 번 흐릅니다(20초).
+          <b> 방향을 분명히 말해 주세요</b> — 손님이 반대로 누우면 안 되니까요.
+          <br />좌우를 번갈아 하는 카드에는 쓰이지 않습니다.
+        </div>
+        <div style={{ maxWidth: 320 }}>{slot('switch', 0, '자리 바꾸기')}</div>
       </div>
 
       <div style={{ ...box }}>

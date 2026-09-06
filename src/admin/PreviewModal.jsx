@@ -54,7 +54,9 @@ export default function PreviewModal({ title, onClose, children }) {
         {/* 휴대폰 틀 — 손님이 쥐고 보는 그대로 */}
         <div style={{ position: 'relative', width: size.w + 20, maxWidth: '92vw', height: `min(${size.h + 20}px, 82vh)`,
           background: '#17150F', borderRadius: 46, padding: 10, boxShadow: '0 20px 60px rgba(0,0,0,0.45)', flexShrink: 0 }}>
-          <div style={{ position: 'relative', width: '100%', height: '100%', background: '#fff', borderRadius: 38, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {/* transform을 걸어 두면 안쪽의 fixed 팝업이 휴대폰 틀 안에 갇힌다 — 손님 화면 그대로 보인다 */}
+          <div style={{ position: 'relative', width: '100%', height: '100%', background: '#fff', borderRadius: 38, overflow: 'hidden',
+            display: 'flex', flexDirection: 'column', transform: 'translateZ(0)' }}>
             {/* 상태 줄 */}
             <div style={{ flexShrink: 0, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px', fontSize: 11, fontWeight: 800, color: INK }}>
               <span>9:41</span>
