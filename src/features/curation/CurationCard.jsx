@@ -52,9 +52,9 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
       {clip ? (
         <video ref={vidRef} src={clip} muted playsInline autoPlay loop preload="metadata"
           poster={item.cover_url || undefined}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#fff' }} />
       ) : item.cover_url
-        ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#fff' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>{emptyText}</div>}
 
       {item.thumb_text && (() => {
@@ -162,14 +162,15 @@ const sectionImages = (item, sec) => {
 };
 
 // 사진 한 장 또는 영상 한 편 — 영상은 소리 없이 저절로 반복된다.
+// 누끼 그림(배경이 비어 있는 png)이 들어와도 뒤가 비치지 않게 화이트를 깔아 둔다.
 function Shot({ src, alt, style }) {
   if (isClip(src)) {
     return (
       <video src={src} autoPlay loop muted playsInline preload="metadata"
-        style={{ width: '100%', display: 'block', background: '#EDE9E2', ...style }} />
+        style={{ width: '100%', display: 'block', background: '#fff', ...style }} />
     );
   }
-  return <img src={src} alt={alt || ''} style={{ width: '100%', display: 'block', ...style }} />;
+  return <img src={src} alt={alt || ''} style={{ width: '100%', display: 'block', background: '#fff', ...style }} />;
 }
 
 // 마디에 딸린 사진·영상 — 하나면 그대로, 여럿이면 가로로 넘겨 본다.

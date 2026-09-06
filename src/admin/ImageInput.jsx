@@ -51,7 +51,7 @@ export default function ImageInput({ value, onChange, placeholder = 'https://...
         <span style={{ width: 62, height: 40, flexShrink: 0, borderRadius: 7, overflow: 'hidden', background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: SUB }}>
           {!value ? '없음' : isClip(value)
             ? <video src={value} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }} />
-            : <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+            : <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#fff' }} />}
         </span>
         <input style={{ ...input, flex: 1 }} value={value || ''} placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)} />
@@ -140,7 +140,7 @@ export function ImageListInput({ value, onChange, hint, captions, onCaptions, al
             <span key={`${src}-${i}`} style={{ width: onCaptions ? 150 : 92, borderRadius: 9, overflow: 'hidden', background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
               {isClip(src)
                 ? <video src={src} muted playsInline preload="metadata" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block', background: '#000' }} />
-                : <img src={src} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block' }} />}
+                : <img src={src} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', display: 'block', background: '#fff' }} />}
               {onCaptions && (
                 <input value={capAt(i)} onChange={(e) => setCap(i, e.target.value)} placeholder="사진 설명 (선택)"
                   style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderTop: `1px solid ${LINE}`, padding: '5px 6px', fontSize: 11, fontFamily: 'inherit', color: INK, outline: 'none' }} />
