@@ -7,6 +7,7 @@ import { pickCurationTone, fmtCount } from './format';
 import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fonts';
 import { charBox } from '../../lib/charBox';
 import { isClip } from './media';
+import { clipY } from './format';
 import AiNote from './AiNote';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
@@ -65,12 +66,13 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
   }, [clip]);
   return (
     <div ref={boxRef} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
+      {/* 4:5 틀에 세로로 긴 영상을 담으면 위아래가 잘린다. 어디를 살릴지 정해 둔 자리를 쓴다. */}
       {clip ? (
         <video ref={vidRef} src={clip} muted playsInline autoPlay loop preload="metadata"
           poster={item.cover_url || undefined}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#fff' }} />
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
       ) : item.cover_url
-        ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#fff' }} />
+        ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>{emptyText}</div>}
 
       {item.thumb_text && (() => {

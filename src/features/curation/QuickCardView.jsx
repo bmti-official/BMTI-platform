@@ -9,7 +9,7 @@ import { loadVoiceAssets, voiceKey } from './voiceCommon';
 import { cardSetup, SET_LIST, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { pickCardTone, fmtCount as fmt, mmss, nameLines } from './format';
+import { pickCardTone, fmtCount as fmt, mmss, nameLines, clipY } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -359,7 +359,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
             onEnded={onRepEnd}
-            style={{ width: '100%', height: '100%', objectFit: 'cover',
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`,
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}

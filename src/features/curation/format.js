@@ -62,3 +62,9 @@ export function nameLines(text) {
   const half = Math.ceil(t.length / 2);
   return [t.slice(0, half), t.slice(half)];
 }
+
+// 영상·사진을 틀 안에서 위아래 어디쯤 보여 줄지 — 0 위, 50 가운데, 100 아래.
+export const clipY = (item) => {
+  const v = Number(item?.clip_y);
+  return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 50;
+};
