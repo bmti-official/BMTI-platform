@@ -99,7 +99,7 @@ export default function VoiceCommon() {
               style={{ ...btn(tone === t), opacity: 1 }}>{lb}</button>
           ))}
           <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            숫자 {countDone}/{COUNT_MAX} · 쉬는 시간 {restDone}/{REST_LENS.length} · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
+            숫자 {countDone}/{COUNT_MAX} · 쉬는 시간 {restDone}/{REST_LENS.length} · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -124,6 +124,20 @@ export default function VoiceCommon() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
           {REST_LENS.map((n) => slot('rest', n, `${n}초 쉼`))}
+        </div>
+      </div>
+
+      <div style={{ ...box, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>방향 알림</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          좌우가 나뉘는 동작에서 <b>세트를 시작할 때마다 한 마디</b>만 짧게 흐릅니다 —
+          &lsquo;오른쪽입니다&rsquo;, &lsquo;왼쪽입니다&rsquo;. 이게 끝나야 동작 멘트가 이어집니다.
+          <br />덕분에 <b>카드마다 좌우 두 벌을 녹음하지 않아도</b> 됩니다. 1초 안쪽으로 짧게 잘라 주세요.
+          <br />좌우를 번갈아 하는 카드에는 쓰이지 않습니다.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
+          {slot('side', 1, '오른쪽')}
+          {slot('side', 2, '왼쪽')}
         </div>
       </div>
 
