@@ -87,6 +87,18 @@ const PARTS = ["머리", "목", "어깨", "팔꿈치", "손목", "팔", "등", "
 const WHEN_OPTS = ["오늘 아침 일어날 때", "움직일 때", "오래 앉아있을 때", "오래 서있을 때", "일할 때", "하루 종일"];
 
 // ── 받침 유무로 이/가 조사 고르는 헬퍼 ──
+// 기록 박스를 넣고 빼는 자리 — 박스 옆에 더하기·빼기를 나란히 둔다.
+function BoxEditIcon({ size = 19, color = "#8B7BD8" }) {
+  const P = { stroke: color, strokeWidth: 2.1, strokeLinecap: "round" };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 5.4v5.4M2.3 8.1h5.4" {...P} />
+      <path d="M2.3 16.2h5.4" {...P} />
+      <rect x="11.6" y="4.6" width="10" height="14.8" rx="2.6" stroke={color} strokeWidth="1.8" />
+    </svg>
+  );
+}
+
 function hasBatchim(word) {
   if (!word) return false;
   const code = word.charCodeAt(word.length - 1);
@@ -851,8 +863,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               <span style={{ fontSize: 13, fontWeight: 800 }}>완료</span>
             ) : (
               <>
-                <DiaryIcon name="gear" size={19} color="#8B7BD8" />
-                <span style={{ fontSize: 11.5, fontWeight: 700 }}>편집</span>
+                <BoxEditIcon size={19} color="#8B7BD8" />
+                <span style={{ fontSize: 11.5, fontWeight: 700 }}>기록 박스</span>
               </>
             )}
           </button>
