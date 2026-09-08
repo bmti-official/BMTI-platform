@@ -15,6 +15,7 @@ import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
 import CharPicker from './CharPicker';
+import { kindSetup, SET_LIST, REST_LIST } from '../features/curation/cardDefaults';
 import AudioInput, { AudioListInput } from './AudioInput';
 import { CHARACTERS } from '../data';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
@@ -30,7 +31,8 @@ const EMPTY = {
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
   chars_z: [], chars_m: [],
-  has_side: false, can_alternate: false, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
+  has_side: false, can_alternate: false,
+  default_reps: null, default_sets: null, default_rest: null, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
 };
 
 // 아홉 칸 자리에서 문구를 조금 더 미세하게 밀고, 크기도 손보는 슬라이더
@@ -206,8 +208,9 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>목록에서 보이는 표지입니다. 아래 &lsquo;동작 영상&rsquo;의 0~5초가 소리 없이 돌아갑니다. &lsquo;바로 따라하기&rsquo;를 눌러도 같은 4:5로 이어집니다.</div>
         <div style={{ marginBottom: 12 }}>
           <span style={label}>동작 이름 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 표지와 제목 옆에 함께 나옵니다</span></span>
-          <input style={{ ...input, fontSize: 16, fontWeight: 800, padding: '12px 14px' }} value={f.thumb_text || ''}
-            onChange={(e) => set('thumb_text')(e.target.value)} placeholder="어깨 벽 밀기" />
+          <textarea style={{ ...area, fontSize: 16, fontWeight: 800, padding: '12px 14px', minHeight: 62, lineHeight: 1.4 }}
+            value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)}
+            placeholder="어깨 벽 밀기&#10;엔터를 치면 표지에서도 줄이 바뀝니다" />
         </div>
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 300px', minWidth: 260, display: 'grid', gridTemplateColumns: '1fr 132px', gap: 12 }}>
@@ -248,6 +251,31 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
             <CurationThumb item={f} ratio="4 / 5" showRead={false} clip={f.video_url || ''} emptyText="동작 영상을 올리면 보여요"
               badge={f.duration_sec > 0 ? { label: '소요시간', value: `${Math.floor(f.duration_sec / 60)}:${String(f.duration_sec % 60).padStart(2, '0')}` } : null} />
           </div>
+        </div>
+      </div>
+
+      {/* 손님이 처음 볼 설정 — 비워 두면 종류에 맞는 값이 쓰인다 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>기본 설정</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          손님이 카드를 열었을 때 처음 보이는 값입니다. 손님은 언제든 바꿀 수 있어요.
+          <br /><b>비워 두면</b> 지금 고른 종류(<b>{KIND_LABEL[f.kind] || f.kind}</b>)의 기본값이 쓰입니다 —
+          {' '}{kindSetup(f.kind).reps}회 · {kindSetup(f.kind).sets}세트 · {kindSetup(f.kind).rest}초 쉼
+          <br />마사지·스트레칭은 영상 한 바퀴가 <b>자세를 잡고 한참 버티는 한 판</b>이라 횟수를 적게 잡습니다.
+        </div>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          {[['default_reps', '횟수', kindSetup(f.kind).repList, '회'],
+            ['default_sets', '세트', SET_LIST, '세트'],
+            ['default_rest', '쉬는 시간', REST_LIST, '초']].map(([key, lb, list, unit]) => (
+            <div key={key}>
+              <span style={label}>{lb}</span>
+              <select value={f[key] || ''} onChange={(e) => set(key)(e.target.value ? Number(e.target.value) : null)}
+                style={{ ...input, cursor: 'pointer', width: 130 }}>
+                <option value="">종류 기본값</option>
+                {list.map((n) => <option key={n} value={n}>{n}{unit}</option>)}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
 

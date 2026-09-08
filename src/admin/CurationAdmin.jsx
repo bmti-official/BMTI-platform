@@ -203,8 +203,9 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
         {/* 문구는 가로로 길게 — 나머지 설정은 아래로 내려 놓는다 */}
         <div style={{ marginBottom: 12 }}>
           <span style={label}>썸네일 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통</span></span>
-          <input style={{ ...input, fontSize: 16, fontWeight: 800, padding: '12px 14px' }} value={f.thumb_text || ''}
-            onChange={(e) => set('thumb_text')(e.target.value)} placeholder="목이 굳는 진짜 이유" />
+          <textarea style={{ ...area, fontSize: 16, fontWeight: 800, padding: '12px 14px', minHeight: 62, lineHeight: 1.4 }}
+            value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)}
+            placeholder="목이 굳는 진짜 이유&#10;엔터를 치면 표지에서도 줄이 바뀝니다" />
         </div>
 
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>

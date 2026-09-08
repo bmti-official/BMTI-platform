@@ -22,7 +22,7 @@ const LINES = [
     ex: '발목만 움직여 발뒤꿈치를 위로 들어 올립니다.' },
   { k: 'c', n: '③', t: '얼마나', h: '각도 말고, 눈에 보이는 기준으로',
     ex: '발뒤꿈치가 바닥에서 주먹 하나 높이만큼 올라갑니다.' },
-  { k: 'd', n: '④', t: '끝 자세', h: '멈추는 지점',
+  { k: 'd', n: '④', t: '끝 자세', h: '버티는 동작이면 여기서 버팁니다',
     ex: '발끝으로만 서서 멈춥니다.' },
   { k: 'e', n: '⑤', t: '되돌아오기', h: '같은 길, 같은 속도로',
     ex: '같은 속도로 발뒤꿈치를 바닥에 내려놓습니다.' },
@@ -84,13 +84,32 @@ DO NOT
 - Do not straighten or change the joint angles described in the pose.`;
 }
 
-function buildPrompt({ gender, angle, tools, move, nameEn }) {
+// 버티는 동작은 시간 배분이 다르다 — 잠깐 들어가서 오래 버티고 잠깐 나온다.
+const TIMING = {
+  rep: `TIMING — 8 seconds total, one full repetition only
+0.0-0.5s  Hold the starting pose completely still.
+0.5-3.0s  Move slowly into the end position. Smooth, even speed. No acceleration.
+3.0-4.5s  Hold the end position still.
+4.5-7.5s  Return slowly to the exact starting pose, at the same even speed.
+7.5-8.0s  Hold the starting pose completely still.`,
+  hold: `TIMING — 8 seconds total, one hold only
+0.0-0.5s  Hold the starting pose completely still.
+0.5-1.5s  Move into the stretched position. One smooth, even move.
+1.5-6.5s  HOLD. The pose does not change at all for these five seconds.
+          The only motion allowed is slow, shallow breathing in the ribcage —
+          the ribcage rises over about two seconds and falls over about three seconds.
+          No sway, no drifting, no adjusting, no deepening of the stretch.
+6.5-7.5s  Release back to the exact starting pose at the same even speed.
+7.5-8.0s  Hold the starting pose completely still.`,
+};
+
+function buildPrompt({ gender, angle, tools, move, nameEn, hold }) {
   const g = gender === 'male' ? 'male' : 'female';
   const equip = toolPhrase(tools);
   // ①(시작 자세)과 ⑥(움직이지 않는 곳)은 문단에 묻으면 무시된다. 따로 세운다.
   const startPose = (move.a || '').trim();
   const body = ['b', 'c', 'd', 'e'].map((k) => (move[k] || '').trim()).filter(Boolean).join(' ');
-  const hold = (move.f || '').trim();
+  const stay = (move.f || '').trim();
   const named = nameEn.trim() ? `This is a standard ${nameEn.trim()}. Follow the textbook form of that exercise.\n` : '';
   return `Create a seamlessly looping 8-second exercise demonstration video.
 
@@ -128,12 +147,7 @@ If the movement uses one side of the body, always demonstrate it on the RIGHT si
 THE MOVEMENT — exactly one movement, nothing else
 ${named}${body || '[② ~ ⑤를 채우면 여기에 들어갑니다]'}
 
-TIMING — 8 seconds total, one full repetition only
-0.0-0.5s  Hold the starting pose completely still.
-0.5-3.0s  Move slowly into the end position. Smooth, even speed. No acceleration.
-3.0-4.5s  Hold the end position still.
-4.5-7.5s  Return slowly to the exact starting pose, at the same even speed.
-7.5-8.0s  Hold the starting pose completely still.
+${TIMING[hold ? 'hold' : 'rep']}
 
 SEAMLESS LOOP — the most important requirement
 The last frame must be pixel-identical to the first frame:
@@ -145,13 +159,13 @@ The clip will be played on repeat, so any difference between the first and last 
 will show up as a visible jump.
 
 MUST NOT MOVE — check this in every single frame
-${hold || '[⑥ 움직이지 않는 곳을 채우면 여기에 들어갑니다]'}
+${stay || '[⑥ 움직이지 않는 곳을 채우면 여기에 들어갑니다]'}
 These parts stay exactly as they are in the starting pose for the whole 8 seconds.
 If any of them moves, the clip is wrong.
 
 DO NOT
 - Do not move the parts listed under MUST NOT MOVE.
-- Do not add a second repetition or a second exercise.
+- Do not add a second repetition or a second exercise.${hold ? '\n- Do not go deeper into the stretch during the hold. The angle stays fixed.' : ''}
 - Do not speed up, ease in, or ease out. Keep one constant slow speed.
 - Do not move the camera at any point.
 - Do not add text, numbers, counters, captions, or a progress bar.
@@ -202,6 +216,8 @@ export default function FlowStudio() {
   const [tools, setTools] = useState(['none']);
   const [name, setName] = useState('');
   const [nameEn, setNameEn] = useState('');
+  // 반복하는 동작인가, 자세를 잡고 버티는 동작인가
+  const [hold, setHold] = useState(false);
   const [move, setMove] = useState({ a: '', b: '', c: '', d: '', e: '', f: '' });
   const setLine = (k) => (v) => setMove((p) => ({ ...p, [k]: v }));
   // '없음'을 고르면 나머지가 풀리고, 다른 걸 고르면 '없음'이 풀린다.
@@ -231,7 +247,7 @@ export default function FlowStudio() {
   };
 
   const filled = LINES.filter((l) => (move[l.k] || '').trim()).length;
-  const prompt = useMemo(() => buildPrompt({ gender, angle, tools, move, nameEn }), [gender, angle, tools, move, nameEn]);
+  const prompt = useMemo(() => buildPrompt({ gender, angle, tools, move, nameEn, hold }), [gender, angle, tools, move, nameEn, hold]);
   const startImg = useMemo(() => buildStartImage({ gender, angle, tools, move, nameEn }), [gender, angle, tools, move, nameEn]);
   const needOwnStart = tools.some((t) => t !== 'none');
   const translate = useMemo(() => buildTranslate(move), [move]);
@@ -319,6 +335,17 @@ export default function FlowStudio() {
               {ANGLES.map(([k, lb, why]) => <button key={k} type="button" title={why} onClick={() => setAngle(k)} style={pick(angle === k)}>{lb}</button>)}
             </div>
             <div style={{ fontSize: 11, color: SUB, marginTop: 5 }}>{ANGLES.find(([k]) => k === angle)?.[2]}</div>
+          </div>
+          <div>
+            <span style={label}>동작 갈래</span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[[false, '반복하기'], [true, '버티기']].map(([h, lb]) => (
+                <button key={lb} type="button" onClick={() => setHold(h)} style={pick(hold === h)}>{lb}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: SUB, marginTop: 5, maxWidth: 200, lineHeight: 1.5 }}>
+              {hold ? '자세를 잡고 5초쯤 버팁니다. 마사지·스트레칭' : '움직였다 돌아옵니다. 운동'}
+            </div>
           </div>
           <div>
             <span style={label}>도구 <span style={{ fontWeight: 600 }}>— 여러 개 고를 수 있어요</span></span>

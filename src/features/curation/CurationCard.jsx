@@ -87,7 +87,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
             padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
-            <span style={{ fontSize: Math.round((big ? 30 : 21) * scale), fontWeight: 900, color, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all',
+            <span style={{ fontSize: Math.round((big ? 30 : 21) * scale), fontWeight: 900, color, lineHeight: 1.25, letterSpacing: '-0.02em', wordBreak: 'keep-all', whiteSpace: 'pre-line',
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
               // 아홉 칸 자리에서 가로·세로로 조금씩 더 민다
               transform: `translate(${Number(item.thumb_dx) || 0}%, ${Number(item.thumb_dy) || 0}%)` }}>

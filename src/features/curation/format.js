@@ -48,6 +48,8 @@ export function routineSummary(cards) {
 // 띄어쓰기가 있으면 한가운데에 가장 가까운 띄어쓰기에서, 없으면 반으로 나눈다.
 export function nameLines(text) {
   const t = String(text || '').trim();
+  // 사장님이 손으로 줄을 나눠 적었으면 그대로 따른다.
+  if (t.includes('\n')) return t.split('\n').map((x) => x.trim()).filter(Boolean);
   const letters = t.replace(/\s/g, '').length;
   if (letters < 5) return [t];
   const mid = t.length / 2;

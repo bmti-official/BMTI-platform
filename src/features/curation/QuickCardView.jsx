@@ -2,10 +2,11 @@
 //  ① 종류·시간·제목·완주율  ② 추천 유형 누끼 캐릭터  ③ 4:5 표지(부위·도구를 모서리에 얹는다)
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb, CharRow, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { loadVoiceAssets, voiceKey } from './voiceCommon';
+import { cardSetup, SET_LIST, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { pickCardTone, fmtCount as fmt, mmss, nameLines } from './format';
@@ -52,9 +53,8 @@ const overlay = (side) => ({
   textShadow: SHADE,
 });
 
-const REPS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-const SETS = [3, 4, 5];
-const RESTS = [5, 10, 15, 20];
+const SETS = SET_LIST;
+const RESTS = REST_LIST;
 // 좌우를 번갈아 못 하는 동작은, 오른쪽을 다 하고 왼쪽으로 자세를 고쳐 누워야 해서 넉넉히 쉰다.
 const SWITCH_REST = 20;
 // right/left  한쪽만 · both  오른쪽을 다 하고 왼쪽으로 · alt  한 번 할 때마다 좌우가 바뀐다
@@ -66,14 +66,15 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
   const started = stage !== 'cover';
-  // 몇 번, 몇 세트 할지는 손님이 정한다. 시작한 뒤에는 몇 세트째인지 센다.
-  const [reps, setReps] = useState(15);
-  const [sets, setSets] = useState(3);
+  // 몇 번, 몇 세트 할지는 손님이 정한다. 처음 값은 카드 종류에 맞춰 달라진다.
+  const setup = useMemo(() => cardSetup(card), [card]);
+  const [reps, setReps] = useState(setup.reps);
+  const [sets, setSets] = useState(setup.sets);
   const [done, setDone] = useState(0);
   // 영상이 한 바퀴 돌 때마다 한 번씩 세고, 정한 횟수를 채우면 다음 세트로 넘어간다.
   const [rep, setRep] = useState(0);
   // 세트 사이 쉬는 시간 — 고른 초만큼 세다가 저절로 다음 세트를 시작한다.
-  const [restSec, setRestSec] = useState(10);
+  const [restSec, setRestSec] = useState(setup.rest);
   const [rest, setRest] = useState(0);
   // 지금 쉬는 시간이 몇 초짜리인지 — 멘트를 고를 때 쓴다(자리 바꿀 땐 20초).
   const [restLen, setRestLen] = useState(10);
@@ -255,7 +256,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {label('횟수')}
             <select value={reps} onChange={(e) => change(setReps)(Number(e.target.value))} style={dropdown}>
-              {REPS.map((n) => <option key={n} value={n}>{n}회</option>)}
+              {setup.repList.map((n) => <option key={n} value={n}>{n}회</option>)}
             </select>
             {label('세트')}
             <select value={sets} onChange={(e) => change(setSets)(Number(e.target.value))} style={dropdown}>
