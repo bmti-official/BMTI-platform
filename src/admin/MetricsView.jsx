@@ -5,8 +5,98 @@ import { PARTS } from '../lib/mallangReportEngine';
 import { GROUP_LABEL, groupsOfPart } from '../lib/bodyGroups';
 import { isBmtiCode } from '../lib/bmtiTypes';
 
-// 📈 지표 — 다이어리 기록(지금 바로 되는 것)과 행동 기록(app_events)을 함께 본다.
+// 📊 통계·지표 — 회원 구성, 다이어리 기록(지금 바로 되는 것), 행동 기록(app_events)을 한 장에서 본다.
 const GOLD = '#9C6F26';
+const ACCENT = '#6B5BB5';
+const TRACK = '#ECEAF4';                 // 막대 배경(연보라 톤)
+const CARD = { background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' };
+const AGE_ORDER = ['10대', '20대', '30대', '40대', '50대 이상'];
+const normGender = (g) => (g === 'male' || g === '남성' ? '남성' : g === 'female' || g === '여성' ? '여성' : (g || '미상'));
+
+// 라벨→개수를 세어 [{label, value}] 로 (order가 있으면 그 순서, 없으면 내림차순)
+function tally(rows, getKey, order) {
+  const m = new Map();
+  rows.forEach(r => { const k = getKey(r); if (k == null || k === '') return; m.set(k, (m.get(k) || 0) + 1); });
+  let arr = [...m.entries()].map(([label, value]) => ({ label, value }));
+  if (order) arr.sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label));
+  else arr.sort((a, b) => b.value - a.value);
+  return arr;
+}
+
+// ── 회원 한눈에 보기 타일 ──
+function StatTile({ label, value, sub }) {
+  return (
+    <div style={{ ...CARD, padding: '16px 18px', flex: '1 1 140px', minWidth: 140 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: SUB, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: INK, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      {sub && <div style={{ fontSize: 11.5, fontWeight: 600, color: ACCENT, marginTop: 6 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── 막대(단색 연보라) 그룹 — 각 막대에 값 직접 표기 ──
+function BarGroup({ title, data, total }) {
+  const max = Math.max(1, ...data.map(d => d.value));
+  return (
+    <div style={{ ...CARD, padding: '16px 18px' }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: INK, marginBottom: 14 }}>{title}</div>
+      {data.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: SUB, padding: '6px 0' }}>데이터 없음</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {data.map(d => {
+            const pct = total ? Math.round((d.value / total) * 100) : 0;
+            return (
+              <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ width: 78, flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: INK, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.label}</span>
+                <div style={{ flex: 1, height: 20, background: TRACK, borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(d.value / max) * 100}%`, minWidth: d.value > 0 ? 4 : 0, background: ACCENT, borderRadius: 6 }} />
+                </div>
+                <span style={{ width: 74, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: INK, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  {d.value}{total ? <span style={{ color: SUB, fontWeight: 600 }}> ({pct}%)</span> : null}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 통계 탭 ──
+function StatsView({ users, loading }) {
+  const s = useMemo(() => {
+    const total = users.length;
+    const notif = users.filter(u => u.app_notification).length;
+    const done = users.filter(u => u.bmti_type).length;
+    return {
+      total, notif, done,
+      gender: tally(users, u => normGender(u.kakao_gender)),
+      age: tally(users, u => u.kakao_age, AGE_ORDER),
+      type: tally(users, u => (u.bmti_type ? String(u.bmti_type).split('-')[0] : null)),
+    };
+  }, [users]);
+
+  if (loading) return <div style={{ ...CARD, padding: 28, textAlign: 'center', color: SUB, fontSize: 14 }}>불러오는 중…</div>;
+
+  const pct = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        <StatTile label="총 회원 수" value={s.total.toLocaleString()} />
+        <StatTile label="🔔 알림 동의" value={s.notif.toLocaleString()} sub={`전체의 ${pct(s.notif)}%`} />
+        <StatTile label="BMTI 검사 완료" value={s.done.toLocaleString()} sub={`전체의 ${pct(s.done)}%`} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+        <BarGroup title="성별 분포" data={s.gender} total={s.total} />
+        <BarGroup title="연령대 분포" data={s.age} total={s.total} />
+        <BarGroup title="BMTI 유형 분포" data={s.type} total={s.done} />
+      </div>
+    </div>
+  );
+}
+
 // 관리자 칭호 — 앱 곳곳에서 닉네임이 정확히 'BMTI'인 계정을 관리자로 본다.
 const ADMIN_NICKNAME = 'BMTI';
 const monthKey = (d) => String(d).slice(0, 7);
@@ -185,7 +275,7 @@ export default function MetricsView() {
     let alive = true;
     (async () => {
       const d = await supabase.from('diary_entries').select('user_id,date,soreness');
-      const u = await supabase.from('users').select('id,bmti_type,created_at,nickname');
+      const u = await supabase.from('users').select('id,bmti_type,created_at,nickname,kakao_gender,kakao_age,app_notification');
       const e = await supabase.from('app_events').select('anon_id,user_id,name,meta,created_at')
         .order('created_at', { ascending: false }).limit(20000);
       if (!alive) return;
@@ -373,6 +463,14 @@ export default function MetricsView() {
           </div>
         </div>
       )}
+
+      {/* 회원이 어떻게 이뤄져 있나 — 예전 '통계' 탭에 있던 것 */}
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 8 }}>
+          회원 구성 <span style={{ fontWeight: 600, color: SUB, fontSize: 12 }}>· 가입한 사람 기준</span>
+        </div>
+        <StatsView users={users} loading={loading} />
+      </div>
 
       {/* 성장 추이 — 지원사업 서류용 */}
       <div>
