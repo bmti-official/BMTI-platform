@@ -503,7 +503,7 @@ export default function QuickCardAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '#', '종류', '제목(Z)', '완주율', '조회', '저장', ''].map((h) => (
+              {['상태', '#', '종류', '동작 이름', '완주율', '조회', '저장', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -520,7 +520,10 @@ export default function QuickCardAdmin() {
                   </td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.id}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{KIND_LABEL[r.kind] || r.kind}</td>
-                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 13, fontWeight: 700, color: INK }}>{r.title_z}</td>
+                  {/* 목록에서는 동작 이름으로 찾는다 — 제목보다 짧고, 무슨 동작인지 바로 보인다 */}
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 13, fontWeight: 700, color: INK, whiteSpace: 'pre-line' }}>
+                    {r.thumb_text?.trim() || <span style={{ color: SUB, fontWeight: 600 }}>{r.title_z || '이름 없음'}</span>}
+                  </td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{rate != null ? `${rate}%` : '—'}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.view_count}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
