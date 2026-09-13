@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { INK, SUB, LINE, ACCENT, btn } from './theme';
+import { CHARACTERS } from '../data';
+import { Mallang } from '../components/Mallang';
 
 // 손님 화면 미리보기 창 — 휴대폰 틀 안에 넣어 실제로 보일 모습 그대로 확인한다.
 // Z/M 말투를 토글해 두 벌이 각각 어떻게 읽히는지 바로 비교할 수 있다.
@@ -9,21 +11,108 @@ const SIZES = [
   { key: 'big', label: '큰 폰 430', w: 430, h: 800 },
 ];
 
-// 실제 앱 아래에 떠 있는 알약 모양 메뉴를 흉내 낸다(누를 수는 없다).
-function FakeNav() {
+// 실제 앱의 화면 껍데기를 그대로 흉내 낸다 — 홈 버튼 · 마이페이지 · 하단 알약.
+// 손님이 보는 자리를 가리지 않는지 여기서 바로 확인한다. 누를 수는 없다.
+
+// 홈 버튼 — 가로로 넓힌 집 안에 BMTI를 넣었다.
+const HomeMark = ({ w = 54 }) => (
+  <svg width={w} height={w * 0.58} viewBox="0 0 54 31" fill="none" aria-hidden="true">
+    <path d="M2.5 14.2 27 2l24.5 12.2V27a2 2 0 0 1-2 2h-45a2 2 0 0 1-2-2V14.2Z" fill="currentColor" />
+    <text x="27" y="24" textAnchor="middle" fontSize="10.5" fontWeight="900" fill="#fff" fontFamily="inherit" letterSpacing="0.3">BMTI</text>
+  </svg>
+);
+const PersonMark = () => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+    <circle cx="12" cy="8" r="4" fill="currentColor" />
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8Z" fill="currentColor" />
+  </svg>
+);
+// 하단 알약 네 칸의 그림
+const BookMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+    <path d="M12 6.2C10.3 5 7.4 4.5 4.3 5v12.6C7.4 17.1 10.3 17.6 12 18.8" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
+    <path d="M12 6.2C13.7 5 16.6 4.5 19.7 5v12.6C16.6 17.1 13.7 17.6 12 18.8" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
+    <path d="M12 6.2V18.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+  </svg>
+);
+const BoltMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+    <path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" />
+  </svg>
+);
+const PlayListMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+    <path d="M4 6.5h11M4 11h11M4 15.5h7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    <circle cx="17.5" cy="17" r="3" stroke="currentColor" strokeWidth="1.9" />
+    <path d="M20.5 17V7.6l2.5.9" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const NAV = [
+  { key: 'curation', label: '큐레이션', icon: <BookMark /> },
+  { key: 'cards', label: '바로카드', icon: <BoltMark /> },
+  { key: 'char' },
+  { key: 'routines', label: '건강플리', icon: <PlayListMark /> },
+  { key: 'diary', label: '다이어리', icon: <Mallang v={4} size={22} noBlink /> },
+];
+
+// 손님 화면 껍데기 — 위 두 버튼과 아래 알약
+function AppChrome({ tone, active }) {
+  const code = tone === 'm' ? 'OCDM' : 'ACDZ';
+  const ch = CHARACTERS.find((c) => c.id === code);
+  const off = { color: '#9CA3AF' };
   return (
-    <div style={{ position: 'absolute', left: 8, right: 8, bottom: 12, pointerEvents: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.96)',
-        borderRadius: 999, border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '7px 14px' }}>
-        {['BMTI', '나의유형', '', '다이어리', '기록·발견'].map((lb, i) => (
-          <span key={i} style={{ fontSize: 10.5, fontWeight: 700, color: '#B9B3A8', minWidth: i === 2 ? 44 : undefined, textAlign: 'center' }}>{lb}</span>
-        ))}
+    <>
+      {/* 왼쪽 위 홈 */}
+      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 30, pointerEvents: 'none' }}>
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 44, padding: '0 12px',
+          borderRadius: 999, background: 'rgba(255,255,255,0.95)', border: '1px solid #F1F1F1',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.12)', color: '#111' }}>
+          <HomeMark />
+        </span>
       </div>
-    </div>
+
+      {/* 오른쪽 위 마이페이지 */}
+      <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 30, pointerEvents: 'none' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, height: 44, paddingLeft: 13, paddingRight: 6,
+          borderRadius: 999, background: 'rgba(255,255,255,0.95)', border: '1px solid #F1F1F1', boxShadow: '0 2px 10px rgba(0,0,0,0.12)' }}>
+          <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#8B7BD8', borderRadius: 8, padding: '2px 7px' }}>{code}</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#374151' }}>회원</span>
+          <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280' }}>
+            <PersonMark />
+          </span>
+        </span>
+      </div>
+
+      {/* 아래 알약 */}
+      <div style={{ position: 'absolute', left: 8, right: 8, bottom: 12, zIndex: 30, pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 999,
+          border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '4px 6px' }}>
+          {NAV.map((t) => (t.key === 'char' ? (
+            <span key="char" style={{ width: 56, flexShrink: 0 }} />
+          ) : (
+            <span key={t.key} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              padding: '6px 0', borderRadius: 16, background: active === t.key ? '#F3F1EC' : 'transparent' }}>
+              <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                ...(active === t.key ? { color: '#111' } : { ...off, opacity: 0.45, filter: 'grayscale(1)' }) }}>{t.icon}</span>
+              <span style={{ fontSize: 9.5, fontWeight: 800, whiteSpace: 'nowrap', color: active === t.key ? '#000' : '#9CA3AF' }}>{t.label}</span>
+            </span>
+          )))}
+        </div>
+      </div>
+
+      {/* 가운데 누끼 캐릭터 — 알약 위로 떠 있다 */}
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 20, zIndex: 31, pointerEvents: 'none' }}>
+        <span style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))' }}>
+          {ch ? <img src={ch.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: 30 }}>⭐️</span>}
+        </span>
+      </div>
+    </>
   );
 }
 
-export default function PreviewModal({ title, onClose, children }) {
+export default function PreviewModal({ title, onClose, children, navActive = 'curation' }) {
   const [tone, setTone] = useState('z');
   const [size, setSize] = useState(SIZES[0]);
 
@@ -64,10 +153,10 @@ export default function PreviewModal({ title, onClose, children }) {
               <span style={{ letterSpacing: 1 }}>▮▮▮</span>
             </div>
             {/* 본문 — 실제 앱과 같은 좌우 여백 */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 16px 88px', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '64px 16px 92px', WebkitOverflowScrolling: 'touch' }}>
               {children(tone)}
             </div>
-            <FakeNav />
+            <AppChrome tone={tone} active={navActive} />
           </div>
         </div>
 

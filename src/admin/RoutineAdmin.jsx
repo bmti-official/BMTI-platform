@@ -5,6 +5,9 @@ import { INK, SUB, LINE, BG, box, input, label, btn, smallBtn } from './theme';
 import { PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
+import { SearchBox, MoveButtons } from './listTools';
+import { useSearch } from './useSearch';
+import { moveRow, duplicateRow } from './listActions';
 import { withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
@@ -197,6 +200,30 @@ export default function RoutineAdmin() {
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
   const [saved, setSaved] = useSavedNote();
+  const [shown, q, setQ] = useSearch(rows, ['title_z', 'title_m']);
+  const [busy, setBusy] = useState(false);
+  // 차례 바꾸기 · 복제 — 끝나면 목록을 다시 읽는다
+  const move = async (i, d) => {
+    if (busy || q.trim()) return;
+    setBusy(true);
+    const e = await moveRow('routines', rows, i, d);
+    setBusy(false);
+    if (e) { alert('차례 바꾸기 실패: ' + e); return; }
+    load();
+  };
+  // 플레이리스트는 담긴 동작까지 함께 본떠야 한다.
+  const copy = async (row) => {
+    if (busy) return;
+    setBusy(true);
+    const r = await duplicateRow('routines', row, ['cards']);
+    if (!r.err && (row.cards || []).length) {
+      await supabase.from('routine_cards').insert(row.cards.map((c, i) => ({ routine_id: r.id, card_id: c.id, position: i })));
+    }
+    setBusy(false);
+    if (r.err) { alert('복제 실패: ' + r.err); return; }
+    load();
+    setSaved('복제했습니다. 비공개로 들어갔어요.');
+  };
 
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
@@ -247,6 +274,7 @@ export default function RoutineAdmin() {
             ✓ {saved}
           </div>
         )}
+        <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목으로 찾기" />
         <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 루틴</button>
       </div>
 
@@ -266,7 +294,7 @@ export default function RoutineAdmin() {
       )}
 
       {preview && (
-        <PreviewModal title="루틴 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="routines" title="루틴 미리보기" onClose={() => setPreview(null)}>
           {(tone) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div>
@@ -286,20 +314,23 @@ export default function RoutineAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 780 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '#', '제목(Z)', '동작', '총 시간', 'BEST 유형', '완주율', ''].map((h) => (
+              {['차례', '상태', '#', '제목(Z)', '동작', '총 시간', 'BEST 유형', '완주율', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 루틴이 없습니다.</td></tr>}
-            {rows.map((r) => {
+            {loading && <tr><td colSpan={9} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={9} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 루틴이 없습니다.</td></tr>}
+            {shown.map((r, i) => {
               const s = routineSummary(r.cards);
               const rate = finishRate(r);
               const td = { padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB };
               return (
                 <tr key={r.id}>
+                  <td style={{ ...td, padding: '6px 10px' }}>
+                    <MoveButtons up={!q.trim() && i > 0} down={!q.trim() && i < shown.length - 1} onMove={(d) => move(i, d)} />
+                  </td>
                   <td style={{ ...td }}><PublishBadge published={r.published} onClick={() => togglePublish(r)} /></td>
                   <td style={td}>{r.id}</td>
                   <td style={{ ...td, fontSize: 13, fontWeight: 700, color: INK }}>{r.title_z}</td>
@@ -310,6 +341,7 @@ export default function RoutineAdmin() {
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
                     <button onClick={() => setPreview({ routine: r, cards: r.cards })} style={smallBtn}>미리보기</button>
                     <button onClick={() => { if (confirmLeave()) setEditing({ routine: r, cards: r.cards }); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                    <button onClick={() => copy(r)} style={{ ...smallBtn, marginLeft: 6 }}>복제</button>
                     <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
                   </td>
                 </tr>

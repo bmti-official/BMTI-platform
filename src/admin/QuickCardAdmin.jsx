@@ -6,6 +6,9 @@ import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './th
 import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
+import { SearchBox, MoveButtons } from './listTools';
+import { useSearch } from './useSearch';
+import { moveRow, duplicateRow } from './listActions';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
@@ -439,6 +442,26 @@ export default function QuickCardAdmin() {
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
   const [saved, setSaved] = useSavedNote();
+  const [shown, q, setQ] = useSearch(rows, ['thumb_text', 'title_z', 'title_m']);
+  const [busy, setBusy] = useState(false);
+  // 차례 바꾸기 · 복제 — 끝나면 목록을 다시 읽는다
+  const move = async (i, d) => {
+    if (busy || q.trim()) return;
+    setBusy(true);
+    const e = await moveRow('quick_cards', rows, i, d);
+    setBusy(false);
+    if (e) { setSaved(''); alert('차례 바꾸기 실패: ' + e); return; }
+    load();
+  };
+  const copy = async (row) => {
+    if (busy) return;
+    setBusy(true);
+    const r = await duplicateRow('quick_cards', row);
+    setBusy(false);
+    if (r.err) { alert('복제 실패: ' + r.err); return; }
+    load();
+    setSaved('복제했습니다. 비공개로 들어갔어요.');
+  };
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
 
@@ -483,6 +506,7 @@ export default function QuickCardAdmin() {
             ✓ {saved}
           </div>
         )}
+        <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="동작 이름·제목으로 찾기" />
         <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
       </div>
 
@@ -502,7 +526,7 @@ export default function QuickCardAdmin() {
       )}
 
       {preview && (
-        <PreviewModal title="바로카드 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="cards" title="바로카드 미리보기" onClose={() => setPreview(null)}>
           {(tone) => {
             const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];
             const charImages = charCodes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean);
@@ -515,7 +539,7 @@ export default function QuickCardAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '#', '종류', '동작 이름', '완주율', '조회', '저장', ''].map((h) => (
+              {['차례', '상태', '#', '종류', '동작 이름', '완주율', '조회', '저장', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -523,10 +547,13 @@ export default function QuickCardAdmin() {
           <tbody>
             {loading && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
             {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 바로카드가 없습니다.</td></tr>}
-            {rows.map((r) => {
+            {shown.map((r, i) => {
               const rate = finishRate(r);
               return (
                 <tr key={r.id}>
+                  <td style={{ padding: '6px 10px', borderBottom: `1px solid ${LINE}` }}>
+                    <MoveButtons up={!q.trim() && i > 0} down={!q.trim() && i < shown.length - 1} onMove={(d) => move(i, d)} />
+                  </td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}` }}>
                     <PublishBadge published={r.published} onClick={() => togglePublish(r)} />
                   </td>
@@ -542,6 +569,7 @@ export default function QuickCardAdmin() {
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>
                     <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
                     <button onClick={() => { if (confirmLeave()) setEditing(r); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                    <button onClick={() => copy(r)} style={{ ...smallBtn, marginLeft: 6 }}>복제</button>
                     <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
                   </td>
                 </tr>

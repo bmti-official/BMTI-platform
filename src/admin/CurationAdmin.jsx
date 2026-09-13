@@ -6,6 +6,9 @@ import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } fr
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
+import { SearchBox, MoveButtons } from './listTools';
+import { useSearch } from './useSearch';
+import { moveRow, duplicateRow } from './listActions';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
@@ -424,6 +427,26 @@ export default function CurationAdmin() {
   const [editing, setEditing] = useState(null); // null=안 열림, {}=새로, {…}=수정
   const [preview, setPreview] = useState(null);
   const [saved, setSaved] = useSavedNote();
+  const [shown, q, setQ] = useSearch(rows, ['thumb_text', 'title_z', 'title_m']);
+  const [busy, setBusy] = useState(false);
+  // 차례 바꾸기 · 복제 — 끝나면 목록을 다시 읽는다
+  const move = async (i, d) => {
+    if (busy || q.trim()) return;
+    setBusy(true);
+    const e = await moveRow('curation_items', rows, i, d);
+    setBusy(false);
+    if (e) { setSaved(''); alert('차례 바꾸기 실패: ' + e); return; }
+    load();
+  };
+  const copy = async (row) => {
+    if (busy) return;
+    setBusy(true);
+    const r = await duplicateRow('curation_items', row);
+    setBusy(false);
+    if (r.err) { alert('복제 실패: ' + r.err); return; }
+    load();
+    setSaved('복제했습니다. 비공개로 들어갔어요.');
+  };
   const [allCards, setAllCards] = useState([]);
 
   // 목록 읽기 — tick을 올리면 다시 읽는다.
@@ -478,6 +501,7 @@ export default function CurationAdmin() {
             ✓ {saved}
           </div>
         )}
+        <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목·문구로 찾기" />
         <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 큐레이션</button>
       </div>
 
@@ -496,7 +520,7 @@ export default function CurationAdmin() {
       )}
 
       {preview && (
-        <PreviewModal title="큐레이션 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="curation" title="큐레이션 미리보기" onClose={() => setPreview(null)}>
           {(tone) => {
             const picked = (preview.card_ids || []).map((id) => allCards.find((c) => c.id === id)).filter(Boolean);
             const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];
@@ -521,7 +545,7 @@ export default function CurationAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '#', '제목(Z)', '부위 묶음', '조회', '저장', ''].map((h, i, arr) => (
+              {['차례', '상태', '#', '제목(Z)', '부위 묶음', '조회', '저장', ''].map((h, i, arr) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap',
                   ...(i === arr.length - 1 ? { position: 'sticky', right: 0, background: BG } : null) }}>{h}</th>
               ))}
@@ -530,8 +554,11 @@ export default function CurationAdmin() {
           <tbody>
             {loading && <tr><td colSpan={7} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
             {!loading && rows.length === 0 && <tr><td colSpan={7} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 큐레이션이 없습니다.</td></tr>}
-            {rows.map((r) => (
+            {shown.map((r, i) => (
               <tr key={r.id}>
+                <td style={{ padding: '6px 10px', borderBottom: `1px solid ${LINE}` }}>
+                  <MoveButtons up={!q.trim() && i > 0} down={!q.trim() && i < shown.length - 1} onMove={(d) => move(i, d)} />
+                </td>
                 <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}` }}>
                   <PublishBadge published={r.published} onClick={() => togglePublish(r)} />
                 </td>
@@ -545,6 +572,7 @@ export default function CurationAdmin() {
                 <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap', position: 'sticky', right: 0, background: '#fff' }}>
                   <button onClick={() => setPreview(r)} style={smallBtn}>미리보기</button>
                   <button onClick={() => { if (confirmLeave()) setEditing(r); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>
+                  <button onClick={() => copy(r)} style={{ ...smallBtn, marginLeft: 6 }}>복제</button>
                   <button onClick={() => remove(r.id)} style={{ ...smallBtn, marginLeft: 6, color: '#B23B36' }}>삭제</button>
                 </td>
               </tr>
