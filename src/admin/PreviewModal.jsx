@@ -16,7 +16,7 @@ const SIZES = [
 
 // 홈 버튼 — 실제 앱과 같은 집 모양. 아래에 작게 이름만 붙인다.
 const HomeMark = () => (
-  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true">
     <path d="M4 11.2 12 4l8 7.2V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1v-8.8Z" fill="currentColor" />
   </svg>
 );
@@ -62,15 +62,14 @@ function AppChrome({ tone, active }) {
   const off = { color: '#9CA3AF' };
   return (
     <>
-      {/* 왼쪽 위 홈 — 동그란 버튼 아래에 이름 한 줄 */}
-      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 30, pointerEvents: 'none',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44,
-          borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #F1F1F1',
+      {/* 왼쪽 위 홈 — 동그란 버튼 안에 집과 이름을 함께 담는다 */}
+      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 30, pointerEvents: 'none' }}>
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0,
+          width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #F1F1F1',
           boxShadow: '0 2px 10px rgba(0,0,0,0.12)', color: '#111' }}>
           <HomeMark />
+          <span style={{ fontSize: 7.5, fontWeight: 900, color: '#6B7280', letterSpacing: '0.02em', lineHeight: 1, marginTop: -1 }}>BMTI</span>
         </span>
-        <span style={{ fontSize: 9.5, fontWeight: 900, color: '#6B7280', letterSpacing: '0.02em' }}>BMTI</span>
       </div>
 
       {/* 오른쪽 위 마이페이지 */}
