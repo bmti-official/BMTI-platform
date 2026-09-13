@@ -5,13 +5,14 @@
 // 그래서 횟수를 적게 잡고, 고를 수 있는 폭도 좁게 둔다.
 
 const KIND_SETUP = {
-  exercise: { reps: 15, sets: 3, rest: 10, repList: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-  massage:  { reps: 5,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8] },
-  stretch:  { reps: 5,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8] },
+  // 운동은 여러 세트를 나눠 해야 하지만, 마사지·스트레칭은 한두 세트로 끝내는 날도 많다.
+  exercise: { reps: 15, sets: 3, rest: 10, repList: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], setList: [3, 4, 5] },
+  massage:  { reps: 5,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8], setList: [1, 2, 3, 4, 5] },
+  stretch:  { reps: 5,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8], setList: [1, 2, 3, 4, 5] },
 };
 const FALLBACK = KIND_SETUP.exercise;
 
-export const SET_LIST = [3, 4, 5];
+export const SET_LIST = [1, 2, 3, 4, 5];   // 관리자 칸에서 고를 수 있는 가장 넓은 범위
 export const REST_LIST = [5, 10, 15, 20];
 
 // 고른 값이 목록에 없으면 가장 가까운 것으로 맞춰 준다.
@@ -21,10 +22,11 @@ const nearest = (list, v) => list.reduce((a, b) => (Math.abs(b - v) < Math.abs(a
 export function cardSetup(card = {}) {
   const base = KIND_SETUP[card.kind] || FALLBACK;
   const repList = base.repList;
+  const setList = base.setList;
   const reps = Number(card.default_reps) > 0 ? nearest(repList, Number(card.default_reps)) : base.reps;
-  const sets = Number(card.default_sets) > 0 ? nearest(SET_LIST, Number(card.default_sets)) : base.sets;
+  const sets = Number(card.default_sets) > 0 ? nearest(setList, Number(card.default_sets)) : base.sets;
   const rest = Number(card.default_rest) > 0 ? nearest(REST_LIST, Number(card.default_rest)) : base.rest;
-  return { reps, sets, rest, repList };
+  return { reps, sets, rest, repList, setList };
 }
 
 /** 관리자 화면에서 '비워 두면 이렇게 됩니다'를 적어 줄 때 쓴다. */

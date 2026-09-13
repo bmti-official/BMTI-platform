@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb, CharRow, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { loadVoiceAssets, voiceKey } from './voiceCommon';
-import { cardSetup, SET_LIST, REST_LIST } from './cardDefaults';
+import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { pickCardTone, fmtCount as fmt, mmss, nameLines, clipY } from './format';
@@ -53,7 +53,6 @@ const overlay = (side) => ({
   textShadow: SHADE,
 });
 
-const SETS = SET_LIST;
 const RESTS = REST_LIST;
 // 좌우를 번갈아 못 하는 동작은, 오른쪽을 다 하고 왼쪽으로 자세를 고쳐 누워야 해서 넉넉히 쉰다.
 const SWITCH_REST = 20;
@@ -274,7 +273,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
             </select>
             {label('세트')}
             <select value={sets} onChange={(e) => change(setSets)(Number(e.target.value))} style={dropdown}>
-              {SETS.map((n) => <option key={n} value={n}>{n}세트</option>)}
+              {setup.setList.map((n) => <option key={n} value={n}>{n}세트</option>)}
             </select>
             {label('쉬는 시간')}
             <select value={restSec} onChange={(e) => change(setRestSec)(Number(e.target.value))} style={dropdown}>
@@ -412,8 +411,9 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
         <div style={{ position: 'relative' }}>
           <CurationThumb item={card} radius={0} ratio="4 / 5" showRead={false} clip={card.video_url || ''} emptyText="동작 영상 없음" />
           {/* 오른쪽 아래 — 조회·저장 */}
-          <div style={{ position: 'absolute', right: 12, bottom: 12, zIndex: 2, pointerEvents: 'none', color: INK,
-            fontSize: 11.5, fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap', textShadow: SHADE }}>
+          <div style={{ position: 'absolute', right: 10, bottom: 10, zIndex: 2, pointerEvents: 'none', color: INK,
+            background: '#fff', borderRadius: 9, padding: '4px 9px',
+            fontSize: 11.5, fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
             조회 {fmt(card.view_count)} · 저장 {fmt(card.save_count)}
           </div>
           {/* 왼쪽 위 — 타겟 부위(연보라) / 연관 부위(검정) */}

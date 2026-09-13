@@ -18,7 +18,7 @@ import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
 import CharPicker from './CharPicker';
-import { kindSetup, SET_LIST, REST_LIST } from '../features/curation/cardDefaults';
+import { kindSetup, REST_LIST } from '../features/curation/cardDefaults';
 import AudioInput, { AudioListInput } from './AudioInput';
 import { CHARACTERS } from '../data';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
@@ -296,7 +296,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         </div>
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           {[['default_reps', '횟수', kindSetup(f.kind).repList, '회'],
-            ['default_sets', '세트', SET_LIST, '세트'],
+            ['default_sets', '세트', kindSetup(f.kind).setList, '세트'],
             ['default_rest', '쉬는 시간', REST_LIST, '초']].map(([key, lb, list, unit]) => (
             <div key={key}>
               <span style={label}>{lb}</span>
