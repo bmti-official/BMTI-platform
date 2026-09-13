@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabaseClient';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { INK, SUB, LINE, BG, box, input, label, btn, smallBtn } from './theme';
 import { PublishBadge } from './ui';
+import CharPicker from './CharPicker';
+import { CHARACTERS } from '../data';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { SearchBox, MoveButtons } from './listTools';
@@ -15,9 +17,15 @@ import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curati
 
 // 플레이리스트(루틴) 등록 화면 — 바로카드를 골라 순서를 정하면 하나의 루틴이 된다.
 // 총 소요시간·도구·타겟 부위는 담긴 카드에서 자동으로 계산되므로 따로 입력하지 않는다.
-const EMPTY = { published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true };
+const EMPTY = { published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true, chars_z: [], chars_m: [] };
 
 const BMTI_OPTIONS = Object.keys(CHARACTER_NAMES);
+
+// 골라 둔 누끼 캐릭터를 그림 주소로 바꿔 넘긴다.
+function charProps(r, tone) {
+  const codes = ((tone === 'm' ? r?.chars_m : r?.chars_z) || []).filter(Boolean);
+  return { charCodes: codes, charImages: codes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean) };
+}
 
 function CardPicker({ all, chosen, onChange }) {
   const chosenIds = chosen.map((c) => c.id);
@@ -75,7 +83,7 @@ function CardPicker({ all, chosen, onChange }) {
 function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
   // 저장 안 하고 나간 내용이 있으면 물어보고 이어 쓴다 — 담아 둔 동작 목록까지 함께.
   const [start] = useState(() => withDraft({ ...(row.routine || EMPTY), cards: row.cards || [] }, 'routine', row.routine));
-  const [f, setF] = useState(() => { const rest = { ...start }; delete rest.cards; return rest; });
+  const [f, setF] = useState(() => { const rest = { ...start }; delete rest.cards; ['chars_z', 'chars_m'].forEach((k) => { if (!Array.isArray(rest[k])) rest[k] = []; }); return rest; });
   const [chosen, setChosen] = useState(() => start.cards || []);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -98,6 +106,7 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
       title_z: f.title_z, title_m: f.title_m,
       bmti_code: f.bmti_code || null,
       skip_opening: f.skip_opening !== false,
+      chars_z: f.chars_z || [], chars_m: f.chars_m || [],
       owner_id: null,                        // 관리자가 만드는 공식 추천 루틴
       updated_at: new Date().toISOString(),
     };
@@ -174,6 +183,20 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
           <input type="checkbox" checked={f.skip_opening !== false} onChange={(e) => set('skip_opening')(e.target.checked)} />
           오프닝 건너뛰기 <span style={{ fontWeight: 600, color: SUB }}>(이어서 하니 동작마다 설명을 다시 듣지 않아요)</span>
         </label>
+      </div>
+
+      {/* 묶음을 고르는 이유가 유형이므로, 추천 유형은 여기에만 둔다 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>추천 유형 누끼 캐릭터</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>제목 위에 &lsquo;추천 유형&rsquo;으로 놓입니다 · 유형마다 최대 4개</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {[['chars_z', 'Z 유형', 'Z'], ['chars_m', 'M 유형', 'M']].map(([key, lb, suffix]) => (
+            <div key={key}>
+              <span style={label}>{lb} <span style={{ color: SUB, fontWeight: 700 }}>({(f[key] || []).length}/4)</span></span>
+              <CharPicker suffix={suffix} value={f[key] || []} onChange={set(key)} />
+            </div>
+          ))}
+        </div>
       </div>
 
       {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
@@ -299,11 +322,11 @@ export default function RoutineAdmin() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
-                <RoutineView routine={preview.routine} cards={preview.cards} tone={tone} />
+                <RoutineView routine={preview.routine} cards={preview.cards} tone={tone} {...charProps(preview.routine, tone)} />
               </div>
               <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>‘일단 구경하기’를 눌렀을 때</div>
-                <RoutineDetail routine={preview.routine} cards={preview.cards} tone={tone} />
+                <RoutineDetail routine={preview.routine} cards={preview.cards} tone={tone} {...charProps(preview.routine, tone)} />
               </div>
             </div>
           )}

@@ -7,8 +7,8 @@
 const KIND_SETUP = {
   // 운동은 여러 세트를 나눠 해야 하지만, 마사지·스트레칭은 한두 세트로 끝내는 날도 많다.
   exercise: { reps: 15, sets: 3, rest: 10, repList: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], setList: [3, 4, 5] },
-  massage:  { reps: 5,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8], setList: [1, 2, 3, 4, 5] },
-  stretch:  { reps: 5,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8], setList: [1, 2, 3, 4, 5] },
+  massage:  { reps: 3,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8], setList: [1, 2, 3, 4, 5] },
+  stretch:  { reps: 3,  sets: 3, rest: 10, repList: [3, 4, 5, 6, 7, 8], setList: [1, 2, 3, 4, 5] },
 };
 const FALLBACK = KIND_SETUP.exercise;
 

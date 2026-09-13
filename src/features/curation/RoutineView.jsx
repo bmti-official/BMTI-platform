@@ -2,12 +2,13 @@
 // '바로 시작하기'와 '일단 구경하기'로 이어진다.
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import AiNote from './AiNote';
+import { CharRow } from './CurationCard';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
-export default function RoutineView({ routine, cards, tone = 'z', onStart, onBrowse }) {
+export default function RoutineView({ routine, cards, tone = 'z', onStart, onBrowse, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
   const s = routineSummary(cards);
   const rate = finishRate(routine);
@@ -21,6 +22,8 @@ export default function RoutineView({ routine, cards, tone = 'z', onStart, onBro
         <span style={{ fontSize: 11.5, color: SUB, fontWeight: 700 }}>동작 {s.count}개</span>
       </div>
 
+      {/* 묶음은 유형을 보고 고르기 때문에, 여기서만 추천 유형을 보여 준다 */}
+      {(charImages || []).length > 0 && <CharRow chars={(charImages || []).slice(0, 4)} codes={charCodes || []} h={30} />}
       <h3 style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.4, margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h3>
 
       <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
@@ -50,11 +53,12 @@ export default function RoutineView({ routine, cards, tone = 'z', onStart, onBro
 }
 
 // '일단 구경하기'로 펼쳐 보는 내용 — 어떤 동작이 어떤 순서로 들어 있는지
-export function RoutineDetail({ routine, cards, tone = 'z', onStart, onCopy }) {
+export function RoutineDetail({ routine, cards, tone = 'z', onStart, onCopy, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
   const s = routineSummary(cards);
   return (
     <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
+      {(charImages || []).length > 0 && <CharRow chars={(charImages || []).slice(0, 4)} codes={charCodes || []} h={34} />}
       <h2 style={{ fontSize: 18, fontWeight: 900, margin: '0 0 6px', lineHeight: 1.35, wordBreak: 'keep-all' }}>{title}</h2>
       <div style={{ fontSize: 12, color: SUB, fontWeight: 600, marginBottom: 14 }}>
         {s.durationSec > 0 ? mmss(s.durationSec) : '시간 미정'} · 동작 {s.count}개

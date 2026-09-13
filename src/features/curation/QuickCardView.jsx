@@ -3,7 +3,7 @@
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CurationThumb, CharRow, CharPic } from './CurationCard';
+import { CurationThumb, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { loadVoiceAssets, voiceKey } from './voiceCommon';
 import { cardSetup, REST_LIST } from './cardDefaults';
@@ -237,7 +237,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
   const tools = card.tools || [];
-  const chars = (charImages || []).slice(0, 4);
+  const chars = (charImages || []).slice(0, 4);   // 오프닝 화면에서만 쓴다
   const openName = String(CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
@@ -309,8 +309,6 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       <style>{FULLSCREEN_FIX}</style>
       {stage !== 'move' && (
       <div style={{ padding: '12px 15px 10px' }}>
-        {/* 추천 유형 누끼 캐릭터 */}
-        {chars.length > 0 && <CharRow chars={chars} codes={charCodes || []} h={30} />}
         {/* 동작 이름표(Z·M 공통) + 제목 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
           {card.thumb_text && (
