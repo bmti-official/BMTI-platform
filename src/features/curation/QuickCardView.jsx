@@ -159,7 +159,9 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const [common, setCommon] = useState({});
   const countRef = useRef(null);
   useEffect(() => { let alive = true; loadVoiceAssets().then((m) => { if (alive) setCommon(m); }); return () => { alive = false; }; }, []);
-  const commonAt = (kind, n) => common[voiceKey(kind, tone === 'm' ? 'm' : 'z', n)] || '';
+  // 영상에 나오는 사람의 성별에 맞는 목소리를 쓴다.
+  const voiceSex = card.video_gender === 'male' ? 'male' : 'female';
+  const commonAt = (kind, n) => common[voiceKey(kind, voiceSex, tone, n)] || '';
   // 지금 어느 쪽을 하는가 — '좌우 번갈아'는 한 번마다 바뀌니 알리지 않는다.
   const nowSide = !card.has_side || side === 'alt' ? null : (twoPhase ? (secondSide ? 2 : 1) : (side === 'left' ? 2 : 1));
   const cueUrl = nowSide ? commonAt('side', nowSide) : '';
