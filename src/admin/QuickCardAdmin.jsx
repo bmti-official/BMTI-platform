@@ -444,6 +444,9 @@ export default function QuickCardAdmin() {
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['thumb_text', 'title_z', 'title_m']);
   const [busy, setBusy] = useState(false);
+  // 목록은 100개씩 나눠 읽는다 — 쌓여도 처음 여는 속도가 그대로다
+  const [take, setTake] = useState(100);
+  const [total, setTotal] = useState(0);
   // 차례 바꾸기 · 복제 — 끝나면 목록을 다시 읽는다
   const move = async (i, d) => {
     if (busy || q.trim()) return;
@@ -468,15 +471,16 @@ export default function QuickCardAdmin() {
   useEffect(() => {
     let alive = true;
     supabase.from('quick_cards')
-      .select('*').order('sort_order', { ascending: true }).order('id', { ascending: false })
-      .then(({ data, error }) => {
+      .select('*', { count: 'exact' }).order('sort_order', { ascending: true }).order('id', { ascending: false })
+      .range(0, take - 1)
+      .then(({ data, error, count }) => {
         if (!alive) return;
         setLoading(false);
         if (error) { setErr(error.message); return; }
-        setErr(''); setRows(data || []);
+        setErr(''); setRows(data || []); setTotal(count || 0);
       });
     return () => { alive = false; };
-  }, [tick]);
+  }, [tick, take]);
 
   const remove = async (id, after) => {
     if (!window.confirm(`바로카드 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
@@ -578,6 +582,14 @@ export default function QuickCardAdmin() {
           </tbody>
         </table>
       </div>
+
+      {/* 쌓이면 나눠 읽는다 — 100개를 넘겨야 보인다 */}
+      {total > rows.length && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, justifyContent: 'center', marginTop: 12 }}>
+          <button onClick={() => setTake((n) => n + 100)} style={btn(false)}>더 보기</button>
+          <span style={{ fontSize: 12, color: SUB }}>{rows.length} / {total}개</span>
+        </div>
+      )}
     </div>
   );
 }

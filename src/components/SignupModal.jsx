@@ -186,14 +186,11 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id')
-          .eq('nickname', formData.nickname);
-
+        // 문을 잠근 뒤에는 남의 줄이 보이지 않으므로, 겹치는지만 서버에 물어본다.
+        const { data, error } = await supabase.rpc('nickname_taken', { p_nickname: formData.nickname });
         if (error) throw error;
 
-        if (data && data.length > 0) {
+        if (data === true) {
           alert('이미 사용중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
           return;
         }

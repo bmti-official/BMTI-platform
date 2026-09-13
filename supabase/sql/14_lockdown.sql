@@ -1,7 +1,7 @@
 -- ===================================================================
 -- 2단계 — 활짝 열려 있던 문을 닫는다
 -- ===================================================================
--- ⚠️ 13_auth_link.sql을 먼저 실행하고,
+-- ⚠️ 13_auth_link.sql 과 14a_before_lockdown.sql 을 먼저 실행하고,
 --    로그인·다이어리·건강 기록이 모두 잘 되는 걸 확인한 뒤에 실행하세요.
 --    이걸 실행하면 로그인하지 않은 사람은 자기 기록도 못 씁니다.
 --
@@ -25,6 +25,9 @@ drop policy if exists "curation_all" on public.curation_content;
 
 -- 방문자 수는 숫자만 있는 표라 계속 열어 두되, 지우지는 못하게 한다.
 drop policy if exists "allow anon all - visitor_counts" on public.visitor_counts;
+drop policy if exists visitor_counts_rw  on public.visitor_counts;
+drop policy if exists visitor_counts_ins on public.visitor_counts;
+drop policy if exists visitor_counts_upd on public.visitor_counts;
 create policy visitor_counts_rw on public.visitor_counts
   for select using (true);
 create policy visitor_counts_ins on public.visitor_counts
@@ -33,10 +36,14 @@ create policy visitor_counts_upd on public.visitor_counts
   for update using (true) with check (true);
 
 drop policy if exists "allow anon all - visitor_total" on public.visitor_total;
+drop policy if exists visitor_total_sel on public.visitor_total;
+drop policy if exists visitor_total_upd on public.visitor_total;
 create policy visitor_total_sel on public.visitor_total
   for select using (true);
 create policy visitor_total_upd on public.visitor_total
   for update using (true) with check (true);
+
+-- 여러 번 실행해도 탈이 없습니다.
 
 -- 되돌리기(문제가 생겼을 때만):
 --   create policy "allow anon all - users" on public.users for all using (true) with check (true);

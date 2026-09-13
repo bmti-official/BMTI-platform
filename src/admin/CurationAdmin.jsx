@@ -429,6 +429,9 @@ export default function CurationAdmin() {
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['thumb_text', 'title_z', 'title_m']);
   const [busy, setBusy] = useState(false);
+  // 목록은 100개씩 나눠 읽는다
+  const [take, setTake] = useState(100);
+  const [total, setTotal] = useState(0);
   // 차례 바꾸기 · 복제 — 끝나면 목록을 다시 읽는다
   const move = async (i, d) => {
     if (busy || q.trim()) return;
@@ -459,15 +462,16 @@ export default function CurationAdmin() {
     let alive = true;
     (async () => {
       const a = await supabase.from('curation_items')
-        .select('*').order('sort_order', { ascending: true }).order('id', { ascending: false });
+        .select('*', { count: 'exact' }).order('sort_order', { ascending: true }).order('id', { ascending: false })
+        .range(0, take - 1);
       const b = await supabase.from('quick_cards').select('*').order('sort_order', { ascending: true });
       if (!alive) return;
       setLoading(false);
       if (a.error) { setErr(a.error.message); return; }
-      setErr(''); setRows(a.data || []); setAllCards(b.data || []);
+      setErr(''); setRows(a.data || []); setTotal(a.count || 0); setAllCards(b.data || []);
     })();
     return () => { alive = false; };
-  }, [tick]);
+  }, [tick, take]);
 
   const remove = async (id, after) => {
     if (!window.confirm(`큐레이션 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
@@ -580,6 +584,14 @@ export default function CurationAdmin() {
           </tbody>
         </table>
       </div>
+
+      {/* 쌓이면 나눠 읽는다 — 100개를 넘겨야 보인다 */}
+      {total > rows.length && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, justifyContent: 'center', marginTop: 12 }}>
+          <button onClick={() => setTake((n) => n + 100)} style={btn(false)}>더 보기</button>
+          <span style={{ fontSize: 12, color: SUB }}>{rows.length} / {total}개</span>
+        </div>
+      )}
     </div>
   );
 }

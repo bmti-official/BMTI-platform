@@ -6,6 +6,7 @@ import RoutineAdmin from './RoutineAdmin';
 import SearchPreview from './SearchPreview';
 import FlowStudio from './FlowStudio';
 import VoiceCommon from './VoiceCommon';
+import StorageClean from './StorageClean';
 import MetricsView from './MetricsView';
 import { confirmLeave } from './dirty';
 
@@ -183,6 +184,7 @@ function Dashboard({ session }) {
           {tabBtn('search', '🔎 검색 분류')}
           {tabBtn('flow', '🎬 동작 영상')}
           {tabBtn('voice', '🔊 공통 음성')}
+          {tabBtn('clean', '🧹 파일 정리')}
         </div>
         {tab === 'metrics' && <MetricsView />}
         {tab === 'users' && <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
@@ -192,6 +194,7 @@ function Dashboard({ session }) {
         {tab === 'search' && <SearchPreview />}
         {tab === 'flow' && <FlowStudio />}
         {tab === 'voice' && <VoiceCommon />}
+        {tab === 'clean' && <StorageClean />}
       </main>
     </div>
   );
