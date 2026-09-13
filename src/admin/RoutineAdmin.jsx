@@ -5,6 +5,8 @@ import { INK, SUB, LINE, BG, box, input, label, btn, smallBtn } from './theme';
 import { PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
+import { withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
+import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
 import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curation/format';
 
@@ -67,17 +69,26 @@ function CardPicker({ all, chosen, onChange }) {
   );
 }
 
-function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
-  const [f, setF] = useState(row.routine || EMPTY);
-  const [chosen, setChosen] = useState(row.cards || []);
+function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
+  // 저장 안 하고 나간 내용이 있으면 물어보고 이어 쓴다 — 담아 둔 동작 목록까지 함께.
+  const [start] = useState(() => withDraft({ ...(row.routine || EMPTY), cards: row.cards || [] }, 'routine', row.routine));
+  const [f, setF] = useState(() => { const rest = { ...start }; delete rest.cards; return rest; });
+  const [chosen, setChosen] = useState(() => start.cards || []);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
   useUnsavedGuard(f, chosen);
+  const draftAt = useAutoDraft('routine', row.routine, { ...f, cards: chosen });
   const s = routineSummary(chosen);
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
+    // 빈 플레이리스트가 손님에게 보이지 않게 한다.
+    const missing = f.published ? missingForPublish('routine', { cardCount: chosen.length }) : [];
+    if (missing.length) {
+      setErr(`${missing.join(' · ')}이(가) 비어 있어 공개할 수 없습니다. 채운 뒤 다시 눌러 주세요.`);
+      return;
+    }
     setSaving(true); setErr('');
     const payload = {
       published: f.published, sort_order: f.sort_order,
@@ -104,7 +115,8 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
       if (error) { setSaving(false); setErr('동작 저장 실패: ' + error.message); return; }
     }
     setSaving(false);
-    onSaved();
+    dropDraft('routine', row.routine?.id);
+    onSaved(f.published ? '공개로 저장했습니다.' : '비공개로 저장했습니다.');
   };
 
   return (
@@ -168,6 +180,10 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview }) {
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview({ routine: f, cards: chosen })} style={btn(false)}>미리보기</button>
         <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
+        <DraftMark at={draftAt} />
+        {f.id && (
+          <button onClick={() => onDelete(f.id)} style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36' }}>삭제</button>
+        )}
       </div>
     </div>
   );
@@ -180,6 +196,7 @@ export default function RoutineAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [saved, setSaved] = useSavedNote();
 
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
@@ -225,6 +242,11 @@ export default function RoutineAdmin() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>플레이리스트</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
+        {saved && (
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#2F7A4F', background: '#E8F3EC', borderRadius: 999, padding: '5px 12px' }}>
+            ✓ {saved}
+          </div>
+        )}
         <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 루틴</button>
       </div>
 
@@ -239,7 +261,8 @@ export default function RoutineAdmin() {
 
       {editing && (
         <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load(); }} onPreview={(d) => setPreview(d)} />
+          onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
+          onDelete={(id) => { remove(id); setEditing(null); }} onPreview={(d) => setPreview(d)} />
       )}
 
       {preview && (

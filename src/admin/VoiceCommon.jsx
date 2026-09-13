@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, ACCENT, box, btn } from './theme';
 import { uploadOne, AUDIO_ACCEPT } from './upload';
 import { COUNT_MAX, REST_LENS, COUNT_KO, voiceKey as key } from '../features/curation/voiceCommon';
+import { useSavedNote } from './editorState';
 
 // 칸 하나 — 올리기·듣기·비우기
 function Slot({ label, url, busy, onPick, onClear }) {
@@ -34,6 +35,7 @@ export default function VoiceCommon() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState('');
+  const [saved, setSaved] = useSavedNote();
 
   useEffect(() => {
     let alive = true;
@@ -64,6 +66,7 @@ export default function VoiceCommon() {
       setBusy('');
       if (error) { setErr('저장 실패: ' + error.message); return; }
       setRows((p) => ({ ...p, [k]: r.url }));
+      setSaved('올렸습니다.');
     };
     input.click();
   };
@@ -73,6 +76,7 @@ export default function VoiceCommon() {
     const { error } = await supabase.from('voice_assets').delete().match({ kind, tone, n });
     if (error) { setErr('지우기 실패: ' + error.message); return; }
     setRows((p) => { const next = { ...p }; delete next[k]; return next; });
+    setSaved('비웠습니다.');
   };
 
   const at = (kind, n) => rows[key(kind, tone, n)];
@@ -98,7 +102,12 @@ export default function VoiceCommon() {
             <button key={t} type="button" onClick={() => setTone(t)}
               style={{ ...btn(tone === t), opacity: 1 }}>{lb}</button>
           ))}
-          <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
+          {saved && (
+            <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 12.5, fontWeight: 800, color: '#2F7A4F', background: '#E8F3EC', borderRadius: 999, padding: '5px 12px' }}>
+              ✓ {saved}
+            </span>
+          )}
+          <span style={{ marginLeft: saved ? 0 : 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
             숫자 {countDone}/{COUNT_MAX} · 쉬는 시간 {restDone}/{REST_LENS.length} · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>

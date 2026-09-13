@@ -53,3 +53,39 @@ export function dropDraft(prefix, id) {
   try { localStorage.removeItem(`bmti_admin_draft_${prefix}_${id || 'new'}`); } catch { /* 무시 */ }
 }
 
+
+// ── 저장했다는 알림 ──────────────────────────────────────────
+// 저장 버튼을 누르면 화면이 닫히기만 해서 "된 건가?" 싶었다.
+// 목록 위에 잠깐 떴다 사라지는 한 줄을 띄운다.
+export function useSavedNote(sec = 3) {
+  const [note, setNote] = useState('');
+  useEffect(() => {
+    if (!note) return undefined;
+    const t = setTimeout(() => setNote(''), sec * 1000);
+    return () => clearTimeout(t);
+  }, [note, sec]);
+  return [note, setNote];
+}
+
+// ── 공개 전 검사 ────────────────────────────────────────────
+// 알맹이가 빠진 채로 공개되면 손님 화면에 '동작 영상 없음' 같은 게 그대로 뜬다.
+// 비공개로 저장하는 건 언제나 되고, 공개로 돌릴 때만 막는다.
+const has = (v) => typeof v === 'string' && v.trim().length > 0;
+
+/** 공개하기 전에 비어 있으면 안 되는 칸들. 비어 있는 것들의 이름을 돌려준다. */
+export function missingForPublish(kind, f) {
+  const out = [];
+  if (kind === 'curation') {
+    if (!has(f.cover_url)) out.push('대표 이미지');
+    if (!has(f.thumb_text)) out.push('썸네일 문구');
+  }
+  if (kind === 'card') {
+    if (!has(f.video_url)) out.push('동작 영상');
+    if (!has(f.thumb_text)) out.push('동작 이름');
+    if (!(Number(f.duration_sec) > 0)) out.push('동작 한 번 길이');
+  }
+  if (kind === 'routine') {
+    if (!(Number(f.cardCount) > 0)) out.push('담긴 동작');
+  }
+  return out;
+}

@@ -6,7 +6,7 @@ import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './th
 import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
-import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
+import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
 import ImageInput from './ImageInput';
@@ -99,6 +99,12 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
 
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
+    // 공개로 돌릴 땐 손님 화면에 빈칸이 보이지 않게 알맹이를 확인한다.
+    const missing = f.published ? missingForPublish('card', f) : [];
+    if (missing.length) {
+      setErr(`${missing.join(' · ')}이(가) 비어 있어 공개할 수 없습니다. 채운 뒤 다시 눌러 주세요.`);
+      return;
+    }
     const unchecked = countNeedsCheck(f);
     if (f.published && unchecked > 0) {
       setErr(`'${NEEDS_CHECK}' 표시가 ${unchecked}군데 남아 있습니다. 사실을 확인하고 표시를 지운 뒤 공개해 주세요.`);
@@ -114,7 +120,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
     dropDraft('card', row?.id);
-    onSaved();
+    onSaved(f.published ? '공개로 저장했습니다.' : '비공개로 저장했습니다.');
   };
 
   return (
@@ -432,6 +438,7 @@ export default function QuickCardAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [saved, setSaved] = useSavedNote();
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((n) => n + 1), []);
 
@@ -471,6 +478,11 @@ export default function QuickCardAdmin() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>바로카드</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
+        {saved && (
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#2F7A4F', background: '#E8F3EC', borderRadius: 999, padding: '5px 12px' }}>
+            ✓ {saved}
+          </div>
+        )}
         <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
       </div>
 
@@ -484,7 +496,7 @@ export default function QuickCardAdmin() {
       )}
 
       {editing && (
-        <Editor row={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }}
+        <Editor row={editing} onCancel={() => setEditing(null)} onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
           onDelete={(id) => remove(id, () => setEditing(null))}
           onPreview={(draft) => setPreview(draft)} />
       )}

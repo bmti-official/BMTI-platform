@@ -8,7 +8,7 @@ import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
-import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft } from './editorState';
+import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
 import CharPicker from './CharPicker';
@@ -122,6 +122,12 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
   const save = async () => {
     if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
     // AI가 '내가 준 정보에 없는 내용'이라고 표시해 둔 곳은 공개 전에 반드시 확인한다.
+    // 공개로 돌릴 땐 손님 화면에 빈칸이 보이지 않게 알맹이를 확인한다.
+    const missing = f.published ? missingForPublish('curation', f) : [];
+    if (missing.length) {
+      setErr(`${missing.join(' · ')}이(가) 비어 있어 공개할 수 없습니다. 채운 뒤 다시 눌러 주세요.`);
+      return;
+    }
     const unchecked = countNeedsCheck(f);
     if (f.published && unchecked > 0) {
       setErr(`'${NEEDS_CHECK}' 표시가 ${unchecked}군데 남아 있습니다. 사실을 확인하고 표시를 지운 뒤 공개해 주세요.`);
@@ -137,7 +143,7 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
     dropDraft('curation', row?.id);
-    onSaved();
+    onSaved(f.published ? '공개로 저장했습니다.' : '비공개로 저장했습니다.');
   };
 
   return (
@@ -417,6 +423,7 @@ export default function CurationAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null); // null=안 열림, {}=새로, {…}=수정
   const [preview, setPreview] = useState(null);
+  const [saved, setSaved] = useSavedNote();
   const [allCards, setAllCards] = useState([]);
 
   // 목록 읽기 — tick을 올리면 다시 읽는다.
@@ -466,6 +473,11 @@ export default function CurationAdmin() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>큐레이션</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
+        {saved && (
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#2F7A4F', background: '#E8F3EC', borderRadius: 999, padding: '5px 12px' }}>
+            ✓ {saved}
+          </div>
+        )}
         <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 큐레이션</button>
       </div>
 
@@ -479,7 +491,7 @@ export default function CurationAdmin() {
       )}
 
       {editing && (
-        <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }}
+        <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)} onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
           onPreview={(draft) => setPreview(draft)} onDelete={(id) => remove(id, () => setEditing(null))} />
       )}
 
