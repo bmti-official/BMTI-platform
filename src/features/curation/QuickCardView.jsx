@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
-import { loadVoiceAssets, voiceKey } from './voiceCommon';
+import { loadVoiceAssets, voiceKey, COUNTDOWN_AT } from './voiceCommon';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
@@ -218,7 +218,18 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
     if (rest > 0) {
       resting.current = true;
       if (paused) return undefined;
-      const t = setTimeout(() => setRest((n) => n - 1), 1000);
+      const t = setTimeout(() => {
+        const next = rest - 1;
+        // 3초 남으면 '셋, 둘, 하나'가 나간다. 쉬는 멘트와 채널이 달라 서로 자르지 않는다.
+        if (next === COUNTDOWN_AT && voiceOn) {
+          const a = countRef.current;
+          if (a && commonAt('countdown', 0)) {
+            a.volume = vol;
+            try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
+          }
+        }
+        setRest(next);
+      }, 1000);
       return () => clearTimeout(t);
     }
     if (resting.current) {
@@ -227,7 +238,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
       if (v) { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } }
     }
     return undefined;
-  }, [rest, paused]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rest, paused, voiceOn, vol]);
 
   // 소리가 막혀 오프닝이 끝나지 않는 경우를 대비해, 스무 해 세고는 동작으로 넘어간다.
   useEffect(() => {
@@ -441,7 +453,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
               else if (voiceRole === 'cue') setCueDone(setKey);
               else if (voiceRole === 'ment') setMentDone(setKey);
             }} style={{ display: 'none' }} />
-          <audio ref={countRef} src={commonAt('count', rep + 1) || undefined} preload="auto" style={{ display: 'none' }} />
+          <audio ref={countRef} src={(rest > 0 ? commonAt('countdown', 0) : commonAt('count', rep + 1)) || undefined}
+            preload="auto" style={{ display: 'none' }} />
           <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
             style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,
               background: voiceOn ? SET_BG : '#fff', boxShadow: voiceOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
