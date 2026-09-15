@@ -9,8 +9,9 @@ export const COUNTDOWN_AT = 3;   // 남은 초가 이만큼일 때 '셋, 둘, �
 export const COUNT_KO = ['', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열',
   '열하나', '열둘', '열셋', '열넷', '열다섯', '열여섯', '열일곱', '열여덟', '열아홉', '스물'];
 
-// 말투를 가리지 않는 갈래 — 숫자·방향·카운트다운은 성별로만 나뉜다.
-export const TONE_FREE = ['count', 'side', 'countdown'];
+// 말투를 가리지 않는 갈래 — 숫자·방향·카운트다운·자리 바꾸기는 성별로만 나뉜다.
+// 하는 말이 하나뿐이라 담백하게 읽든 다정하게 읽든 내용이 같다.
+export const TONE_FREE = ['count', 'side', 'countdown', 'switch'];
 export const ANY_TONE = 'a';
 /** 말투를 가리는 갈래인지 보고, 안 가리면 'a'로 맞춰 준다. */
 export const toneFor = (kind, tone) => (TONE_FREE.includes(kind) ? ANY_TONE : (tone === 'm' ? 'm' : 'z'));
