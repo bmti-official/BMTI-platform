@@ -39,20 +39,17 @@ const BoltMark = () => (
     <path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" />
   </svg>
 );
-const PlayListMark = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-    <path d="M4 6.5h11M4 11h11M4 15.5h7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-    <circle cx="17.5" cy="17" r="3" stroke="currentColor" strokeWidth="1.9" />
-    <path d="M20.5 17V7.6l2.5.9" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+const CheckMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 13l4 4L19 7" />
   </svg>
 );
-
 const NAV = [
-  { key: 'curation', label: '큐레이션', icon: <BookMark /> },
-  { key: 'cards', label: '바로카드', icon: <BoltMark /> },
-  { key: 'char' },
-  { key: 'routines', label: '건강플리', icon: <PlayListMark /> },
   { key: 'diary', label: '다이어리', icon: <Mallang v={4} size={22} noBlink /> },
+  { key: 'curation', label: '큐레이션', icon: <BookMark /> },
+  { key: 'char' },
+  { key: 'baro', label: '바로플리', icon: <BoltMark /> },
+  { key: 'mine', label: '자기플리', icon: <CheckMark /> },
 ];
 
 // 손님 화면 껍데기 — 위 두 버튼과 아래 알약

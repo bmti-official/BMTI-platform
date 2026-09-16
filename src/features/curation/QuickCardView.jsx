@@ -11,7 +11,7 @@ import { HELLO_LINE } from './helloLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { pickCardTone, fmtCount as fmt, mmss, nameLines, clipY } from './format';
+import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -350,13 +350,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       <div style={{ padding: '12px 15px 10px' }}>
         {/* 동작 이름표(Z·M 공통) + 제목 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
-          {card.thumb_text && (
-            <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 900, color: KIND_INK[card.kind] || PURPLE,
-              background: '#fff', borderRadius: 10, padding: '5px 10px', boxShadow: `inset 0 0 0 1px ${LINE}`,
-              lineHeight: 1.25, textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
-              {nameLines(card.thumb_text).map((ln, i) => <span key={i}>{ln}</span>)}
-            </span>
-          )}
+          {/* 종류 이름표 — 글자와 색이 함께 종류를 말해 준다 */}
+          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 900, color: KIND_INK[card.kind] || PURPLE,
+            background: '#fff', borderRadius: 10, padding: '5px 11px', boxShadow: `inset 0 0 0 1px ${LINE}`,
+            lineHeight: 1.25, whiteSpace: 'nowrap' }}>
+            {KIND_LABEL[card.kind] || card.kind}
+          </span>
           <h3 style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: 0, wordBreak: 'keep-all' }}>{title}</h3>
         </div>
       </div>

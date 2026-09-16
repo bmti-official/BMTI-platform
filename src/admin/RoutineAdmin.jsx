@@ -13,6 +13,7 @@ import { moveRow, duplicateRow } from './listActions';
 import { withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
+import BaroPliView from '../features/curation/BaroPliView';
 import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curation/format';
 
 // 플레이리스트(루틴) 등록 화면 — 바로카드를 골라 순서를 정하면 하나의 루틴이 된다.
@@ -222,6 +223,7 @@ export default function RoutineAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [screen, setScreen] = useState(false);   // 손님이 보는 바로플리 화면 통째로
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['title_z', 'title_m']);
   const [busy, setBusy] = useState(false);
@@ -298,7 +300,8 @@ export default function RoutineAdmin() {
           </div>
         )}
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목으로 찾기" />
-        <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 루틴</button>
+        <button onClick={() => setScreen(true)} style={{ ...btn(false), marginLeft: 'auto' }}>📱 바로플리 화면</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={btn(true)}>+ 새 루틴</button>
       </div>
 
       {err && (
@@ -316,8 +319,18 @@ export default function RoutineAdmin() {
           onDelete={(id) => { remove(id); setEditing(null); }} onPreview={(d) => setPreview(d)} />
       )}
 
+      {screen && (
+        <PreviewModal navActive="baro" title="바로플리 화면" onClose={() => setScreen(false)}>
+          {(tone) => (
+            <BaroPliView tone={tone}
+              routines={rows.filter((r) => r.published)}
+              cards={allCards.filter((c) => c.published)} />
+          )}
+        </PreviewModal>
+      )}
+
       {preview && (
-        <PreviewModal navActive="routines" title="루틴 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="baro" title="루틴 미리보기" onClose={() => setPreview(null)}>
           {(tone) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div>
