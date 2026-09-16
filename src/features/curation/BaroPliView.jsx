@@ -2,12 +2,13 @@
 //  · 바로플리 : 인스타 게시물처럼 한 줄에 하나씩
 //  · 바로카드 : 인스타 돋보기처럼 가로 셋씩
 // 위쪽 알약을 누르거나 좌우로 밀어 옮긴다.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import RoutineView from './RoutineView';
 import CardFeed from './CardFeed';
 import RoutinePlayer from './RoutinePlayer';
 import { fmtCount } from './format';
+import { gridOrder } from './gridOrder';
 import { CHARACTERS } from '../../data';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -23,6 +24,9 @@ function charProps(r, tone) {
 
 export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmtiCode, onOpenRoutine }) {
   const [tab, setTab] = useState('pli');
+  // 격자 차례는 화면을 열 때 한 번만 정한다 — 스크롤할 때마다 바뀌면 어지럽다.
+  const [seed] = useState(() => Math.floor(Math.random() * 2000000) + 1);
+  const grid = useMemo(() => gridOrder(cards, bmtiCode, seed), [cards, bmtiCode, seed]);
   // 눌러서 펼쳐 본 바로카드
   const [open, setOpen] = useState(null);   // { cards, startId, origin }
   const [playing, setPlaying] = useState(null);   // 재생 중인 바로플리
@@ -101,12 +105,12 @@ export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmt
       ) : (
         // 돋보기처럼 가로 셋씩
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
-          {cards.length === 0 && <div style={{ gridColumn: '1 / -1' }}><Empty text="아직 등록된 동작이 없어요." /></div>}
-          {cards.map((c) => (
+          {grid.length === 0 && <div style={{ gridColumn: '1 / -1' }}><Empty text="아직 등록된 동작이 없어요." /></div>}
+          {grid.map((c) => (
             <button key={c.id} type="button"
               onClick={(e) => {
                 const r = e.currentTarget.getBoundingClientRect();
-                setOpen({ cards, startId: c.id, origin: { left: r.left, top: r.top, width: r.width, height: r.height } });
+                setOpen({ cards: grid, startId: c.id, origin: { left: r.left, top: r.top, width: r.width, height: r.height } });
               }}
               style={{ position: 'relative', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
               <CurationThumb item={c} radius={2} ratio="4 / 5" showRead={false} clip={c.video_url || ''} emptyText="" />

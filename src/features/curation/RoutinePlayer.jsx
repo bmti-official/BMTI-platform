@@ -2,6 +2,7 @@
 // 배경음악이 처음부터 끝까지 깔리고, 멘트가 흐를 땐 저절로 작아진다.
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
+import { withRoutineSetup } from './routineSetup';
 import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS } from './voiceCommon';
 import { pickCardTone, pickRoutineTone } from './format';
 
@@ -79,7 +80,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       </div>
 
       <div style={{ padding: '10px 14px 0' }}>
-        <QuickCardView key={card.id} card={card} tone={tone} bmtiCode={bmtiCode} skipOpening={routine?.skip_opening !== false} />
+        <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode} skipOpening={routine?.skip_opening !== false} />
       </div>
 
       {/* 다음 동작 · 음악 */}

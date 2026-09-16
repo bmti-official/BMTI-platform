@@ -84,7 +84,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const clipRef = useRef(null);
   const resting = useRef(false);
   // 좌우가 나뉘는 동작이면 어느 쪽을 할지 고른다.
-  const [side, setSide] = useState('both');
+  const [side, setSide] = useState(card.default_side || 'both');
   // '한쪽씩 둘 다'는 오른쪽을 다 하고 왼쪽으로 넘어간다. 지금 왼쪽 차례인가.
   const [secondSide, setSecondSide] = useState(false);
   // '좌우 번갈아'는 영상이 한 번 돌 때마다 좌우가 바뀐다.

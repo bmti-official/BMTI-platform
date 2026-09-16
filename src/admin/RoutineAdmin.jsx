@@ -18,6 +18,8 @@ import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
 import BaroPliView from '../features/curation/BaroPliView';
 import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curation/format';
+import { RC_SIDES } from '../features/curation/routineSetup';
+import { cardSetup, REST_LIST } from '../features/curation/cardDefaults';
 
 // 플레이리스트(루틴) 등록 화면 — 바로카드를 골라 순서를 정하면 하나의 루틴이 된다.
 // 총 소요시간·도구·타겟 부위는 담긴 카드에서 자동으로 계산되므로 따로 입력하지 않는다.
@@ -55,15 +57,18 @@ function CardPicker({ all, chosen, onChange }) {
         <div style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 8, minHeight: 120, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {chosen.length === 0 && <div style={{ fontSize: 12.5, color: SUB, padding: 10 }}>오른쪽에서 동작을 눌러 담아주세요.</div>}
           {chosen.map((c, i) => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 7, background: BG, borderRadius: 8, padding: '7px 9px' }}>
-              <span style={{ width: 18, fontSize: 12, fontWeight: 800, color: SUB, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {c.title_z}
-              </span>
-              <span style={{ fontSize: 11, color: SUB, whiteSpace: 'nowrap' }}>{c.duration_sec > 0 ? mmss(c.duration_sec) : '—'}</span>
-              <button onClick={() => move(i, -1)} disabled={i === 0} style={{ ...smallBtn, padding: '3px 7px', opacity: i === 0 ? 0.35 : 1 }}>↑</button>
-              <button onClick={() => move(i, 1)} disabled={i === chosen.length - 1} style={{ ...smallBtn, padding: '3px 7px', opacity: i === chosen.length - 1 ? 0.35 : 1 }}>↓</button>
-              <button onClick={() => onChange(chosen.filter((x) => x.id !== c.id))} style={{ ...smallBtn, padding: '3px 7px', color: '#B23B36' }}>✕</button>
+            <div key={c.id} style={{ background: BG, borderRadius: 8, padding: '7px 9px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ width: 18, fontSize: 12, fontWeight: 800, color: SUB, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.title_z}
+                </span>
+                <span style={{ fontSize: 11, color: SUB, whiteSpace: 'nowrap' }}>{c.duration_sec > 0 ? mmss(c.duration_sec) : '—'}</span>
+                <button onClick={() => move(i, -1)} disabled={i === 0} style={{ ...smallBtn, padding: '3px 7px', opacity: i === 0 ? 0.35 : 1 }}>↑</button>
+                <button onClick={() => move(i, 1)} disabled={i === chosen.length - 1} style={{ ...smallBtn, padding: '3px 7px', opacity: i === chosen.length - 1 ? 0.35 : 1 }}>↓</button>
+                <button onClick={() => onChange(chosen.filter((x) => x.id !== c.id))} style={{ ...smallBtn, padding: '3px 7px', color: '#B23B36' }}>✕</button>
+              </div>
+              <CardSetup card={c} onChange={(patch) => onChange(chosen.map((x) => (x.id === c.id ? { ...x, ...patch } : x)))} />
             </div>
           ))}
         </div>
@@ -88,6 +93,32 @@ function CardPicker({ all, chosen, onChange }) {
     </div>
   );
 }
+
+// 이 묶음 안에서만 쓰는 설정 — 비워 두면 바로카드에 적어 둔 값을 그대로 쓴다.
+function CardSetup({ card, onChange }) {
+  const base = cardSetup({ kind: card.kind, default_reps: card.default_reps, default_sets: card.default_sets, default_rest: card.default_rest });
+  const pick = (key, list, unit, now) => (
+    <select value={card[key] ?? ''} onChange={(e) => onChange({ [key]: e.target.value === '' ? null : Number(e.target.value) })}
+      style={{ ...tinyPick }}>
+      <option value="">기본 {now}{unit}</option>
+      {list.map((v) => <option key={v} value={v}>{v}{unit}</option>)}
+    </select>
+  );
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, paddingLeft: 25, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 10.5, color: SUB, fontWeight: 700 }}>이 플리에서만</span>
+      {pick('rc_reps', base.repList, '회', base.reps)}
+      {pick('rc_sets', base.setList, '세트', base.sets)}
+      {pick('rc_rest', REST_LIST, '초 쉬기', base.rest)}
+      <select value={card.rc_side || ''} onChange={(e) => onChange({ rc_side: e.target.value || null })} style={{ ...tinyPick }}>
+        {RC_SIDES.map(([v, ko]) => <option key={v} value={v}>{ko}</option>)}
+      </select>
+    </div>
+  );
+}
+
+const tinyPick = { fontSize: 11, fontWeight: 700, color: INK, background: '#fff', border: `1px solid ${LINE}`,
+  borderRadius: 6, padding: '3px 5px', fontFamily: 'inherit', cursor: 'pointer' };
 
 function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
   // 저장 안 하고 나간 내용이 있으면 물어보고 이어 쓴다 — 담아 둔 동작 목록까지 함께.
@@ -135,7 +166,10 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
     // 담긴 동작은 통째로 갈아끼운다 — 순서까지 그대로 맞추는 가장 단순한 방법.
     await supabase.from('routine_cards').delete().eq('routine_id', id);
     if (chosen.length) {
-      const rows = chosen.map((c, i) => ({ routine_id: id, card_id: c.id, position: i }));
+      const rows = chosen.map((c, i) => ({
+        routine_id: id, card_id: c.id, position: i,
+        reps: c.rc_reps ?? null, sets: c.rc_sets ?? null, rest: c.rc_rest ?? null, side: c.rc_side || null,
+      }));
       const { error } = await supabase.from('routine_cards').insert(rows);
       if (error) { setSaving(false); setErr('동작 저장 실패: ' + error.message); return; }
     }
@@ -310,7 +344,10 @@ export default function RoutineAdmin() {
     setBusy(true);
     const r = await duplicateRow('routines', row, ['cards']);
     if (!r.err && (row.cards || []).length) {
-      await supabase.from('routine_cards').insert(row.cards.map((c, i) => ({ routine_id: r.id, card_id: c.id, position: i })));
+      await supabase.from('routine_cards').insert(row.cards.map((c, i) => ({
+        routine_id: r.id, card_id: c.id, position: i,
+        reps: c.rc_reps ?? null, sets: c.rc_sets ?? null, rest: c.rc_rest ?? null, side: c.rc_side || null,
+      })));
     }
     setBusy(false);
     if (r.err) { alert('복제 실패: ' + r.err); return; }
@@ -337,7 +374,9 @@ export default function RoutineAdmin() {
       setAllCards(cards.data || []);
       setRows((rt.data || []).map((r) => ({
         ...r,
-        cards: (links.data || []).filter((l) => l.routine_id === r.id).map((l) => byId[l.card_id]).filter(Boolean),
+        cards: (links.data || []).filter((l) => l.routine_id === r.id)
+          .map((l) => (byId[l.card_id] ? { ...byId[l.card_id], rc_reps: l.reps, rc_sets: l.sets, rc_rest: l.rest, rc_side: l.side || '' } : null))
+          .filter(Boolean),
       })));
     })();
     return () => { alive = false; };
