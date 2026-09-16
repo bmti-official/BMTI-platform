@@ -28,7 +28,7 @@ const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label
 
 const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
-  title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', duration_sec: 0,
+  title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', intro_url: '', duration_sec: 0,
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
@@ -409,6 +409,12 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <ImageInput allowVideo value={f.video_url} onChange={set('video_url')}
             placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
             hint="mp4·webm 파일을 올릴 수 있어요. 세로 4:5, 20MB 이하를 권합니다." />
+        </div>
+        <div>
+          <span style={label}>세트 전 설명 영상 <span style={{ fontWeight: 600 }}>— 화살표로 짚어 주는 4~6초 한 편</span></span>
+          <ImageInput allowVideo value={f.intro_url} onChange={set('intro_url')}
+            placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
+            hint="세트를 시작할 때 멘트와 함께 돕니다. 멘트가 끝날 때까지 되돌아 도니 4~6초로 짧게, 화살표 한 번이 그 안에 끝나게 만들어 주세요. 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다." />
         </div>
         <div>
           <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 골라서 담고, 없으면 직접 적기</span></span>

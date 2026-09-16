@@ -487,6 +487,15 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`,
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
+          {/* 세트 전 설명 영상 — 멘트가 흐르는 동안 동작 영상 위에서 되돈다.
+              화살표로 어디를 어떻게 움직이는지 짚어 주는 자리다. */}
+          {holding && card.intro_url && (
+            <video src={card.intro_url} muted playsInline autoPlay loop preload="auto"
+              style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%',
+                objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`, background: '#F3F1EC',
+                transform: mirrored ? 'scaleX(-1)' : 'none' }} />
+          )}
+
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
           {card.has_side && !allDone && (
             <span style={{ ...corner, top: full ? 26 : 12, left: 12, color: PURPLE }}>
