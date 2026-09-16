@@ -126,6 +126,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
         {gap > 0 ? (
           <GapStage code={myCode} img={partnerImg} name={partnerName} tone={tone} sec={gap} full={full}
             nextTitle={cards[at + 1] ? pickCardTone(cards[at + 1], tone).title : ''}
+            nextClip={(cards[at + 1] || {}).video_url || ''}
             voiceUrl={common[voiceKey('next', tone, 0)] || ''} audioRef={gapRef}
             onSkip={() => { setGap(0); setAt((n) => n + 1); }} />
         ) : (
@@ -187,9 +188,11 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
 }
 
 // 다음 동작으로 넘어가기 전 — 오프닝과 같은 자리에 파트너가 서서 한마디를 건넨다.
-function GapStage({ code, img, name, tone, sec, full, nextTitle, voiceUrl, audioRef, onSkip }) {
+function GapStage({ code, img, name, tone, sec, full, nextTitle, nextClip, voiceUrl, audioRef, onSkip }) {
   const stage = (
-    <PartnerStage code={code} img={img} name={name} say={subLines(nextLine(tone))} at={GAP_SEC - sec} len={GAP_SEC}>
+    // 뒤에는 이제 갈 동작이 흐릿하게 돈다 — 무엇을 하러 가는지 말보다 먼저 보인다.
+    <PartnerStage code={code} img={img} name={name} say={subLines(nextLine(tone))}
+      at={GAP_SEC - sec} len={GAP_SEC} clip={nextClip}>
       <span style={{ fontSize: 12.5, fontWeight: 700, color: SUB, textAlign: 'center', wordBreak: 'keep-all' }}>
         다음은 <b style={{ color: INK }}>{nextTitle || '다음 동작'}</b> — <b style={{ color: SET_INK }}>{sec}</b>초 뒤에 이어져요
       </span>
