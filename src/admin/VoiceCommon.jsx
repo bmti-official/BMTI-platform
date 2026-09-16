@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, ACCENT, box, btn } from './theme';
 import { uploadOne, AUDIO_ACCEPT } from './upload';
-import { COUNT_MAX, REST_LENS, COUNT_KO, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
+import { COUNT_MAX, REST_LENS, COUNT_KO, BGM_GROUPS, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { useSavedNote } from './editorState';
 
@@ -154,7 +154,7 @@ export default function VoiceCommon() {
             </span>
           )}
           <span style={{ marginLeft: saved ? 0 : 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
+            배경음악 {BGM_GROUPS.filter((g) => at('bgm', g.n)).length}/4 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -218,6 +218,28 @@ export default function VoiceCommon() {
           <br />좌우를 번갈아 하는 카드에는 쓰이지 않습니다.
         </div>
         <div style={{ maxWidth: 320 }}>{slot('switch', 0, '자리 바꾸기')}</div>
+      </div>
+
+      <div style={{ ...box, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>
+          배경음악 <span style={{ fontWeight: 600, color: SUB }}>— 네 곡</span>
+        </div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          <b>가사 없는 연주곡</b>만 올리세요. 사람 목소리가 섞이면 숫자 세는 소리와 부딪힙니다.
+          <br />손님 유형에 맞는 곡이 <b>처음부터 골라져</b> 있습니다 —
+          활력(A)·이완(O)으로 빠르기가, 확신(D)·유연(Q)으로 박자가 갈립니다.
+          <br /><b>처음부터 끝까지 같은 세기</b>로, 끝과 시작이 이어지게 만들어 주세요. 3분 안팎이면 넉넉합니다.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
+          {BGM_GROUPS.map((g) => (
+            <div key={g.n}>
+              {slot('bgm', g.n, `${g.label} · ${g.hint}`)}
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: SUB, marginTop: 10, lineHeight: 1.7 }}>
+          멘트가 흐르는 동안에는 음악이 저절로 작아집니다. <b>일정한 크기로만</b> 만들어 주시면 됩니다.
+        </div>
       </div>
 
       <div style={{ ...box, marginBottom: 16 }}>
