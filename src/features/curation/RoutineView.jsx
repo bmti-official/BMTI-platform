@@ -1,8 +1,9 @@
 // 손님에게 보이는 루틴(플레이리스트) — 총 소요시간·완주율·도구·타겟을 한눈에 보여주고
 // '바로 시작하기'와 '일단 구경하기'로 이어진다.
-import { useRef } from 'react';
+import { useState } from 'react';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import AiNote from './AiNote';
+import CardPeek from './CardPeek';
 import { CharRow, CurationThumb } from './CurationCard';
 import { isClip } from './media';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
@@ -10,27 +11,24 @@ import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRa
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
-export default function RoutineView({ routine, cards, tone = 'z', onStart, onBrowse, charImages, charCodes }) {
+export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onStart, onBrowse, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
   const s = routineSummary(cards);
   const rate = finishRate(routine);
-  // 구경하기를 누르면 이 표지 자리에서 화면이 커지게, 자리를 재서 넘겨 준다.
-  const coverRef = useRef(null);
+  // 구경하기 — 표지는 그대로 두고 그 위에 창만 띄워, 옆으로 넘겨 가며 훑어본다.
+  const [peek, setPeek] = useState(false);
   const browse = () => {
-    if (!onBrowse) return;
-    const r = coverRef.current?.getBoundingClientRect();
-    onBrowse(r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null);
+    if ((cards || []).length === 0) { if (onBrowse) onBrowse(); return; }
+    setPeek(true);
   };
 
   return (
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       {/* 표지 — 없으면 담긴 첫 동작의 것을 빌려 쓴다 */}
-      <div ref={coverRef}>
       <CurationThumb item={routine.cover_url ? routine : { ...(cards[0] || {}), thumb_text: routine.thumb_text || (cards[0] || {}).thumb_text }}
         radius={0} ratio="4 / 5" showRead={false}
         clip={routine.cover_url ? (isClip(routine.cover_url) ? routine.cover_url : '') : ((cards[0] || {}).video_url || '')}
         emptyText="표지 없음" />
-      </div>
       <div style={{ padding: '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11.5, fontWeight: 800, color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '3px 10px' }}>
@@ -66,6 +64,11 @@ export default function RoutineView({ routine, cards, tone = 'z', onStart, onBro
         </button>
       </div>
       </div>
+
+      {peek && (
+        <CardPeek title={title} cards={cards || []} tone={tone} bmtiCode={bmtiCode}
+          onClose={() => setPeek(false)} />
+      )}
     </article>
   );
 }

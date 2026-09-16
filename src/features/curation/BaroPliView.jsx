@@ -92,13 +92,9 @@ export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmt
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {routines.length === 0 && <Empty text="아직 담긴 플리가 없어요." />}
           {routines.map((r) => (
-            <RoutineView key={r.id} routine={r} cards={r.cards || []} tone={tone}
+            <RoutineView key={r.id} routine={r} cards={r.cards || []} tone={tone} bmtiCode={bmtiCode}
               onStart={() => setPlaying(r)}
-              onBrowse={(rect) => {
-                const list = r.cards || [];
-                if (list.length === 0) { if (onOpenRoutine) onOpenRoutine(r); return; }
-                setOpen({ cards: list, startId: list[0].id, origin: rect });
-              }}
+              onBrowse={() => onOpenRoutine && onOpenRoutine(r)}
               {...charProps(r, tone)} />
           ))}
         </div>

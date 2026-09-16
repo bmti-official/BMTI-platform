@@ -443,7 +443,7 @@ export default function RoutineAdmin() {
                 <RoutineView routine={preview.routine} cards={preview.cards} tone={tone} {...charProps(preview.routine, tone)} />
               </div>
               <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>‘일단 구경하기’를 눌렀을 때</div>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>담긴 동작 한눈에 — ‘일단 구경하기’는 위 표지에서 바로 눌러 보세요</div>
                 <RoutineDetail routine={preview.routine} cards={preview.cards} tone={tone} {...charProps(preview.routine, tone)} />
               </div>
             </div>
