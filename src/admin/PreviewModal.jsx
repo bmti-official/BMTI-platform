@@ -39,9 +39,11 @@ const BoltMark = () => (
     <path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" />
   </svg>
 );
-const CheckMark = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 13l4 4L19 7" />
+// 자기플리 — 내가 담은 것이라 사람 모양으로 둔다 (위 마이페이지 것보다 크게)
+const MineMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="3.6" />
+    <path d="M4.8 20.2c0-3.6 3.2-6 7.2-6s7.2 2.4 7.2 6" />
   </svg>
 );
 const NAV = [
@@ -49,7 +51,7 @@ const NAV = [
   { key: 'curation', label: '큐레이션', icon: <BookMark /> },
   { key: 'char' },
   { key: 'baro', label: '바로플리', icon: <BoltMark /> },
-  { key: 'mine', label: '자기플리', icon: <CheckMark /> },
+  { key: 'mine', label: '자기플리', icon: <MineMark /> },
 ];
 
 // 손님 화면 껍데기 — 위 두 버튼과 아래 알약

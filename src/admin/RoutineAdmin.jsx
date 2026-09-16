@@ -226,10 +226,6 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
           <input type="checkbox" checked={f.published} onChange={(e) => set('published')(e.target.checked)} />
           공개 <span style={{ fontWeight: 600, color: SUB }}>(체크해야 이용자에게 보입니다)</span>
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 800, color: INK, cursor: 'pointer', paddingBottom: 9 }}>
-          <input type="checkbox" checked={f.skip_opening !== false} onChange={(e) => set('skip_opening')(e.target.checked)} />
-          오프닝 건너뛰기 <span style={{ fontWeight: 600, color: SUB }}>(이어서 하니 동작마다 설명을 다시 듣지 않아요)</span>
-        </label>
       </div>
 
       {/* 표지 — 목록에서 플리마다 얼굴이 되는 자리 */}

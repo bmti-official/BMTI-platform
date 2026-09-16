@@ -1,6 +1,6 @@
 // 이미지·영상을 AI로 만들었다는 표시 — 큐레이션·바로카드·플레이리스트가 함께 쓴다.
 // 문구를 한 곳에서만 고치면 세 군데에 모두 반영된다.
-export const AI_NOTE = '일부 이미지·영상은 AI로 만들었습니다.';
+export const AI_NOTE = '일부 이미지·영상·음성·음악은 AI로 만들었습니다.';
 
 export default function AiNote({ align = 'left', top = 14 }) {
   return (

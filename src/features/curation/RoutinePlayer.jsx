@@ -195,7 +195,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       <div style={{ padding: '10px 14px 0' }}>
         {gap > 0 ? (
           <GapStage code={myCode} img={partnerImg} name={partnerName} tone={tone} sec={gap} full={full}
-            nextTitle={cards[at + 1] ? pickCardTone(cards[at + 1], tone).title : ''}
+            nextTitle={(cards[at + 1] || {}).thumb_text || ''}
             nextClip={(cards[at + 1] || {}).video_url || ''}
             voiceUrl={common[voiceKey('next', tone, 0)] || ''} audioRef={gapRef}
             onSkip={() => { setGap(0); setAt((n) => n + 1); }} />
@@ -217,7 +217,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
           onClick={() => { if (last) { if (onDone) onDone(); if (onClose) onClose(); } else setAt((n) => n + 1); }}
           style={{ flex: 1, padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
-          {last ? '플리 끝내기 ✓' : `다음 동작 → ${cards[at + 1] ? pickCardTone(cards[at + 1], tone).title.slice(0, 10) : ''}`}
+          {last ? '플리 끝내기 ✓' : `다음 동작 → ${(cards[at + 1] || {}).thumb_text || ''}`}
         </button>
       </div>
 
