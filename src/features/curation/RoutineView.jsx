@@ -11,13 +11,17 @@ import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRa
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
-// 표지 모서리에 얹는 글씨 — 사진 위에서도 읽히게 연한 옐로우 판을 깐다.
+// 표지 모서리에 얹는 글씨.
+// 부위는 판 없이 글씨만 얹고, 사진 위에서도 읽히게 흰 번짐을 둘러 준다.
+const SHADE = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)';
 const coverTag = (side) => ({
   position: 'absolute', top: 12, [side]: 12, zIndex: 2, pointerEvents: 'none',
   fontSize: 12, fontWeight: 800, lineHeight: 1.35, letterSpacing: '-0.01em',
-  color: GOLD, background: '#FDF6DC', borderRadius: 9, padding: '4px 9px',
-  textAlign: side === 'right' ? 'right' : 'left', maxWidth: '44%', wordBreak: 'keep-all',
+  color: GOLD, textAlign: side === 'right' ? 'right' : 'left', maxWidth: '44%', wordBreak: 'keep-all',
+  textShadow: SHADE,
 });
+// 도구는 지금처럼 연한 옐로우 판 위에 얹는다.
+const toolTag = { ...coverTag('right'), background: '#FDF6DC', borderRadius: 9, padding: '4px 9px', textShadow: 'none' };
 
 export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onStart, onBrowse, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
@@ -43,7 +47,7 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
         <div style={coverTag('left')}>{partLabels(s.coreParts).join(', ')}</div>
       )}
       {s.tools.length > 0 && (
-        <div style={coverTag('right')}>{s.tools.map((t, i) => <div key={i}>{t}</div>)}</div>
+        <div style={toolTag}>{s.tools.map((t, i) => <div key={i}>{t}</div>)}</div>
       )}
       </div>
       <div style={{ padding: '15px 16px' }}>
@@ -65,11 +69,14 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
 
       <div style={{ display: 'flex', gap: 7, marginTop: 14 }}>
         <button onClick={onStart}
-          style={{ flex: 1, padding: 13, borderRadius: 13, border: 'none', background: GOLD, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          style={{ flex: 3, padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
+            fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+            boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
           바로 시작하기 →
         </button>
         <button onClick={browse}
-          style={{ flex: 1, padding: 13, borderRadius: 13, border: `1px solid ${LINE}`, background: '#fff', color: SUB, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          style={{ flexShrink: 0, padding: '13px 12px', borderRadius: 13, border: `1px solid ${LINE}`, background: '#fff',
+            color: SUB, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           일단 구경하기
         </button>
       </div>
