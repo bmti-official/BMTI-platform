@@ -37,7 +37,7 @@ const EMPTY = {
     [`s${n}_tip_z`, ''], [`s${n}_tip_m`, ''],
     [`s${n}_tipq_z`, ''], [`s${n}_tipq_m`, ''],
   ])),
-  card_ids: [],
+  card_ids: [], routine_ids: [],
   body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
 };
 
@@ -91,11 +91,11 @@ function normalize(row) {
     if (!Array.isArray(f[k]) || f[k].length === 0) f[k] = f[`s${n}_img`] ? [f[`s${n}_img`]] : [];
     if (!Array.isArray(f[`s${n}_caps`])) f[`s${n}_caps`] = [];
   });
-  ['card_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
+  ['card_ids', 'routine_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
   return f;
 }
 
-function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
+function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => withDraft(normalize(row), 'curation', row));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -339,28 +339,28 @@ function Editor({ row, allCards, onSaved, onCancel, onPreview, onDelete }) {
         })}
       </div>
 
-      {/* 추천 바로카드 3~4장 */}
+      {/* 추천 바로플리 3~4개 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <span style={label}>추천 바로카드 <span style={{ fontWeight: 600 }}>— 글 맨 끝 &lsquo;이 글과 함께 해보면 좋아요&rsquo;에 붙습니다. 3~4장 권장</span></span>
-        {allCards.length === 0 ? (
+        <span style={label}>추천 바로플리 <span style={{ fontWeight: 600 }}>— 글 맨 끝 &lsquo;이 글과 함께 해보면 좋아요&rsquo;에 붙습니다. 3~4개 권장</span></span>
+        {allPlis.length === 0 ? (
           <div style={{ fontSize: 12.5, color: SUB, lineHeight: 1.7, background: '#fff', borderRadius: 9, padding: '12px 14px', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-            아직 만들어 둔 바로카드가 없어서 고를 게 없습니다.<br />
-            위쪽 <b style={{ color: INK }}>⚡ 바로카드</b> 탭에서 한 장이라도 만들고 오시면 여기에 목록이 뜹니다.
+            아직 만들어 둔 바로플리가 없어서 고를 게 없습니다.<br />
+            위쪽 <b style={{ color: INK }}>🎵 플레이리스트</b> 탭에서 하나라도 만들고 오시면 여기에 목록이 뜹니다.
           </div>
         ) : (
           <>
             <PillPicker
-              options={allCards.map((c) => ({ key: String(c.id), label: c.title_z }))}
-              value={(f.card_ids || []).map(String)}
-              onChange={(v) => set('card_ids')(v.map(Number))}
+              options={allPlis.map((r) => ({ key: String(r.id), label: r.title_z }))}
+              value={(f.routine_ids || []).map(String)}
+              onChange={(v) => set('routine_ids')(v.map(Number))}
               max={4}
             />
-            {(f.card_ids || []).length > 0 && (
+            {(f.routine_ids || []).length > 0 && (
               <div style={{ marginTop: 10, fontSize: 12, color: SUB, lineHeight: 1.8 }}>
                 고른 순서대로 붙습니다 —{' '}
-                {(f.card_ids || []).map((id, i) => {
-                  const c = allCards.find((x) => x.id === id);
-                  return <span key={id}><b style={{ color: INK }}>{i + 1}. {c ? c.title_z : `#${id}`}</b>{i < f.card_ids.length - 1 ? ' · ' : ''}</span>;
+                {(f.routine_ids || []).map((id, i) => {
+                  const r = allPlis.find((x) => x.id === id);
+                  return <span key={id}><b style={{ color: INK }}>{i + 1}. {r ? r.title_z : `#${id}`}</b>{i < f.routine_ids.length - 1 ? ' · ' : ''}</span>;
                 })}
               </div>
             )}
@@ -450,7 +450,7 @@ export default function CurationAdmin() {
     load();
     setSaved('복제했습니다. 비공개로 들어갔어요.');
   };
-  const [allCards, setAllCards] = useState([]);
+  const [allPlis, setAllPlis] = useState([]);   // 추천에 붙일 바로플리
 
   // 목록 읽기 — tick을 올리면 다시 읽는다.
   // 결과 처리를 .then 안에서 해야 effect 본문에서 동기로 setState 하지 않게 되고,
@@ -465,10 +465,19 @@ export default function CurationAdmin() {
         .select('*', { count: 'exact' }).order('sort_order', { ascending: true }).order('id', { ascending: false })
         .range(0, take - 1);
       const b = await supabase.from('quick_cards').select('*').order('sort_order', { ascending: true });
+      const rt = await supabase.from('routines').select('*').is('owner_id', null)
+        .order('sort_order', { ascending: true }).order('id', { ascending: false });
+      const lk = await supabase.from('routine_cards').select('*').order('position', { ascending: true });
       if (!alive) return;
       setLoading(false);
       if (a.error) { setErr(a.error.message); return; }
-      setErr(''); setRows(a.data || []); setTotal(a.count || 0); setAllCards(b.data || []);
+      setErr(''); setRows(a.data || []); setTotal(a.count || 0);
+      // 플리마다 담긴 동작을 이어 붙여 둔다 — 추천 표지와 총 시간에 쓴다
+      const byId = Object.fromEntries((b.data || []).map((c) => [c.id, c]));
+      setAllPlis((rt.data || []).map((r) => ({
+        ...r,
+        cards: (lk.data || []).filter((l) => l.routine_id === r.id).map((l) => byId[l.card_id]).filter(Boolean),
+      })));
     })();
     return () => { alive = false; };
   }, [tick, take]);
@@ -519,14 +528,14 @@ export default function CurationAdmin() {
       )}
 
       {editing && (
-        <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)} onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
+        <Editor row={editing} allPlis={allPlis} onCancel={() => setEditing(null)} onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
           onPreview={(draft) => setPreview(draft)} onDelete={(id) => remove(id, () => setEditing(null))} />
       )}
 
       {preview && (
         <PreviewModal navActive="curation" title="큐레이션 미리보기" onClose={() => setPreview(null)}>
           {(tone) => {
-            const picked = (preview.card_ids || []).map((id) => allCards.find((c) => c.id === id)).filter(Boolean);
+            const picked = (preview.routine_ids || []).map((id) => allPlis.find((r) => r.id === id)).filter(Boolean);
             const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];
             const charImages = charCodes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean);
             return (
@@ -537,7 +546,7 @@ export default function CurationAdmin() {
                 </div>
                 <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>눌렀을 때</div>
-                  <CurationDetail item={preview} tone={tone} cards={picked} charImages={charImages} charCodes={charCodes} />
+                  <CurationDetail item={preview} tone={tone} routines={picked} charImages={charImages} charCodes={charCodes} />
                 </div>
               </div>
             );

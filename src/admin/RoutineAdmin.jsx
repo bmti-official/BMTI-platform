@@ -320,11 +320,9 @@ export default function RoutineAdmin() {
       )}
 
       {screen && (
-        <PreviewModal navActive="baro" title="바로플리 화면" onClose={() => setScreen(false)}>
+        <PreviewModal navActive="baro" title={`바로플리 화면 — 플리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`} onClose={() => setScreen(false)}>
           {(tone) => (
-            <BaroPliView tone={tone}
-              routines={rows.filter((r) => r.published)}
-              cards={allCards.filter((c) => c.published)} />
+            <BaroPliView tone={tone} routines={rows} cards={allCards} />
           )}
         </PreviewModal>
       )}
