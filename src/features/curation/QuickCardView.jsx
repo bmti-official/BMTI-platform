@@ -199,7 +199,14 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 세트를 시작할 때 방향을 한 마디로 알린다. 이게 끝나야 세트 멘트가 흐른다.
   const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone;
   // 지금 세트 멘트가 흐르는 중인가 — 설명 모드이고, 방향 알림이 끝났고, 아직 다 듣지 않았을 때만.
-  const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !cueOn && !!setClips.length && mentDone !== setKey;
+  // 멘트가 나가는 자리 — 세트마다 다르다.
+  //  1세트는 시작 전에 멈춰 서서 길게(핵심 세 가지 + 화살표 설명 영상),
+  //  2세트부터는 쉬는 시간 멘트와 붙어 버리니 세트 한가운데에서 짧게 한마디.
+  const firstSet = done === 0 && !secondSide;
+  const midRep = Math.max(1, Math.round(reps / 2));
+  const mentDue = firstSet || rep + 1 >= midRep;
+  const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !cueOn
+    && !!setClips.length && mentDone !== setKey && mentDue;
   const hasVoice = !!(openUrl || helloUrl || setClips.length || Object.keys(common).length);
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
@@ -300,7 +307,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 멘트가 흐르는 동안에는 첫 자세로 멈춰 선다.
   // 영상이 계속 돌면 회차가 지나가 버려, 멘트가 끝난 뒤 숫자가 '넷'부터 튀어나온다.
   // 멈춰 두면 멘트가 끝나고 늘 '하나'부터 셀 수 있다.
-  const holding = stage === 'move' && rest === 0 && !allDone && !paused && (mentOn || cueOn);
+  // 멈춰 서서 듣는 건 1세트뿐이다. 2세트부터는 하면서 듣는다.
+  const holding = stage === 'move' && rest === 0 && !allDone && !paused && ((mentOn && firstSet) || cueOn);
   useEffect(() => {
     const v = clipRef.current;
     if (!v || stage !== 'move' || rest > 0 || allDone || paused) return;

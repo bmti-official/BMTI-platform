@@ -287,20 +287,28 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
                   onChange={(e) => set('thumb_color')(e.target.value)} />
               </div>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <span style={label}>이름 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 4 }}>
-                {THUMB_POS.map((tp) => {
-                  const on = (f.thumb_pos || 'tl') === tp.key;
-                  return (
-                    <button key={tp.key} type="button" title={tp.label} onClick={() => set('thumb_pos')(tp.key)}
-                      style={{ height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
-                        background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
-                  );
-                })}
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <div style={{ flexShrink: 0 }}>
+                <span style={label}>이름 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 4 }}>
+                  {THUMB_POS.map((tp) => {
+                    const on = (f.thumb_pos || 'tl') === tp.key;
+                    return (
+                      <button key={tp.key} type="button" title={tp.label} onClick={() => set('thumb_pos')(tp.key)}
+                        style={{ height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
+                          background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
+                    );
+                  })}
+                </div>
+                <ThumbNudge dx={f.thumb_dx} dy={f.thumb_dy} scale={f.thumb_scale}
+                  onDx={set('thumb_dx')} onDy={set('thumb_dy')} onScale={set('thumb_scale')} />
               </div>
-              <ThumbNudge dx={f.thumb_dx} dy={f.thumb_dy} scale={f.thumb_scale}
-                onDx={set('thumb_dx')} onDy={set('thumb_dy')} onScale={set('thumb_scale')} />
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <span style={label}>동작 영상 <span style={{ fontWeight: 600 }}>— 구글 플로우로 뽑은 8초짜리 한 편</span></span>
+                <ImageInput allowVideo value={f.video_url} onChange={set('video_url')}
+                  placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
+                  hint="mp4·webm 파일을 올릴 수 있어요. 세로 4:5, 20MB 이하를 권합니다." />
+              </div>
             </div>
           </div>
           <div style={{ flex: '0 0 200px', maxWidth: '100%' }}>
@@ -356,8 +364,10 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
               <div style={{ height: 12 }} />
               <span style={label}>세트 멘트 <span style={{ fontWeight: 600 }}>— 올린 차례대로 1세트째부터</span></span>
               <div style={{ fontSize: 11, color: SUB, fontWeight: 600, lineHeight: 1.6, marginBottom: 6 }}>
-                세트를 시작할 때 <b>첫 자세로 멈춰 선 채</b> 흐릅니다. 멘트가 끝나야 영상이 돌고 숫자를 <b>하나부터</b> 셉니다.
-                <br />그래서 길이에 매이지 않아도 됩니다. 다만 세트마다 반복되니 <b>20초 안쪽</b>을 권합니다.
+                <b>1세트</b>는 시작 전에 첫 자세로 멈춰 선 채 흐릅니다. 설명 영상이 함께 돌고, 멘트가 끝나야
+                동작이 시작되며 숫자를 <b>하나부터</b> 셉니다. <b>12~15초</b>로 핵심을 다 담으세요.
+                <br /><b>2세트부터</b>는 시작할 때 말하지 않습니다 — 바로 앞 쉬는 시간 멘트와 붙어 버리니까요.
+                대신 <b>세트 한가운데(횟수의 절반 지점)</b>에서 하면서 듣는 <b>한마디(3~5초)</b>가 흐릅니다.
               </div>
               <AudioListInput value={f[`voice_sets_${t}`] || []} onChange={set(`voice_sets_${t}`)} max={5} />
               <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -404,12 +414,6 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div>
-          <span style={label}>동작 영상 <span style={{ fontWeight: 600 }}>— 구글 플로우로 뽑은 8초짜리 한 편</span></span>
-          <ImageInput allowVideo value={f.video_url} onChange={set('video_url')}
-            placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
-            hint="mp4·webm 파일을 올릴 수 있어요. 세로 4:5, 20MB 이하를 권합니다." />
-        </div>
         <div>
           <span style={label}>세트 전 설명 영상 <span style={{ fontWeight: 600 }}>— 화살표로 짚어 주는 4~6초 한 편</span></span>
           <ImageInput allowVideo value={f.intro_url} onChange={set('intro_url')}
