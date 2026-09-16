@@ -108,11 +108,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const mirrored = card.has_side && (side === 'left' || (side === 'both' && secondSide) || (side === 'alt' && altFlip));
   // 한 번 도는 데 걸리는 시간을 영상에서 직접 읽어 온다(없으면 관리자가 적은 값을 쓴다).
   const [clipSec, setClipSec] = useState(0);
+  // 세트 멘트를 듣고 시작하니 그 길이도 예상 시간에 든다. 들어 본 것 중 가장 긴 것으로 잡는다.
+  const [mentSec, setMentSec] = useState(0);
   const oneRep = clipSec > 0 ? clipSec : card.duration_sec;
   const perSet = oneRep > 0 ? Math.round(oneRep * reps) : 0;
   const rounds = sets * (twoPhase ? 2 : 1);
   const restTotal = twoPhase ? restSec * (sets - 1) * 2 + sideRest : restSec * Math.max(0, sets - 1);
-  const totalSec = perSet > 0 ? perSet * rounds + restTotal : 0;
+  const totalSec = perSet > 0 ? perSet * rounds + restTotal + Math.round(mentSec) * rounds : 0;
 
   const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setCueDone(false); setPaused(false); };
 
@@ -294,6 +296,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rep, done, secondSide, stage, rest, mentOn, cueOn, voiceOn]);
+
+  // 멘트가 흐르는 동안에는 첫 자세로 멈춰 선다.
+  // 영상이 계속 돌면 회차가 지나가 버려, 멘트가 끝난 뒤 숫자가 '넷'부터 튀어나온다.
+  // 멈춰 두면 멘트가 끝나고 늘 '하나'부터 셀 수 있다.
+  const holding = stage === 'move' && rest === 0 && !allDone && !paused && (mentOn || cueOn);
+  useEffect(() => {
+    const v = clipRef.current;
+    if (!v || stage !== 'move' || rest > 0 || allDone || paused) return;
+    if (holding) { try { v.pause(); v.currentTime = 0; } catch { /* 무시 */ } }
+    else { try { v.play().catch(() => {}); } catch { /* 무시 */ } }
+  }, [holding, stage, rest, allDone, paused]);
 
   // 한 해씩 줄이다가 0이 되면 다음 세트를 저절로 시작한다.
   useEffect(() => {
@@ -561,7 +574,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       {started && hasVoice && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
           <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
-            onLoadedMetadata={(e) => setSaid({ at: 0, len: Number(e.currentTarget.duration) || 0 })}
+            onLoadedMetadata={(e) => {
+              const len = Number(e.currentTarget.duration) || 0;
+              setSaid({ at: 0, len });
+              if (voiceRole === 'ment' && len > 0) setMentSec((p) => Math.max(p, len));
+            }}
             onTimeUpdate={(e) => {
               // 값은 여기서 읽어 둔다. 아래 갱신 함수는 나중에 불리는데,
               // 그때는 React가 currentTarget을 비워 버려 화면이 통째로 죽는다.

@@ -355,6 +355,10 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
                 onChange={(e) => set(`sub_open_${t}`)(e.target.value)} placeholder="오프닝 자막 — 말풍선에 그대로 뜹니다" />
               <div style={{ height: 12 }} />
               <span style={label}>세트 멘트 <span style={{ fontWeight: 600 }}>— 올린 차례대로 1세트째부터</span></span>
+              <div style={{ fontSize: 11, color: SUB, fontWeight: 600, lineHeight: 1.6, marginBottom: 6 }}>
+                세트를 시작할 때 <b>첫 자세로 멈춰 선 채</b> 흐릅니다. 멘트가 끝나야 영상이 돌고 숫자를 <b>하나부터</b> 셉니다.
+                <br />그래서 길이에 매이지 않아도 됩니다. 다만 세트마다 반복되니 <b>20초 안쪽</b>을 권합니다.
+              </div>
               <AudioListInput value={f[`voice_sets_${t}`] || []} onChange={set(`voice_sets_${t}`)} max={5} />
               <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {[0, 1, 2, 3, 4].slice(0, Math.max(1, (f[`voice_sets_${t}`] || []).length)).map((i) => (
