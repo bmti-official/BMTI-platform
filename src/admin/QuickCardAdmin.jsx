@@ -31,6 +31,7 @@ const EMPTY = {
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
+  sub_open_z: '', sub_open_m: '', sub_sets_z: [], sub_sets_m: [],
   has_side: false, can_alternate: false,
   default_reps: null, default_sets: null, default_rest: null, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
 };
@@ -70,7 +71,7 @@ function ThumbNudge({ dx, dy, scale, onDx, onDy, onScale }) {
 function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => {
     const base = withDraft({ ...EMPTY, ...(row || {}) }, 'card', row);
-    ['voice_sets_z', 'voice_sets_m'].forEach((k) => { if (!Array.isArray(base[k])) base[k] = []; });
+    ['voice_sets_z', 'voice_sets_m', 'sub_sets_z', 'sub_sets_m'].forEach((k) => { if (!Array.isArray(base[k])) base[k] = []; });
     return base;
   });
   const [saving, setSaving] = useState(false);
@@ -314,6 +315,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           영상 소리는 손님 화면에서 늘 꺼집니다. 들리는 건 여기 올린 음성뿐입니다.
           <br />오프닝이 먼저 흐르고, 끝나면 1세트째 멘트로 넘어갑니다. 세트 수보다 적게 올리면 마지막 것을 이어서 씁니다.
           <br />mp3 · m4a · wav, 한 편에 8MB까지.
+          <br /><b>자막</b>은 소리를 못 켜는 자리(지하철·사무실)에서 대신 읽힙니다. 음성과 같은 글을 넣어 주세요.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {[['z', 'Z 유형'], ['m', 'M 유형']].map(([t, lb]) => (
@@ -321,9 +323,24 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
               <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>{lb}</div>
               <span style={label}>오프닝 멘트 <span style={{ fontWeight: 600 }}>— 준비 자세 → &lsquo;천천히 시작합니다&rsquo;</span></span>
               <AudioInput value={f[`voice_open_${t}`] || ''} onChange={set(`voice_open_${t}`)} />
+              <textarea style={{ ...area, minHeight: 56, fontSize: 12.5, marginTop: 6 }} value={f[`sub_open_${t}`] || ''}
+                onChange={(e) => set(`sub_open_${t}`)(e.target.value)} placeholder="오프닝 자막 — 말풍선에 그대로 뜹니다" />
               <div style={{ height: 12 }} />
               <span style={label}>세트 멘트 <span style={{ fontWeight: 600 }}>— 올린 차례대로 1세트째부터</span></span>
               <AudioListInput value={f[`voice_sets_${t}`] || []} onChange={set(`voice_sets_${t}`)} max={5} />
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[0, 1, 2, 3, 4].slice(0, Math.max(1, (f[`voice_sets_${t}`] || []).length)).map((i) => (
+                  <textarea key={i} style={{ ...area, minHeight: 48, fontSize: 12.5 }}
+                    value={(f[`sub_sets_${t}`] || [])[i] || ''}
+                    onChange={(e) => {
+                      const next = [...(f[`sub_sets_${t}`] || [])];
+                      while (next.length <= i) next.push('');
+                      next[i] = e.target.value;
+                      set(`sub_sets_${t}`)(next);
+                    }}
+                    placeholder={`${i + 1}세트 자막`} />
+                ))}
+              </div>
             </div>
           ))}
         </div>

@@ -71,6 +71,18 @@ export function parseCard(text) {
       if (t.name.startsWith('제목')) { put(t.name.endsWith('M') ? 'title_m' : 'title_z', t.value); continue; }
       if (t.name.startsWith('대본')) { put(t.name.endsWith('M') ? 'script_m' : 'script_z', t.value); continue; }
       if (t.name === '동작이름' || t.name.startsWith('썸네일')) { put('thumb_text', t.value.split('\n')[0].trim()); continue; }
+      // C묶음 — 음성으로 만들 글이 곧 자막이다
+      if (t.name.startsWith('오프닝')) { put(t.name.endsWith('M') ? 'sub_open_m' : 'sub_open_z', t.value); continue; }
+      // 표지가 '1세트 · Z'이면 띄어쓰기만 지워져 '1세트·Z'로 온다 — 가운뎃점을 넘겨 읽는다
+      const set = t.name.match(/^([1-5])세트[^ZM]*([ZM])?$/i);
+      if (set) {
+        const key = (set[2] || '').toUpperCase() === 'M' ? 'sub_sets_m' : 'sub_sets_z';
+        const arr = out[key] ? [...out[key]] : [];
+        while (arr.length < Number(set[1])) arr.push('');
+        arr[Number(set[1]) - 1] = t.value;
+        put(key, arr);
+        continue;
+      }
       continue;
     }
 
@@ -97,6 +109,7 @@ export function parseCard(text) {
     has(/^title_/) ? `제목 ${has(/^title_/)}` : null,
     has(/^script_/) ? `대본 ${has(/^script_/)}` : null,
     filled.includes('thumb_text') ? '동작 이름' : null,
+    has(/^sub_/) ? `자막 ${has(/^sub_/)}` : null,
     filled.includes('kind') ? '종류' : null,
     filled.includes('duration_sec') ? '소요 시간' : null,
     filled.includes('tools') ? '도구' : null,

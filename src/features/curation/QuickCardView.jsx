@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
+import { tintBg, axisOf } from './typeTint';
+import { HELLO_LINE } from './helloLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
@@ -170,6 +172,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 오프닝에서 내 파트너가 먼저 자기를 소개한다.
   const helloUrl = hello[String(bmtiCode || '').split('-')[0].toUpperCase()] || '';
   const [helloDone, setHelloDone] = useState(false);
+  // 자막 — 소리를 못 켜는 자리에서도 따라 할 수 있게 한다.
+  const [subOn, setSubOn] = useState(true);
+  // 지금 흐르는 멘트가 얼마나 지났는지 — 오프닝 화면의 남은 시간 막대에 쓴다.
+  const [said, setSaid] = useState({ at: 0, len: 0 });
+  const myCode = axisOf(bmtiCode);
+  const subOpen = (tone === 'm' ? card.sub_open_m : card.sub_open_z) || '';
+  const subSets = ((tone === 'm' ? card.sub_sets_m : card.sub_sets_z) || []).filter(Boolean);
   // 지금 어느 쪽을 하는가 — '좌우 번갈아'는 한 번마다 바뀌니 알리지 않는다.
   const nowSide = !card.has_side || side === 'alt' ? null : (twoPhase ? (secondSide ? 2 : 1) : (side === 'left' ? 2 : 1));
   const cueUrl = nowSide ? commonAt('side', nowSide) : '';
@@ -261,7 +270,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const related = partLabels(card.related_parts);
   const tools = card.tools || [];
   const chars = (charImages || []).slice(0, 4);   // 오프닝 화면에서만 쓴다
-  const openName = String(CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
+  const partnerName = String(CHARACTER_NAMES[myCode] || CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
+  // 지금 흐르는 소리에 딸린 자막
+  const sayNow = voiceRole === 'hello' ? (HELLO_LINE[myCode] || '')
+    : voiceRole === 'open' ? subOpen
+      : voiceRole === 'ment' ? (subSets[Math.min(done, subSets.length - 1)] || '') : '';
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
   // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
@@ -369,20 +382,38 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       )}
 
       {stage === 'open' ? (
-        // 오프닝 — 누끼 캐릭터가 잠깐 설명해 준다. 소리가 끝나면 저절로 동작으로 넘어간다.
-        <div style={{ width: '100%', aspectRatio: '4 / 5', background: 'linear-gradient(180deg,#FFFDF7,#FAF3E2)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20, boxSizing: 'border-box' }}>
-          {chars.length > 0
-            ? <CharPic src={chars[0]} code={(charCodes || [])[0]} h={140} />
-            : <span style={{ fontSize: 64 }}>💬</span>}
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: NAME_INK, background: NAME_BG, borderRadius: 999, padding: '5px 12px' }}>
-            {openName ? `${openName} 설명 중` : '설명 중'}
+        // 오프닝 — 내 파트너가 말을 건네는 자리. 이 몇 초가 자세를 잡는 시간이기도 하다.
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: tintBg(myCode),
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 10, padding: '18px 20px 20px', boxSizing: 'border-box' }}>
+          {/* 말풍선 — 캐릭터가 말하고 있다는 걸 글자 없이 알린다 */}
+          {subOn && sayNow && (
+            <div style={{ position: 'relative', maxWidth: '92%', background: '#fff', borderRadius: 16,
+              padding: '12px 14px', boxShadow: '0 3px 12px rgba(23,21,15,0.10)' }}>
+              <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.6,
+                wordBreak: 'keep-all', textAlign: 'center', whiteSpace: 'pre-line' }}>{sayNow}</span>
+              <span style={{ position: 'absolute', left: '50%', bottom: -7, transform: 'translateX(-50%) rotate(45deg)',
+                width: 14, height: 14, background: '#fff', borderRadius: 3 }} />
+            </div>
+          )}
+
+          <span style={{ animation: 'bmtiBreathe 2.6s ease-in-out infinite' }}>
+            {chars.length > 0
+              ? <CharPic src={chars[0]} code={(charCodes || [])[0]} h={172} />
+              : <span style={{ fontSize: 78 }}>💬</span>}
           </span>
-          <span style={{ fontSize: 14.5, fontWeight: 800, color: INK, textAlign: 'center', wordBreak: 'keep-all', lineHeight: 1.4 }}>
-            {card.thumb_text || title}
+          <style>{'@keyframes bmtiBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}'}</style>
+
+          <span style={{ fontSize: 13, fontWeight: 900, color: INK }}>{partnerName || '내 파트너'}</span>
+
+          {/* 남은 시간 — 끝이 보이면 길게 느껴지지 않는다 */}
+          <span style={{ width: '62%', height: 4, borderRadius: 999, background: 'rgba(23,21,15,0.10)', overflow: 'hidden' }}>
+            <span style={{ display: 'block', height: '100%', borderRadius: 999, background: 'rgba(23,21,15,0.35)',
+              width: `${said.len > 0 ? Math.min(100, (said.at / said.len) * 100) : 0}%`, transition: 'width .25s linear' }} />
           </span>
+
           <button type="button" onClick={() => setStage('move')}
-            style={{ marginTop: 4, border: 'none', background: '#fff', color: SUB, borderRadius: 999, padding: '8px 16px',
+            style={{ marginTop: 2, border: 'none', background: '#fff', color: SUB, borderRadius: 999, padding: '8px 16px',
               fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
             바로 동작 보기 →
           </button>
@@ -408,6 +439,15 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <span style={{ ...corner, right: 12, fontVariantNumeric: 'tabular-nums' }}>
             <b style={{ color: PURPLE, fontWeight: 900 }}>{Math.min(rep + 1, reps)}</b>/{reps}
           </span>
+          {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
+          {subOn && sayNow && rest === 0 && (
+            <div style={{ position: 'absolute', left: 10, right: 10, bottom: 10, zIndex: 2, pointerEvents: 'none',
+              background: 'rgba(255,255,255,0.94)', borderRadius: 12, padding: '10px 12px' }}>
+              <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.6,
+                wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{sayNow}</span>
+            </div>
+          )}
+
           {/* 쉬는 시간 — 영상을 멈추고 남은 초를 센다 */}
           {rest > 0 && (
             <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: 'rgba(255,255,255,0.86)',
@@ -457,7 +497,10 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       {started && hasVoice && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
           <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
+            onLoadedMetadata={(e) => setSaid({ at: 0, len: Number(e.currentTarget.duration) || 0 })}
+            onTimeUpdate={(e) => setSaid((p) => ({ at: Number(e.currentTarget.currentTime) || 0, len: p.len }))}
             onEnded={() => {
+              setSaid({ at: 0, len: 0 });
               if (voiceRole === 'hello') { setHelloDone(true); if (!openUrl) setStage('move'); }
               else if (voiceRole === 'open') setStage('move');
               else if (voiceRole === 'cue') setCueDone(setKey);
@@ -473,6 +516,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <input type="range" min={0} max={100} step={5} value={Math.round(vol * 100)} aria-label="음성 크기"
             onChange={(e) => { setVol(Number(e.target.value) / 100); setVoiceOn(true); }}
             style={{ flex: 1, minWidth: 0, accentColor: '#C9A227' }} />
+          <button type="button" onClick={() => setSubOn((v) => !v)} aria-label={subOn ? '자막 끄기' : '자막 켜기'}
+            style={{ flexShrink: 0, height: 32, padding: '0 10px', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: subOn ? SET_INK : SUB,
+              background: subOn ? SET_BG : '#fff', boxShadow: subOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+            자막
+          </button>
           <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB, width: 62, textAlign: 'right' }}>
             {stage === 'open' ? (voiceRole === 'hello' ? '파트너 인사' : '준비 멘트') : rest > 0 ? '쉬는 멘트' : cueOn ? '방향 알림' : mentOn ? '동작 멘트' : '숫자 세기'}
           </span>
