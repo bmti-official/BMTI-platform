@@ -7,12 +7,11 @@ import { CurationThumb } from './CurationCard';
 import RoutineView from './RoutineView';
 import CardFeed from './CardFeed';
 import RoutinePlayer from './RoutinePlayer';
-import { KIND_LABEL, fmtCount } from './format';
+import { fmtCount } from './format';
 import { CHARACTERS } from '../../data';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const YELLOW = '#FDF6DC';
-const KIND_INK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#6FAE6A' };
 
 const TABS = [['pli', '바로플리'], ['card', '바로카드']];
 
@@ -25,7 +24,7 @@ function charProps(r, tone) {
 export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmtiCode, onOpenRoutine }) {
   const [tab, setTab] = useState('pli');
   // 눌러서 펼쳐 본 바로카드
-  const [openId, setOpenId] = useState(null);
+  const [open, setOpen] = useState(null);   // { cards, startId, origin }
   const [playing, setPlaying] = useState(null);   // 재생 중인 바로플리
   // 알약은 늘 떠 있다. 내려갈수록 옅어지고, 손이 닿으면 다시 또렷해진다.
   const wrapRef = useRef(null);
@@ -91,7 +90,11 @@ export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmt
           {routines.map((r) => (
             <RoutineView key={r.id} routine={r} cards={r.cards || []} tone={tone}
               onStart={() => setPlaying(r)}
-              onBrowse={() => onOpenRoutine && onOpenRoutine(r)}
+              onBrowse={(rect) => {
+                const list = r.cards || [];
+                if (list.length === 0) { if (onOpenRoutine) onOpenRoutine(r); return; }
+                setOpen({ cards: list, startId: list[0].id, origin: rect });
+              }}
               {...charProps(r, tone)} />
           ))}
         </div>
@@ -100,14 +103,13 @@ export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmt
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
           {cards.length === 0 && <div style={{ gridColumn: '1 / -1' }}><Empty text="아직 등록된 동작이 없어요." /></div>}
           {cards.map((c) => (
-            <button key={c.id} type="button" onClick={() => setOpenId(c.id)}
+            <button key={c.id} type="button"
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                setOpen({ cards, startId: c.id, origin: { left: r.left, top: r.top, width: r.width, height: r.height } });
+              }}
               style={{ position: 'relative', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
               <CurationThumb item={c} radius={2} ratio="4 / 5" showRead={false} clip={c.video_url || ''} emptyText="" />
-              {/* 왼쪽 위 종류 — 색만으로도 갈래가 보인다 */}
-              <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 9.5, fontWeight: 900,
-                color: KIND_INK[c.kind] || SUB, background: '#fff', borderRadius: 6, padding: '2px 5px', lineHeight: 1.2 }}>
-                {KIND_LABEL[c.kind] || c.kind}
-              </span>
               {/* 오른쪽 아래 조회 */}
               <span style={{ position: 'absolute', right: 5, bottom: 5, fontSize: 9.5, fontWeight: 800,
                 color: INK, background: '#fff', borderRadius: 6, padding: '2px 5px', lineHeight: 1.2 }}>
@@ -119,8 +121,9 @@ export default function BaroPliView({ routines = [], cards = [], tone = 'z', bmt
       )}
 
       {/* 누른 카드가 그 자리에서 커지며 펼쳐진다 */}
-      {openId != null && (
-        <CardFeed cards={cards} startId={openId} tone={tone} bmtiCode={bmtiCode} onClose={() => setOpenId(null)} />
+      {open && (
+        <CardFeed cards={open.cards} startId={open.startId} origin={open.origin}
+          tone={tone} bmtiCode={bmtiCode} onClose={() => setOpen(null)} />
       )}
 
       {playing && (

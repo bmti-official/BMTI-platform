@@ -5,9 +5,33 @@ import QuickCardView from './QuickCardView';
 
 const SUB = '#8A8378';
 
-export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, onClose }) {
+export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, origin, onClose }) {
   const boxRef = useRef(null);
+  const rootRef = useRef(null);
   const first = useRef(true);
+
+  // 누른 썸네일 자리에서 그대로 커지게 — 인스타처럼.
+  // 누른 칸과 펼쳐진 화면의 자리를 재서 그 차이만큼만 움직인다.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    if (!origin || !origin.width || !origin.height) {
+      root.style.animation = 'cardGrow .26s cubic-bezier(.2,.8,.3,1)';
+      return undefined;
+    }
+    const box = root.getBoundingClientRect();
+    const sx = origin.width / box.width, sy = origin.height / box.height;
+    const tx = origin.left - box.left, ty = origin.top - box.top;
+    root.style.transformOrigin = 'top left';
+    root.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+    root.style.opacity = '0.55';
+    const id = requestAnimationFrame(() => {
+      root.style.transition = 'transform .34s cubic-bezier(.2,.8,.26,1), opacity .2s ease';
+      root.style.transform = 'none';
+      root.style.opacity = '1';
+    });
+    return () => cancelAnimationFrame(id);
+  }, [origin]);
 
   // 누른 카드부터 보여 준다 — 그 자리에서 커진 것처럼.
   useEffect(() => {
@@ -30,7 +54,7 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, on
   }, [onClose]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: '#fff', animation: 'cardGrow .26s cubic-bezier(.2,.8,.3,1)' }}>
+    <div ref={rootRef} style={{ position: 'fixed', inset: 0, zIndex: 70, background: '#fff' }}>
       <style>{'@keyframes cardGrow{from{opacity:.4;transform:scale(.88)}to{opacity:1;transform:scale(1)}}'}</style>
 
       {/* 닫기 — 늘 같은 자리에 */}

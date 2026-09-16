@@ -500,7 +500,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
           <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
             onLoadedMetadata={(e) => setSaid({ at: 0, len: Number(e.currentTarget.duration) || 0 })}
-            onTimeUpdate={(e) => setSaid((p) => ({ at: Number(e.currentTarget.currentTime) || 0, len: p.len }))}
+            onTimeUpdate={(e) => {
+              // 값은 여기서 읽어 둔다. 아래 갱신 함수는 나중에 불리는데,
+              // 그때는 React가 currentTarget을 비워 버려 화면이 통째로 죽는다.
+              const t = Number(e.currentTarget.currentTime) || 0;
+              setSaid((p) => ({ at: t, len: p.len }));
+            }}
             onEnded={() => {
               setSaid({ at: 0, len: 0 });
               if (voiceRole === 'hello') { setHelloDone(true); if (!openUrl) setStage('move'); }
