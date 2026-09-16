@@ -4,6 +4,7 @@ import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, TagsInput, PublishBadge } from './ui';
+import { TOOL_LIST } from '../features/curation/tools';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { SearchBox, MoveButtons } from './listTools';
@@ -37,6 +38,33 @@ const EMPTY = {
 };
 
 // 아홉 칸 자리에서 문구를 조금 더 미세하게 밀고, 크기도 손보는 슬라이더
+// 도구 고르기 — 자주 쓰는 것은 눌러서 담고, 없는 것만 직접 적는다.
+function ToolPicker({ value, onChange }) {
+  const has = (t) => (value || []).includes(t);
+  const toggle = (t) => onChange(has(t) ? value.filter((x) => x !== t) : [...(value || []), t]);
+  return (
+    <div>
+      <select value="" onChange={(e) => { if (e.target.value) toggle(e.target.value); }}
+        style={{ ...input, marginBottom: 6, cursor: 'pointer' }}>
+        <option value="">＋ 도구 고르기</option>
+        {TOOL_LIST.filter((t) => !has(t)).map((t) => <option key={t} value={t}>{t}</option>)}
+      </select>
+      {(value || []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+          {value.map((t) => (
+            <button key={t} type="button" onClick={() => toggle(t)}
+              style={{ padding: '4px 9px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 999,
+                border: 'none', background: '#F3EAD8', color: '#8A6A3A', cursor: 'pointer' }}>
+              {t} ✕
+            </button>
+          ))}
+        </div>
+      )}
+      <TagsInput value={value} onChange={onChange} placeholder="직접 적기 — 쉼표로 구분" />
+    </div>
+  );
+}
+
 function ThumbNudge({ dx, dy, scale, onDx, onDy, onScale }) {
   const row = (label, v, on, opt = {}) => {
     const { min = -40, max = 40, step = 2, base = 0, unit = '' } = opt;
@@ -379,8 +407,8 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
             hint="mp4·webm 파일을 올릴 수 있어요. 세로 4:5, 20MB 이하를 권합니다." />
         </div>
         <div>
-          <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 쉼표로 구분</span></span>
-          <TagsInput value={f.tools} onChange={set('tools')} placeholder="폼롤러, 매트" />
+          <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 골라서 담고, 없으면 직접 적기</span></span>
+          <ToolPicker value={f.tools} onChange={set('tools')} />
         </div>
       </div>
 

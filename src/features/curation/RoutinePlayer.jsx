@@ -19,6 +19,8 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   const [bgmNo, setBgmNo] = useState(() => bgmNoFor(bmtiCode));
   const [musicOn, setMusicOn] = useState(true);
   const [volNo, setVolNo] = useState(VOL_START);
+  // 전체 화면은 동작이 바뀌어도 그대로 — 그래서 카드가 아니라 여기가 쥐고 있는다.
+  const [full, setFull] = useState(false);
   const musicRef = useRef(null);
   const card = cards[at];
 
@@ -86,7 +88,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
 
       <div style={{ padding: '10px 14px 0' }}>
         <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
-          autoStart skipOpening={at > 0} />
+          autoStart skipOpening={at > 0} full={full} onFull={setFull} />
       </div>
 
       {/* 다음 동작 · 음악 */}
@@ -99,29 +101,38 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
           {last ? '플리 끝내기 ✓' : `다음 동작 → ${cards[at + 1] ? pickCardTone(cards[at + 1], tone).title.slice(0, 10) : ''}`}
         </button>
-        <button type="button" onClick={() => setMusicOn((v) => !v)} aria-label={musicOn ? '음악 끄기' : '음악 켜기'}
-          style={{ ...navBtn, background: musicOn ? SET_BG : '#fff', color: musicOn ? SET_INK : SUB, cursor: 'pointer' }}>
-          {musicOn ? '♪ 켬' : '♪ 끔'}
-        </button>
       </div>
 
       {/* 어떤 음악인지 · 바꾸기 */}
       {bgmUrl && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 14px 26px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB }}>배경음악</span>
-          <VolBar no={volNo} on={musicOn} onPick={setVolNo} />
-          {BGM_GROUPS.map((g) => (
-            <button key={g.n} type="button" onClick={() => setBgmNo(g.n)}
-              disabled={!common[voiceKey('bgm', 'a', g.n)]}
-              style={{ padding: '0 10px', height: 28, borderRadius: 9, border: 'none', fontFamily: 'inherit',
-                fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap',
-                cursor: common[voiceKey('bgm', 'a', g.n)] ? 'pointer' : 'default',
-                opacity: common[voiceKey('bgm', 'a', g.n)] ? 1 : 0.35,
-                color: g.n === bgmNo ? SET_INK : SUB,
-                background: g.n === bgmNo ? SET_BG : '#fff', boxShadow: g.n === bgmNo ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
-              {g.hint}
+        <div style={{ padding: '0 14px 26px' }}>
+          {/* 켬·끔 · 이름 · 크기 — 한 줄에 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <button type="button" onClick={() => setMusicOn((v) => !v)} aria-label={musicOn ? '음악 끄기' : '음악 켜기'}
+              style={{ padding: '0 11px', height: 28, borderRadius: 9, border: 'none', fontFamily: 'inherit',
+                fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
+                background: musicOn ? SET_BG : '#fff', color: musicOn ? SET_INK : SUB,
+                boxShadow: musicOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+              {musicOn ? '♪ 켬' : '♪ 끔'}
             </button>
-          ))}
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB }}>배경음악</span>
+            <VolBar no={volNo} on={musicOn} onPick={setVolNo} />
+          </div>
+          {/* 곡 고르기 — 두 개씩 나란히 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {BGM_GROUPS.map((g) => (
+              <button key={g.n} type="button" onClick={() => setBgmNo(g.n)}
+                disabled={!common[voiceKey('bgm', 'a', g.n)]}
+                style={{ padding: '0 10px', height: 32, borderRadius: 9, border: 'none', fontFamily: 'inherit',
+                  fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap',
+                  cursor: common[voiceKey('bgm', 'a', g.n)] ? 'pointer' : 'default',
+                  opacity: common[voiceKey('bgm', 'a', g.n)] ? 1 : 0.35,
+                  color: g.n === bgmNo ? SET_INK : SUB,
+                  background: g.n === bgmNo ? SET_BG : '#fff', boxShadow: g.n === bgmNo ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+                {g.hint}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <span style={{ display: 'none' }}>{cardTitle}</span>

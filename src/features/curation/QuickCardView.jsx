@@ -9,6 +9,7 @@ import { CHARACTERS } from '../../data';
 import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
 import { tintBg, axisOf } from './typeTint';
 import { HELLO_LINE } from './helloLine';
+import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
@@ -63,10 +64,14 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
+  // 전체 화면 — 바로플리는 동작이 바뀌어도 그대로여야 해서 바깥에서 쥐어 줄 수도 있다.
+  const [fullSelf, setFullSelf] = useState(false);
+  const full = onFull ? !!fullProp : fullSelf;
+  const setFull = (v) => (onFull ? onFull(v) : setFullSelf(v));
   const started = stage !== 'cover';
   // 몇 번, 몇 세트 할지는 손님이 정한다. 처음 값은 카드 종류에 맞춰 달라진다.
   const setup = useMemo(() => cardSetup(card), [card]);
@@ -207,12 +212,35 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         : voiceRole === 'cue' ? cueUrl
           : voiceRole === 'ment' ? (setClips[Math.min(done, setClips.length - 1)] || '') : '';
 
-  const beginOpening = !skipOpening && !heardOpening && !!(openUrl || helloUrl);
+  // 음성 파일이 아직 없어도 자막만으로 오프닝을 보여 준다.
+  // 소리가 없으면 읽을 만큼만 세워 두었다가 저절로 동작으로 넘어간다.
+  const openText = subLines(HELLO_LINE[myCode] || subOpen || '');
+  const beginOpening = !skipOpening && !heardOpening && !!(openUrl || helloUrl || openText);
   const start = () => {
     restart();
     if (beginOpening) { setHeardOpening(true); setHelloDone(false); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
+
+  // 전체 화면일 땐 뒤쪽이 움직이지 않고, ESC로 빠져나온다.
+  useEffect(() => {
+    if (!full) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const esc = (e) => { if (e.key === 'Escape') setFull(false); };
+    window.addEventListener('keydown', esc);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', esc); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [full]);
+
+  // 소리가 없는 오프닝 — 글자 수에 맞춰 읽을 참을 주고 넘어간다.
+  // 소리가 있어도 브라우저가 막아 버리면 영영 멈춰 있으므로, 넉넉한 끝 시각을 함께 둔다.
+  useEffect(() => {
+    if (stage !== 'open') return undefined;
+    const ms = nowVoice ? 15000 : Math.min(9000, 2600 + openText.length * 110);
+    const t = setTimeout(() => setStage('move'), ms);
+    return () => clearTimeout(t);
+  }, [stage, nowVoice, openText]);
 
   // 바로플리에서는 버튼을 누르지 않아도 바로 이어진다.
   useEffect(() => {
@@ -289,7 +317,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 지금 흐르는 소리에 딸린 자막
   const sayNow = subLines(voiceRole === 'hello' ? (HELLO_LINE[myCode] || '')
     : voiceRole === 'open' ? subOpen
-      : voiceRole === 'ment' ? (subSets[Math.min(done, subSets.length - 1)] || '') : '');
+      : voiceRole === 'finish' ? finishLine(tone)
+        : voiceRole === 'ment' ? (subSets[Math.min(done, subSets.length - 1)] || '') : '');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
   // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
@@ -397,48 +426,23 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
       {stage === 'open' ? (
         // 오프닝 — 내 파트너가 말을 건네는 자리. 이 몇 초가 자세를 잡는 시간이기도 하다.
-        <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: tintBg(myCode),
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 10, padding: '18px 20px 20px', boxSizing: 'border-box' }}>
-          {/* 말풍선 — 캐릭터가 말하고 있다는 걸 글자 없이 알린다 */}
-          {subOn && sayNow && (
-            <div style={{ position: 'relative', maxWidth: '92%', background: '#fff', borderRadius: 16,
-              padding: '12px 14px', boxShadow: '0 3px 12px rgba(23,21,15,0.10)' }}>
-              <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.6,
-                wordBreak: 'keep-all', textAlign: 'center', whiteSpace: 'pre-line' }}>{sayNow}</span>
-              <span style={{ position: 'absolute', left: '50%', bottom: -7, transform: 'translateX(-50%) rotate(45deg)',
-                width: 14, height: 14, background: '#fff', borderRadius: 3 }} />
-            </div>
-          )}
-
-          <span style={{ animation: 'bmtiBreathe 2.6s ease-in-out infinite' }}>
-            {partnerImg
-              ? <CharPic src={partnerImg} code={myCode} h={172} />
-              : <span style={{ fontSize: 78 }}>💬</span>}
-          </span>
-          <style>{'@keyframes bmtiBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}'}</style>
-
-          <span style={{ fontSize: 13, fontWeight: 900, color: INK }}>{partnerName || '내 파트너'}</span>
-
-          {/* 남은 시간 — 끝이 보이면 길게 느껴지지 않는다 */}
-          <span style={{ width: '62%', height: 4, borderRadius: 999, background: 'rgba(23,21,15,0.10)', overflow: 'hidden' }}>
-            <span style={{ display: 'block', height: '100%', borderRadius: 999, background: 'rgba(23,21,15,0.35)',
-              width: `${said.len > 0 ? Math.min(100, (said.at / said.len) * 100) : 0}%`, transition: 'width .25s linear' }} />
-          </span>
-
-          <button type="button" onClick={() => setStage('move')}
-            style={{ marginTop: 2, border: 'none', background: '#fff', color: SUB, borderRadius: 999, padding: '8px 16px',
-              fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-            바로 동작 보기 →
-          </button>
-        </div>
+        <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''} at={said.at} len={said.len}>
+          <button type="button" onClick={() => setStage('move')} style={partnerBtn}>바로 동작 보기 →</button>
+        </PartnerStage>
+      ) : started && allDone ? (
+        // 마무리 — 오프닝과 같은 자리에서 파트너가 끝인사를 한다.
+        <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''} at={said.at} len={said.len}>
+          <button type="button" onClick={() => { restart(); setStage('move'); }} style={partnerBtn}>한 번 더 하기 ↻</button>
+        </PartnerStage>
       ) : started && hasPlay ? (
-        // 실제 동작 — 표지와 같은 4:5
-        <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        // 실제 동작 — 표지와 같은 4:5. 전체 화면으로 키우면 그대로 화면을 다 채운다.
+        <div style={full
+          ? { position: 'fixed', inset: 0, zIndex: 90, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+          : { position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
             onEnded={onRepEnd}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`,
+            style={{ width: '100%', height: '100%', objectFit: full ? 'contain' : 'cover', objectPosition: `50% ${clipY(card)}%`,
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
@@ -453,9 +457,25 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <span style={{ ...corner, right: 12, fontVariantNumeric: 'tabular-nums' }}>
             <b style={{ color: PURPLE, fontWeight: 900 }}>{Math.min(rep + 1, reps)}</b>/{reps}
           </span>
+          {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
+          {!full ? (
+            <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
+              style={{ position: 'absolute', right: 10, top: 42, zIndex: 4, width: 30, height: 30, borderRadius: 9,
+                border: 'none', background: 'rgba(255,255,255,0.92)', color: INK, fontSize: 13, fontWeight: 900,
+                cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>⛶</button>
+          ) : (
+            <button type="button" onClick={() => setFull(false)}
+              style={{ position: 'absolute', left: '50%', bottom: 'max(22px, env(safe-area-inset-bottom))',
+                transform: 'translateX(-50%)', zIndex: 4, border: 'none', background: 'rgba(255,255,255,0.94)',
+                color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800,
+                cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 14px rgba(0,0,0,0.3)' }}>
+              설정 바꾸기
+            </button>
+          )}
+
           {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
           {subOn && sayNow && rest === 0 && (
-            <div style={{ position: 'absolute', left: 10, right: 10, bottom: 10, zIndex: 2, pointerEvents: 'none',
+            <div style={{ position: 'absolute', left: 10, right: 10, bottom: full ? 78 : 10, zIndex: 2, pointerEvents: 'none',
               background: 'rgba(255,255,255,0.94)', borderRadius: 12, padding: '10px 12px' }}>
               <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.6,
                 wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{sayNow}</span>
@@ -576,3 +596,43 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     </article>
   );
 }
+
+// 오프닝·마무리에서 내 파트너가 말을 건네는 화면 — 두 자리가 같은 모양이라 한 조각으로 쓴다.
+function PartnerStage({ code, img, name, say, at, len, children }) {
+  return (
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: tintBg(code),
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 10, padding: '18px 20px 20px', boxSizing: 'border-box' }}>
+      {/* 말풍선 — 캐릭터가 말하고 있다는 걸 글자 없이 알린다 */}
+      {say && (
+        <div style={{ position: 'relative', maxWidth: '92%', background: '#fff', borderRadius: 16,
+          padding: '12px 14px', boxShadow: '0 3px 12px rgba(23,21,15,0.10)' }}>
+          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.6,
+            wordBreak: 'keep-all', textAlign: 'center', whiteSpace: 'pre-line' }}>{say}</span>
+          <span style={{ position: 'absolute', left: '50%', bottom: -7, transform: 'translateX(-50%) rotate(45deg)',
+            width: 14, height: 14, background: '#fff', borderRadius: 3 }} />
+        </div>
+      )}
+
+      <span style={{ animation: 'bmtiBreathe 2.6s ease-in-out infinite' }}>
+        {img ? <CharPic src={img} code={code} h={172} /> : <span style={{ fontSize: 78 }}>💬</span>}
+      </span>
+      <style>{'@keyframes bmtiBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}'}</style>
+
+      <span style={{ fontSize: 13, fontWeight: 900, color: INK }}>{name || '내 파트너'}</span>
+
+      {/* 남은 시간 — 끝이 보이면 길게 느껴지지 않는다 */}
+      <span style={{ width: '62%', height: 4, borderRadius: 999, background: 'rgba(23,21,15,0.10)', overflow: 'hidden' }}>
+        <span style={{ display: 'block', height: '100%', borderRadius: 999, background: 'rgba(23,21,15,0.35)',
+          width: `${len > 0 ? Math.min(100, (at / len) * 100) : 0}%`, transition: 'width .25s linear' }} />
+      </span>
+
+      {children}
+    </div>
+  );
+}
+
+const partnerBtn = {
+  marginTop: 2, border: 'none', background: '#fff', color: SUB, borderRadius: 999, padding: '8px 16px',
+  fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: `inset 0 0 0 1px ${LINE}`,
+};
