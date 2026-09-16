@@ -51,6 +51,18 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
   // 표지에 영상을 깔면, 화면에 들어올 때 소리 없이 처음부터 끝까지 돌려 준다.
   const boxRef = useRef(null);
   const vidRef = useRef(null);
+  // 문구 크기는 상자 폭을 따라간다. 가로 셋씩 놓인 작은 칸에서도 비율이 같아진다.
+  const [boxW, setBoxW] = useState(0);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return undefined;
+    const read = () => setBoxW(box.getBoundingClientRect().width || 0);
+    read();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(read);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, []);
   useEffect(() => {
     if (!clip) return undefined;
     const box = boxRef.current;
@@ -89,7 +101,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
             padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
-            <span style={{ fontSize: Math.round((big ? 30 : 21) * scale), fontWeight: 900, color, lineHeight: 1.25, letterSpacing: '-0.02em', wordBreak: 'keep-all', whiteSpace: 'pre-line',
+            <span style={{ fontSize: Math.max(9, Math.round((boxW || 360) * (big ? 0.077 : 0.058) * scale)), fontWeight: 900, color, lineHeight: 1.25, letterSpacing: '-0.02em', wordBreak: 'keep-all', whiteSpace: 'pre-line',
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
               // 아홉 칸 자리에서 가로·세로로 조금씩 더 민다
               transform: `translate(${Number(item.thumb_dx) || 0}%, ${Number(item.thumb_dy) || 0}%)` }}>

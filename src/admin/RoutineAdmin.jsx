@@ -1,9 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-import { INK, SUB, LINE, BG, box, input, label, btn, smallBtn } from './theme';
+import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PublishBadge } from './ui';
 import CharPicker from './CharPicker';
+import ImageInput from './ImageInput';
+import { CurationThumb } from '../features/curation/CurationCard';
+import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { CHARACTERS } from '../data';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
@@ -18,7 +21,12 @@ import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curati
 
 // 플레이리스트(루틴) 등록 화면 — 바로카드를 골라 순서를 정하면 하나의 루틴이 된다.
 // 총 소요시간·도구·타겟 부위는 담긴 카드에서 자동으로 계산되므로 따로 입력하지 않는다.
-const EMPTY = { published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true, chars_z: [], chars_m: [] };
+const EMPTY = {
+  published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true,
+  chars_z: [], chars_m: [],
+  cover_url: '', thumb_text: '', thumb_font: 'pretendard', thumb_pos: 'bc',
+  thumb_color: '#FFFFFF', thumb_scale: 100, thumb_dx: 0, thumb_dy: 0,
+};
 
 const BMTI_OPTIONS = Object.keys(CHARACTER_NAMES);
 
@@ -108,6 +116,10 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
       bmti_code: f.bmti_code || null,
       skip_opening: f.skip_opening !== false,
       chars_z: f.chars_z || [], chars_m: f.chars_m || [],
+      cover_url: f.cover_url || null, thumb_text: f.thumb_text || null,
+      thumb_font: f.thumb_font || 'pretendard', thumb_pos: f.thumb_pos || 'bc',
+      thumb_color: f.thumb_color || '#FFFFFF', thumb_scale: Number(f.thumb_scale) || 100,
+      thumb_dx: Number(f.thumb_dx) || 0, thumb_dy: Number(f.thumb_dy) || 0,
       owner_id: null,                        // 관리자가 만드는 공식 추천 루틴
       updated_at: new Date().toISOString(),
     };
@@ -184,6 +196,62 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
           <input type="checkbox" checked={f.skip_opening !== false} onChange={(e) => set('skip_opening')(e.target.checked)} />
           오프닝 건너뛰기 <span style={{ fontWeight: 600, color: SUB }}>(이어서 하니 동작마다 설명을 다시 듣지 않아요)</span>
         </label>
+      </div>
+
+      {/* 표지 — 목록에서 플리마다 얼굴이 되는 자리 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>표지 <span style={{ fontWeight: 600, color: SUB }}>— 세로 4:5</span></div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>
+          비워 두면 담긴 첫 동작의 표지를 빌려 씁니다. 사진이나 영상을 올리면 그것이 얼굴이 됩니다.
+        </div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 300px', minWidth: 260 }}>
+            <span style={label}>사진 또는 영상</span>
+            <ImageInput allowVideo value={f.cover_url} onChange={set('cover_url')}
+              hint="세로로 긴 4:5를 권합니다. mp4·webm도 됩니다." />
+            <div style={{ height: 12 }} />
+            <span style={label}>표지 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 엔터로 줄을 바꿉니다</span></span>
+            <textarea style={{ ...area, fontSize: 16, fontWeight: 800, padding: '12px 14px', minHeight: 58, lineHeight: 1.4 }}
+              value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)}
+              placeholder="자기 전 10분" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 132px', gap: 12, marginTop: 12 }}>
+              <div>
+                <span style={label}>글씨체</span>
+                <select value={f.thumb_font || 'pretendard'} onChange={(e) => set('thumb_font')(e.target.value)}
+                  style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.thumb_font) }}>
+                  {THUMB_FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <span style={label}>문구 색</span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input type="color" value={f.thumb_color || '#FFFFFF'} onChange={(e) => set('thumb_color')(e.target.value)}
+                    style={{ width: 38, height: 38, padding: 2, border: `1px solid ${LINE}`, borderRadius: 8, background: '#fff', cursor: 'pointer', flexShrink: 0 }} />
+                  <input style={{ ...input, flex: 1, minWidth: 0, padding: '10px 8px', fontSize: 12.5 }} value={f.thumb_color || '#FFFFFF'}
+                    onChange={(e) => set('thumb_color')(e.target.value)} />
+                </div>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <span style={label}>문구 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 4 }}>
+                  {THUMB_POS.map((tp) => {
+                    const on = (f.thumb_pos || 'bc') === tp.key;
+                    return (
+                      <button key={tp.key} type="button" title={tp.label} onClick={() => set('thumb_pos')(tp.key)}
+                        style={{ height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
+                          background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ flex: '0 0 200px', maxWidth: '100%' }}>
+            <span style={label}>미리보기 <span style={{ fontWeight: 600 }}>— 4:5</span></span>
+            <CurationThumb item={f} ratio="4 / 5" showRead={false} clip={f.cover_url && /\.(mp4|webm|mov)(\?|$)/i.test(f.cover_url) ? f.cover_url : ''}
+              emptyText="표지를 올리면 보여요" />
+          </div>
+        </div>
       </div>
 
       {/* 묶음을 고르는 이유가 유형이므로, 추천 유형은 여기에만 둔다 */}

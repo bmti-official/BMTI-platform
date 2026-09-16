@@ -2,7 +2,8 @@
 // '바로 시작하기'와 '일단 구경하기'로 이어진다.
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import AiNote from './AiNote';
-import { CharRow } from './CurationCard';
+import { CharRow, CurationThumb } from './CurationCard';
+import { isClip } from './media';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
@@ -14,7 +15,13 @@ export default function RoutineView({ routine, cards, tone = 'z', onStart, onBro
   const rate = finishRate(routine);
 
   return (
-    <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, padding: '15px 16px', background: '#fff' }}>
+    <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
+      {/* 표지 — 없으면 담긴 첫 동작의 것을 빌려 쓴다 */}
+      <CurationThumb item={routine.cover_url ? routine : { ...(cards[0] || {}), thumb_text: routine.thumb_text || (cards[0] || {}).thumb_text }}
+        radius={0} ratio="4 / 5" showRead={false}
+        clip={routine.cover_url ? (isClip(routine.cover_url) ? routine.cover_url : '') : ((cards[0] || {}).video_url || '')}
+        emptyText="표지 없음" />
+      <div style={{ padding: '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11.5, fontWeight: 800, color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '3px 10px' }}>
           {s.durationSec > 0 ? mmss(s.durationSec) : '시간 미정'}
@@ -47,6 +54,7 @@ export default function RoutineView({ routine, cards, tone = 'z', onStart, onBro
           style={{ flex: 1, padding: 13, borderRadius: 13, border: `1px solid ${LINE}`, background: '#fff', color: SUB, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
           일단 구경하기
         </button>
+      </div>
       </div>
     </article>
   );
