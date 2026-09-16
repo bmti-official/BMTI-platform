@@ -47,7 +47,7 @@ export function CharPic({ src, code, h = 38 }) {
 }
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', emptyText = '대표 이미지 없음' }) {
+export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip = '', emptyText = '대표 이미지 없음', onClipEnd }) {
   // 표지에 영상을 깔면, 화면에 들어올 때 소리 없이 처음부터 끝까지 돌려 준다.
   const boxRef = useRef(null);
   const vidRef = useRef(null);
@@ -80,8 +80,8 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
     <div ref={boxRef} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
       {/* 4:5 틀에 세로로 긴 영상을 담으면 위아래가 잘린다. 어디를 살릴지 정해 둔 자리를 쓴다. */}
       {clip ? (
-        <video ref={vidRef} src={clip} muted playsInline autoPlay loop preload="metadata"
-          poster={item.cover_url || undefined}
+        <video ref={vidRef} src={clip} muted playsInline autoPlay loop={!onClipEnd} preload="metadata"
+          poster={item.cover_url || undefined} onEnded={onClipEnd}
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
       ) : item.cover_url
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />

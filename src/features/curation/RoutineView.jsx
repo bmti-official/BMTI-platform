@@ -28,6 +28,13 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
   const rate = finishRate(routine);
   // 구경하기 — 표지는 그대로 두고 그 위에 창만 띄워, 옆으로 넘겨 가며 훑어본다.
   const [peek, setPeek] = useState(false);
+  // 표지 영상 — 담긴 동작을 차례대로 한 편씩 돌린다. 끝까지 가면 처음으로.
+  const clips = (cards || []).map((c) => c.video_url).filter(Boolean);
+  // 나머지로 돌려 쓰므로 편수가 달라져도 자리를 되돌릴 일이 없다.
+  const [clipAt, setClipAt] = useState(0);
+  // 표지를 따로 올렸으면 그것만 쓰고, 아니면 담긴 영상을 돌린다.
+  const ownClip = routine.cover_url && isClip(routine.cover_url) ? routine.cover_url : '';
+  const coverClip = routine.cover_url ? ownClip : (clips[clipAt % Math.max(1, clips.length)] || '');
   const browse = () => {
     if ((cards || []).length === 0) { if (onBrowse) onBrowse(); return; }
     setPeek(true);
@@ -37,9 +44,10 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       {/* 표지 — 없으면 담긴 첫 동작의 것을 빌려 쓴다 */}
       <div style={{ position: 'relative' }}>
-      <CurationThumb item={routine.cover_url ? routine : { ...(cards[0] || {}), thumb_text: routine.thumb_text || (cards[0] || {}).thumb_text }}
-        radius={0} ratio="4 / 5" showRead={false}
-        clip={routine.cover_url ? (isClip(routine.cover_url) ? routine.cover_url : '') : ((cards[0] || {}).video_url || '')}
+      {/* 문구·자리·색은 플리에 적어 둔 것만 쓴다. 담긴 바로카드의 문구는 따라오지 않는다. */}
+      <CurationThumb item={routine} radius={0} ratio="4 / 5" showRead={false}
+        clip={coverClip}
+        onClipEnd={routine.cover_url || clips.length < 2 ? undefined : () => setClipAt((n) => n + 1)}
         emptyText="표지 없음" />
       {/* 왼쪽 위 타겟 부위 · 오른쪽 위 도구 — 바로카드와 같은 자리에 둔다 */}
       {s.coreParts.length > 0 && (
