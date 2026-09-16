@@ -41,7 +41,7 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
         + '.peek-track{scrollbar-width:none}.peek-track::-webkit-scrollbar{display:none}'}</style>
 
       <div onClick={(e) => e.stopPropagation()}
-        style={{ width: '100%', maxWidth: 420, maxHeight: '90%', display: 'flex', flexDirection: 'column',
+        style={{ width: '100%', maxWidth: 420, height: '92%', display: 'flex', flexDirection: 'column',
           background: '#fff', borderRadius: 18, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.22)',
           animation: 'peekUp .24s cubic-bezier(.2,.8,.3,1)', fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
 
@@ -63,8 +63,10 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
             style={{ display: 'flex', height: '100%', overflowX: 'auto', overflowY: 'hidden',
               scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
             {cards.map((c) => (
-              <div key={c.id} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflowY: 'auto', padding: 14, boxSizing: 'border-box' }}>
-                <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode} skipOpening />
+              <div key={c.id} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflow: 'hidden', padding: '10px 12px', boxSizing: 'border-box' }}>
+                <FitCard>
+                  <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode} skipOpening />
+                </FitCard>
               </div>
             ))}
           </div>
@@ -83,6 +85,38 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// 한 장이 창보다 길면 그만큼 줄여 준다 — 훑어보는 창이라 한눈에 다 들어와야 한다.
+// 가로세로를 같은 배율로 줄이므로 표지 비율은 그대로다.
+function FitCard({ children }) {
+  const boxRef = useRef(null);
+  const inRef = useRef(null);
+  const [k, setK] = useState(1);
+
+  useEffect(() => {
+    const box = boxRef.current, inner = inRef.current;
+    if (!box || !inner) return undefined;
+    // 줄여도 재는 값(레이아웃 크기)은 그대로라, 재고 줄이기를 되풀이하지 않는다.
+    const fit = () => {
+      const h = inner.offsetHeight, room = box.clientHeight;
+      if (!h || !room) return;
+      setK(Math.min(1, Math.max(0.5, room / h)));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(inner);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={boxRef} style={{ height: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+      <div ref={inRef} style={{ width: '100%', transform: `scale(${k})`, transformOrigin: 'top center' }}>
+        {children}
       </div>
     </div>
   );
