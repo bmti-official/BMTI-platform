@@ -41,7 +41,7 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
         + '.peek-track{scrollbar-width:none}.peek-track::-webkit-scrollbar{display:none}'}</style>
 
       <div onClick={(e) => e.stopPropagation()}
-        style={{ width: '100%', maxWidth: 420, height: '92%', display: 'flex', flexDirection: 'column',
+        style={{ width: '100%', maxWidth: 460, height: '92%', display: 'flex', flexDirection: 'column',
           background: '#fff', borderRadius: 18, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.22)',
           animation: 'peekUp .24s cubic-bezier(.2,.8,.3,1)', fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
 
@@ -63,7 +63,7 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
             style={{ display: 'flex', height: '100%', overflowX: 'auto', overflowY: 'hidden',
               scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
             {cards.map((c) => (
-              <div key={c.id} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflow: 'hidden', padding: '10px 12px', boxSizing: 'border-box' }}>
+              <div key={c.id} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflow: 'hidden', padding: '10px 7px', boxSizing: 'border-box' }}>
                 <FitCard>
                   <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode} skipOpening />
                 </FitCard>
@@ -90,33 +90,41 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
   );
 }
 
-// 한 장이 창보다 길면 그만큼 줄여 준다 — 훑어보는 창이라 한눈에 다 들어와야 한다.
+// 한 장이 창보다 길면 줄여 주되, 너무 작아지면 글씨가 안 보인다.
+// 그래서 0.86배까지만 줄이고, 그래도 남는 만큼은 살짝 내려 보게 둔다.
 // 가로세로를 같은 배율로 줄이므로 표지 비율은 그대로다.
 function FitCard({ children }) {
   const boxRef = useRef(null);
   const inRef = useRef(null);
-  const [k, setK] = useState(1);
+  const [size, setSize] = useState({ h: 0, room: 0 });
 
   useEffect(() => {
     const box = boxRef.current, inner = inRef.current;
     if (!box || !inner) return undefined;
-    // 줄여도 재는 값(레이아웃 크기)은 그대로라, 재고 줄이기를 되풀이하지 않는다.
-    const fit = () => {
+    const read = () => {
       const h = inner.offsetHeight, room = box.clientHeight;
       if (!h || !room) return;
-      setK(Math.min(1, Math.max(0.5, room / h)));
+      setSize((p) => (p.h === h && p.room === room ? p : { h, room }));
     };
-    fit();
-    const ro = new ResizeObserver(fit);
+    read();
+    const ro = new ResizeObserver(read);
     ro.observe(inner);
     ro.observe(box);
     return () => ro.disconnect();
   }, []);
 
+  const { h, room } = size;
+  const snug = h && room ? room / h : 1;             // 딱 맞게 줄였을 때
+  const loose = h && room ? (room * 1.25) / h : 1;   // 한 뼘쯤 내려 보기로 하고 덜 줄였을 때
+  const k = Math.min(1, Math.max(snug, Math.min(0.86, loose)));
+
   return (
-    <div ref={boxRef} style={{ height: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-      <div ref={inRef} style={{ width: '100%', transform: `scale(${k})`, transformOrigin: 'top center' }}>
-        {children}
+    <div ref={boxRef} className="peek-track" style={{ height: '100%', overflowX: 'hidden', overflowY: 'auto' }}>
+      {/* 줄인 만큼만 자리를 차지하게 — 안 그러면 빈 곳까지 내려가진다 */}
+      <div style={{ height: h ? Math.round(h * k) : 'auto' }}>
+        <div ref={inRef} style={{ width: '100%', transform: `scale(${k})`, transformOrigin: 'top center' }}>
+          {children}
+        </div>
       </div>
     </div>
   );
