@@ -6,6 +6,7 @@ import { withRoutineSetup } from './routineSetup';
 import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS } from './voiceCommon';
 import { pickCardTone, pickRoutineTone, subLines } from './format';
 import PartnerStage from './PartnerStage';
+import FullWrap from './FullWrap';
 import { partnerBtn } from './partnerBtn';
 import { nextLine } from './finishLine';
 import { axisOf } from './typeTint';
@@ -192,13 +193,7 @@ function GapStage({ code, img, name, tone, sec, full, nextTitle, voiceUrl, audio
       <audio ref={audioRef} src={voiceUrl || undefined} preload="auto" style={{ display: 'none' }} />
     </PartnerStage>
   );
-  if (!full) return stage;
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: '#fff',
-      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 'min(100%, 78vh)' }}>{stage}</div>
-    </div>
-  );
+  return <FullWrap on={full}>{stage}</FullWrap>;
 }
 
 // 음악 크기 — 다섯 칸짜리 막대. 몇 칸인지 눈으로 바로 보인다.

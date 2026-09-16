@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import PartnerStage from './PartnerStage';
+import FullWrap from './FullWrap';
 import { partnerBtn } from './partnerBtn';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { CHARACTERS } from '../../data';
@@ -443,32 +444,32 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <button type="button" onClick={() => { restart(); setStage('move'); }} style={partnerBtn}>한 번 더 하기 ↻</button>
         </PartnerStage>
       ) : started && hasPlay ? (
-        // 실제 동작 — 표지와 같은 4:5. 전체 화면으로 키우면 그대로 화면을 다 채운다.
-        <div style={full
-          ? { position: 'fixed', inset: 0, zIndex: 90, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }
-          : { position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        // 실제 동작 — 표지와 같은 4:5. 전체 화면에서도 이 비율 그대로 키우기만 한다.
+        // 그래야 위에 얹은 글씨가 화면 꼭대기가 아니라 영상 안에 앉는다.
+        <FullWrap on={full}>
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
             onEnded={onRepEnd}
-            style={{ width: '100%', height: '100%', objectFit: full ? 'contain' : 'cover', objectPosition: `50% ${clipY(card)}%`,
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`,
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
           {card.has_side && !allDone && (
-            <span style={{ ...corner, left: 12, color: PURPLE }}>
+            <span style={{ ...corner, top: full ? 26 : 12, left: 12, color: PURPLE }}>
               {twoPhase ? (secondSide ? '왼쪽' : '오른쪽') : SIDE_KO[side]}
             </span>
           )}
-          <span style={{ ...corner, left: '50%', transform: 'translateX(-50%)' }}>
+          <span style={{ ...corner, top: full ? 26 : 12, left: '50%', transform: 'translateX(-50%)' }}>
             {allDone ? '다 끝냈어요' : (<><b style={{ color: PURPLE, fontWeight: 900 }}>{done + 1}</b> 세트 중</>)}
           </span>
-          <span style={{ ...corner, right: 12, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ ...corner, top: full ? 26 : 12, right: 12, fontVariantNumeric: 'tabular-nums' }}>
             <b style={{ color: PURPLE, fontWeight: 900 }}>{Math.min(rep + 1, reps)}</b>/{reps}
           </span>
           {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
-              style={{ position: 'absolute', right: 10, top: 42, zIndex: 4, width: 30, height: 30, borderRadius: 9,
+              style={{ position: 'absolute', right: 10, top: 46, zIndex: 4, width: 30, height: 30, borderRadius: 9,
                 border: 'none', background: '#fff', color: INK, fontSize: 13, fontWeight: 900,
                 cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1, boxShadow: `inset 0 0 0 1px ${LINE}` }}>⛶</button>
           ) : (
@@ -509,6 +510,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             </div>
           )}
         </div>
+        </FullWrap>
       ) : (
         // 표지 — 인스타 게시물 비율(4:5). 영상이 있으면 0~5초가 소리 없이 돌아간다.
         <div style={{ position: 'relative' }}>

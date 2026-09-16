@@ -429,7 +429,7 @@ export default function RoutineAdmin() {
       {screen && (
         <PreviewModal navActive="baro" title={`바로플리 화면 — 플리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`} onClose={() => setScreen(false)}>
           {(tone) => (
-            <BaroPliView tone={tone} routines={rows} cards={allCards} />
+            <BaroPliView tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} routines={rows} cards={allCards} />
           )}
         </PreviewModal>
       )}
@@ -440,7 +440,8 @@ export default function RoutineAdmin() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
-                <RoutineView routine={preview.routine} cards={preview.cards} tone={tone} {...charProps(preview.routine, tone)} />
+                <RoutineView routine={preview.routine} cards={preview.cards} tone={tone}
+                  bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} {...charProps(preview.routine, tone)} />
               </div>
               <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>담긴 동작 한눈에 — ‘일단 구경하기’는 위 표지에서 바로 눌러 보세요</div>
