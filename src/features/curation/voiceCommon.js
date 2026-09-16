@@ -50,3 +50,17 @@ export function bgmNoFor(code) {
   if (relaxed) return flexible ? 2 : 1;
   return flexible ? 3 : 4;
 }
+
+// ── 음악 여닫기 ────────────────────────────────────────────────
+// 곡의 처음 열 셈과 마지막 열 셈은 더 작게 튼다.
+// 갑자기 커지거나 뚝 끊기지 않고, 한 바퀴 돌아 다시 시작할 때의 이음매도 덜 튄다.
+export const FADE_SEC = 10;    // 여닫는 데 쓰는 시간
+export const FADE_MIN = 0.35;  // 가장 작을 때 — 아주 끄지는 않는다
+
+/** 지금 자리에서 음량에 곱할 값. 0.35(가장자리) ~ 1(가운데) */
+export function bgmFade(at, dur) {
+  if (!Number.isFinite(dur) || dur <= FADE_SEC * 2) return 1;
+  const opening = Math.min(1, Math.max(0, at) / FADE_SEC);
+  const closing = Math.min(1, Math.max(0, dur - at) / FADE_SEC);
+  return FADE_MIN + (1 - FADE_MIN) * Math.min(opening, closing);
+}

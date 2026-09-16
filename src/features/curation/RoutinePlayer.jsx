@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
-import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS } from './voiceCommon';
+import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS, bgmFade } from './voiceCommon';
 import { pickCardTone, pickRoutineTone, subLines } from './format';
 import PartnerStage from './PartnerStage';
 import FullWrap from './FullWrap';
@@ -47,7 +47,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   useEffect(() => {
     const a = musicRef.current;
     if (!a) return;
-    a.volume = musicOn ? loud : 0;
+    a.volume = musicOn ? loud * bgmFade(a.currentTime, a.duration) : 0;
     if (musicOn && !quiet && bgmUrl) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
     else { try { a.pause(); } catch { /* 무시 */ } }
   }, [bgmUrl, musicOn, loud, quiet]);
@@ -59,9 +59,10 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       const a = musicRef.current;
       if (!a || !musicOn || quiet) return;
       const talking = [...document.querySelectorAll('audio')].some((el) => el !== a && !el.paused && !el.muted && el.currentTime > 0);
-      const want = talking ? loud * DUCK_RATE : loud;
-      if (Math.abs(a.volume - want) > 0.01) a.volume = want;
-    }, 350);
+      // 멘트가 들리면 낮추고, 곡의 처음·끝에서도 한 번 더 낮춘다.
+      const want = (talking ? loud * DUCK_RATE : loud) * bgmFade(a.currentTime, a.duration);
+      if (Math.abs(a.volume - want) > 0.005) a.volume = want;
+    }, 250);
     return () => clearInterval(tick);
   }, [musicOn, loud, quiet]);
 
