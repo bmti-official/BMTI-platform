@@ -176,8 +176,9 @@ export default function VoiceCommon() {
         <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>쉬는 시간 멘트</div>
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
           고른 쉬는 시간에 맞는 것 하나가 흐릅니다. <b>&lsquo;셋, 둘, 하나&rsquo;는 넣지 마세요</b> —
-          아래 카운트다운이 남은 3초에 저절로 나갑니다. 여기엔 <b>앞부분(숨 고르기)만</b> 담으세요.
-          <br />길이는 <b>쉬는 시간에서 3초를 뺀 만큼</b> 안으로 —  5초면 2초, 10초면 7초 안쪽.
+          아래 카운트다운이 남은 4초에 저절로 나갑니다. 여기엔 <b>앞부분(숨 고르기)만</b> 담으세요.
+          <br />길이는 <b>쉬는 시간에서 4초를 뺀 만큼</b> 안으로 — 10초면 6초, 15초면 11초, 20초면 16초 안쪽.
+          <br />5초 쉼은 카운트다운만으로 거의 찹니다. 한마디만 짧게 담거나 비워 두세요.
           <br />세트마다 같은 파일이 나가니 &lsquo;한 세트 끝&rsquo;처럼 <b>횟수를 세는 말은 넣지 마세요.</b>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
@@ -186,12 +187,13 @@ export default function VoiceCommon() {
       </div>
 
       <div style={{ ...box, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>카운트다운 &lsquo;셋, 둘, 하나&rsquo;</div>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>카운트다운 &lsquo;셋, 둘, 하나, 시작!&rsquo;</div>
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
-          쉬는 시간이든 자리 바꾸기든 <b>남은 3초에 이 하나가 나갑니다.</b> 딱 3초로, 한 숫자에 1초씩 또박또박.
-          <br />말투를 가리지 않으니 <b>성별당 한 벌</b>이면 됩니다.
+          쉬는 시간이든 자리 바꾸기든 <b>남은 4초에 이 하나가 나갑니다.</b> 딱 4초로, 한 마디에 1초씩 또박또박.
+          <br /><b>끝의 &lsquo;시작!&rsquo;을 꼭 넣어 주세요</b> — 이게 있어야 세트를 여는 &lsquo;하나&rsquo;와 뜻이 갈립니다.
+          <br />말투를 가리지 않으니 <b>한 벌</b>이면 됩니다.
         </div>
-        <div style={{ maxWidth: 320 }}>{slot('countdown', 0, '셋, 둘, 하나')}</div>
+        <div style={{ maxWidth: 320 }}>{slot('countdown', 0, '셋, 둘, 하나, 시작!')}</div>
       </div>
 
       <div style={{ ...box, marginBottom: 16 }}>
@@ -214,7 +216,7 @@ export default function VoiceCommon() {
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
           &lsquo;한쪽씩 둘 다&rsquo;로 하다가 <b>오른쪽을 마치고 왼쪽으로 넘어갈 때</b> 한 번 흐릅니다(20초).
           <b> 방향을 분명히 말해 주세요</b> — 손님이 반대로 누우면 안 되니까요.
-          <br /><b>&lsquo;셋, 둘, 하나&rsquo;는 넣지 마세요</b> — 위 카운트다운이 남은 3초에 저절로 나갑니다. 17초 안쪽으로 담으세요.
+          <br /><b>&lsquo;셋, 둘, 하나&rsquo;는 넣지 마세요</b> — 위 카운트다운이 남은 4초에 저절로 나갑니다. 16초 안쪽으로 담으세요.
           <br />좌우를 번갈아 하는 카드에는 쓰이지 않습니다.
         </div>
         <div style={{ maxWidth: 320 }}>{slot('switch', 0, '자리 바꾸기')}</div>

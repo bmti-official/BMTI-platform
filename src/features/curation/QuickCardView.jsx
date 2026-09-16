@@ -295,7 +295,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       if (paused) return undefined;
       const t = setTimeout(() => {
         const next = rest - 1;
-        // 3초 남으면 '셋, 둘, 하나'가 나간다. 쉬는 멘트와 채널이 달라 서로 자르지 않는다.
+        // 4초 남으면 '셋, 둘, 하나, 시작!'이 나간다. 쉬는 멘트와 채널이 달라 서로 자르지 않는다.
         if (next === COUNTDOWN_AT && voiceOn) {
           const a = countRef.current;
           if (a && commonAt('countdown', 0)) {

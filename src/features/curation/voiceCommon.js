@@ -4,7 +4,9 @@ import { supabase } from '../../lib/supabaseClient';
 
 export const COUNT_MAX = 20;
 export const REST_LENS = [5, 10, 15, 20];
-export const COUNTDOWN_AT = 3;   // 남은 초가 이만큼일 때 '셋, 둘, 하나'가 나간다
+// 남은 초가 이만큼일 때 '셋, 둘, 하나, 시작!'이 나간다.
+// 넷에서 시작해야 '시작!'이 남은 1초에 떨어지고, 세트가 열리는 '하나'와 한 박자 벌어진다.
+export const COUNTDOWN_AT = 4;
 // 우리말 셈씨 — 운동은 '하나 둘 셋'으로 셉니다.
 export const COUNT_KO = ['', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열',
   '열하나', '열둘', '열셋', '열넷', '열다섯', '열여섯', '열일곱', '열여덟', '열아홉', '스물'];
