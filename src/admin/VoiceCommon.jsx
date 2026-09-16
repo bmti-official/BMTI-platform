@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, ACCENT, box, btn } from './theme';
 import { uploadOne, AUDIO_ACCEPT } from './upload';
 import { COUNT_MAX, REST_LENS, COUNT_KO, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
+import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { useSavedNote } from './editorState';
 
 // 칸 하나 — 올리기·듣기·비우기
@@ -13,7 +14,7 @@ function Slot({ label, url, busy, onPick, onClear }) {
     <div style={{ background: url ? '#fff' : BG, borderRadius: 10, padding: '8px 10px',
       boxShadow: `inset 0 0 0 ${url ? 1 : 1}px ${url ? ACCENT : LINE}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <span style={{ fontSize: 12, fontWeight: 900, color: url ? INK : SUB, minWidth: 52 }}>{label}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 900, color: url ? INK : SUB, minWidth: 52, lineHeight: 1.35 }}>{label}</span>
         <button type="button" onClick={onPick} disabled={busy}
           style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: busy ? 'default' : 'pointer',
             fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: busy ? SUB : ACCENT, padding: 0 }}>
@@ -31,7 +32,7 @@ function Slot({ label, url, busy, onPick, onClear }) {
 
 export default function VoiceCommon() {
   const [rows, setRows] = useState({});
-  const [sex, setSex] = useState('female');
+  const [hello, setHello] = useState({});
   const [tone, setTone] = useState('z');
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -40,15 +41,45 @@ export default function VoiceCommon() {
 
   useEffect(() => {
     let alive = true;
-    supabase.from('voice_assets').select('kind, gender, tone, n, url').then(({ data, error }) => {
+    supabase.from('voice_assets').select('kind, tone, n, url').then(({ data, error }) => {
       if (!alive) return;
       setLoading(false);
       if (error) { setErr(error.message); return; }
       setErr('');
-      setRows(Object.fromEntries((data || []).map((r) => [key(r.kind, r.gender, r.tone, r.n), r.url])));
+      setRows(Object.fromEntries((data || []).map((r) => [key(r.kind, r.tone, r.n), r.url])));
+    });
+    supabase.from('voice_hello').select('code, url').then(({ data }) => {
+      if (alive && data) setHello(Object.fromEntries(data.map((r) => [r.code, r.url])));
     });
     return () => { alive = false; };
   }, []);
+
+  // 캐릭터 인사 — 유형 코드마다 한 편
+  const pickHello = (code) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = AUDIO_ACCEPT;
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      setBusy('hello-' + code); setErr('');
+      const r = await uploadOne(file, { allowAudio: true });
+      if (r.err) { setBusy(''); setErr(r.err); return; }
+      const { error } = await supabase.from('voice_hello')
+        .upsert({ code, url: r.url, updated_at: new Date().toISOString() });
+      setBusy('');
+      if (error) { setErr('저장 실패: ' + error.message); return; }
+      setHello((p) => ({ ...p, [code]: r.url }));
+      setSaved('올렸습니다.');
+    };
+    input.click();
+  };
+  const clearHello = async (code) => {
+    const { error } = await supabase.from('voice_hello').delete().eq('code', code);
+    if (error) { setErr('지우기 실패: ' + error.message); return; }
+    setHello((p) => { const next = { ...p }; delete next[code]; return next; });
+    setSaved('비웠습니다.');
+  };
 
   // 파일 하나를 골라 올리고 그 자리에 저장한다.
   const pick = (kind, n) => {
@@ -58,12 +89,12 @@ export default function VoiceCommon() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const k = key(kind, sex, tone, n);
+      const k = key(kind, tone, n);
       setBusy(k); setErr('');
       const r = await uploadOne(file, { allowAudio: true });
       if (r.err) { setBusy(''); setErr(r.err); return; }
       const { error } = await supabase.from('voice_assets')
-        .upsert({ kind, gender: sex, tone: toneFor(kind, tone), n, url: r.url, updated_at: new Date().toISOString() });
+        .upsert({ kind, tone: toneFor(kind, tone), n, url: r.url, updated_at: new Date().toISOString() });
       setBusy('');
       if (error) { setErr('저장 실패: ' + error.message); return; }
       setRows((p) => ({ ...p, [k]: r.url }));
@@ -73,19 +104,19 @@ export default function VoiceCommon() {
   };
 
   const clear = async (kind, n) => {
-    const k = key(kind, sex, tone, n);
-    const { error } = await supabase.from('voice_assets').delete().match({ kind, gender: sex, tone: toneFor(kind, tone), n });
+    const k = key(kind, tone, n);
+    const { error } = await supabase.from('voice_assets').delete().match({ kind, tone: toneFor(kind, tone), n });
     if (error) { setErr('지우기 실패: ' + error.message); return; }
     setRows((p) => { const next = { ...p }; delete next[k]; return next; });
     setSaved('비웠습니다.');
   };
 
-  const at = (kind, n) => rows[key(kind, sex, tone, n)];
+  const at = (kind, n) => rows[key(kind, tone, n)];
   const countDone = Array.from({ length: COUNT_MAX }, (_, i) => at('count', i + 1)).filter(Boolean).length;
   const restDone = REST_LENS.filter((n) => at('rest', n)).length;
 
   const slot = (kind, n, label) => (
-    <Slot key={`${kind}-${n}`} label={label} url={at(kind, n)} busy={busy === key(kind, sex, tone, n)}
+    <Slot key={`${kind}-${n}`} label={label} url={at(kind, n)} busy={busy === key(kind, tone, n)}
       onPick={() => pick(kind, n)} onClear={() => clear(kind, n)} />
   );
 
@@ -96,18 +127,13 @@ export default function VoiceCommon() {
         <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8 }}>
           모든 바로카드가 함께 쓰는 소리입니다. <b>한 번 올려 두면 카드마다 다시 만들지 않아도 됩니다.</b>
           <br />숫자는 영상이 한 바퀴 돌 때마다 하나씩, 쉬는 시간 멘트는 세트 사이에 흐릅니다.
-          <br /><b>영상에 나오는 사람의 성별</b>에 맞는 목소리가 나갑니다. 바로카드마다 성별을 골라 두세요.
-          <br /><b>숫자 세기 · 방향 알림 · 카운트다운 · 자리 바꾸기는 말투를 가리지 않습니다</b> — 성별로만 한 벌씩 올리면 Z·M 모두에 쓰입니다.
-          <br /><b>쉬는 시간과 마무리만</b> 성별 × 말투 네 갈래입니다. 나머지는 성별 두 갈래입니다.
+          <br />목소리는 <b>손님의 BMTI 파트너</b>입니다. 영상 속 사람이 아니라, 옆에서 같이 세어 주는 내 캐릭터예요.
+          <br />파트너 16종은 도구라 성별이 없습니다. <b>여성 목소리 하나로 통일</b>하고, <b>말투(Z·M) 둘</b>로만 갈라 주세요.
+          <br /><b>숫자 세기 · 방향 알림 · 카운트다운 · 자리 바꾸기는 말투도 가리지 않습니다</b> — 한 벌이면 Z·M 모두에 쓰입니다.
           <br />mp3 · m4a · wav, 한 편에 8MB까지. 숫자는 짧게(1초 안쪽) 잘라 올리세요.
         </div>
         <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginRight: 2 }}>목소리</span>
-          {[['female', '여자 목소리'], ['male', '남자 목소리']].map(([g, lb]) => (
-            <button key={g} type="button" onClick={() => setSex(g)}
-              style={{ ...btn(sex === g), opacity: 1 }}>{lb}</button>
-          ))}
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB, margin: '0 2px 0 10px' }}>말투</span>
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginRight: 2 }}>말투</span>
           {[['z', 'Z · 담백'], ['m', 'M · 다정']].map(([t, lb]) => (
             <button key={t} type="button" onClick={() => setTone(t)}
               style={{ ...btn(tone === t), opacity: 1 }}>{lb}</button>
@@ -118,7 +144,7 @@ export default function VoiceCommon() {
             </span>
           )}
           <span style={{ marginLeft: saved ? 0 : 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
+            인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -182,6 +208,26 @@ export default function VoiceCommon() {
           <br />좌우를 번갈아 하는 카드에는 쓰이지 않습니다.
         </div>
         <div style={{ maxWidth: 320 }}>{slot('switch', 0, '자리 바꾸기')}</div>
+      </div>
+
+      <div style={{ ...box, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>
+          캐릭터 인사 <span style={{ fontWeight: 600, color: SUB }}>— 유형마다 하나씩 16개</span>
+        </div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          손님이 &lsquo;바로 따라하기&rsquo;를 누르면 <b>오프닝 화면에서 자기 파트너가 먼저 인사</b>합니다. 2~4초로 짧게.
+          <br />여기만 유형마다 다릅니다. 나머지 공통 음성은 말투 둘로 돌아갑니다.
+          <br /><b>같은 목소리로 읽되 속도와 힘만 바꾸세요.</b> 목소리가 달라지면 뒤이어 나오는 숫자 세기와 딴사람이 됩니다.
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 800, color: SUB, marginBottom: 8 }}>
+          올린 것 {Object.keys(hello).length}/16
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
+          {Object.keys(CHARACTER_NAMES).map((code) => (
+            <Slot key={code} label={`${code} · ${CHARACTER_NAMES[code]}`} url={hello[code]}
+              busy={busy === 'hello-' + code} onPick={() => pickHello(code)} onClear={() => clearHello(code)} />
+          ))}
+        </div>
       </div>
 
       <div style={{ ...box }}>

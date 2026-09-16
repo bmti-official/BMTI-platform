@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
-import { loadVoiceAssets, voiceKey, COUNTDOWN_AT } from './voiceCommon';
+import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
@@ -60,7 +60,7 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -157,11 +157,19 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const [cueDone, setCueDone] = useState('');
   // 모든 카드가 함께 쓰는 소리 — 숫자·쉬는 시간·마무리
   const [common, setCommon] = useState({});
+  const [hello, setHello] = useState({});
   const countRef = useRef(null);
-  useEffect(() => { let alive = true; loadVoiceAssets().then((m) => { if (alive) setCommon(m); }); return () => { alive = false; }; }, []);
-  // 영상에 나오는 사람의 성별에 맞는 목소리를 쓴다.
-  const voiceSex = card.video_gender === 'male' ? 'male' : 'female';
-  const commonAt = (kind, n) => common[voiceKey(kind, voiceSex, tone, n)] || '';
+  useEffect(() => {
+    let alive = true;
+    loadVoiceAssets().then((m) => { if (alive) setCommon(m); });
+    loadHello().then((m) => { if (alive) setHello(m); });
+    return () => { alive = false; };
+  }, []);
+  // 목소리는 '내 BMTI 파트너' 하나뿐이다. 말투(Z/M)로만 갈린다.
+  const commonAt = (kind, n) => common[voiceKey(kind, tone, n)] || '';
+  // 오프닝에서 내 파트너가 먼저 자기를 소개한다.
+  const helloUrl = hello[String(bmtiCode || '').split('-')[0].toUpperCase()] || '';
+  const [helloDone, setHelloDone] = useState(false);
   // 지금 어느 쪽을 하는가 — '좌우 번갈아'는 한 번마다 바뀌니 알리지 않는다.
   const nowSide = !card.has_side || side === 'alt' ? null : (twoPhase ? (secondSide ? 2 : 1) : (side === 'left' ? 2 : 1));
   const cueUrl = nowSide ? commonAt('side', nowSide) : '';
@@ -169,26 +177,27 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
   const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && cueDone !== setKey;
   // 지금 세트 멘트가 흐르는 중인가 — 설명 모드이고, 방향 알림이 끝났고, 아직 다 듣지 않았을 때만.
   const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !cueOn && !!setClips.length && mentDone !== setKey;
-  const hasVoice = !!(openUrl || setClips.length || Object.keys(common).length);
+  const hasVoice = !!(openUrl || helloUrl || setClips.length || Object.keys(common).length);
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
   // 지금 흐를 멘트가 무엇인지 — 끝났을 때 무엇을 표시해 둘지 알아야 해서 갈래도 함께 들고 있는다.
   const voiceRole = !started ? ''
-    : stage === 'open' ? 'open'
+    : stage === 'open' ? ((helloUrl && !helloDone) ? 'hello' : 'open')
       : rest > 0 ? 'rest'
         : allDone ? 'finish'
           : cueOn ? 'cue'
             : mentOn ? 'ment' : '';
-  const nowVoice = voiceRole === 'open' ? openUrl
+  const nowVoice = voiceRole === 'hello' ? helloUrl
+    : voiceRole === 'open' ? openUrl
     : voiceRole === 'rest' ? ((switching && commonAt('switch', 0)) || commonAt('rest', restLen))
       : voiceRole === 'finish' ? commonAt('finish', 0)
         : voiceRole === 'cue' ? cueUrl
           : voiceRole === 'ment' ? (setClips[Math.min(done, setClips.length - 1)] || '') : '';
 
-  const beginOpening = !skipOpening && !heardOpening && !!openUrl;
+  const beginOpening = !skipOpening && !heardOpening && !!(openUrl || helloUrl);
   const start = () => {
     restart();
-    if (beginOpening) { setHeardOpening(true); setStage('open'); } else setStage('move');
+    if (beginOpening) { setHeardOpening(true); setHelloDone(false); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
 
@@ -449,7 +458,8 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
           <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
             onEnded={() => {
-              if (voiceRole === 'open') setStage('move');
+              if (voiceRole === 'hello') { setHelloDone(true); if (!openUrl) setStage('move'); }
+              else if (voiceRole === 'open') setStage('move');
               else if (voiceRole === 'cue') setCueDone(setKey);
               else if (voiceRole === 'ment') setMentDone(setKey);
             }} style={{ display: 'none' }} />
@@ -464,7 +474,7 @@ export default function QuickCardView({ card, tone = 'z', onStart, onSave, onMak
             onChange={(e) => { setVol(Number(e.target.value) / 100); setVoiceOn(true); }}
             style={{ flex: 1, minWidth: 0, accentColor: '#C9A227' }} />
           <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: SUB, width: 62, textAlign: 'right' }}>
-            {stage === 'open' ? '준비 멘트' : rest > 0 ? '쉬는 멘트' : cueOn ? '방향 알림' : mentOn ? '동작 멘트' : '숫자 세기'}
+            {stage === 'open' ? (voiceRole === 'hello' ? '파트너 인사' : '준비 멘트') : rest > 0 ? '쉬는 멘트' : cueOn ? '방향 알림' : mentOn ? '동작 멘트' : '숫자 세기'}
           </span>
         </div>
       )}

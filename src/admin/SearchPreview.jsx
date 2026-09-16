@@ -141,7 +141,7 @@ export default function SearchPreview() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginBottom: 5 }}>{i + 1}번째 · {GROUP_LABEL[group] || group}</div>
                   {kind === 'curation'
                     ? <CurationCard item={item} tone={tone} {...charProps(item, tone)} />
-                    : <QuickCardView card={item} tone={tone} {...charProps(item, tone)} />}
+                    : <QuickCardView card={item} tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} />}
                 </div>
               ))}
             </div>

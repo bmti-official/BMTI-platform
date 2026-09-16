@@ -31,7 +31,6 @@ const EMPTY = {
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
-  video_gender: 'female',
   has_side: false, can_alternate: false,
   default_reps: null, default_sets: null, default_rest: null, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
 };
@@ -184,11 +183,6 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>
             {f.video_url ? '영상을 올리면 자동으로 채워집니다' : '영상을 올리면 자동으로 채워집니다 (지금은 직접 적을 수 있어요)'}
           </div>
-        </div>
-        <div>
-          <span style={label}>영상 속 사람 <span style={{ fontWeight: 600 }}>— 이 성별의 공통 음성이 나갑니다</span></span>
-          <OnePicker options={[{ key: 'female', label: '여자' }, { key: 'male', label: '남자' }]}
-            value={f.video_gender || 'female'} onChange={set('video_gender')} />
         </div>
         <div>
           <span style={label}>좌우</span>
@@ -520,7 +514,7 @@ export default function QuickCardAdmin() {
 
       {preview && (
         <PreviewModal navActive="cards" title="바로카드 미리보기" onClose={() => setPreview(null)}>
-          {(tone) => <QuickCardView card={preview} tone={tone} />}
+          {(tone) => <QuickCardView card={preview} tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} />}
         </PreviewModal>
       )}
 
