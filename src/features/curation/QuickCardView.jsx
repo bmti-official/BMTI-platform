@@ -105,7 +105,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const restTotal = twoPhase ? restSec * (sets - 1) * 2 + sideRest : restSec * Math.max(0, sets - 1);
   const totalSec = perSet > 0 ? perSet * rounds + restTotal : 0;
 
-  const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setCueDone(''); setPaused(false); };
+  const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setCueDone(false); setPaused(false); };
 
   // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
   const togglePause = () => {
@@ -155,8 +155,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const [paused, setPaused] = useState(false);
   // 세트 멘트가 흐르는 동안에는 숫자를 세지 않는다. 멘트를 다 들은 세트를 적어 둔다.
   const [mentDone, setMentDone] = useState('');
-  // 방향 알림도 세트마다 한 번만 — 다 들은 세트를 따로 적어 둔다.
-  const [cueDone, setCueDone] = useState('');
+  // 방향 알림은 따라하기를 시작할 때 딱 한 번만.
+  // 세트마다 '오른쪽입니다'를 되풀이하면 잔소리가 된다.
+  // 반대쪽으로 넘어갈 땐 자리 바꾸기 멘트가 방향을 알려 주고,
+  // 그 뒤로는 영상 왼쪽 위에 오른쪽/왼쪽이 계속 떠 있다.
+  const [cueDone, setCueDone] = useState(false);
   // 모든 카드가 함께 쓰는 소리 — 숫자·쉬는 시간·마무리
   const [common, setCommon] = useState({});
   const [hello, setHello] = useState({});
@@ -183,7 +186,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const nowSide = !card.has_side || side === 'alt' ? null : (twoPhase ? (secondSide ? 2 : 1) : (side === 'left' ? 2 : 1));
   const cueUrl = nowSide ? commonAt('side', nowSide) : '';
   // 세트를 시작할 때 방향을 한 마디로 알린다. 이게 끝나야 세트 멘트가 흐른다.
-  const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && cueDone !== setKey;
+  const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone;
   // 지금 세트 멘트가 흐르는 중인가 — 설명 모드이고, 방향 알림이 끝났고, 아직 다 듣지 않았을 때만.
   const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !cueOn && !!setClips.length && mentDone !== setKey;
   const hasVoice = !!(openUrl || helloUrl || setClips.length || Object.keys(common).length);
@@ -503,7 +506,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               setSaid({ at: 0, len: 0 });
               if (voiceRole === 'hello') { setHelloDone(true); if (!openUrl) setStage('move'); }
               else if (voiceRole === 'open') setStage('move');
-              else if (voiceRole === 'cue') setCueDone(setKey);
+              else if (voiceRole === 'cue') setCueDone(true);
               else if (voiceRole === 'ment') setMentDone(setKey);
             }} style={{ display: 'none' }} />
           <audio ref={countRef} src={(rest > 0 ? commonAt('countdown', 0) : commonAt('count', rep + 1)) || undefined}

@@ -8,11 +8,20 @@ import { COUNT_MAX, REST_LENS, COUNT_KO, voiceKey as key, toneFor } from '../fea
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { useSavedNote } from './editorState';
 
-// 칸 하나 — 올리기·듣기·비우기
-function Slot({ label, url, busy, onPick, onClear }) {
+// 칸 하나 — 끌어다 놓거나 골라서 올리고, 듣고, 비운다
+function Slot({ label, url, busy, onPick, onClear, onDrop }) {
+  const [over, setOver] = useState(false);
   return (
-    <div style={{ background: url ? '#fff' : BG, borderRadius: 10, padding: '8px 10px',
-      boxShadow: `inset 0 0 0 ${url ? 1 : 1}px ${url ? ACCENT : LINE}` }}>
+    <div
+      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault(); setOver(false);
+        const file = [...(e.dataTransfer.files || [])][0];
+        if (file && onDrop) onDrop(file);
+      }}
+      style={{ background: over ? '#FFF6E6' : url ? '#fff' : BG, borderRadius: 10, padding: '8px 10px',
+        boxShadow: `inset 0 0 0 ${over ? 2 : 1}px ${over ? ACCENT : url ? ACCENT : LINE}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <span style={{ fontSize: 11.5, fontWeight: 900, color: url ? INK : SUB, minWidth: 52, lineHeight: 1.35 }}>{label}</span>
         <button type="button" onClick={onPick} disabled={busy}
@@ -55,23 +64,23 @@ export default function VoiceCommon() {
   }, []);
 
   // 캐릭터 인사 — 유형 코드마다 한 편
+  const uploadHello = async (code, file) => {
+    if (!file) return;
+    setBusy('hello-' + code); setErr('');
+    const r = await uploadOne(file, { allowAudio: true });
+    if (r.err) { setBusy(''); setErr(r.err); return; }
+    const { error } = await supabase.from('voice_hello')
+      .upsert({ code, url: r.url, updated_at: new Date().toISOString() });
+    setBusy('');
+    if (error) { setErr('저장 실패: ' + error.message); return; }
+    setHello((p) => ({ ...p, [code]: r.url }));
+    setSaved('올렸습니다.');
+  };
   const pickHello = (code) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = AUDIO_ACCEPT;
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      setBusy('hello-' + code); setErr('');
-      const r = await uploadOne(file, { allowAudio: true });
-      if (r.err) { setBusy(''); setErr(r.err); return; }
-      const { error } = await supabase.from('voice_hello')
-        .upsert({ code, url: r.url, updated_at: new Date().toISOString() });
-      setBusy('');
-      if (error) { setErr('저장 실패: ' + error.message); return; }
-      setHello((p) => ({ ...p, [code]: r.url }));
-      setSaved('올렸습니다.');
-    };
+    input.onchange = () => uploadHello(code, input.files?.[0]);
     input.click();
   };
   const clearHello = async (code) => {
@@ -81,25 +90,25 @@ export default function VoiceCommon() {
     setSaved('비웠습니다.');
   };
 
-  // 파일 하나를 골라 올리고 그 자리에 저장한다.
+  // 파일 하나를 올려 그 자리에 담는다 — 골라서도, 끌어다 놓아서도 여기로 온다.
+  const upload = async (kind, n, file) => {
+    if (!file) return;
+    const k = key(kind, tone, n);
+    setBusy(k); setErr('');
+    const r = await uploadOne(file, { allowAudio: true });
+    if (r.err) { setBusy(''); setErr(r.err); return; }
+    const { error } = await supabase.from('voice_assets')
+      .upsert({ kind, tone: toneFor(kind, tone), n, url: r.url, updated_at: new Date().toISOString() });
+    setBusy('');
+    if (error) { setErr('저장 실패: ' + error.message); return; }
+    setRows((p) => ({ ...p, [k]: r.url }));
+    setSaved('올렸습니다.');
+  };
   const pick = (kind, n) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = AUDIO_ACCEPT;
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const k = key(kind, tone, n);
-      setBusy(k); setErr('');
-      const r = await uploadOne(file, { allowAudio: true });
-      if (r.err) { setBusy(''); setErr(r.err); return; }
-      const { error } = await supabase.from('voice_assets')
-        .upsert({ kind, tone: toneFor(kind, tone), n, url: r.url, updated_at: new Date().toISOString() });
-      setBusy('');
-      if (error) { setErr('저장 실패: ' + error.message); return; }
-      setRows((p) => ({ ...p, [k]: r.url }));
-      setSaved('올렸습니다.');
-    };
+    input.onchange = () => upload(kind, n, input.files?.[0]);
     input.click();
   };
 
@@ -117,7 +126,7 @@ export default function VoiceCommon() {
 
   const slot = (kind, n, label) => (
     <Slot key={`${kind}-${n}`} label={label} url={at(kind, n)} busy={busy === key(kind, tone, n)}
-      onPick={() => pick(kind, n)} onClear={() => clear(kind, n)} />
+      onPick={() => pick(kind, n)} onClear={() => clear(kind, n)} onDrop={(file) => upload(kind, n, file)} />
   );
 
   return (
@@ -131,6 +140,7 @@ export default function VoiceCommon() {
           <br />파트너 16종은 도구라 성별이 없습니다. <b>여성 목소리 하나로 통일</b>하고, <b>말투(Z·M) 둘</b>로만 갈라 주세요.
           <br /><b>숫자 세기 · 방향 알림 · 카운트다운 · 자리 바꾸기는 말투도 가리지 않습니다</b> — 한 벌이면 Z·M 모두에 쓰입니다.
           <br />mp3 · m4a · wav, 한 편에 8MB까지. 숫자는 짧게(1초 안쪽) 잘라 올리세요.
+          <br /><b>칸 위로 파일을 끌어다 놓아도 올라갑니다.</b> 여러 칸에 하나씩 떨어뜨리면 빠릅니다.
         </div>
         <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginRight: 2 }}>말투</span>
@@ -225,7 +235,8 @@ export default function VoiceCommon() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
           {Object.keys(CHARACTER_NAMES).map((code) => (
             <Slot key={code} label={`${code} · ${CHARACTER_NAMES[code]}`} url={hello[code]}
-              busy={busy === 'hello-' + code} onPick={() => pickHello(code)} onClear={() => clearHello(code)} />
+              busy={busy === 'hello-' + code} onPick={() => pickHello(code)} onClear={() => clearHello(code)}
+              onDrop={(file) => uploadHello(code, file)} />
           ))}
         </div>
       </div>
