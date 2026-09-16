@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, ACCENT, box, btn } from './theme';
 import { uploadOne, AUDIO_ACCEPT } from './upload';
-import { COUNT_MAX, REST_LENS, COUNT_KO, BGM_GROUPS, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
+import { COUNT_MAX, REST_LENS, COUNT_KO, BGM_GROUPS, BGM_PARTS, bgmN, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { useSavedNote } from './editorState';
 
@@ -154,7 +154,7 @@ export default function VoiceCommon() {
             </span>
           )}
           <span style={{ marginLeft: saved ? 0 : 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            배경음악 {BGM_GROUPS.filter((g) => at('bgm', g.n)).length}/4 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 다음 동작 {at('next', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
+            배경음악 {BGM_GROUPS.reduce((k, g) => k + BGM_PARTS.filter((b) => at('bgm', bgmN(g.n, b.p))).length, 0)}/12 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 다음 동작 {at('next', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -224,23 +224,32 @@ export default function VoiceCommon() {
 
       <div style={{ ...box, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>
-          배경음악 <span style={{ fontWeight: 600, color: SUB }}>— 네 곡</span>
+          배경음악 <span style={{ fontWeight: 600, color: SUB }}>— 네 곡 × 세 도막</span>
         </div>
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
           <b>가사 없는 연주곡</b>만 올리세요. 사람 목소리가 섞이면 숫자 세는 소리와 부딪힙니다.
           <br />손님 유형에 맞는 곡이 <b>처음부터 골라져</b> 있습니다 —
           활력(A)·이완(O)으로 빠르기가, 확신(D)·유연(Q)으로 박자가 갈립니다.
-          <br /><b>처음부터 끝까지 같은 세기</b>로, 끝과 시작이 이어지게 만들어 주세요. 3분 안팎이면 넉넉합니다.
+          <br />한 곡을 <b>세 도막</b>으로 나눠 올립니다 —
+          <b>도입부</b>는 플리를 열 때 한 번, <b>중간</b>은 그동안 계속 돌고, <b>마무리</b>는 끝나기 전에 한 번.
+          <br />도막끼리는 <b>3초 동안 겹쳐 넘어갑니다.</b> 겹치는 동안 도입부·마무리가 앞에 서고 중간이 뒤로 물러납니다.
+          <br />도입부·마무리는 <b>20~40초</b>, 중간은 <b>1~3분</b>에 끝과 시작이 이어지게. 셋 다 <b>같은 조·같은 빠르기</b>로 만들어야 이어집니다.
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
           {BGM_GROUPS.map((g) => (
-            <div key={g.n}>
-              {slot('bgm', g.n, `${g.label} · ${g.hint}`)}
+            <div key={g.n} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>
+                {g.label} <span style={{ fontWeight: 700, color: SUB }}>· {g.hint}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {BGM_PARTS.map((b) => slot('bgm', bgmN(g.n, b.p), `${b.label} — ${b.hint}`))}
+              </div>
             </div>
           ))}
         </div>
         <div style={{ fontSize: 11, color: SUB, marginTop: 10, lineHeight: 1.7 }}>
           멘트가 흐르는 동안에는 음악이 저절로 작아집니다. <b>일정한 크기로만</b> 만들어 주시면 됩니다.
+          <br />세 도막을 다 올리지 않아도 됩니다 — 중간 하나만 있으면 예전처럼 그것만 돕니다.
         </div>
       </div>
 

@@ -44,6 +44,24 @@ export const BGM_GROUPS = [
   { n: 4, label: '확신의 A 유형', hint: '활력 · 또렷', codes: 'A + D' },
 ];
 
+// 한 곡은 세 도막으로 나뉜다.
+//   도입부 — 바로플리를 열 때 한 번
+//   중간   — 도입부가 끝나면 이어받아 계속 돈다
+//   마무리 — 끝나기 전에 이어받아 한 번
+// 담는 자리는 곡번호 뒤에 도막번호를 붙여 쓴다. 1번 곡이면 11·12·13.
+export const BGM_PARTS = [
+  { p: 1, label: '도입부', hint: '시작하는 느낌' },
+  { p: 2, label: '중간', hint: '계속되는 느낌' },
+  { p: 3, label: '마무리', hint: '끝나는 느낌' },
+];
+export const bgmN = (group, part) => group * 10 + part;
+/** 이 곡의 세 도막 주소를 한 번에 꺼낸다. */
+export const bgmSet = (common, group) => ({
+  intro: common[voiceKey('bgm', ANY_TONE, bgmN(group, 1))] || '',
+  loop: common[voiceKey('bgm', ANY_TONE, bgmN(group, 2))] || '',
+  outro: common[voiceKey('bgm', ANY_TONE, bgmN(group, 3))] || '',
+});
+
 /** 이 유형에게 처음 골라져 있을 곡 번호 */
 export function bgmNoFor(code) {
   const a = String(code || '').split('-')[0].toUpperCase();
@@ -58,6 +76,8 @@ export function bgmNoFor(code) {
 // 갑자기 커지거나 뚝 끊기지 않고, 한 바퀴 돌아 다시 시작할 때의 이음매도 덜 튄다.
 export const FADE_SEC = 10;    // 여닫는 데 쓰는 시간
 export const FADE_MIN = 0.35;  // 가장 작을 때 — 아주 끄지는 않는다
+export const XFADE_SEC = 3;    // 도막과 도막이 겹치는 시간
+export const UNDER = 0.4;      // 겹치는 동안 뒤로 물러나는 도막의 크기
 
 /** 지금 자리에서 음량에 곱할 값. 0.35(가장자리) ~ 1(가운데) */
 export function bgmFade(at, dur) {

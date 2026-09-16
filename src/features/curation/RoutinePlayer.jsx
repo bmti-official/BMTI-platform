@@ -1,9 +1,15 @@
 // 바로플리 재생 — 담긴 동작을 차례로 이어서 한다.
-// 배경음악이 처음부터 끝까지 깔리고, 멘트가 흐를 땐 저절로 작아진다.
+//
+// 배경음악은 세 도막으로 흐른다.
+//   도입부 — 열 때 한 번
+//   중간   — 도입부 끝자락에서 이어받아 계속 돈다
+//   마무리 — 마지막 동작의 마지막 세트에서 이어받아 한 번
+// 도막이 바뀔 땐 3초 겹쳐 넘어가고, 겹치는 동안 도입부·마무리가 앞에 선다.
+// 멘트가 흐를 땐 저절로 작아지고, 오프닝·마무리 멘트에는 아예 쉰다.
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
-import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS, bgmFade } from './voiceCommon';
+import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS, BGM_PARTS, bgmN, bgmSet, bgmFade, XFADE_SEC, UNDER } from './voiceCommon';
 import { pickCardTone, pickRoutineTone, subLines } from './format';
 import PartnerStage from './PartnerStage';
 import FullWrap from './FullWrap';
@@ -35,36 +41,95 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   // 동작을 다 끝내면 파트너가 '다음 동작' 한마디를 건네고, 스무 셈을 센다.
   const [gap, setGap] = useState(0);        // 남은 셈. 0이면 쉬는 참이 아니다.
   const gapRef = useRef(null);
-  const musicRef = useRef(null);
+  const introRef = useRef(null);
+  const loopRef = useRef(null);
+  const outroRef = useRef(null);
   const card = cards[at];
 
   useEffect(() => { let alive = true; loadVoiceAssets().then((m) => { if (alive) setCommon(m); }); return () => { alive = false; }; }, []);
-  const bgmUrl = common[voiceKey('bgm', 'a', bgmNo)] || '';
+  const bgm = bgmSet(common, bgmNo);
+  const hasMusic = !!(bgm.intro || bgm.loop || bgm.outro);
 
   const loud = VOL_STEPS[volNo];
+  // 지금 어느 도막인가 — 'intro' | 'loop' | 'outro'
+  const [part, setPart] = useState('intro');
+  // 도막이 바뀐 때 — 겹치는 동안 크기를 얼마나 옮겼는지 재는 데 쓴다.
+  const outroFrom = useRef(0);
+  const loopFrom = useRef(0);
 
-  // 음악은 한 번 틀면 끝까지 — 동작이 바뀌어도 끊기지 않는다.
+  // 도입부가 없는 곡이면 처음부터 중간으로 친다 — 따로 되돌릴 일이 없다.
+  const live = part === 'intro' && !bgm.intro ? 'loop' : part;
+
+  // 도막마다 언제 틀고 언제 세울지 — 한 군데서 정한다.
+  // 중간은 도입부 끝자락에 아래 시계가 미리 깔아 주므로, 여기서는 붙잡지 않는다.
   useEffect(() => {
-    const a = musicRef.current;
-    if (!a) return;
-    a.volume = musicOn ? loud * bgmFade(a.currentTime, a.duration) : 0;
-    if (musicOn && !quiet && bgmUrl) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
-    else { try { a.pause(); } catch { /* 무시 */ } }
-  }, [bgmUrl, musicOn, loud, quiet]);
+    const on = musicOn && !quiet;
+    const put = (a, go) => {
+      if (!a || !a.src) return;
+      if (go) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
+      else { try { a.pause(); } catch { /* 무시 */ } }
+    };
+    put(introRef.current, on && live === 'intro' && !!bgm.intro);
+    put(outroRef.current, on && live === 'outro' && !!bgm.outro);
+    const lA = loopRef.current;
+    if (lA && lA.src) {
+      if (!on) put(lA, false);              // 음악을 껐거나 파트너가 말할 때만 세운다
+      else if (live === 'loop') put(lA, true);
+    }
+  }, [live, musicOn, quiet, bgm.intro, bgm.loop, bgm.outro]);
 
-  // 멘트가 들리는 동안에는 음악을 낮춘다.
+  // 크기 맞추기 — 멘트가 들리면 낮추고, 도막이 겹치는 동안에는 앞뒤를 가른다.
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
     const tick = setInterval(() => {
-      const a = musicRef.current;
-      if (!a || !musicOn || quiet) return;
-      const talking = [...document.querySelectorAll('audio')].some((el) => el !== a && !el.paused && !el.muted && el.currentTime > 0);
-      // 멘트가 들리면 낮추고, 곡의 처음·끝에서도 한 번 더 낮춘다.
-      const want = (talking ? loud * DUCK_RATE : loud) * bgmFade(a.currentTime, a.duration);
-      if (Math.abs(a.volume - want) > 0.005) a.volume = want;
-    }, 250);
+      const iA = introRef.current, lA = loopRef.current, oA = outroRef.current;
+      const mine = [iA, lA, oA].filter(Boolean);
+      const talking = [...document.querySelectorAll('audio')]
+        .some((el) => !mine.includes(el) && !el.paused && !el.muted && el.currentTime > 0);
+      const base = (musicOn && !quiet ? loud : 0) * (talking ? DUCK_RATE : 1);
+      const set = (a, v) => { if (a && Math.abs(a.volume - v) > 0.005) a.volume = Math.max(0, Math.min(1, v)); };
+
+      // 도입부 — 겹치는 동안에도 앞에 선다
+      set(iA, base);
+
+      // 중간 — 도입부 끝자락에 슬며시 들어와, 도입부가 끝나면 앞으로 나온다
+      if (live === 'intro') {
+        const left = iA && iA.duration > 0 ? iA.duration - iA.currentTime : 99;
+        const inN = Math.max(0, Math.min(1, (XFADE_SEC - left) / XFADE_SEC));
+        set(lA, base * UNDER * inN);
+        // 끝자락에 닿으면 미리 틀어 둔다 — 소리가 뚝 끊기지 않게
+        if (left <= XFADE_SEC && lA && lA.paused && musicOn && !quiet) {
+          loopFrom.current = 0;
+          try { lA.play().catch(() => {}); } catch { /* 무시 */ }
+        }
+      } else if (live === 'outro') {
+        const gone = (Date.now() - outroFrom.current) / 1000;
+        set(lA, base * Math.max(0, 1 - gone / XFADE_SEC));
+        if (lA && gone > XFADE_SEC && !lA.paused) { try { lA.pause(); } catch { /* 무시 */ } }
+      } else {
+        // 도입부에서 막 넘어왔으면 물러나 있던 자리에서 천천히 올라온다
+        if (!loopFrom.current) loopFrom.current = Date.now();
+        const up = Math.max(0, Math.min(1, (Date.now() - loopFrom.current) / (XFADE_SEC * 1000)));
+        const room = bgm.intro ? UNDER + (1 - UNDER) * up : 1;
+        set(lA, base * room * bgmFade(lA ? lA.currentTime : 0, lA ? lA.duration : 0));
+      }
+
+      // 마무리 — 한 셈 만에 앞으로 나와 중간을 덮는다
+      if (live === 'outro') {
+        const gone = (Date.now() - outroFrom.current) / 1000;
+        set(oA, base * Math.max(0, Math.min(1, gone / 1)));
+      } else set(oA, 0);
+
+    }, 200);
     return () => clearInterval(tick);
-  }, [musicOn, loud, quiet]);
+  }, [musicOn, loud, quiet, live, bgm.intro]);
+
+  // 마지막 동작의 마지막 세트에 닿으면 마무리 도막으로 넘어간다.
+  const toOutro = () => {
+    if (!bgm.outro || live === 'outro') return;
+    outroFrom.current = Date.now();
+    setPart('outro');
+  };
 
   // 한 셈씩 줄이다가 0이 되면 저절로 다음 동작으로 넘어간다.
   useEffect(() => {
@@ -102,7 +167,12 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
 
   return (
     <Shell onClose={onClose}>
-      {bgmUrl && <audio ref={musicRef} src={bgmUrl} loop preload="auto" style={{ display: 'none' }} />}
+      {/* 배경음악 세 도막 — 중간만 되돈다 */}
+      {bgm.intro && <audio ref={introRef} src={bgm.intro} preload="auto" style={{ display: 'none' }}
+        onEnded={() => setPart((k) => (k === 'intro' ? 'loop' : k))} />}
+      {bgm.loop && <audio ref={loopRef} src={bgm.loop} loop preload="auto" style={{ display: 'none' }} />}
+      {bgm.outro && <audio ref={outroRef} src={bgm.outro} preload="auto" style={{ display: 'none' }}
+        onEnded={() => setPart((k) => (k === 'outro' ? 'loop' : k))} />}
 
       {/* 어디쯤 왔는지 — 늘 위에 떠 있다 */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.96)', padding: '10px 14px 8px' }}>
@@ -134,6 +204,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
             autoStart skipOpening={at > 0} full={full} onFull={setFull}
             hideFinish={!last}
             onQuiet={setQuiet}
+            onFinalStretch={() => { if (last) toOutro(); }}
             onAllDone={() => { if (!last) { setGap(GAP_SEC); setQuiet(false); } }} />
         )}
       </div>
@@ -151,7 +222,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       </div>
 
       {/* 어떤 음악인지 · 바꾸기 */}
-      {bgmUrl && (
+      {hasMusic && (
         <div style={{ padding: '0 14px 26px' }}>
           {/* 켬·끔 · 이름 · 크기 — 한 줄에 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -168,12 +239,12 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
           {/* 곡 고르기 — 두 개씩 나란히 */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             {BGM_GROUPS.map((g) => (
-              <button key={g.n} type="button" onClick={() => setBgmNo(g.n)}
-                disabled={!common[voiceKey('bgm', 'a', g.n)]}
+              <button key={g.n} type="button" onClick={() => { setBgmNo(g.n); setPart('intro'); outroFrom.current = 0; }}
+                disabled={!BGM_PARTS.some((b) => common[voiceKey('bgm', 'a', bgmN(g.n, b.p))])}
                 style={{ padding: '0 10px', height: 32, borderRadius: 9, border: 'none', fontFamily: 'inherit',
                   fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap',
-                  cursor: common[voiceKey('bgm', 'a', g.n)] ? 'pointer' : 'default',
-                  opacity: common[voiceKey('bgm', 'a', g.n)] ? 1 : 0.35,
+                  cursor: BGM_PARTS.some((b) => common[voiceKey('bgm', 'a', bgmN(g.n, b.p))]) ? 'pointer' : 'default',
+                  opacity: BGM_PARTS.some((b) => common[voiceKey('bgm', 'a', bgmN(g.n, b.p))]) ? 1 : 0.35,
                   color: g.n === bgmNo ? SET_INK : SUB,
                   background: g.n === bgmNo ? SET_BG : '#fff', boxShadow: g.n === bgmNo ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
                 {g.hint}

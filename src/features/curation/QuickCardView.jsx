@@ -67,7 +67,7 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = false, onQuiet }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = false, onQuiet, onFinalStretch }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -224,6 +224,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (beginOpening) { setHeardOpening(true); setHelloDone(false); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
+
+  // 마지막 세트에 들어섰다고 한 번 알린다 — 바로플리가 마무리 음악을 깔 시점이다.
+  const finalStretch = started && !allDone && done + 1 >= sets && (!twoPhase || secondSide);
+  useEffect(() => {
+    if (finalStretch && onFinalStretch) onFinalStretch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalStretch]);
 
   // 파트너가 말하는 동안에는 음악이 쉬어야 한다 — 바로플리에 알려 준다.
   const quiet = stage === 'open' || (started && allDone);
