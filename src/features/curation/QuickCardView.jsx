@@ -445,7 +445,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5. 전체 화면으로 키우면 그대로 화면을 다 채운다.
         <div style={full
-          ? { position: 'fixed', inset: 0, zIndex: 90, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+          ? { position: 'fixed', inset: 0, zIndex: 90, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }
           : { position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
@@ -469,14 +469,14 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
               style={{ position: 'absolute', right: 10, top: 42, zIndex: 4, width: 30, height: 30, borderRadius: 9,
-                border: 'none', background: 'rgba(255,255,255,0.92)', color: INK, fontSize: 13, fontWeight: 900,
-                cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>⛶</button>
+                border: 'none', background: '#fff', color: INK, fontSize: 13, fontWeight: 900,
+                cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1, boxShadow: `inset 0 0 0 1px ${LINE}` }}>⛶</button>
           ) : (
             <button type="button" onClick={() => setFull(false)}
               style={{ position: 'absolute', left: '50%', bottom: 'max(22px, env(safe-area-inset-bottom))',
-                transform: 'translateX(-50%)', zIndex: 4, border: 'none', background: 'rgba(255,255,255,0.94)',
+                transform: 'translateX(-50%)', zIndex: 4, border: 'none', background: '#fff',
                 color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800,
-                cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 14px rgba(0,0,0,0.3)' }}>
+                cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
               설정 바꾸기
             </button>
           )}

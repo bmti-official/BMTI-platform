@@ -27,7 +27,8 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   const [musicOn, setMusicOn] = useState(true);
   const [volNo, setVolNo] = useState(VOL_START);
   // 전체 화면은 동작이 바뀌어도 그대로 — 그래서 카드가 아니라 여기가 쥐고 있는다.
-  const [full, setFull] = useState(false);
+  // 바로플리는 처음부터 전체 화면으로 연다. 손을 대지 않고 끝까지 갈 수 있게.
+  const [full, setFull] = useState(true);
   // 동작을 다 끝내면 파트너가 '다음 동작' 한마디를 건네고, 스무 셈을 센다.
   const [gap, setGap] = useState(0);        // 남은 셈. 0이면 쉬는 참이 아니다.
   const gapRef = useRef(null);
@@ -193,7 +194,7 @@ function GapStage({ code, img, name, tone, sec, full, nextTitle, voiceUrl, audio
   );
   if (!full) return stage;
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: '#000',
+    <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: '#fff',
       display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: 'min(100%, 78vh)' }}>{stage}</div>
     </div>

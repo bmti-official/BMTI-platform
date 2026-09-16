@@ -11,8 +11,8 @@ import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRa
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
-// 표지 모서리에 얹는 글씨.
-// 부위는 판 없이 글씨만 얹고, 사진 위에서도 읽히게 흰 번짐을 둘러 준다.
+// 표지 모서리에 얹는 글씨 — 판 없이 글씨만 얹고,
+// 사진 위에서도 읽히게 흰 번짐을 둘러 준다. 바로카드 표지와 같은 방식이다.
 const SHADE = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)';
 const coverTag = (side) => ({
   position: 'absolute', top: 12, [side]: 12, zIndex: 2, pointerEvents: 'none',
@@ -20,8 +20,7 @@ const coverTag = (side) => ({
   color: GOLD, textAlign: side === 'right' ? 'right' : 'left', maxWidth: '44%', wordBreak: 'keep-all',
   textShadow: SHADE,
 });
-// 도구는 지금처럼 연한 옐로우 판 위에 얹는다.
-const toolTag = { ...coverTag('right'), background: '#FDF6DC', borderRadius: 9, padding: '4px 9px', textShadow: 'none' };
+
 
 export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onStart, onBrowse, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
@@ -47,7 +46,7 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
         <div style={coverTag('left')}>{partLabels(s.coreParts).join(', ')}</div>
       )}
       {s.tools.length > 0 && (
-        <div style={toolTag}>{s.tools.map((t, i) => <div key={i}>{t}</div>)}</div>
+        <div style={coverTag('right')}>{s.tools.map((t, i) => <div key={i}>{t}</div>)}</div>
       )}
       </div>
       <div style={{ padding: '15px 16px' }}>
