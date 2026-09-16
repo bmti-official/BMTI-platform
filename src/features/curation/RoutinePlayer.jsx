@@ -30,6 +30,8 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   // 전체 화면은 동작이 바뀌어도 그대로 — 그래서 카드가 아니라 여기가 쥐고 있는다.
   // 바로플리는 처음부터 전체 화면으로 연다. 손을 대지 않고 끝까지 갈 수 있게.
   const [full, setFull] = useState(true);
+  // 파트너가 오프닝·마무리를 말하는 동안에는 음악을 쉬게 둔다.
+  const [quiet, setQuiet] = useState(false);
   // 동작을 다 끝내면 파트너가 '다음 동작' 한마디를 건네고, 스무 셈을 센다.
   const [gap, setGap] = useState(0);        // 남은 셈. 0이면 쉬는 참이 아니다.
   const gapRef = useRef(null);
@@ -46,22 +48,22 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
     const a = musicRef.current;
     if (!a) return;
     a.volume = musicOn ? loud : 0;
-    if (musicOn && bgmUrl) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
+    if (musicOn && !quiet && bgmUrl) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
     else { try { a.pause(); } catch { /* 무시 */ } }
-  }, [bgmUrl, musicOn, loud]);
+  }, [bgmUrl, musicOn, loud, quiet]);
 
   // 멘트가 들리는 동안에는 음악을 낮춘다.
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
     const tick = setInterval(() => {
       const a = musicRef.current;
-      if (!a || !musicOn) return;
+      if (!a || !musicOn || quiet) return;
       const talking = [...document.querySelectorAll('audio')].some((el) => el !== a && !el.paused && !el.muted && el.currentTime > 0);
       const want = talking ? loud * DUCK_RATE : loud;
       if (Math.abs(a.volume - want) > 0.01) a.volume = want;
     }, 350);
     return () => clearInterval(tick);
-  }, [musicOn, loud]);
+  }, [musicOn, loud, quiet]);
 
   // 한 셈씩 줄이다가 0이 되면 저절로 다음 동작으로 넘어간다.
   useEffect(() => {
@@ -129,7 +131,8 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
           <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
             autoStart skipOpening={at > 0} full={full} onFull={setFull}
             hideFinish={!last}
-            onAllDone={() => { if (!last) setGap(GAP_SEC); }} />
+            onQuiet={setQuiet}
+            onAllDone={() => { if (!last) { setGap(GAP_SEC); setQuiet(false); } }} />
         )}
       </div>
 

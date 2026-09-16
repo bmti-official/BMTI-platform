@@ -67,7 +67,7 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = false }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = false, onQuiet }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -224,6 +224,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (beginOpening) { setHeardOpening(true); setHelloDone(false); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
+
+  // 파트너가 말하는 동안에는 음악이 쉬어야 한다 — 바로플리에 알려 준다.
+  const quiet = stage === 'open' || (started && allDone);
+  useEffect(() => {
+    if (onQuiet) onQuiet(quiet);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quiet]);
 
   // 다 끝냈다고 한 번만 알린다 — 바로플리가 이어받아 다음 동작으로 넘긴다.
   useEffect(() => {
@@ -435,14 +442,20 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
       {stage === 'open' ? (
         // 오프닝 — 내 파트너가 말을 건네는 자리. 이 몇 초가 자세를 잡는 시간이기도 하다.
-        <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''} at={said.at} len={said.len}>
-          <button type="button" onClick={() => setStage('move')} style={partnerBtn}>바로 동작 보기 →</button>
-        </PartnerStage>
+        <FullWrap on={full}>
+          <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''}
+            at={said.at} len={said.len} clip={card.video_url || ''}>
+            <button type="button" onClick={() => setStage('move')} style={partnerBtn}>바로 동작 보기 →</button>
+          </PartnerStage>
+        </FullWrap>
       ) : started && allDone && !hideFinish ? (
         // 마무리 — 오프닝과 같은 자리에서 파트너가 끝인사를 한다.
-        <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''} at={said.at} len={said.len}>
-          <button type="button" onClick={() => { restart(); setStage('move'); }} style={partnerBtn}>한 번 더 하기 ↻</button>
-        </PartnerStage>
+        <FullWrap on={full}>
+          <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''}
+            at={said.at} len={said.len} clip={card.video_url || ''}>
+            <button type="button" onClick={() => { restart(); setStage('move'); }} style={partnerBtn}>한 번 더 하기 ↻</button>
+          </PartnerStage>
+        </FullWrap>
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5. 전체 화면에서도 이 비율 그대로 키우기만 한다.
         // 그래야 위에 얹은 글씨가 화면 꼭대기가 아니라 영상 안에 앉는다.
