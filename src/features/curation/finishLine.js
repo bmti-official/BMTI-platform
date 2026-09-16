@@ -5,3 +5,10 @@ export const FINISH_LINE = {
   m: '다 하셨어요!\n오늘도 한 칸 채우셨네요.\n천천히 숨 고르세요.',
 };
 export const finishLine = (tone) => FINISH_LINE[tone === 'm' ? 'm' : 'z'];
+
+// 다음 동작으로 넘어갈 때 — 바로플리에서만 나온다.
+export const NEXT_LINE = {
+  z: '좋습니다.\n잠깐 숨 고르고 다음 동작으로 가겠습니다.',
+  m: '잘하셨어요!\n잠깐 숨 고르고 다음 동작 갈게요.',
+};
+export const nextLine = (tone) => NEXT_LINE[tone === 'm' ? 'm' : 'z'];

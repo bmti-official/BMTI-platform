@@ -4,13 +4,20 @@ import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
 import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS } from './voiceCommon';
-import { pickCardTone, pickRoutineTone } from './format';
+import { pickCardTone, pickRoutineTone, subLines } from './format';
+import PartnerStage from './PartnerStage';
+import { partnerBtn } from './partnerBtn';
+import { nextLine } from './finishLine';
+import { axisOf } from './typeTint';
+import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
+import { CHARACTERS } from '../../data';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';
 // 음악은 멘트를 덮지 않을 만큼만. 처음 크기는 작게 두고 손님이 올릴 수 있게 한다.
 const VOL_STEPS = [0.06, 0.12, 0.18, 0.26, 0.36];
 const VOL_START = 1;                 // 처음은 두 번째 칸
+const GAP_SEC = 20;                  // 동작과 동작 사이 — 멘트가 끝나고 세는 셈
 const DUCK_RATE = 0.35;              // 멘트가 흐를 땐 이만큼만 남긴다
 
 export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCode, onClose, onDone }) {
@@ -21,6 +28,9 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   const [volNo, setVolNo] = useState(VOL_START);
   // 전체 화면은 동작이 바뀌어도 그대로 — 그래서 카드가 아니라 여기가 쥐고 있는다.
   const [full, setFull] = useState(false);
+  // 동작을 다 끝내면 파트너가 '다음 동작' 한마디를 건네고, 스무 셈을 센다.
+  const [gap, setGap] = useState(0);        // 남은 셈. 0이면 쉬는 참이 아니다.
+  const gapRef = useRef(null);
   const musicRef = useRef(null);
   const card = cards[at];
 
@@ -50,6 +60,27 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
     }, 350);
     return () => clearInterval(tick);
   }, [musicOn, loud]);
+
+  // 한 셈씩 줄이다가 0이 되면 저절로 다음 동작으로 넘어간다.
+  useEffect(() => {
+    if (gap <= 0) return undefined;
+    const t = setTimeout(() => {
+      if (gap === 1) { setGap(0); setAt((n) => n + 1); } else setGap((n) => n - 1);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [gap]);
+
+  // '다음 동작' 멘트는 한 번만 — 쉬는 참이 시작될 때.
+  useEffect(() => {
+    if (gap !== GAP_SEC) return;
+    const a = gapRef.current;
+    if (!a || !a.src) return;
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
+  }, [gap]);
+
+  const myCode = axisOf(bmtiCode);
+  const partnerImg = CHARACTERS.find((c) => c.id === myCode)?.image || '';
+  const partnerName = String(CHARACTER_NAMES[myCode] || '').replace(/\n/g, ' ');
 
   if (!card) {
     return (
@@ -87,8 +118,17 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       </div>
 
       <div style={{ padding: '10px 14px 0' }}>
-        <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
-          autoStart skipOpening={at > 0} full={full} onFull={setFull} />
+        {gap > 0 ? (
+          <GapStage code={myCode} img={partnerImg} name={partnerName} tone={tone} sec={gap} full={full}
+            nextTitle={cards[at + 1] ? pickCardTone(cards[at + 1], tone).title : ''}
+            voiceUrl={common[voiceKey('next', tone, 0)] || ''} audioRef={gapRef}
+            onSkip={() => { setGap(0); setAt((n) => n + 1); }} />
+        ) : (
+          <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
+            autoStart skipOpening={at > 0} full={full} onFull={setFull}
+            hideFinish={!last}
+            onAllDone={() => { if (!last) setGap(GAP_SEC); }} />
+        )}
       </div>
 
       {/* 다음 동작 · 음악 */}
@@ -137,6 +177,26 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       )}
       <span style={{ display: 'none' }}>{cardTitle}</span>
     </Shell>
+  );
+}
+
+// 다음 동작으로 넘어가기 전 — 오프닝과 같은 자리에 파트너가 서서 한마디를 건넨다.
+function GapStage({ code, img, name, tone, sec, full, nextTitle, voiceUrl, audioRef, onSkip }) {
+  const stage = (
+    <PartnerStage code={code} img={img} name={name} say={subLines(nextLine(tone))} at={GAP_SEC - sec} len={GAP_SEC}>
+      <span style={{ fontSize: 12.5, fontWeight: 700, color: SUB, textAlign: 'center', wordBreak: 'keep-all' }}>
+        다음은 <b style={{ color: INK }}>{nextTitle || '다음 동작'}</b> — <b style={{ color: SET_INK }}>{sec}</b>초 뒤에 이어져요
+      </span>
+      <button type="button" onClick={onSkip} style={partnerBtn}>바로 시작 →</button>
+      <audio ref={audioRef} src={voiceUrl || undefined} preload="auto" style={{ display: 'none' }} />
+    </PartnerStage>
+  );
+  if (!full) return stage;
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: '#000',
+      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 'min(100%, 78vh)' }}>{stage}</div>
+    </div>
   );
 }
 

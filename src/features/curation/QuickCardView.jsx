@@ -3,11 +3,13 @@
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CurationThumb, CharPic } from './CurationCard';
+import { CurationThumb } from './CurationCard';
+import PartnerStage from './PartnerStage';
+import { partnerBtn } from './partnerBtn';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { CHARACTERS } from '../../data';
 import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
-import { tintBg, axisOf } from './typeTint';
+import { axisOf } from './typeTint';
 import { HELLO_LINE } from './helloLine';
 import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
@@ -64,7 +66,7 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = false }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -221,6 +223,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (beginOpening) { setHeardOpening(true); setHelloDone(false); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
+
+  // 다 끝냈다고 한 번만 알린다 — 바로플리가 이어받아 다음 동작으로 넘긴다.
+  useEffect(() => {
+    if (allDone && onAllDone) onAllDone();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDone]);
 
   // 전체 화면일 땐 뒤쪽이 움직이지 않고, ESC로 빠져나온다.
   useEffect(() => {
@@ -429,7 +437,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''} at={said.at} len={said.len}>
           <button type="button" onClick={() => setStage('move')} style={partnerBtn}>바로 동작 보기 →</button>
         </PartnerStage>
-      ) : started && allDone ? (
+      ) : started && allDone && !hideFinish ? (
         // 마무리 — 오프닝과 같은 자리에서 파트너가 끝인사를 한다.
         <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''} at={said.at} len={said.len}>
           <button type="button" onClick={() => { restart(); setStage('move'); }} style={partnerBtn}>한 번 더 하기 ↻</button>
@@ -596,43 +604,3 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     </article>
   );
 }
-
-// 오프닝·마무리에서 내 파트너가 말을 건네는 화면 — 두 자리가 같은 모양이라 한 조각으로 쓴다.
-function PartnerStage({ code, img, name, say, at, len, children }) {
-  return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: tintBg(code),
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 10, padding: '18px 20px 20px', boxSizing: 'border-box' }}>
-      {/* 말풍선 — 캐릭터가 말하고 있다는 걸 글자 없이 알린다 */}
-      {say && (
-        <div style={{ position: 'relative', maxWidth: '92%', background: '#fff', borderRadius: 16,
-          padding: '12px 14px', boxShadow: '0 3px 12px rgba(23,21,15,0.10)' }}>
-          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.6,
-            wordBreak: 'keep-all', textAlign: 'center', whiteSpace: 'pre-line' }}>{say}</span>
-          <span style={{ position: 'absolute', left: '50%', bottom: -7, transform: 'translateX(-50%) rotate(45deg)',
-            width: 14, height: 14, background: '#fff', borderRadius: 3 }} />
-        </div>
-      )}
-
-      <span style={{ animation: 'bmtiBreathe 2.6s ease-in-out infinite' }}>
-        {img ? <CharPic src={img} code={code} h={172} /> : <span style={{ fontSize: 78 }}>💬</span>}
-      </span>
-      <style>{'@keyframes bmtiBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}'}</style>
-
-      <span style={{ fontSize: 13, fontWeight: 900, color: INK }}>{name || '내 파트너'}</span>
-
-      {/* 남은 시간 — 끝이 보이면 길게 느껴지지 않는다 */}
-      <span style={{ width: '62%', height: 4, borderRadius: 999, background: 'rgba(23,21,15,0.10)', overflow: 'hidden' }}>
-        <span style={{ display: 'block', height: '100%', borderRadius: 999, background: 'rgba(23,21,15,0.35)',
-          width: `${len > 0 ? Math.min(100, (at / len) * 100) : 0}%`, transition: 'width .25s linear' }} />
-      </span>
-
-      {children}
-    </div>
-  );
-}
-
-const partnerBtn = {
-  marginTop: 2, border: 'none', background: '#fff', color: SUB, borderRadius: 999, padding: '8px 16px',
-  fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: `inset 0 0 0 1px ${LINE}`,
-};

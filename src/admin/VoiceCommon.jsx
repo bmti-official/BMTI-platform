@@ -154,7 +154,7 @@ export default function VoiceCommon() {
             </span>
           )}
           <span style={{ marginLeft: saved ? 0 : 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            배경음악 {BGM_GROUPS.filter((g) => at('bgm', g.n)).length}/4 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
+            배경음악 {BGM_GROUPS.filter((g) => at('bgm', g.n)).length}/4 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 다음 동작 {at('next', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -264,8 +264,18 @@ export default function VoiceCommon() {
       </div>
 
       <div style={{ ...box }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>다음 동작 멘트</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>
+          바로플리에서 한 동작을 마치고 다음으로 넘어갈 때 흐릅니다. 멘트가 끝나면 스무 셈을 세고 저절로 이어집니다.
+        </div>
+        <div style={{ maxWidth: 320 }}>{slot('next', 0, '다음 동작')}</div>
+      </div>
+
+      <div style={{ ...box }}>
         <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>마무리 멘트</div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>모든 세트를 마쳤을 때 한 번 흐릅니다.</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>
+          모든 세트를 마쳤을 때 한 번 흐릅니다. 바로플리에서는 <b>맨 마지막 동작</b>에서만 나옵니다.
+        </div>
         <div style={{ maxWidth: 320 }}>{slot('finish', 0, '마무리')}</div>
       </div>
     </div>
