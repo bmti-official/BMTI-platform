@@ -9,7 +9,7 @@ import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { useSavedNote } from './editorState';
 
 // 칸 하나 — 끌어다 놓거나 골라서 올리고, 듣고, 비운다
-function Slot({ label, url, busy, onPick, onClear, onDrop }) {
+function Slot({ label, url, busy, note, onPick, onClear, onDrop }) {
   const [over, setOver] = useState(false);
   return (
     <div
@@ -34,6 +34,11 @@ function Slot({ label, url, busy, onPick, onClear, onDrop }) {
             style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#B23B36', padding: '0 2px' }}>×</button>
         )}
       </div>
+      {note && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#B23B36', marginTop: 5, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+          {note}
+        </div>
+      )}
       {url && <audio src={url} controls preload="none" style={{ width: '100%', height: 28, marginTop: 5 }} />}
     </div>
   );
@@ -46,6 +51,7 @@ export default function VoiceCommon() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState('');
+  const [failed, setFailed] = useState({});   // 어느 칸이 왜 안 올라갔는지
   const [saved, setSaved] = useSavedNote();
 
   useEffect(() => {
@@ -95,12 +101,14 @@ export default function VoiceCommon() {
     if (!file) return;
     const k = key(kind, tone, n);
     setBusy(k); setErr('');
-    const r = await uploadOne(file, { allowAudio: true });
-    if (r.err) { setBusy(''); setErr(r.err); return; }
+    setFailed((p) => { const next = { ...p }; delete next[k]; return next; });
+    // 배경음악은 몇 분짜리라 다른 음성보다 크게 받아 준다.
+    const r = await uploadOne(file, { allowAudio: true, music: kind === 'bgm' });
+    if (r.err) { setBusy(''); setErr(r.err); setFailed((p) => ({ ...p, [k]: r.err })); return; }
     const { error } = await supabase.from('voice_assets')
       .upsert({ kind, tone: toneFor(kind, tone), n, url: r.url, updated_at: new Date().toISOString() });
     setBusy('');
-    if (error) { setErr('저장 실패: ' + error.message); return; }
+    if (error) { setErr('저장 실패: ' + error.message); setFailed((p) => ({ ...p, [k]: '저장 실패: ' + error.message })); return; }
     setRows((p) => ({ ...p, [k]: r.url }));
     setSaved('올렸습니다.');
   };
@@ -126,6 +134,7 @@ export default function VoiceCommon() {
 
   const slot = (kind, n, label) => (
     <Slot key={`${kind}-${n}`} label={label} url={at(kind, n)} busy={busy === key(kind, tone, n)}
+      note={failed[key(kind, tone, n)]}
       onPick={() => pick(kind, n)} onClear={() => clear(kind, n)} onDrop={(file) => upload(kind, n, file)} />
   );
 
@@ -234,6 +243,7 @@ export default function VoiceCommon() {
           <b>도입부</b>는 플리를 열 때 한 번, <b>중간</b>은 그동안 계속 돌고, <b>마무리</b>는 끝나기 전에 한 번.
           <br />도막끼리는 <b>3초 동안 겹쳐 넘어갑니다.</b> 겹치는 동안 도입부·마무리가 앞에 서고 중간이 뒤로 물러납니다.
           <br />도입부·마무리는 <b>20~40초</b>, 중간은 <b>1~3분</b>에 끝과 시작이 이어지게. 셋 다 <b>같은 조·같은 빠르기</b>로 만들어야 이어집니다.
+          <br />한 도막에 <b>25MB까지</b> 올라갑니다. wav는 금방 넘치니 <b>mp3(192kbps 안팎)</b>로 바꿔서 올려 주세요.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
           {BGM_GROUPS.map((g) => (

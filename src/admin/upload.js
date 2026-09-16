@@ -6,11 +6,15 @@ export const BUCKET = 'curation';
 
 const MAX_MB = 5;          // 사진
 const MAX_VIDEO_MB = 20;   // 반복 영상
-const MAX_AUDIO_MB = 8;    // AI 음성
+const MAX_AUDIO_MB = 8;    // AI 음성 — 한두 마디라 작다
+const MAX_MUSIC_MB = 25;   // 배경음악 — 몇 분짜리라 훨씬 크다
 const OK_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 const OK_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
-const OK_AUDIO = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/webm'];
-export const AUDIO_ACCEPT = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/wav,audio/ogg,audio/webm,.mp3,.m4a,.wav,.ogg';
+const OK_AUDIO = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/wav', 'audio/x-wav',
+  'audio/ogg', 'audio/webm', 'audio/flac', 'audio/x-flac', 'audio/opus'];
+const AUDIO_EXT = /\.(mp3|m4a|wav|ogg|flac|opus)$/i;
+export const AUDIO_ACCEPT = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/wav,audio/ogg,audio/webm,audio/flac,'
+  + '.mp3,.m4a,.wav,.ogg,.flac,.opus';
 
 
 // 파일 이름은 한글·공백이 섞여도 안전하게 새로 지어 준다.
@@ -24,15 +28,18 @@ function safeName(file) {
 // 한 장(또는 한 편)을 올리고 { url } 또는 { err }를 돌려준다.
 // opt는 true(=영상 허용)로도, { allowVideo, allowAudio }로도 받는다.
 export async function uploadOne(file, opt = false) {
-  const { allowVideo = false, allowAudio = false } = (opt === true ? { allowVideo: true } : (opt || {}));
-  const audio = OK_AUDIO.includes(file.type) || /\.(mp3|m4a|wav|ogg)$/i.test(file.name) || (allowAudio && /\.webm$/i.test(file.name) && !allowVideo);
+  const { allowVideo = false, allowAudio = false, music = false } = (opt === true ? { allowVideo: true } : (opt || {}));
+  const audio = OK_AUDIO.includes(file.type) || AUDIO_EXT.test(file.name) || (allowAudio && /\.webm$/i.test(file.name) && !allowVideo);
   const video = !audio && (OK_VIDEO.includes(file.type) || /\.(mp4|webm|mov)$/i.test(file.name));
   if (audio && !allowAudio) return { err: `'${file.name}'은 소리 파일이라 이 칸에는 넣을 수 없어요.` };
-  if (allowAudio && !audio) return { err: `'${file.name}'은 소리 파일이 아니에요 (mp3 · m4a · wav).` };
+  if (allowAudio && !audio) return { err: `'${file.name}'은 소리 파일이 아니에요 (mp3 · m4a · wav · ogg · flac).` };
   if (video && !allowVideo) return { err: `'${file.name}'은 영상이라 이 칸에는 넣을 수 없어요.` };
   if (!video && !audio && !OK_TYPES.includes(file.type)) return { err: `'${file.name}'은 사진·영상 파일이 아니에요 (jpg · png · webp · mp4 · webm).` };
-  const cap = audio ? MAX_AUDIO_MB : video ? MAX_VIDEO_MB : MAX_MB;
-  if (file.size > cap * 1024 * 1024) return { err: `'${file.name}'이 ${cap}MB보다 큽니다.` };
+  const cap = audio ? (music ? MAX_MUSIC_MB : MAX_AUDIO_MB) : video ? MAX_VIDEO_MB : MAX_MB;
+  if (file.size > cap * 1024 * 1024) {
+    const mb = (file.size / 1024 / 1024).toFixed(1);
+    return { err: `'${file.name}'이 ${mb}MB라 ${cap}MB를 넘습니다. mp3로 줄여서 올려 주세요.` };
+  }
   const path = safeName(file);
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { cacheControl: '31536000', upsert: false });
   if (error) {
