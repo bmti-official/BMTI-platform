@@ -5,13 +5,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurationThumb, CharPic } from './CurationCard';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
+import { CHARACTERS } from '../../data';
 import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
 import { tintBg, axisOf } from './typeTint';
 import { HELLO_LINE } from './helloLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY } from './format';
+import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -62,7 +63,7 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = false, autoStart = false }) {
   const { title, script } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -213,6 +214,15 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (onStart) onStart();
   };
 
+  // 바로플리에서는 버튼을 누르지 않아도 바로 이어진다.
+  useEffect(() => {
+    if (!autoStart || stage !== 'cover') return undefined;
+    // 한 박자 쉬었다 시작해야 소리와 영상이 함께 준비된 뒤에 출발한다.
+    const t = setTimeout(() => start(), 80);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, card.id]);
+
   // 멘트가 바뀌면 처음부터 다시 틀어 준다.
   useEffect(() => {
     const a = audioRef.current;
@@ -273,11 +283,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const related = partLabels(card.related_parts);
   const tools = card.tools || [];
   const chars = (charImages || []).slice(0, 4);   // 오프닝 화면에서만 쓴다
+  // 오프닝에 서는 건 '내 파트너'다. 카드에 골라 둔 캐릭터가 아니라 내 유형에서 찾는다.
+  const partnerImg = CHARACTERS.find((c) => c.id === myCode)?.image || chars[0] || '';
   const partnerName = String(CHARACTER_NAMES[myCode] || CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
   // 지금 흐르는 소리에 딸린 자막
-  const sayNow = voiceRole === 'hello' ? (HELLO_LINE[myCode] || '')
+  const sayNow = subLines(voiceRole === 'hello' ? (HELLO_LINE[myCode] || '')
     : voiceRole === 'open' ? subOpen
-      : voiceRole === 'ment' ? (subSets[Math.min(done, subSets.length - 1)] || '') : '';
+      : voiceRole === 'ment' ? (subSets[Math.min(done, subSets.length - 1)] || '') : '');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
   // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
@@ -400,8 +412,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           )}
 
           <span style={{ animation: 'bmtiBreathe 2.6s ease-in-out infinite' }}>
-            {chars.length > 0
-              ? <CharPic src={chars[0]} code={(charCodes || [])[0]} h={172} />
+            {partnerImg
+              ? <CharPic src={partnerImg} code={myCode} h={172} />
               : <span style={{ fontSize: 78 }}>💬</span>}
           </span>
           <style>{'@keyframes bmtiBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}'}</style>

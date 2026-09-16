@@ -68,3 +68,12 @@ export const clipY = (item) => {
   const v = Number(item?.clip_y);
   return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 50;
 };
+
+/** 자막을 한 문장씩 끊어 준다 — 한 줄로 길게 흐르면 눈으로 따라가기 어렵다. */
+export function subLines(text) {
+  return String(text || '')
+    .trim()
+    .replace(/\s*\n\s*/g, '\n')        // 이미 넣어 둔 줄바꿈은 그대로
+    .replace(/([.!?…])\s+/g, '$1\n')     // 문장이 끝나면 다음 줄로
+    .replace(/\n{2,}/g, '\n');
+}

@@ -8,28 +8,33 @@ import { pickCardTone, pickRoutineTone } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';
-const LOUD = 0.34;   // 음악 크기
-const DUCK = 0.12;   // 멘트가 흐를 때 낮추는 크기
+// 음악은 멘트를 덮지 않을 만큼만. 처음 크기는 작게 두고 손님이 올릴 수 있게 한다.
+const VOL_STEPS = [0.06, 0.12, 0.18, 0.26, 0.36];
+const VOL_START = 1;                 // 처음은 두 번째 칸
+const DUCK_RATE = 0.35;              // 멘트가 흐를 땐 이만큼만 남긴다
 
 export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCode, onClose, onDone }) {
   const [at, setAt] = useState(0);            // 몇 번째 동작인가
   const [common, setCommon] = useState({});
   const [bgmNo, setBgmNo] = useState(() => bgmNoFor(bmtiCode));
   const [musicOn, setMusicOn] = useState(true);
+  const [volNo, setVolNo] = useState(VOL_START);
   const musicRef = useRef(null);
   const card = cards[at];
 
   useEffect(() => { let alive = true; loadVoiceAssets().then((m) => { if (alive) setCommon(m); }); return () => { alive = false; }; }, []);
   const bgmUrl = common[voiceKey('bgm', 'a', bgmNo)] || '';
 
+  const loud = VOL_STEPS[volNo];
+
   // 음악은 한 번 틀면 끝까지 — 동작이 바뀌어도 끊기지 않는다.
   useEffect(() => {
     const a = musicRef.current;
     if (!a) return;
-    a.volume = musicOn ? LOUD : 0;
+    a.volume = musicOn ? loud : 0;
     if (musicOn && bgmUrl) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
     else { try { a.pause(); } catch { /* 무시 */ } }
-  }, [bgmUrl, musicOn]);
+  }, [bgmUrl, musicOn, loud]);
 
   // 멘트가 들리는 동안에는 음악을 낮춘다.
   useEffect(() => {
@@ -38,11 +43,11 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       const a = musicRef.current;
       if (!a || !musicOn) return;
       const talking = [...document.querySelectorAll('audio')].some((el) => el !== a && !el.paused && !el.muted && el.currentTime > 0);
-      const want = talking ? DUCK : LOUD;
+      const want = talking ? loud * DUCK_RATE : loud;
       if (Math.abs(a.volume - want) > 0.01) a.volume = want;
     }, 350);
     return () => clearInterval(tick);
-  }, [musicOn]);
+  }, [musicOn, loud]);
 
   if (!card) {
     return (
@@ -80,7 +85,8 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       </div>
 
       <div style={{ padding: '10px 14px 0' }}>
-        <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode} skipOpening={routine?.skip_opening !== false} />
+        <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
+          autoStart skipOpening={at > 0} />
       </div>
 
       {/* 다음 동작 · 음악 */}
@@ -103,6 +109,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       {bgmUrl && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 14px 26px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB }}>배경음악</span>
+          <VolBar no={volNo} on={musicOn} onPick={setVolNo} />
           {BGM_GROUPS.map((g) => (
             <button key={g.n} type="button" onClick={() => setBgmNo(g.n)}
               disabled={!common[voiceKey('bgm', 'a', g.n)]}
@@ -119,6 +126,19 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       )}
       <span style={{ display: 'none' }}>{cardTitle}</span>
     </Shell>
+  );
+}
+
+// 음악 크기 — 다섯 칸짜리 막대. 몇 칸인지 눈으로 바로 보인다.
+function VolBar({ no, on, onPick }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginRight: 4 }}>
+      {VOL_STEPS.map((v, i) => (
+        <button key={v} type="button" onClick={() => onPick(i)} aria-label={`음악 크기 ${i + 1}칸`}
+          style={{ width: 11, height: 8 + i * 4, borderRadius: 3, border: 'none', padding: 0, cursor: 'pointer',
+            background: on && i <= no ? SET_INK : '#E6E1D8', transition: 'background .15s' }} />
+      ))}
+    </span>
   );
 }
 
