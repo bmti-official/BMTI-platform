@@ -552,6 +552,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               </>
             )}
           </div>
+          {/* 설명을 이미 아는 사람은 기다리지 않아도 되게 */}
+          {introOn && (
+            <button type="button" onClick={() => setIntroDone(true)}
+              style={{ position: 'absolute', top: full ? 62 : 48, left: '50%', transform: 'translateX(-50%)',
+                zIndex: 4, border: 'none', background: 'rgba(255,255,255,0.94)', color: SUB, borderRadius: 999,
+                padding: '6px 14px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
+              설명 건너뛰기 →
+            </button>
+          )}
+
           {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
