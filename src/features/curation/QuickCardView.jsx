@@ -214,6 +214,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 설명 영상이 도는 동안 '오른쪽'이 먼저 튀어나오면 설명이 묻힌다.
   const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone && !introOn;
   const hasVoice = !!(helloUrl || introClip || mentClip || Object.keys(common).length);
+  // 지금 이 칸에서 낼 숫자(또는 카운트다운) 소리
+  const countUrl = (rest > 0 ? commonAt('countdown', 0) : commonAt('count', rep + 1)) || '';
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
   // 지금 흐를 멘트가 무엇인지 — 끝났을 때 무엇을 표시해 둘지 알아야 해서 갈래도 함께 들고 있는다.
@@ -695,7 +697,9 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               else if (voiceRole === 'cue') setCueDone(true);
               else if (voiceRole === 'ment') setMentDone(setKey);
             }} style={{ display: 'none' }} />
-          <audio ref={countRef} src={(rest > 0 ? commonAt('countdown', 0) : commonAt('count', rep + 1)) || undefined}
+          {/* 숫자 세기 · 카운트다운 — 여기도 주소를 key로 둔다.
+              주소만 갈아 끼우면 브라우저가 앞 숫자를 마저 세어 버린다. */}
+          <audio ref={countRef} key={countUrl || 'none'} src={countUrl || undefined}
             preload="auto" style={{ display: 'none' }} />
           <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
             style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,

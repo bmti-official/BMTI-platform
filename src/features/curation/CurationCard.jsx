@@ -80,7 +80,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
     <div ref={boxRef} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
       {/* 4:5 틀에 세로로 긴 영상을 담으면 위아래가 잘린다. 어디를 살릴지 정해 둔 자리를 쓴다. */}
       {clip ? (
-        <video ref={vidRef} src={clip} muted playsInline autoPlay loop={!onClipEnd} preload="metadata"
+        <video ref={vidRef} key={clip} src={clip} muted playsInline autoPlay loop={!onClipEnd} preload="metadata"
           poster={item.cover_url || undefined} onEnded={onClipEnd}
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
       ) : item.cover_url
