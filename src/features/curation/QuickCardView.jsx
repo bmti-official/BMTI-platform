@@ -476,19 +476,31 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: INK, wordBreak: 'keep-all' }}>
             총 {reps}회 · {sets}세트{card.has_side ? ` · ${SIDE_KO[side]}` : ''}{paused ? ' · 멈춤' : ''}
           </span>
-          <button type="button" onClick={togglePause}
-            style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
-              border: 'none', background: paused ? SET_BG : '#fff', color: paused ? SET_INK : SUB,
-              boxShadow: paused ? 'none' : `inset 0 0 0 1px ${LINE}`, cursor: 'pointer', lineHeight: 1.2,
-              display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span>{paused ? '이어서' : '일시'}</span><span>{paused ? '하기' : '정지'}</span>
-          </button>
-          <button type="button" onClick={() => { restart(); setStage('move'); }}
-            style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
-              border: 'none', background: NAME_BG, color: NAME_INK, cursor: 'pointer', lineHeight: 1.2,
-              display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span>처음부터</span><span>다시</span>
-          </button>
+          {/* 설명을 듣는 동안에는 멈출 것도 되돌릴 것도 없다. 그 자리를 건너뛰기가 쓴다. */}
+          {introOn ? (
+            <button type="button" onClick={() => setIntroDone(true)}
+              style={{ flexShrink: 0, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit',
+                borderRadius: 14, border: 'none', background: NAME_BG, color: NAME_INK, cursor: 'pointer',
+                lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+              설명 건너뛰기 →
+            </button>
+          ) : (
+            <>
+              <button type="button" onClick={togglePause}
+                style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
+                  border: 'none', background: paused ? SET_BG : '#fff', color: paused ? SET_INK : SUB,
+                  boxShadow: paused ? 'none' : `inset 0 0 0 1px ${LINE}`, cursor: 'pointer', lineHeight: 1.2,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span>{paused ? '이어서' : '일시'}</span><span>{paused ? '하기' : '정지'}</span>
+              </button>
+              <button type="button" onClick={() => { restart(); setStage('move'); }}
+                style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
+                  border: 'none', background: NAME_BG, color: NAME_INK, cursor: 'pointer', lineHeight: 1.2,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span>처음부터</span><span>다시</span>
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -552,17 +564,6 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               </>
             )}
           </div>
-          {/* 설명을 이미 아는 사람은 기다리지 않아도 되게 */}
-          {introOn && (
-            <button type="button" onClick={() => setIntroDone(true)}
-              style={{ position: 'absolute', top: full ? 62 : 48, left: '50%', transform: 'translateX(-50%)',
-                zIndex: 4, border: 'none', background: 'rgba(255,255,255,0.94)', color: SUB, borderRadius: 999,
-                padding: '6px 14px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
-                whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
-              설명 건너뛰기 →
-            </button>
-          )}
-
           {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
