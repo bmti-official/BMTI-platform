@@ -138,6 +138,9 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 영상 한 바퀴가 끝날 때마다 — 세고, 필요하면 세트를 넘기고, 다시 튼다.
   const onRepEnd = (e) => {
     const v = e.currentTarget;
+    // 설명을 듣는 동안에는 한 바퀴를 돌았어도 세지 않는다.
+    // 멈추라고 했는데도 브라우저가 한두 바퀴 더 돌려 버리는 일이 있어, 여기서 한 번 더 막는다.
+    if (holdRef.current) { try { v.pause(); v.currentTime = 0; } catch { /* 무시 */ } return; }
     const again = () => { try { v.currentTime = 0; v.play().catch(() => {}); } catch { /* 무시 */ } };
     // 세트를 넘길 땐 곧장 잇지 않고, 고른 만큼 쉬었다 간다.
     const breathe = (n, isSwitch = false) => {
@@ -335,7 +338,10 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 멈춰 두면 멘트가 끝나고 늘 '하나'부터 셀 수 있다.
   // 멈춰 서서 듣는 건 1세트뿐이다. 2세트부터는 하면서 듣는다.
   const holding = stage === 'move' && rest === 0 && !allDone && !paused && (introOn || cueOn);
+  // 지금 멈춰 서 있어야 하는지 — 이벤트 안에서도 바로 볼 수 있게 들고 있는다.
+  const holdRef = useRef(false);
   useEffect(() => {
+    holdRef.current = holding;
     const v = clipRef.current;
     if (!v || stage !== 'move' || rest > 0 || allDone || paused) return;
     if (holding) { try { v.pause(); v.currentTime = 0; } catch { /* 무시 */ } }
@@ -530,6 +536,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
             onEnded={onRepEnd}
+            onPlay={(e) => {
+              // autoplay가 뒤늦게 살아나 설명 중에 영상이 도는 일을 막는다
+              if (!holdRef.current) return;
+              const v = e.currentTarget;
+              try { v.pause(); v.currentTime = 0; } catch { /* 무시 */ }
+            }}
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`,
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
