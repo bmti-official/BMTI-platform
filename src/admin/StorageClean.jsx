@@ -5,6 +5,14 @@ import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, ACCENT, box, btn } from './theme';
 import { BUCKET } from './upload';
 
+// 파일 주소가 담기는 표 — 새 표를 만들면 여기에 꼭 더해야 한다.
+//   curation_items  큐레이션 사진·영상
+//   quick_cards     동작 영상 · 세트 전 설명 영상 · 세트 멘트 음성
+//   routines        바로플리 표지
+//   voice_assets    공통 음성 (숫자·쉼·마무리·배경음악…)
+//   voice_hello     캐릭터 인사 열여섯 편
+const TABLES = ['curation_items', 'quick_cards', 'routines', 'voice_assets', 'voice_hello'];
+
 const mb = (n) => `${(Number(n || 0) / 1024 / 1024).toFixed(2)}MB`;
 const fileName = (p) => p.split('/').pop();
 
@@ -56,21 +64,18 @@ export default function StorageClean() {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess?.session) { setBusy(''); setErr('관리자로 로그인한 뒤에 눌러 주세요. 로그인 없이 훑으면 쓰는 파일까지 안 쓰는 것으로 잡힙니다.'); return; }
 
-      const [cur, card, voice, files] = await Promise.all([
-        supabase.from('curation_items').select('*'),
-        supabase.from('quick_cards').select('*'),
-        supabase.from('voice_assets').select('url'),
-        listAll(),
-      ]);
-      const bad = [cur.error, card.error, voice.error].filter(Boolean);
+      // 파일 주소가 담길 수 있는 표는 하나도 빠뜨리면 안 된다.
+      // 빠진 표의 파일은 '안 쓰는 것'으로 잡혀 통째로 지워진다.
+      const reads = await Promise.all(TABLES.map((t) => supabase.from(t).select('*')));
+      const files = await listAll();
+      const bad = reads.map((r) => r.error).filter(Boolean);
       if (bad.length) { setBusy(''); setErr('글을 읽지 못했습니다: ' + bad[0].message + ' — 이 상태로는 지울 수 없습니다.'); return; }
 
+      const rows = reads.flatMap((r) => r.data || []);
       const keep = new Set();
-      [...(cur.data || []), ...(card.data || []), ...(voice.data || [])].forEach((r) => {
-        urlsIn(r).forEach((u) => { const p = pathOf(u); if (p) keep.add(p); });
-      });
+      rows.forEach((r) => { urlsIn(r).forEach((u) => { const p = pathOf(u); if (p) keep.add(p); }); });
       setUsed(keep.size);
-      setRowCount((cur.data || []).length + (card.data || []).length + (voice.data || []).length);
+      setRowCount(rows.length);
       setOrphans(files.filter((f) => !keep.has(f.path)).sort((a, b) => b.size - a.size));
     } catch (e) {
       setErr(String(e?.message || e));
@@ -107,6 +112,7 @@ export default function StorageClean() {
           사진을 바꾸거나 카드를 지워도 <b>올린 원본은 저장소에 그대로 남습니다.</b> 20MB짜리 영상이 쌓이면 용량 요금이 붙어요.
           <br />어느 글에서도 쓰지 않는 파일만 골라 보여 드립니다. <b>쓰이고 있는 파일은 절대 건드리지 않습니다.</b>
           <br />복제한 카드가 같은 파일을 함께 쓰는 경우도 &lsquo;쓰는 중&rsquo;으로 셉니다.
+          <br />훑는 곳: 큐레이션 · 바로카드 · 바로플리 표지 · <b>공통 음성</b> · <b>캐릭터 인사</b>.
           <br /><b style={{ color: '#B23B36' }}>관리자로 로그인한 상태에서만</b> 훑습니다. 그래야 모든 글이 보여서 쓰는 파일을 빠뜨리지 않습니다.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
