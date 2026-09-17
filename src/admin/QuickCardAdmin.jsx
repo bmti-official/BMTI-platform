@@ -19,7 +19,7 @@ import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
 import { kindSetup, REST_LIST } from '../features/curation/cardDefaults';
-import AudioInput, { AudioListInput } from './AudioInput';
+import AudioInput, { AudioSlot } from './AudioInput';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
 
 // 바로카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
@@ -61,6 +61,111 @@ function ToolPicker({ value, onChange }) {
         </div>
       )}
       <TagsInput value={value} onChange={onChange} placeholder="직접 적기 — 쉼표로 구분" />
+    </div>
+  );
+}
+
+// 세트마다 멘트가 나가는 자리와 길이 — 화면에 그대로 적어 준다.
+const SET_WHEN = (i) => (i === 0
+  ? { where: '시작 전 · 멈춰 서서', len: '12~15초', what: '핵심 세 가지 + 아프면 멈추라는 말' }
+  : { where: '한가운데 · 하면서', len: '3~5초', what: '놓치기 쉬운 것 하나만 되짚기' });
+
+// 소리와 자막, 설명 영상을 한 상자에 모았다.
+// Z·M을 나란히 두면 안내가 두 번 적히고 칸이 좁아져, 위 알약으로 갈아 끼운다.
+function VoiceBox({ f, set }) {
+  const [t, setT] = useState('z');
+  const clips = f[`voice_sets_${t}`] || [];
+  const subs = f[`sub_sets_${t}`] || [];
+  const rows = Math.min(5, Math.max(3, clips.length, subs.length));
+
+  const putAt = (key, i, v) => {
+    const next = [...(f[key] || [])];
+    while (next.length <= i) next.push('');
+    next[i] = v;
+    while (next.length && !next[next.length - 1]) next.pop();   // 끝의 빈 칸은 덜어 낸다
+    set(key)(next);
+  };
+
+  return (
+    <div style={{ ...box, background: BG, marginBottom: 14 }}>
+      <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>손님이 듣고 보는 것</div>
+      <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.6 }}>
+        영상 소리는 손님 화면에서 늘 꺼집니다. 들리는 건 여기 올린 음성뿐입니다.
+        <br /><b>자막</b>은 소리를 못 켜는 자리(지하철·사무실)에서 대신 읽힙니다. 음성과 <b>같은 글</b>을 넣어 주세요.
+        음성이 아직 없어도 자막만으로 먼저 나갑니다.
+        <br />mp3 · m4a · wav, 한 편에 8MB까지. 칸에 파일을 <b>끌어다 놓아도</b> 올라갑니다.
+      </div>
+
+      {/* 설명 영상 — 말투를 가리지 않으니 위에 한 번만 */}
+      <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+        <span style={label}>세트 전 설명 영상 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 화살표로 짚어 주는 4~6초 한 편</span></span>
+        <ImageInput allowVideo value={f.intro_url} onChange={set('intro_url')}
+          placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
+          hint="1세트를 시작할 때 멘트와 함께 되돌아 돕니다. 화살표 한 번이 한 바퀴 안에 끝나게 만들어 주세요. 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다." />
+      </div>
+
+      {/* 말투 고르기 */}
+      <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, marginBottom: 12,
+        boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+        {[['z', 'Z 유형 · 담백'], ['m', 'M 유형 · 다정']].map(([k, lb]) => (
+          <button key={k} type="button" onClick={() => setT(k)}
+            style={{ padding: '7px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 12, fontWeight: 800, background: t === k ? ACCENT : 'transparent', color: t === k ? '#fff' : SUB }}>
+            {lb}
+          </button>
+        ))}
+      </div>
+
+      {/* 오프닝 — 바로플리 첫 동작에서만 */}
+      <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 10, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 2 }}>
+          오프닝 <span style={{ fontWeight: 700, color: SUB }}>— 내 파트너가 건네는 인사</span>
+        </div>
+        <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 8, lineHeight: 1.6 }}>
+          <b>바로플리의 첫 동작에서만</b> 흐릅니다. 바로카드 한 장을 볼 때는 나오지 않습니다.
+          준비 자세를 일러 주고 &lsquo;천천히 시작합니다&rsquo;로 맺습니다.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(220px, 1.2fr)', gap: 10 }}>
+          <AudioInput value={f[`voice_open_${t}`] || ''} onChange={set(`voice_open_${t}`)} />
+          <textarea style={{ ...area, minHeight: 72, fontSize: 12.5 }} value={f[`sub_open_${t}`] || ''}
+            onChange={(e) => set(`sub_open_${t}`)(e.target.value)}
+            placeholder="오프닝 자막 — 말풍선에 그대로 뜹니다" />
+        </div>
+      </div>
+
+      {/* 세트 멘트 — 한 줄에 음성과 자막을 나란히 */}
+      <div style={{ background: '#fff', borderRadius: 10, padding: 11, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 2 }}>
+          세트 멘트 <span style={{ fontWeight: 700, color: SUB }}>— 세트마다 나가는 자리가 다릅니다</span>
+        </div>
+        <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 10, lineHeight: 1.6 }}>
+          올리지 않은 세트는 <b>바로 앞 세트의 것을 이어서</b> 씁니다.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[...Array(rows)].map((_, i) => {
+            const w = SET_WHEN(i);
+            return (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '84px minmax(200px, 1fr) minmax(200px, 1.2fr)',
+                gap: 10, alignItems: 'start', background: i === 0 ? '#FFFBF0' : BG, borderRadius: 9, padding: 9 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{i + 1}세트</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: SUB, lineHeight: 1.45, marginTop: 3 }}>
+                    {w.where}<br />{w.len}
+                  </div>
+                </div>
+                <AudioSlot value={clips[i] || ''} onChange={(v) => putAt(`voice_sets_${t}`, i, v)} />
+                <textarea style={{ ...area, minHeight: 66, fontSize: 12.5 }} value={subs[i] || ''}
+                  onChange={(e) => putAt(`sub_sets_${t}`, i, e.target.value)}
+                  placeholder={`${i + 1}세트 자막 — ${w.what}`} />
+              </div>
+            );
+          })}
+        </div>
+        {rows < 5 && (
+          <button type="button" onClick={() => putAt(`sub_sets_${t}`, rows, ' ')}
+            style={{ ...smallBtn, marginTop: 9 }}>＋ 세트 더하기</button>
+        )}
+      </div>
     </div>
   );
 }
@@ -344,49 +449,8 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         </div>
       </div>
 
-      {/* AI 음성 — 오프닝 한 편 + 세트마다 다른 멘트 */}
-      <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>AI 음성</div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.6 }}>
-          영상 소리는 손님 화면에서 늘 꺼집니다. 들리는 건 여기 올린 음성뿐입니다.
-          <br />오프닝이 먼저 흐르고, 끝나면 1세트째 멘트로 넘어갑니다. 세트 수보다 적게 올리면 마지막 것을 이어서 씁니다.
-          <br />mp3 · m4a · wav, 한 편에 8MB까지.
-          <br /><b>자막</b>은 소리를 못 켜는 자리(지하철·사무실)에서 대신 읽힙니다. 음성과 같은 글을 넣어 주세요.
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          {[['z', 'Z 유형'], ['m', 'M 유형']].map(([t, lb]) => (
-            <div key={t}>
-              <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>{lb}</div>
-              <span style={label}>오프닝 멘트 <span style={{ fontWeight: 600 }}>— 준비 자세 → &lsquo;천천히 시작합니다&rsquo;</span></span>
-              <AudioInput value={f[`voice_open_${t}`] || ''} onChange={set(`voice_open_${t}`)} />
-              <textarea style={{ ...area, minHeight: 56, fontSize: 12.5, marginTop: 6 }} value={f[`sub_open_${t}`] || ''}
-                onChange={(e) => set(`sub_open_${t}`)(e.target.value)} placeholder="오프닝 자막 — 말풍선에 그대로 뜹니다" />
-              <div style={{ height: 12 }} />
-              <span style={label}>세트 멘트 <span style={{ fontWeight: 600 }}>— 올린 차례대로 1세트째부터</span></span>
-              <div style={{ fontSize: 11, color: SUB, fontWeight: 600, lineHeight: 1.6, marginBottom: 6 }}>
-                <b>1세트</b>는 시작 전에 첫 자세로 멈춰 선 채 흐릅니다. 설명 영상이 함께 돌고, 멘트가 끝나야
-                동작이 시작되며 숫자를 <b>하나부터</b> 셉니다. <b>12~15초</b>로 핵심을 다 담으세요.
-                <br /><b>2세트부터</b>는 시작할 때 말하지 않습니다 — 바로 앞 쉬는 시간 멘트와 붙어 버리니까요.
-                대신 <b>세트 한가운데(횟수의 절반 지점)</b>에서 하면서 듣는 <b>한마디(3~5초)</b>가 흐릅니다.
-              </div>
-              <AudioListInput value={f[`voice_sets_${t}`] || []} onChange={set(`voice_sets_${t}`)} max={5} />
-              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[0, 1, 2, 3, 4].slice(0, Math.max(1, (f[`voice_sets_${t}`] || []).length)).map((i) => (
-                  <textarea key={i} style={{ ...area, minHeight: 48, fontSize: 12.5 }}
-                    value={(f[`sub_sets_${t}`] || [])[i] || ''}
-                    onChange={(e) => {
-                      const next = [...(f[`sub_sets_${t}`] || [])];
-                      while (next.length <= i) next.push('');
-                      next[i] = e.target.value;
-                      set(`sub_sets_${t}`)(next);
-                    }}
-                    placeholder={`${i + 1}세트 자막`} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 들리는 것과 보이는 것 — 소리·자막·설명 영상을 한 자리에 모았다 */}
+      <VoiceBox f={f} set={set} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <div>
@@ -414,12 +478,6 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div>
-          <span style={label}>세트 전 설명 영상 <span style={{ fontWeight: 600 }}>— 화살표로 짚어 주는 4~6초 한 편</span></span>
-          <ImageInput allowVideo value={f.intro_url} onChange={set('intro_url')}
-            placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
-            hint="세트를 시작할 때 멘트와 함께 돕니다. 멘트가 끝날 때까지 되돌아 도니 4~6초로 짧게, 화살표 한 번이 그 안에 끝나게 만들어 주세요. 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다." />
-        </div>
         <div>
           <span style={label}>포함 도구 <span style={{ fontWeight: 600 }}>— 골라서 담고, 없으면 직접 적기</span></span>
           <ToolPicker value={f.tools} onChange={set('tools')} />

@@ -118,3 +118,57 @@ export function AudioListInput({ value, onChange, hint, max = 5 }) {
     </div>
   );
 }
+
+// ── 한 자리짜리 (세트 멘트 한 칸) ──────────────────────────────────
+// 세트마다 음성과 자막을 나란히 두려고, 목록이 아니라 칸 하나로 쓴다.
+export function AudioSlot({ value, onChange }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [over, setOver] = useState(false);
+
+  const onFiles = async (files) => {
+    const file = files[0];
+    if (!file) return;
+    setErr(''); setBusy(true);
+    const r = await uploadOne(file, { allowAudio: true });
+    setBusy(false);
+    if (r.err) { setErr(r.err); return; }
+    onChange(r.url);
+  };
+
+  return (
+    <div onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
+      onDrop={(e) => { e.preventDefault(); setOver(false); onFiles([...(e.dataTransfer.files || [])]); }}
+      style={{ borderRadius: 9, padding: 7, background: over ? '#FFF6E6' : '#fff',
+        boxShadow: `inset 0 0 0 ${over ? 2 : 1}px ${over ? ACCENT : LINE}` }}>
+      {value ? (
+        <>
+          <audio src={value} controls preload="none" style={{ width: '100%', height: 30 }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
+              style={{ padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit',
+                fontSize: 11, fontWeight: 800, color: ACCENT, cursor: 'pointer' }}>
+              {busy ? '올리는 중…' : '바꾸기'}
+            </button>
+            <button type="button" onClick={() => onChange('')}
+              style={{ padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit',
+                fontSize: 11, fontWeight: 800, color: '#B23B36', cursor: 'pointer' }}>
+              비우기
+            </button>
+          </div>
+        </>
+      ) : (
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
+          style={{ width: '100%', padding: '11px 0', border: 'none', borderRadius: 8, fontFamily: 'inherit',
+            fontSize: 12, fontWeight: 800, cursor: busy ? 'default' : 'pointer',
+            background: busy ? '#fff' : '#F7F4EE', color: busy ? SUB : INK }}>
+          {busy ? '올리는 중…' : '＋ 음성 올리기'}
+        </button>
+      )}
+      <input ref={fileRef} type="file" accept={AUDIO_ACCEPT} style={{ display: 'none' }}
+        onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} />
+      {err && <div style={errStyle}>{err}</div>}
+    </div>
+  );
+}
