@@ -199,7 +199,7 @@ function VoiceBox({ f, set }) {
           {[...Array(rows)].map((_, i) => {
             const w = SET_WHEN(i);
             return (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '96px minmax(200px, 1fr) minmax(200px, 1.2fr)',
+              <div key={`${t}-${i}`} style={{ display: 'grid', gridTemplateColumns: '96px minmax(200px, 1fr) minmax(200px, 1.2fr)',
                 gap: 10, alignItems: 'start', background: i === 0 ? '#FFFBF0' : BG, borderRadius: 9, padding: 9 }}>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{w.name}</div>

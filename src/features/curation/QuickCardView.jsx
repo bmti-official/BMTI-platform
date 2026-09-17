@@ -303,9 +303,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   }, [autoStart, card.id]);
 
   // 멘트가 바뀌면 처음부터 다시 틀어 준다.
+  // 틀 것이 없어졌을 때 세워 두지 않으면, 앞 멘트가 남아서 계속 흐른다.
   useEffect(() => {
     const a = audioRef.current;
-    if (!a || !nowVoice) return;
+    if (!a) return;
+    if (!nowVoice) { try { a.pause(); } catch { /* 무시 */ } return; }
     a.volume = vol;
     a.muted = !voiceOn;
     if (!voiceOn) return;
@@ -662,7 +664,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       {/* AI 음성 — 화면에는 조절 막대만 두고, 소리는 이 태그가 낸다 */}
       {started && hasVoice && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
-          <audio ref={audioRef} src={nowVoice || undefined} preload="auto"
+          <audio ref={audioRef} key={nowVoice || 'none'} src={nowVoice || undefined} preload="auto"
             onLoadedMetadata={(e) => {
               const len = Number(e.currentTarget.duration) || 0;
               setSaid({ at: 0, len });

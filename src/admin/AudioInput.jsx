@@ -13,9 +13,12 @@ const errStyle = { fontSize: 11.5, fontWeight: 700, color: '#C0392B', marginTop:
 const hintStyle = { fontSize: 11.5, fontWeight: 600, color: SUB, marginTop: 5, lineHeight: 1.5 };
 
 // 들어 보는 작은 재생기 — 브라우저 기본 모양을 그대로 쓴다.
+//
+// key를 주소로 두는 까닭: 주소만 바꿔 끼우면 브라우저가 앞 파일을 계속 틀어 버린다.
+// 말투를 Z↔M으로 갈아 끼웠을 때 화면은 Z인데 소리는 M이 나던 일이 이 때문이었다.
 function Play({ src }) {
   if (!src) return null;
-  return <audio src={src} controls preload="none" style={{ width: '100%', height: 32, marginTop: 6 }} />;
+  return <audio key={src} src={src} controls preload="none" style={{ width: '100%', height: 32, marginTop: 6 }} />;
 }
 
 // ── 한 편짜리 (오프닝 멘트) ───────────────────────────────────────
@@ -144,7 +147,7 @@ export function AudioSlot({ value, onChange }) {
         boxShadow: `inset 0 0 0 ${over ? 2 : 1}px ${over ? ACCENT : LINE}` }}>
       {value ? (
         <>
-          <audio src={value} controls preload="none" style={{ width: '100%', height: 30 }} />
+          <audio key={value} src={value} controls preload="none" style={{ width: '100%', height: 30 }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
               style={{ padding: 0, border: 'none', background: 'transparent', fontFamily: 'inherit',
