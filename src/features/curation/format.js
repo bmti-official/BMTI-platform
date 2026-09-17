@@ -77,3 +77,9 @@ export function subLines(text) {
     .replace(/([.!?…])\s+/g, '$1\n')     // 문장이 끝나면 다음 줄로
     .replace(/\n{2,}/g, '\n');
 }
+
+/** 자막이 화면 위아래 어디쯤에 놓일지. 0이 맨 위, 100이 맨 아래. */
+export function subY(card = {}) {
+  const v = Number(card.sub_y);
+  return Number.isFinite(v) && v > 0 ? Math.min(95, Math.max(5, v)) : 78;
+}

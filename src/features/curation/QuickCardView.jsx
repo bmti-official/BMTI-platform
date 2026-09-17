@@ -3,7 +3,7 @@
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CurationThumb } from './CurationCard';
+import { CurationThumb, CharPic } from './CurationCard';
 import PartnerStage from './PartnerStage';
 import FullWrap from './FullWrap';
 import { partnerBtn } from './partnerBtn';
@@ -16,7 +16,7 @@ import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines } from './format';
+import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY } from './format';
 import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -198,17 +198,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 지금 어느 쪽을 하는가 — '좌우 번갈아'는 한 번마다 바뀌니 알리지 않는다.
   const nowSide = !card.has_side || side === 'alt' ? null : (twoPhase ? (secondSide ? 2 : 1) : (side === 'left' ? 2 : 1));
   const cueUrl = nowSide ? commonAt('side', nowSide) : '';
-  // 세트를 시작할 때 방향을 한 마디로 알린다. 이게 끝나야 세트 멘트가 흐른다.
-  const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone;
-  // 지금 세트 멘트가 흐르는 중인가 — 설명 모드이고, 방향 알림이 끝났고, 아직 다 듣지 않았을 때만.
   // 멘트가 나가는 자리 — 세트마다 다르다.
   //  1세트는 시작 전에 멈춰 서서 길게(핵심 세 가지 + 화살표 설명 영상),
   //  2세트부터는 쉬는 시간 멘트와 붙어 버리니 세트 한가운데에서 짧게 한마디.
   const firstSet = done === 0 && !secondSide;
   const midRep = Math.max(1, Math.round(reps / 2));
   const mentDue = firstSet || rep + 1 >= midRep;
-  const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !cueOn
+  const mentOn = stage === 'move' && guide && rest === 0 && !allDone
     && !!(mentClip || mentSub) && mentDone !== setKey && mentDue;
+  // 방향은 설명이 다 끝난 뒤, 몸을 움직이기 바로 전에 한 마디로 알린다.
+  // 설명 영상이 도는 동안 '오른쪽'이 먼저 튀어나오면 설명이 묻힌다.
+  const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone && !mentOn;
   const hasVoice = !!(helloUrl || mentClip || Object.keys(common).length);
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
@@ -505,7 +505,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 세트 전 설명 영상 — 멘트가 흐르는 동안 동작 영상 위에서 되돈다.
               화살표로 어디를 어떻게 움직이는지 짚어 주는 자리다. */}
-          {holding && card.intro_url && (
+          {holding && mentOn && card.intro_url && (
             <video src={card.intro_url} muted playsInline autoPlay loop preload="auto"
               style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%',
                 objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`, background: '#F3F1EC',
@@ -542,10 +542,22 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
           {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
           {subOn && sayNow && rest === 0 && (
-            <div style={{ position: 'absolute', left: 10, right: 10, bottom: full ? 78 : 10, zIndex: 2, pointerEvents: 'none',
-              background: 'rgba(255,255,255,0.94)', borderRadius: 12, padding: '10px 12px' }}>
-              <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.6,
-                wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{sayNow}</span>
+            <div style={{ position: 'absolute', left: 10, right: 10, top: `${subY(card)}%`,
+              transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none',
+              display: 'flex', alignItems: 'flex-end', gap: 7 }}>
+              {/* 내 파트너가 곁에서 말해 주는 모양 */}
+              {partnerImg && <CharPic src={partnerImg} code={myCode} h={54} />}
+              <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 12,
+                padding: '9px 11px', boxShadow: '0 2px 10px rgba(23,21,15,0.12)' }}>
+                {voiceRole === 'ment' && firstSet && (
+                  <span style={{ display: 'inline-block', marginBottom: 4, fontSize: 10, fontWeight: 900,
+                    color: NAME_INK, background: NAME_BG, borderRadius: 999, padding: '2px 8px' }}>
+                    시작 전 설명
+                  </span>
+                )}
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.6,
+                  wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{sayNow}</span>
+              </div>
             </div>
           )}
 

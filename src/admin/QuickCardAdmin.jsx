@@ -28,7 +28,7 @@ const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label
 
 const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
-  title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', intro_url: '', duration_sec: 0,
+  title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', intro_url: '', duration_sec: 0, sub_y: 78,
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
@@ -96,6 +96,24 @@ function VoiceBox({ f, set }) {
         <br />mp3 · m4a · wav, 한 편에 8MB까지. 칸에 파일을 <b>끌어다 놓아도</b> 올라갑니다.
         <br />바로플리 첫 동작의 <b>오프닝 인사</b>는 카드마다 넣지 않습니다 —
         <b>🔊 공통 음성</b>의 캐릭터 인사(유형마다 한 편)가 대신 흐릅니다.
+      </div>
+
+      {/* 자막 자리 — 말투를 가리지 않으니 위에 한 번만 */}
+      <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+        <span style={label}>자막 자리 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 화면 위아래로만</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>위</span>
+          <input type="range" min={5} max={95} step={1} style={{ flex: 1 }}
+            value={Number(f.sub_y) > 0 ? Number(f.sub_y) : 78}
+            onChange={(e) => set('sub_y')(Number(e.target.value))} />
+          <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>아래</span>
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: INK, width: 36, textAlign: 'right',
+            fontVariantNumeric: 'tabular-nums' }}>{Number(f.sub_y) > 0 ? Number(f.sub_y) : 78}</span>
+        </div>
+        <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginTop: 5, lineHeight: 1.6 }}>
+          동작에 따라 몸이 화면 아래를 채우기도 합니다. 자막이 가리지 않게 옮겨 주세요.
+          자막 옆에는 손님의 누끼 캐릭터가 함께 서서 말하듯 보입니다.
+        </div>
       </div>
 
       {/* 설명 영상 — 말투를 가리지 않으니 위에 한 번만 */}
