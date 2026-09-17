@@ -564,6 +564,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               </>
             )}
           </div>
+          {/* 전체 화면에서는 위 버튼 줄이 보이지 않으니, 건너뛰기를 오른쪽 위에 둔다 */}
+          {full && introOn && (
+            <button type="button" onClick={() => setIntroDone(true)}
+              style={{ position: 'absolute', top: 26, right: 12, zIndex: 4, border: 'none',
+                background: NAME_BG, color: NAME_INK, borderRadius: 999, padding: '7px 14px',
+                fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
+              설명 건너뛰기 →
+            </button>
+          )}
+
           {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
@@ -582,7 +593,9 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
           {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
           {subOn && sayNow && rest === 0 && (
-            <div style={{ position: 'absolute', left: 10, right: 10, bottom: `${100 - subY(card)}%`,
+            <div style={{ position: 'absolute', left: 10, right: 10,
+              // 전체 화면에서는 아래 '설정 바꾸기' 버튼이 자막을 가리지 않게 그만큼 띄운다
+              bottom: `${full ? Math.max(14, 100 - subY(card)) : 100 - subY(card)}%`,
               zIndex: 2, pointerEvents: 'none', display: 'flex', alignItems: 'flex-end', gap: 7 }}>
               <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 12,
                 padding: '9px 11px', boxShadow: '0 2px 10px rgba(23,21,15,0.12)' }}>
