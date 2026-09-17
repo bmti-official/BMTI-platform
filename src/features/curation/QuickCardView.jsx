@@ -154,7 +154,6 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     setRep(reps); setDone(sets);      // 다 채웠다. 여기서 멈춘다
   };
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
-  const openUrl = (tone === 'm' ? card.voice_open_m : card.voice_open_z) || '';
   // 음성과 자막을 같은 자리끼리 짝지어 읽는다. 중간이 비어도 어긋나지 않는다.
   const setClips = (tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || [];
   const [voiceOn, setVoiceOn] = useState(true);
@@ -186,13 +185,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const commonAt = (kind, n) => common[voiceKey(kind, tone, n)] || '';
   // 오프닝에서 내 파트너가 먼저 자기를 소개한다.
   const helloUrl = hello[String(bmtiCode || '').split('-')[0].toUpperCase()] || '';
-  const [helloDone, setHelloDone] = useState(false);
   // 자막 — 소리를 못 켜는 자리에서도 따라 할 수 있게 한다.
   const [subOn, setSubOn] = useState(true);
   // 지금 흐르는 멘트가 얼마나 지났는지 — 오프닝 화면의 남은 시간 막대에 쓴다.
   const [said, setSaid] = useState({ at: 0, len: 0 });
   const myCode = axisOf(bmtiCode);
-  const subOpen = (tone === 'm' ? card.sub_open_m : card.sub_open_z) || '';
   const subSets = (tone === 'm' ? card.sub_sets_m : card.sub_sets_z) || [];
   // 올리지 않은 세트는 바로 앞 세트의 것을 이어서 쓴다.
   const back = (list, i) => { for (let k = Math.min(i, list.length - 1); k >= 0; k -= 1) if (list[k]) return list[k]; return ''; };
@@ -212,18 +209,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const mentDue = firstSet || rep + 1 >= midRep;
   const mentOn = stage === 'move' && guide && rest === 0 && !allDone && !cueOn
     && !!(mentClip || mentSub) && mentDone !== setKey && mentDue;
-  const hasVoice = !!(openUrl || helloUrl || mentClip || Object.keys(common).length);
+  const hasVoice = !!(helloUrl || mentClip || Object.keys(common).length);
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
   // 지금 흐를 멘트가 무엇인지 — 끝났을 때 무엇을 표시해 둘지 알아야 해서 갈래도 함께 들고 있는다.
   const voiceRole = !started ? ''
-    : stage === 'open' ? ((helloUrl && !helloDone) ? 'hello' : 'open')
+    : stage === 'open' ? 'hello'
       : rest > 0 ? 'rest'
         : allDone ? 'finish'
           : cueOn ? 'cue'
             : mentOn ? 'ment' : '';
   const nowVoice = voiceRole === 'hello' ? helloUrl
-    : voiceRole === 'open' ? openUrl
     : voiceRole === 'rest' ? ((switching && commonAt('switch', 0)) || commonAt('rest', restLen))
       : voiceRole === 'finish' ? commonAt('finish', 0)
         : voiceRole === 'cue' ? cueUrl
@@ -231,11 +227,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
   // 음성 파일이 아직 없어도 자막만으로 오프닝을 보여 준다.
   // 소리가 없으면 읽을 만큼만 세워 두었다가 저절로 동작으로 넘어간다.
-  const openText = subLines(HELLO_LINE[myCode] || subOpen || '');
-  const beginOpening = !skipOpening && !heardOpening && !!(openUrl || helloUrl || openText);
+  const openText = subLines(HELLO_LINE[myCode] || '');
+  const beginOpening = !skipOpening && !heardOpening && !!(helloUrl || openText);
   const start = () => {
     restart();
-    if (beginOpening) { setHeardOpening(true); setHelloDone(false); setStage('open'); } else setStage('move');
+    if (beginOpening) { setHeardOpening(true); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
 
@@ -373,9 +369,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const partnerName = String(CHARACTER_NAMES[myCode] || CHARACTER_NAMES[(charCodes || [])[0]] || '').replace(/\n/g, ' ');
   // 지금 흐르는 소리에 딸린 자막
   const sayNow = subLines(voiceRole === 'hello' ? (HELLO_LINE[myCode] || '')
-    : voiceRole === 'open' ? subOpen
-      : voiceRole === 'finish' ? finishLine(tone)
-        : voiceRole === 'ment' ? mentSub : '');
+    : voiceRole === 'finish' ? finishLine(tone)
+      : voiceRole === 'ment' ? mentSub : '');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
   // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
@@ -617,8 +612,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             }}
             onEnded={() => {
               setSaid({ at: 0, len: 0 });
-              if (voiceRole === 'hello') { setHelloDone(true); if (!openUrl) setStage('move'); }
-              else if (voiceRole === 'open') setStage('move');
+              if (voiceRole === 'hello') setStage('move');
               else if (voiceRole === 'cue') setCueDone(true);
               else if (voiceRole === 'ment') setMentDone(setKey);
             }} style={{ display: 'none' }} />

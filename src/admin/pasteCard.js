@@ -72,7 +72,8 @@ export function parseCard(text) {
       if (t.name.startsWith('대본')) { put(t.name.endsWith('M') ? 'script_m' : 'script_z', t.value); continue; }
       if (t.name === '동작이름' || t.name.startsWith('썸네일')) { put('thumb_text', t.value.split('\n')[0].trim()); continue; }
       // C묶음 — 음성으로 만들 글이 곧 자막이다
-      if (t.name.startsWith('오프닝')) { put(t.name.endsWith('M') ? 'sub_open_m' : 'sub_open_z', t.value); continue; }
+      // 오프닝은 이제 공통 음성의 캐릭터 인사가 맡는다. 원고에 있어도 담지 않는다.
+      if (t.name.startsWith('오프닝')) continue;
       // 표지가 '1세트 · Z'이면 띄어쓰기만 지워져 '1세트·Z'로 온다 — 가운뎃점을 넘겨 읽는다
       const set = t.name.match(/^([1-5])세트[^ZM]*([ZM])?$/i);
       if (set) {

@@ -19,7 +19,7 @@ import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
 import { kindSetup, REST_LIST } from '../features/curation/cardDefaults';
-import AudioInput, { AudioSlot } from './AudioInput';
+import { AudioSlot } from './AudioInput';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
 
 // 바로카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
@@ -94,6 +94,8 @@ function VoiceBox({ f, set }) {
         <br /><b>자막</b>은 소리를 못 켜는 자리(지하철·사무실)에서 대신 읽힙니다. 음성과 <b>같은 글</b>을 넣어 주세요.
         음성이 아직 없어도 자막만으로 먼저 나갑니다.
         <br />mp3 · m4a · wav, 한 편에 8MB까지. 칸에 파일을 <b>끌어다 놓아도</b> 올라갑니다.
+        <br />바로플리 첫 동작의 <b>오프닝 인사</b>는 카드마다 넣지 않습니다 —
+        <b>🔊 공통 음성</b>의 캐릭터 인사(유형마다 한 편)가 대신 흐릅니다.
       </div>
 
       {/* 설명 영상 — 말투를 가리지 않으니 위에 한 번만 */}
@@ -114,23 +116,6 @@ function VoiceBox({ f, set }) {
             {lb}
           </button>
         ))}
-      </div>
-
-      {/* 오프닝 — 바로플리 첫 동작에서만 */}
-      <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 10, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-        <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 2 }}>
-          오프닝 <span style={{ fontWeight: 700, color: SUB }}>— 내 파트너가 건네는 인사</span>
-        </div>
-        <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 8, lineHeight: 1.6 }}>
-          <b>바로플리의 첫 동작에서만</b> 흐릅니다. 바로카드 한 장을 볼 때는 나오지 않습니다.
-          준비 자세를 일러 주고 &lsquo;천천히 시작합니다&rsquo;로 맺습니다.
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(220px, 1.2fr)', gap: 10 }}>
-          <AudioInput value={f[`voice_open_${t}`] || ''} onChange={set(`voice_open_${t}`)} />
-          <textarea style={{ ...area, minHeight: 72, fontSize: 12.5 }} value={f[`sub_open_${t}`] || ''}
-            onChange={(e) => set(`sub_open_${t}`)(e.target.value)}
-            placeholder="오프닝 자막 — 말풍선에 그대로 뜹니다" />
-        </div>
       </div>
 
       {/* 세트 멘트 — 한 줄에 음성과 자막을 나란히 */}
