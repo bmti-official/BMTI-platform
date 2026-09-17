@@ -33,11 +33,6 @@ const NAME_BG = '#FDF2CE', NAME_INK = '#6E5A1C';           // 제목 옆 동작 
 const SET_BG = '#FBF4DE', SET_INK = '#6E5A1C';             // 세트 고르기 · 세트 세기
 const BOX_BG = '#F7F5F0';                                  // 펼쳤을 때 머리말 바탕
 // 영상 안 모서리에 붙는 글씨 — 몇 세트째 · 몇 번째. 배경 없이 글씨만 얹는다.
-const corner = {
-  position: 'absolute', top: 12, zIndex: 2, pointerEvents: 'none',
-  fontSize: 18, fontWeight: 900, color: INK, whiteSpace: 'nowrap', letterSpacing: '-0.01em',
-  textShadow: SHADE,
-};
 const dropdown = {
   height: 30, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
   fontSize: 12.5, fontWeight: 800, color: SET_INK, background: SET_BG, padding: '0 8px',
@@ -108,6 +103,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const mirrored = card.has_side && (side === 'left' || (side === 'both' && secondSide) || (side === 'alt' && altFlip));
   // 한 번 도는 데 걸리는 시간을 영상에서 직접 읽어 온다(없으면 관리자가 적은 값을 쓴다).
   const [clipSec, setClipSec] = useState(0);
+  // 멘트가 덮고 지나간 회차 — 여기 적힌 자리는 숫자를 세지 않는다.
+  const hush = useRef('');
   // 세트 멘트를 듣고 시작하니 그 길이도 예상 시간에 든다. 들어 본 것 중 가장 긴 것으로 잡는다.
   const [mentSec, setMentSec] = useState(0);
   const oneRep = clipSec > 0 ? clipSec : card.duration_sec;
@@ -302,9 +299,14 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
   }, [nowVoice, voiceOn, vol]);
 
-  // 숫자 세기 — 멘트가 끝난 뒤부터, 한 바퀴마다 하나씩.
+  // 숫자 세기 — 한 바퀴마다 하나씩. 멘트가 흐르는 동안은 쉰다.
   useEffect(() => {
-    if (stage !== 'move' || rest > 0 || allDone || !voiceOn || mentOn || cueOn) return;
+    if (stage !== 'move' || rest > 0 || allDone || !voiceOn) return;
+    const tag = `${setKey}-${rep}`;
+    // 멘트가 덮고 지나간 회차는 표시해 두고 건너뛴다.
+    // 멘트가 끝난 자리에서 뒤늦게 세면 다음 숫자와 바짝 붙어 두 번 세는 것처럼 들린다.
+    if (mentOn || cueOn) { hush.current = tag; return; }
+    if (hush.current === tag) return;
     const url = commonAt('count', rep + 1);
     const a = countRef.current;
     if (!a || !url) return;
@@ -512,18 +514,30 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
                 transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           )}
 
-          {/* 왼쪽 위 몇 세트째 · 오른쪽 위 몇 번째 */}
-          {card.has_side && !allDone && (
-            <span style={{ ...corner, top: full ? 26 : 12, left: 12, color: PURPLE }}>
-              {twoPhase ? (secondSide ? '왼쪽' : '오른쪽') : SIDE_KO[side]}
+          {/* 지금 어디쯤인가 — 좌우·세트·횟수를 알약 하나에 모아 둔다 */}
+          <div style={{ position: 'absolute', top: full ? 26 : 12, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 2, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 9,
+            background: 'rgba(255,255,255,0.94)', borderRadius: 999, padding: '6px 14px',
+            boxShadow: '0 2px 8px rgba(23,21,15,0.10)', whiteSpace: 'nowrap',
+            fontSize: 14, fontWeight: 900, color: INK, letterSpacing: '-0.01em' }}>
+            {card.has_side && !allDone && (
+              <>
+                <span style={{ color: PURPLE }}>{twoPhase ? (secondSide ? '왼쪽' : '오른쪽') : SIDE_KO[side]}</span>
+                <span style={{ width: 1, height: 11, background: LINE }} />
+              </>
+            )}
+            <span>
+              {allDone ? '다 끝냈어요' : (<><b style={{ color: PURPLE }}>{done + 1}</b> 세트 중</>)}
             </span>
-          )}
-          <span style={{ ...corner, top: full ? 26 : 12, left: '50%', transform: 'translateX(-50%)' }}>
-            {allDone ? '다 끝냈어요' : (<><b style={{ color: PURPLE, fontWeight: 900 }}>{done + 1}</b> 세트 중</>)}
-          </span>
-          <span style={{ ...corner, top: full ? 26 : 12, right: 12, fontVariantNumeric: 'tabular-nums' }}>
-            <b style={{ color: PURPLE, fontWeight: 900 }}>{Math.min(rep + 1, reps)}</b>/{reps}
-          </span>
+            {!allDone && (
+              <>
+                <span style={{ width: 1, height: 11, background: LINE }} />
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <b style={{ color: PURPLE }}>{Math.min(rep + 1, reps)}</b>/{reps}
+                </span>
+              </>
+            )}
+          </div>
           {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
@@ -545,8 +559,6 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             <div style={{ position: 'absolute', left: 10, right: 10, top: `${subY(card)}%`,
               transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none',
               display: 'flex', alignItems: 'flex-end', gap: 7 }}>
-              {/* 내 파트너가 곁에서 말해 주는 모양 */}
-              {partnerImg && <CharPic src={partnerImg} code={myCode} h={54} />}
               <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 12,
                 padding: '9px 11px', boxShadow: '0 2px 10px rgba(23,21,15,0.12)' }}>
                 {voiceRole === 'ment' && firstSet && (
@@ -558,6 +570,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
                 <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.6,
                   wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{sayNow}</span>
               </div>
+              {/* 내 파트너가 오른쪽에 서서 말해 주는 모양 */}
+              {partnerImg && <CharPic src={partnerImg} code={myCode} h={54} />}
             </div>
           )}
 

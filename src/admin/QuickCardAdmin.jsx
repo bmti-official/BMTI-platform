@@ -15,6 +15,8 @@ import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
 import ImageInput from './ImageInput';
 import { CurationThumb } from '../features/curation/CurationCard';
+import { clipY } from '../features/curation/format';
+import { CHARACTERS } from '../data';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
@@ -65,6 +67,46 @@ function ToolPicker({ value, onChange }) {
   );
 }
 
+// 자막 자리 미리보기 — 손님이 보는 4:5 화면 그대로 줄여서 보여 준다.
+function SubSpot({ f, at }) {
+  const ch = CHARACTERS.find((c) => c.id === 'ACDZ');
+  const clip = f.video_url && /\.(mp4|webm|mov)(\?|$)/i.test(f.video_url) ? f.video_url : '';
+  return (
+    <div style={{ flex: '0 0 172px' }}>
+      <div style={{ position: 'relative', width: 172, aspectRatio: '4 / 5', borderRadius: 10, overflow: 'hidden',
+        background: '#EDE9E2' }}>
+        {clip
+          ? <video src={clip} muted loop autoPlay playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(f)}%` }} />
+          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700, color: SUB }}>동작 영상을 올리면 보여요</div>}
+
+        {/* 위 알약 — 손님 화면과 같은 자리 */}
+        <div style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(255,255,255,0.94)', borderRadius: 999, padding: '3px 8px',
+          fontSize: 8, fontWeight: 900, color: INK, whiteSpace: 'nowrap' }}>
+          1 세트 중 · 1/15
+        </div>
+
+        {/* 자막 — 막대가 가리키는 자리 */}
+        <div style={{ position: 'absolute', left: 6, right: 6, top: `${at}%`, transform: 'translateY(-50%)',
+          display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+          <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 7, padding: '5px 6px',
+            boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
+            <span style={{ display: 'inline-block', marginBottom: 2, fontSize: 6.5, fontWeight: 900,
+              color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '1px 5px' }}>시작 전 설명</span>
+            <span style={{ display: 'block', fontSize: 7.5, fontWeight: 700, color: INK, lineHeight: 1.5,
+              wordBreak: 'keep-all' }}>
+              {(f.sub_sets_z || [])[0] || '여기에 세트 멘트 자막이 뜹니다.'}
+            </span>
+          </div>
+          {ch && <img src={ch.image} alt="" style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 세트마다 멘트가 나가는 자리와 길이 — 화면에 그대로 적어 준다.
 const SET_WHEN = (i) => (i === 0
   ? { where: '시작 전 · 멈춰 서서', len: '12~15초', what: '핵심 세 가지 + 아프면 멈추라는 말' }
@@ -74,6 +116,7 @@ const SET_WHEN = (i) => (i === 0
 // Z·M을 나란히 두면 안내가 두 번 적히고 칸이 좁아져, 위 알약으로 갈아 끼운다.
 function VoiceBox({ f, set }) {
   const [t, setT] = useState('z');
+  const subAt = Number(f.sub_y) > 0 ? Number(f.sub_y) : 78;
   const clips = f[`voice_sets_${t}`] || [];
   const subs = f[`sub_sets_${t}`] || [];
   const rows = Math.min(5, Math.max(3, clips.length, subs.length));
@@ -101,18 +144,23 @@ function VoiceBox({ f, set }) {
       {/* 자막 자리 — 말투를 가리지 않으니 위에 한 번만 */}
       <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
         <span style={label}>자막 자리 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 화면 위아래로만</span></span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>위</span>
-          <input type="range" min={5} max={95} step={1} style={{ flex: 1 }}
-            value={Number(f.sub_y) > 0 ? Number(f.sub_y) : 78}
-            onChange={(e) => set('sub_y')(Number(e.target.value))} />
-          <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>아래</span>
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: INK, width: 36, textAlign: 'right',
-            fontVariantNumeric: 'tabular-nums' }}>{Number(f.sub_y) > 0 ? Number(f.sub_y) : 78}</span>
-        </div>
-        <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginTop: 5, lineHeight: 1.6 }}>
-          동작에 따라 몸이 화면 아래를 채우기도 합니다. 자막이 가리지 않게 옮겨 주세요.
-          자막 옆에는 손님의 누끼 캐릭터가 함께 서서 말하듯 보입니다.
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>위</span>
+              <input type="range" min={5} max={95} step={1} style={{ flex: 1 }}
+                value={subAt} onChange={(e) => set('sub_y')(Number(e.target.value))} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>아래</span>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: INK, width: 36, textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums' }}>{subAt}</span>
+            </div>
+            <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginTop: 6, lineHeight: 1.6 }}>
+              동작에 따라 몸이 화면 아래를 채우기도 합니다. 자막이 가리지 않게 옮겨 주세요.
+              자막 옆에는 손님의 누끼 캐릭터가 함께 서서 말하듯 보입니다.
+              <br />오른쪽 그림은 <b>손님 화면 그대로</b>입니다. 막대를 움직이면 같이 따라 옵니다.
+            </div>
+          </div>
+          <SubSpot f={f} at={subAt} />
         </div>
       </div>
 
