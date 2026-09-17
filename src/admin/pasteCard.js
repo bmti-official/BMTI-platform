@@ -74,13 +74,17 @@ export function parseCard(text) {
       // C묶음 — 음성으로 만들 글이 곧 자막이다
       // 오프닝은 이제 공통 음성의 캐릭터 인사가 맡는다. 원고에 있어도 담지 않는다.
       if (t.name.startsWith('오프닝')) continue;
+      // 자막 자리는 0번이 '시작 전', 그 뒤가 1세트·2세트… 다.
       // 표지가 '1세트 · Z'이면 띄어쓰기만 지워져 '1세트·Z'로 온다 — 가운뎃점을 넘겨 읽는다
+      const pre = t.name.match(/^시작전[^ZM]*([ZM])?$/i);
       const set = t.name.match(/^([1-5])세트[^ZM]*([ZM])?$/i);
-      if (set) {
-        const key = (set[2] || '').toUpperCase() === 'M' ? 'sub_sets_m' : 'sub_sets_z';
+      if (pre || set) {
+        const mark = (pre ? pre[1] : set[2]) || '';
+        const at = pre ? 0 : Number(set[1]);
+        const key = mark.toUpperCase() === 'M' ? 'sub_sets_m' : 'sub_sets_z';
         const arr = out[key] ? [...out[key]] : [];
-        while (arr.length < Number(set[1])) arr.push('');
-        arr[Number(set[1]) - 1] = t.value;
+        while (arr.length <= at) arr.push('');
+        arr[at] = t.value;
         put(key, arr);
         continue;
       }

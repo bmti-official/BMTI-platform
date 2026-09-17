@@ -113,7 +113,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const restTotal = twoPhase ? restSec * (sets - 1) * 2 + sideRest : restSec * Math.max(0, sets - 1);
   const totalSec = perSet > 0 ? perSet * rounds + restTotal + Math.round(mentSec) * rounds : 0;
 
-  const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setCueDone(false); setPaused(false); };
+  const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); };
 
   // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
   const togglePause = () => {
@@ -163,6 +163,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const [paused, setPaused] = useState(false);
   // 세트 멘트가 흐르는 동안에는 숫자를 세지 않는다. 멘트를 다 들은 세트를 적어 둔다.
   const [mentDone, setMentDone] = useState('');
+  const [introDone, setIntroDone] = useState(false);   // '시작 전 설명'을 들었는가 — 카드마다 한 번
   // 방향 알림은 따라하기를 시작할 때 딱 한 번만.
   // 세트마다 '오른쪽입니다'를 되풀이하면 잔소리가 된다.
   // 반대쪽으로 넘어갈 땐 자리 바꾸기 멘트가 방향을 알려 주고,
@@ -188,25 +189,28 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const [said, setSaid] = useState({ at: 0, len: 0 });
   const myCode = axisOf(bmtiCode);
   const subSets = (tone === 'm' ? card.sub_sets_m : card.sub_sets_z) || [];
-  // 올리지 않은 세트는 바로 앞 세트의 것을 이어서 쓴다.
-  const back = (list, i) => { for (let k = Math.min(i, list.length - 1); k >= 0; k -= 1) if (list[k]) return list[k]; return ''; };
-  const mentClip = back(setClips, done);
-  const mentSub = back(subSets, done);
+  // 첫 자리는 '시작 전 설명', 그 뒤가 1세트·2세트… 한마디다.
+  const introClip = setClips[0] || '';
+  const introSub = subSets[0] || '';
+  // 올리지 않은 세트는 바로 앞 세트의 것을 이어서 쓴다. 시작 전 설명까지 내려가지는 않는다.
+  const back = (list, i) => { for (let k = Math.min(i, list.length - 1); k >= 1; k -= 1) if (list[k]) return list[k]; return ''; };
+  const mentClip = back(setClips, done + 1);
+  const mentSub = back(subSets, done + 1);
   // 지금 어느 쪽을 하는가 — '좌우 번갈아'는 한 번마다 바뀌니 알리지 않는다.
   const nowSide = !card.has_side || side === 'alt' ? null : (twoPhase ? (secondSide ? 2 : 1) : (side === 'left' ? 2 : 1));
   const cueUrl = nowSide ? commonAt('side', nowSide) : '';
-  // 멘트가 나가는 자리 — 세트마다 다르다.
-  //  1세트는 시작 전에 멈춰 서서 길게(핵심 세 가지 + 화살표 설명 영상),
-  //  2세트부터는 쉬는 시간 멘트와 붙어 버리니 세트 한가운데에서 짧게 한마디.
+  // 멘트가 나가는 자리는 둘이다.
+  //  ① 시작 전 설명 — 첫 세트를 시작하기 전에 멈춰 서서 길게. 화살표 설명 영상이 함께 돈다.
+  //  ② 세트 한마디 — 세트마다 한가운데에서 짧게. 쉬는 시간 멘트와 붙지 않게 미뤄 둔 자리다.
   const firstSet = done === 0 && !secondSide;
   const midRep = Math.max(1, Math.round(reps / 2));
-  const mentDue = firstSet || rep + 1 >= midRep;
-  const mentOn = stage === 'move' && guide && rest === 0 && !allDone
-    && !!(mentClip || mentSub) && mentDone !== setKey && mentDue;
+  const talk = stage === 'move' && guide && rest === 0 && !allDone;
+  const introOn = talk && firstSet && !introDone && !!(introClip || introSub);
+  const mentOn = talk && !introOn && rep + 1 >= midRep && !!(mentClip || mentSub) && mentDone !== setKey;
   // 방향은 설명이 다 끝난 뒤, 몸을 움직이기 바로 전에 한 마디로 알린다.
   // 설명 영상이 도는 동안 '오른쪽'이 먼저 튀어나오면 설명이 묻힌다.
-  const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone && !mentOn;
-  const hasVoice = !!(helloUrl || mentClip || Object.keys(common).length);
+  const cueOn = stage === 'move' && rest === 0 && !allDone && !!cueUrl && !cueDone && !introOn;
+  const hasVoice = !!(helloUrl || introClip || mentClip || Object.keys(common).length);
   // 오프닝은 한 번만 — 다시 볼 땐 곧장 동작으로 간다.
   const [heardOpening, setHeardOpening] = useState(false);
   // 지금 흐를 멘트가 무엇인지 — 끝났을 때 무엇을 표시해 둘지 알아야 해서 갈래도 함께 들고 있는다.
@@ -214,13 +218,15 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     : stage === 'open' ? 'hello'
       : rest > 0 ? 'rest'
         : allDone ? 'finish'
-          : cueOn ? 'cue'
-            : mentOn ? 'ment' : '';
+          : introOn ? 'intro'
+            : cueOn ? 'cue'
+              : mentOn ? 'ment' : '';
   const nowVoice = voiceRole === 'hello' ? helloUrl
     : voiceRole === 'rest' ? ((switching && commonAt('switch', 0)) || commonAt('rest', restLen))
       : voiceRole === 'finish' ? commonAt('finish', 0)
-        : voiceRole === 'cue' ? cueUrl
-          : voiceRole === 'ment' ? mentClip : '';
+        : voiceRole === 'intro' ? introClip
+          : voiceRole === 'cue' ? cueUrl
+            : voiceRole === 'ment' ? mentClip : '';
 
   // 음성 파일이 아직 없어도 자막만으로 오프닝을 보여 준다.
   // 소리가 없으면 읽을 만큼만 세워 두었다가 저절로 동작으로 넘어간다.
@@ -265,11 +271,18 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
   // 음성 없이 자막만 올린 세트 멘트 — 읽을 참을 주고 스스로 끝낸다.
   useEffect(() => {
-    if (!mentOn || mentClip) return undefined;
-    const ms = Math.min(16000, 2200 + subLines(mentSub).length * 110);
-    const t = setTimeout(() => setMentDone(setKey), ms);
-    return () => clearTimeout(t);
-  }, [mentOn, mentClip, mentSub, setKey]);
+    if (introOn && !introClip) {
+      const ms = Math.min(20000, 2200 + subLines(introSub).length * 110);
+      const t = setTimeout(() => setIntroDone(true), ms);
+      return () => clearTimeout(t);
+    }
+    if (mentOn && !mentClip) {
+      const ms = Math.min(16000, 2200 + subLines(mentSub).length * 110);
+      const t = setTimeout(() => setMentDone(setKey), ms);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [introOn, introClip, introSub, mentOn, mentClip, mentSub, setKey]);
 
   // 소리가 없는 오프닝 — 글자 수에 맞춰 읽을 참을 주고 넘어간다.
   // 소리가 있어도 브라우저가 막아 버리면 영영 멈춰 있으므로, 넉넉한 끝 시각을 함께 둔다.
@@ -305,7 +318,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     const tag = `${setKey}-${rep}`;
     // 멘트가 덮고 지나간 회차는 표시해 두고 건너뛴다.
     // 멘트가 끝난 자리에서 뒤늦게 세면 다음 숫자와 바짝 붙어 두 번 세는 것처럼 들린다.
-    if (mentOn || cueOn) { hush.current = tag; return; }
+    if (introOn || mentOn || cueOn) { hush.current = tag; return; }
     if (hush.current === tag) return;
     const url = commonAt('count', rep + 1);
     const a = countRef.current;
@@ -313,13 +326,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     a.volume = vol;
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rep, done, secondSide, stage, rest, mentOn, cueOn, voiceOn]);
+  }, [rep, done, secondSide, stage, rest, introOn, mentOn, cueOn, voiceOn]);
 
   // 멘트가 흐르는 동안에는 첫 자세로 멈춰 선다.
   // 영상이 계속 돌면 회차가 지나가 버려, 멘트가 끝난 뒤 숫자가 '넷'부터 튀어나온다.
   // 멈춰 두면 멘트가 끝나고 늘 '하나'부터 셀 수 있다.
   // 멈춰 서서 듣는 건 1세트뿐이다. 2세트부터는 하면서 듣는다.
-  const holding = stage === 'move' && rest === 0 && !allDone && !paused && ((mentOn && firstSet) || cueOn);
+  const holding = stage === 'move' && rest === 0 && !allDone && !paused && (introOn || cueOn);
   useEffect(() => {
     const v = clipRef.current;
     if (!v || stage !== 'move' || rest > 0 || allDone || paused) return;
@@ -372,7 +385,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 지금 흐르는 소리에 딸린 자막
   const sayNow = subLines(voiceRole === 'hello' ? (HELLO_LINE[myCode] || '')
     : voiceRole === 'finish' ? finishLine(tone)
-      : voiceRole === 'ment' ? mentSub : '');
+      : voiceRole === 'intro' ? introSub
+        : voiceRole === 'ment' ? mentSub : '');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
 
   // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
@@ -507,7 +521,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
           {/* 세트 전 설명 영상 — 멘트가 흐르는 동안 동작 영상 위에서 되돈다.
               화살표로 어디를 어떻게 움직이는지 짚어 주는 자리다. */}
-          {holding && mentOn && card.intro_url && (
+          {holding && introOn && card.intro_url && (
             <video src={card.intro_url} muted playsInline autoPlay loop preload="auto"
               style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%',
                 objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`, background: '#F3F1EC',
@@ -556,12 +570,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
           {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
           {subOn && sayNow && rest === 0 && (
-            <div style={{ position: 'absolute', left: 10, right: 10, top: `${subY(card)}%`,
-              transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none',
-              display: 'flex', alignItems: 'flex-end', gap: 7 }}>
+            <div style={{ position: 'absolute', left: 10, right: 10, bottom: `${100 - subY(card)}%`,
+              zIndex: 2, pointerEvents: 'none', display: 'flex', alignItems: 'flex-end', gap: 7 }}>
               <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 12,
                 padding: '9px 11px', boxShadow: '0 2px 10px rgba(23,21,15,0.12)' }}>
-                {voiceRole === 'ment' && firstSet && (
+                {voiceRole === 'intro' && (
                   <span style={{ display: 'inline-block', marginBottom: 4, fontSize: 10, fontWeight: 900,
                     color: NAME_INK, background: NAME_BG, borderRadius: 999, padding: '2px 8px' }}>
                     시작 전 설명
@@ -639,6 +652,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             onEnded={() => {
               setSaid({ at: 0, len: 0 });
               if (voiceRole === 'hello') setStage('move');
+              else if (voiceRole === 'intro') setIntroDone(true);
               else if (voiceRole === 'cue') setCueDone(true);
               else if (voiceRole === 'ment') setMentDone(setKey);
             }} style={{ display: 'none' }} />

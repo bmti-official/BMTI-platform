@@ -89,7 +89,7 @@ function SubSpot({ f, at }) {
         </div>
 
         {/* 자막 — 막대가 가리키는 자리 */}
-        <div style={{ position: 'absolute', left: 6, right: 6, top: `${at}%`, transform: 'translateY(-50%)',
+        <div style={{ position: 'absolute', left: 6, right: 6, bottom: `${100 - at}%`,
           display: 'flex', alignItems: 'flex-end', gap: 4 }}>
           <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 7, padding: '5px 6px',
             boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
@@ -107,19 +107,20 @@ function SubSpot({ f, at }) {
   );
 }
 
-// 세트마다 멘트가 나가는 자리와 길이 — 화면에 그대로 적어 준다.
+// 멘트가 나가는 자리와 길이 — 화면에 그대로 적어 준다.
+// 첫 칸은 '시작 전 설명', 그다음이 1세트·2세트… 한마디다.
 const SET_WHEN = (i) => (i === 0
-  ? { where: '시작 전 · 멈춰 서서', len: '12~15초', what: '핵심 세 가지 + 아프면 멈추라는 말' }
-  : { where: '한가운데 · 하면서', len: '3~5초', what: '놓치기 쉬운 것 하나만 되짚기' });
+  ? { name: '시작 전', where: '멈춰 서서 · 설명 영상과 함께', len: '12~15초', what: '준비 자세 + 핵심 세 가지 + 아프면 멈추라는 말' }
+  : { name: `${i}세트`, where: '한가운데 · 하면서', len: '3~5초', what: '놓치기 쉬운 것 하나만 되짚기' });
 
 // 소리와 자막, 설명 영상을 한 상자에 모았다.
 // Z·M을 나란히 두면 안내가 두 번 적히고 칸이 좁아져, 위 알약으로 갈아 끼운다.
 function VoiceBox({ f, set }) {
   const [t, setT] = useState('z');
-  const subAt = Number(f.sub_y) > 0 ? Number(f.sub_y) : 78;
+  const subAt = Number(f.sub_y) > 0 ? Number(f.sub_y) : 92;
   const clips = f[`voice_sets_${t}`] || [];
   const subs = f[`sub_sets_${t}`] || [];
-  const rows = Math.min(5, Math.max(3, clips.length, subs.length));
+  const rows = Math.min(6, Math.max(4, clips.length, subs.length));
 
   const putAt = (key, i, v) => {
     const next = [...(f[key] || [])];
@@ -148,14 +149,15 @@ function VoiceBox({ f, set }) {
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>위</span>
-              <input type="range" min={5} max={95} step={1} style={{ flex: 1 }}
+    <input type="range" min={12} max={98} step={1} style={{ flex: 1 }}
                 value={subAt} onChange={(e) => set('sub_y')(Number(e.target.value))} />
               <span style={{ fontSize: 11, fontWeight: 800, color: SUB, flexShrink: 0 }}>아래</span>
               <span style={{ fontSize: 11.5, fontWeight: 800, color: INK, width: 36, textAlign: 'right',
                 fontVariantNumeric: 'tabular-nums' }}>{subAt}</span>
             </div>
             <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginTop: 6, lineHeight: 1.6 }}>
-              동작에 따라 몸이 화면 아래를 채우기도 합니다. 자막이 가리지 않게 옮겨 주세요.
+              <b>자막의 아래 선</b>이 놓일 자리입니다. 글이 짧아져도 아래 선은 그대로 있습니다.
+              동작에 따라 몸이 화면 아래를 채우기도 하니, 가리지 않게 옮겨 주세요.
               자막 옆에는 손님의 누끼 캐릭터가 함께 서서 말하듯 보입니다.
               <br />오른쪽 그림은 <b>손님 화면 그대로</b>입니다. 막대를 움직이면 같이 따라 옵니다.
             </div>
@@ -190,16 +192,17 @@ function VoiceBox({ f, set }) {
           세트 멘트 <span style={{ fontWeight: 700, color: SUB }}>— 세트마다 나가는 자리가 다릅니다</span>
         </div>
         <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 10, lineHeight: 1.6 }}>
+          <b>시작 전</b>은 첫 세트를 시작하기 전 한 번, <b>1·2·3세트</b>는 그 세트 한가운데에서 한 번 흐릅니다.
           올리지 않은 세트는 <b>바로 앞 세트의 것을 이어서</b> 씁니다.
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[...Array(rows)].map((_, i) => {
             const w = SET_WHEN(i);
             return (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '84px minmax(200px, 1fr) minmax(200px, 1.2fr)',
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '96px minmax(200px, 1fr) minmax(200px, 1.2fr)',
                 gap: 10, alignItems: 'start', background: i === 0 ? '#FFFBF0' : BG, borderRadius: 9, padding: 9 }}>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{i + 1}세트</div>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{w.name}</div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: SUB, lineHeight: 1.45, marginTop: 3 }}>
                     {w.where}<br />{w.len}
                   </div>
@@ -207,12 +210,12 @@ function VoiceBox({ f, set }) {
                 <AudioSlot value={clips[i] || ''} onChange={(v) => putAt(`voice_sets_${t}`, i, v)} />
                 <textarea style={{ ...area, minHeight: 66, fontSize: 12.5 }} value={subs[i] || ''}
                   onChange={(e) => putAt(`sub_sets_${t}`, i, e.target.value)}
-                  placeholder={`${i + 1}세트 자막 — ${w.what}`} />
+                  placeholder={`${w.name} 자막 — ${w.what}`} />
               </div>
             );
           })}
         </div>
-        {rows < 5 && (
+        {rows < 6 && (
           <button type="button" onClick={() => putAt(`sub_sets_${t}`, rows, ' ')}
             style={{ ...smallBtn, marginTop: 9 }}>＋ 세트 더하기</button>
         )}

@@ -78,8 +78,9 @@ export function subLines(text) {
     .replace(/\n{2,}/g, '\n');
 }
 
-/** 자막이 화면 위아래 어디쯤에 놓일지. 0이 맨 위, 100이 맨 아래. */
+/** 자막의 **밑변**이 화면 위아래 어디쯤에 놓일지. 0이 맨 위, 100이 맨 아래.
+ *  가운데가 아니라 밑변을 잡아 두어야, 글이 짧아져도 자막이 위로 올라가지 않는다. */
 export function subY(card = {}) {
   const v = Number(card.sub_y);
-  return Number.isFinite(v) && v > 0 ? Math.min(95, Math.max(5, v)) : 78;
+  return Number.isFinite(v) && v > 0 ? Math.min(98, Math.max(12, v)) : 92;
 }
