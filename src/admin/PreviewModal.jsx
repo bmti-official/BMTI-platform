@@ -115,11 +115,20 @@ function navFor(active) {
 }
 
 // 손님 화면 껍데기 — 위 두 버튼과 아래 알약
-function AppChrome({ tone, active }) {
+function AppChrome({ tone, active: from }) {
   const code = tone === 'm' ? 'OCDM' : 'ACDZ';
   const ch = CHARACTERS.find((c) => c.id === code);
   const off = { color: '#9CA3AF' };
+  // 관리자에서 층을 오가며 모양을 볼 수 있게, 누르면 자리만 옮겨 준다.
+  // 내용은 지금 만들고 있는 것 하나뿐이라 바뀌지 않는다.
+  const [active, setActive] = useState(from);
   const { rows, at } = navFor(active);
+  const go = (key) => {
+    if (key === 'back') { setActive('root'); return; }
+    if (key === 'diary') { setActive('today'); return; }
+    if (key === 'self') { setActive('browse'); return; }
+    setActive(key);
+  };
   return (
     <>
       {/* 왼쪽 위 홈 — 동그란 버튼 안에 집과 이름을 함께 담는다 */}
@@ -153,26 +162,28 @@ function AppChrome({ tone, active }) {
       </div>
 
       {/* 아래 알약 */}
-      <div style={{ position: 'absolute', left: 8, right: 8, bottom: 12, zIndex: 30, pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', left: 8, right: 8, bottom: 12, zIndex: 30 }}>
         <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 999,
           border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '4px 6px' }}>
           {rows.map((t) => (t.key === 'char' ? (
             <span key="char" style={{ width: 56, flexShrink: 0 }} />
           ) : (
-            <span key={t.key} style={{ flex: 1, minWidth: 0,
+            <button key={t.key} type="button" onClick={() => go(t.key)}
+              style={{ flex: 1, minWidth: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
               padding: '6px 0', borderRadius: 16, background: active === t.key ? '#F3F1EC' : 'transparent' }}>
               <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 ...(active === t.key ? { color: '#111' } : { ...off, opacity: t.key === 'back' ? 0.8 : 0.45, filter: t.key === 'back' ? 'none' : 'grayscale(1)' }) }}>{t.icon}</span>
               <span style={{ fontSize: 9.5, fontWeight: 800, whiteSpace: 'nowrap', color: active === t.key ? '#000' : '#9CA3AF' }}>{t.label}</span>
-            </span>
+            </button>
           )))}
         </div>
       </div>
 
       {/* 가운데 누끼 캐릭터 — 알약 위로 떠 있다 */}
-      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 20, zIndex: 31, pointerEvents: 'none' }}>
-        <span style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 20, zIndex: 31 }}>
+        <span onClick={() => setActive('root')} role="presentation"
+          style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))' }}>
           {ch ? <img src={ch.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: 30 }}>⭐️</span>}
         </span>
@@ -225,7 +236,7 @@ export default function PreviewModal({ title, onClose, children, navActive = 'cu
             <div style={{ flex: 1, overflowY: 'auto', padding: '64px 16px 92px', WebkitOverflowScrolling: 'touch' }}>
               {children(tone)}
             </div>
-            <AppChrome tone={tone} active={navActive} />
+            <AppChrome key={navActive} tone={tone} active={navActive} />
           </div>
         </div>
 

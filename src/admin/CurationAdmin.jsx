@@ -5,6 +5,7 @@ import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
+import BrowseView from '../features/curation/BrowseView';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { SearchBox, MoveButtons } from './listTools';
 import { useSearch } from './useSearch';
@@ -426,6 +427,8 @@ export default function CurationAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null); // null=안 열림, {}=새로, {…}=수정
   const [preview, setPreview] = useState(null);
+  const [allCards, setAllCards] = useState([]);   // 둘러보기 격자에 함께 깔 바로카드
+  const [screen, setScreen] = useState(false);    // 손님이 보는 둘러보기 화면 통째로
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['thumb_text', 'title_z', 'title_m']);
   const [busy, setBusy] = useState(false);
@@ -472,6 +475,7 @@ export default function CurationAdmin() {
       setLoading(false);
       if (a.error) { setErr(a.error.message); return; }
       setErr(''); setRows(a.data || []); setTotal(a.count || 0);
+      setAllCards(b.data || []);
       // 플리마다 담긴 동작을 이어 붙여 둔다 — 추천 표지와 총 시간에 쓴다
       const byId = Object.fromEntries((b.data || []).map((c) => [c.id, c]));
       setAllPlis((rt.data || []).map((r) => ({
@@ -515,7 +519,8 @@ export default function CurationAdmin() {
           </div>
         )}
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목·문구로 찾기" />
-        <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 큐레이션</button>
+        <button onClick={() => setScreen(true)} style={{ ...btn(false), marginLeft: 'auto' }}>📱 둘러보기 화면</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={btn(true)}>+ 새 큐레이션</button>
       </div>
 
       {err && (
@@ -530,6 +535,17 @@ export default function CurationAdmin() {
       {editing && (
         <Editor row={editing} allPlis={allPlis} onCancel={() => setEditing(null)} onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
           onPreview={(draft) => setPreview(draft)} onDelete={(id) => remove(id, () => setEditing(null))} />
+      )}
+
+      {/* 손님이 보는 둘러보기 격자 — 읽을거리와 바로카드가 한 자리에 */}
+      {screen && (
+        <PreviewModal navActive="browse"
+          title={`둘러보기 화면 — 읽을거리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`}
+          onClose={() => setScreen(false)}>
+          {(tone) => (
+            <BrowseView reads={rows} cards={allCards} tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} />
+          )}
+        </PreviewModal>
       )}
 
       {preview && (
