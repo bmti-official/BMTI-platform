@@ -110,9 +110,11 @@ const SELF_KEYS = ['browse', 'baro', 'box'];
 // 위쪽 제목 — 하단 줄이 통째로 바뀌니 여기가 길잡이다.
 // 아이콘을 앞에 세워 어느 방인지 한눈에 들어오게 한다.
 const TITLE = {
-  diary: { text: '다이어리 타임', icon: <Mallang v={4} size={19} noBlink /> },
-  self: { text: '자기점검 타임', icon: <BoltMark size={18} /> },
+  diary: { text: '다이어리', icon: <Mallang v={4} size={19} noBlink /> },
+  self: { text: '자기점검', icon: <BoltMark size={18} /> },
 };
+// 제목만 둥근 글씨체로 — 나머지 화면과 결을 달리해 '여기가 방 이름'임을 알린다.
+const TITLE_FONT = "'Jua','Pretendard',-apple-system,sans-serif";
 function navFor(active) {
   if (DIARY_KEYS.includes(active)) return { rows: DIARY_NAV, at: 'diary' };
   if (SELF_KEYS.includes(active)) return { rows: SELF_NAV, at: 'self' };
@@ -148,12 +150,12 @@ function AppChrome({ tone, active: from }) {
 
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
-        <div style={{ position: 'absolute', top: 12, left: 66, zIndex: 29, pointerEvents: 'none',
+        <div style={{ position: 'absolute', top: 12, left: 80, zIndex: 29, pointerEvents: 'none',
           display: 'flex', alignItems: 'center', gap: 6, height: 44 }}>
           <span style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
             {TITLE[at].icon}
           </span>
-          <span style={{ fontSize: 17, fontWeight: 900, color: '#111', letterSpacing: '-0.03em' }}>{TITLE[at].text}</span>
+          <span style={{ fontSize: 19, color: '#111', letterSpacing: '-0.01em', fontFamily: TITLE_FONT }}>{TITLE[at].text}</span>
         </div>
       )}
 

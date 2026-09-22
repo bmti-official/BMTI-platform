@@ -15,8 +15,8 @@ const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 // 격자 위 고르개 — 알약은 아래 네비와 겹쳐 보이니 끝만 둥근 네모로 둔다.
 const TABS = [['all', '전체'], ['read', '읽을거리'], ['card', '바로카드']];
 const pick = (on) => ({
-  flex: 1, minWidth: 0, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer',
-  fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, whiteSpace: 'nowrap',
+  flex: 1, minWidth: 0, padding: '6px 0', borderRadius: 9, border: 'none', cursor: 'pointer',
+  fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap',
   background: on ? YELLOW : '#fff', color: on ? GOLD_INK : SUB,
   boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}`, transition: 'background .15s, color .15s',
 });
@@ -34,26 +34,35 @@ export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCod
     return q.trim() ? byTab.filter((x) => matches(x.item, q, tone)) : byTab;
   }, [all, tab, q, tone]);
 
+  // 찾기 창은 줄을 밀어내지 않고 그 자리를 덮는다 — 격자가 아래로 내려가지 않게.
+  const glass = (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+      <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
+    </svg>
+  );
   const head = (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', gap: 5 }}>
+    <div style={{ position: 'relative', marginBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 4 }}>
         {TABS.map(([k, lb]) => (
           <button key={k} type="button" onClick={() => setTab(k)} style={pick(tab === k)}>{lb}</button>
         ))}
-        <button type="button" onClick={() => { setFinding((v) => !v); if (finding) setQ(''); }}
-          aria-label="찾기" style={{ ...pick(finding || !!q.trim()), flex: '0 0 44px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
-              <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
-            </svg>
-          </span>
+        <button type="button" onClick={() => setFinding(true)} aria-label="찾기"
+          style={{ ...pick(!!q.trim()), flex: '0 0 38px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{glass}</span>
         </button>
       </div>
       {finding && (
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="부위·도구·제목으로 찾기 — 목, 폼롤러, 어깨…"
-          style={{ width: '100%', marginTop: 6, boxSizing: 'border-box', padding: '10px 12px', borderRadius: 11,
-            border: 'none', boxShadow: `inset 0 0 0 1px ${LINE}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: INK }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 6,
+          background: '#fff', borderRadius: 9, boxShadow: `inset 0 0 0 1px ${LINE}`, padding: '0 9px' }}>
+          <span style={{ color: SUB, display: 'flex', flexShrink: 0 }}>{glass}</span>
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="목, 폼롤러, 어깨…"
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent',
+              fontSize: 12.5, fontFamily: 'inherit', color: INK }} />
+          <button type="button" onClick={() => { setFinding(false); setQ(''); }} aria-label="찾기 닫기"
+            style={{ flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 13, fontWeight: 800, color: SUB, padding: '0 2px' }}>✕</button>
+        </div>
       )}
     </div>
   );

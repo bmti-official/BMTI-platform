@@ -17,6 +17,7 @@ import { withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } f
 import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
 import BaroPliView from '../features/curation/BaroPliView';
+import BoxView from '../features/curation/BoxView';
 import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curation/format';
 import { RC_SIDES } from '../features/curation/routineSetup';
 import { cardSetup, REST_LIST } from '../features/curation/cardDefaults';
@@ -322,6 +323,7 @@ export default function RoutineAdmin() {
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
   const [screen, setScreen] = useState(false);   // 손님이 보는 바로플리 화면 통째로
+  const [box, setBox] = useState(false);         // 손님이 보는 내 보관함 화면
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['title_z', 'title_m']);
   const [busy, setBusy] = useState(false);
@@ -404,6 +406,7 @@ export default function RoutineAdmin() {
         )}
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목으로 찾기" />
         <button onClick={() => setScreen(true)} style={{ ...btn(false), marginLeft: 'auto' }}>📱 바로플리 화면</button>
+        <button onClick={() => setBox(true)} style={btn(false)}>📦 내 보관함 화면</button>
         <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={btn(true)}>+ 새 루틴</button>
       </div>
 
@@ -426,6 +429,16 @@ export default function RoutineAdmin() {
         <PreviewModal navActive="baro" title={`바로플리 화면 — 플리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`} onClose={() => setScreen(false)}>
           {(tone) => (
             <BaroPliView tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} routines={rows} cards={allCards} />
+          )}
+        </PreviewModal>
+      )}
+
+      {/* 내 보관함 — 담아 둔 것이 어떻게 보이는지. 여기선 모든 플리·카드를 담은 셈 친다 */}
+      {box && (
+        <PreviewModal navActive="box" title="내 보관함 화면 — 담아 둔 것이 이렇게 보입니다" onClose={() => setBox(false)}>
+          {(tone) => (
+            <BoxView nickname="회원" bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} tone={tone}
+              plis={rows.slice(0, 3)} cards={allCards.slice(0, 9)} reads={[]} />
           )}
         </PreviewModal>
       )}
