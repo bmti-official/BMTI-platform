@@ -684,7 +684,7 @@ export default function QuickCardAdmin() {
       )}
 
       {preview && (
-        <PreviewModal navActive="baro" title="바로카드 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="browse" title="바로카드 미리보기" onClose={() => setPreview(null)}>
           {(tone) => <QuickCardView card={preview} tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} />}
         </PreviewModal>
       )}

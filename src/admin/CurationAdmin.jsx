@@ -533,7 +533,7 @@ export default function CurationAdmin() {
       )}
 
       {preview && (
-        <PreviewModal navActive="curation" title="큐레이션 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="browse" title="큐레이션 미리보기" onClose={() => setPreview(null)}>
           {(tone) => {
             const picked = (preview.routine_ids || []).map((id) => allPlis.find((r) => r.id === id)).filter(Boolean);
             const charCodes = (tone === 'm' ? preview.chars_m : preview.chars_z) || [];

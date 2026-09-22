@@ -27,38 +27,99 @@ const PersonMark = () => (
   </svg>
 );
 // 하단 알약 네 칸의 그림
-const BookMark = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-    <path d="M12 6.2C10.3 5 7.4 4.5 4.3 5v12.6C7.4 17.1 10.3 17.6 12 18.8" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
-    <path d="M12 6.2C13.7 5 16.6 4.5 19.7 5v12.6C16.6 17.1 13.7 17.6 12 18.8" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
-    <path d="M12 6.2V18.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+// 자기점검 — 루트에서 '움직이는 쪽'을 가리킨다
+const CheckMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 13l4 4L19 7" />
   </svg>
 );
-const BoltMark = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-    <path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" />
+// 둘러보기 — 돋보기
+const GlassMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
   </svg>
 );
-// 자기플리 — 내가 담은 것이라 사람 모양으로 둔다 (위 마이페이지 것보다 크게)
-const MineMark = () => (
+// 바로플리 — 재생 버튼
+const PlayMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+    <path d="M8 5.5l11 6.5-11 6.5z" fill="currentColor" />
+  </svg>
+);
+// 내 보관함 — 담아 둔 상자
+const BoxMark = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="3.6" />
-    <path d="M4.8 20.2c0-3.6 3.2-6 7.2-6s7.2 2.4 7.2 6" />
+    <path d="M3 8.5h18v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5z" />
+    <path d="M2.5 4.5h19v4h-19zM9.5 13h5" />
   </svg>
 );
-const NAV = [
+// 오늘 쓰기 — 연필
+const PenMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 20l4.5-1.2L20 7.3a2 2 0 0 0 0-2.8l-.5-.5a2 2 0 0 0-2.8 0L5.2 15.5z" />
+    <path d="M15.5 6l2.5 2.5" />
+  </svg>
+);
+// 기록·발견 — 막대 그래프
+const ChartMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+    <path d="M5 20V12M12 20V5M19 20v-6" />
+  </svg>
+);
+// 각도기록 — 각도기
+const AngleMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19h16" />
+    <path d="M4 19L15 6" />
+    <path d="M10.5 19a7 7 0 0 0-1.8-4.6" />
+  </svg>
+);
+// 이전 — 루트로 나가기
+const BackMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14.5 5.5L8 12l6.5 6.5" />
+  </svg>
+);
+
+// ── 하단 네비는 두 층이다 ────────────────────────────────────
+// 루트에서 '다이어리' 또는 '자기점검'으로 들어가면 아래 줄이 통째로 바뀐다.
+// 누끼 캐릭터는 어느 층에서도 가운데 그대로 있는다.
+const ROOT_NAV = [
   { key: 'diary', label: '다이어리', icon: <Mallang v={4} size={22} noBlink /> },
-  { key: 'curation', label: '큐레이션', icon: <BookMark /> },
   { key: 'char' },
-  { key: 'baro', label: '바로플리', icon: <BoltMark /> },
-  { key: 'mine', label: '자기플리', icon: <MineMark /> },
+  { key: 'self', label: '자기점검', icon: <CheckMark /> },
 ];
+const DIARY_NAV = [
+  { key: 'back', label: '이전', icon: <BackMark /> },
+  { key: 'today', label: '오늘 쓰기', icon: <PenMark /> },
+  { key: 'char' },
+  { key: 'discover', label: '기록·발견', icon: <ChartMark /> },
+  { key: 'angle', label: '각도기록', icon: <AngleMark /> },
+];
+const SELF_NAV = [
+  { key: 'back', label: '이전', icon: <BackMark /> },
+  { key: 'browse', label: '둘러보기', icon: <GlassMark /> },
+  { key: 'char' },
+  { key: 'baro', label: '바로플리', icon: <PlayMark /> },
+  { key: 'box', label: '내 보관함', icon: <BoxMark /> },
+];
+
+// 어느 칸을 보고 있느냐로 어느 층을 그릴지 정한다.
+const DIARY_KEYS = ['today', 'discover', 'angle'];
+const SELF_KEYS = ['browse', 'baro', 'box'];
+const TITLE = { diary: '다이어리', self: '자기점검' };
+function navFor(active) {
+  if (DIARY_KEYS.includes(active)) return { rows: DIARY_NAV, at: 'diary' };
+  if (SELF_KEYS.includes(active)) return { rows: SELF_NAV, at: 'self' };
+  return { rows: ROOT_NAV, at: '' };
+}
 
 // 손님 화면 껍데기 — 위 두 버튼과 아래 알약
 function AppChrome({ tone, active }) {
   const code = tone === 'm' ? 'OCDM' : 'ACDZ';
   const ch = CHARACTERS.find((c) => c.id === code);
   const off = { color: '#9CA3AF' };
+  const { rows, at } = navFor(active);
   return (
     <>
       {/* 왼쪽 위 홈 — 동그란 버튼 안에 집과 이름을 함께 담는다 */}
@@ -70,6 +131,14 @@ function AppChrome({ tone, active }) {
           <span style={{ fontSize: 7.5, fontWeight: 900, color: '#6B7280', letterSpacing: '0.02em', lineHeight: 1, marginTop: -1 }}>BMTI</span>
         </span>
       </div>
+
+      {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
+      {at && (
+        <div style={{ position: 'absolute', top: 12, left: 0, right: 0, zIndex: 29, pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', height: 44 }}>
+          <span style={{ fontSize: 15, fontWeight: 900, color: '#111', letterSpacing: '-0.02em' }}>{TITLE[at]}</span>
+        </div>
+      )}
 
       {/* 오른쪽 위 마이페이지 */}
       <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 30, pointerEvents: 'none' }}>
@@ -87,13 +156,14 @@ function AppChrome({ tone, active }) {
       <div style={{ position: 'absolute', left: 8, right: 8, bottom: 12, zIndex: 30, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 999,
           border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '4px 6px' }}>
-          {NAV.map((t) => (t.key === 'char' ? (
+          {rows.map((t) => (t.key === 'char' ? (
             <span key="char" style={{ width: 56, flexShrink: 0 }} />
           ) : (
-            <span key={t.key} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            <span key={t.key} style={{ flex: 1, minWidth: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
               padding: '6px 0', borderRadius: 16, background: active === t.key ? '#F3F1EC' : 'transparent' }}>
               <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                ...(active === t.key ? { color: '#111' } : { ...off, opacity: 0.45, filter: 'grayscale(1)' }) }}>{t.icon}</span>
+                ...(active === t.key ? { color: '#111' } : { ...off, opacity: t.key === 'back' ? 0.8 : 0.45, filter: t.key === 'back' ? 'none' : 'grayscale(1)' }) }}>{t.icon}</span>
               <span style={{ fontSize: 9.5, fontWeight: 800, whiteSpace: 'nowrap', color: active === t.key ? '#000' : '#9CA3AF' }}>{t.label}</span>
             </span>
           )))}
