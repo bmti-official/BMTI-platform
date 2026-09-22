@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import CardFeed from './CardFeed';
-import RoutinePlayer from './RoutinePlayer';
+import PliFeed from './PliFeed';
 import PickRow from './PickRow';
 import PliGrid from './PliGrid';
 import { mmss } from './format';
@@ -29,7 +29,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
   plis = [], cards = [], reads = [], onOpenRead }) {
   const [tab, setTab] = useState('pli');
   const [openId, setOpenId] = useState(null);
-  const [playing, setPlaying] = useState(null);
+  const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
 
   const myCode = axisOf(bmtiCode);
   const ch = CHARACTERS.find((c) => c.id === myCode);
@@ -59,7 +59,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
       <PickRow tabs={TABS} value={tab} onPick={setTab} />
 
       {tab === 'pli' ? (
-        <PliGrid plis={plis} tone={tone} onOpen={(r) => setPlaying(r)} empty={EMPTY_WORD.pli} />
+        <PliGrid plis={plis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.pli} />
       ) : grid.length === 0 ? <Empty text={EMPTY_WORD[tab]} /> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
           {grid.map((item) => {
@@ -89,9 +89,9 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
       {openId != null && (
         <CardFeed cards={cards} startId={openId} tone={tone} bmtiCode={bmtiCode} onClose={() => setOpenId(null)} />
       )}
-      {playing && (
-        <RoutinePlayer routine={playing} cards={playing.cards || []} tone={tone} bmtiCode={bmtiCode}
-          onClose={() => setPlaying(null)} />
+      {openPli && (
+        <PliFeed plis={plis} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
+          onClose={() => setOpenPli(null)} />
       )}
     </div>
   );

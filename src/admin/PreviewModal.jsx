@@ -153,7 +153,7 @@ function AppChrome({ tone, active: from }) {
 
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
-        <div style={{ position: 'absolute', top: 12, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
+        <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
           height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
             {TITLE[at].icon}

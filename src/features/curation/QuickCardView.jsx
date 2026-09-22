@@ -558,7 +558,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
           {/* 지금 어디쯤인가 — 좌우·세트·횟수를 알약 하나에 모아 둔다 */}
           <div style={{ position: 'absolute', top: full ? 26 : 12, left: '50%', transform: 'translateX(-50%)',
-            zIndex: 5, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 9,
+            zIndex: 4, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 9,
             background: 'rgba(255,255,255,0.94)', borderRadius: 999, padding: '6px 14px',
             boxShadow: '0 2px 8px rgba(23,21,15,0.10)', whiteSpace: 'nowrap',
             fontSize: 14, fontWeight: 900, color: INK, letterSpacing: '-0.01em' }}>
@@ -583,7 +583,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           {/* 전체 화면에서는 위 버튼 줄이 보이지 않으니, 건너뛰기를 오른쪽 위에 둔다 */}
           {full && introOn && (
             <button type="button" onClick={() => setIntroDone(true)}
-              style={{ position: 'absolute', top: 26, right: 12, zIndex: 6, border: 'none',
+              style={{ position: 'absolute', top: 26, right: 12, zIndex: 7, border: 'none',
                 background: NAME_BG, color: NAME_INK, borderRadius: 999, padding: '7px 14px',
                 fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
                 whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
@@ -594,13 +594,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           {/* 전체 화면으로 / 전체 화면에서는 아래에 설정 버튼 하나만 둔다 */}
           {!full ? (
             <button type="button" onClick={() => setFull(true)} aria-label="전체 화면으로"
-              style={{ position: 'absolute', right: 10, top: 46, zIndex: 6, width: 30, height: 30, borderRadius: 9,
+              style={{ position: 'absolute', right: 10, top: 46, zIndex: 7, width: 30, height: 30, borderRadius: 9,
                 border: 'none', background: '#fff', color: INK, fontSize: 13, fontWeight: 900,
                 cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1, boxShadow: `inset 0 0 0 1px ${LINE}` }}>⛶</button>
           ) : (
             <button type="button" onClick={() => setFull(false)}
               style={{ position: 'absolute', left: '50%', bottom: 'max(22px, env(safe-area-inset-bottom))',
-                transform: 'translateX(-50%)', zIndex: 6, border: 'none', background: '#fff',
+                transform: 'translateX(-50%)', zIndex: 7, border: 'none', background: '#fff',
                 color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800,
                 cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
               설정 바꾸기
@@ -610,10 +610,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
           {subOn && sayNow && rest === 0 && (
             <div style={{ position: 'absolute', left: 10, right: 10,
-              // 위로는 알약·건너뛰기 줄까지만, 아래로는 전체 화면의 '설정 바꾸기' 버튼까지만.
-              // 자막이 그 위를 덮으면 지금 몇 세트째인지가 가려진다.
+              // 아래로는 전체 화면의 '설정 바꾸기' 버튼까지만 내려간다.
               bottom: `${Math.min(76, Math.max(full ? 14 : 4, 100 - subY(card)))}%`,
-              zIndex: 2, pointerEvents: 'none', display: 'flex', alignItems: 'flex-end', gap: 7 }}>
+              // 시작 전 설명은 알약보다 위에 둔다 — 처음 듣는 말이 가려지면 안 된다.
+              // 세트 한마디는 짧게 스쳐 가니 알약(몇 세트째인지)이 위에 있는 게 낫다.
+              zIndex: voiceRole === 'intro' ? 5 : 2,
+              pointerEvents: 'none', display: 'flex', alignItems: 'flex-end', gap: 7 }}>
               <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 12,
                 padding: '9px 11px', boxShadow: '0 2px 10px rgba(23,21,15,0.12)' }}>
                 {voiceRole === 'intro' && (

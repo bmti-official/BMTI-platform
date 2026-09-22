@@ -6,7 +6,7 @@
 import { useMemo, useState } from 'react';
 import PliGrid from './PliGrid';
 import PickRow from './PickRow';
-import RoutinePlayer from './RoutinePlayer';
+import PliFeed from './PliFeed';
 import { routineSummary } from './format';
 import { matches } from './browseOrder';
 
@@ -16,7 +16,7 @@ const TABS = [['all', '전체'], ['short', '10분 이내'], ['mid', '20분 이�
 const CAP = { short: 600, mid: 1200 };
 
 export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
-  const [playing, setPlaying] = useState(null);
+  const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
   const [tab, setTab] = useState('all');
   const [q, setQ] = useState('');
 
@@ -37,11 +37,11 @@ export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
   return (
     <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
       <PickRow tabs={TABS} value={tab} onPick={setTab} q={q} onQ={setQ} findHint="목, 폼롤러, 아침…" />
-      <PliGrid plis={shown} tone={tone} onOpen={(r) => setPlaying(r)} empty={none} />
+      <PliGrid plis={shown} tone={tone} onOpen={(r) => setOpenPli(r)} empty={none} />
 
-      {playing && (
-        <RoutinePlayer routine={playing} cards={playing.cards || []} tone={tone} bmtiCode={bmtiCode}
-          onClose={() => setPlaying(null)} />
+      {openPli && (
+        <PliFeed plis={shown} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
+          onClose={() => setOpenPli(null)} />
       )}
     </div>
   );
