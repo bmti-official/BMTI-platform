@@ -27,10 +27,10 @@ const PersonMark = () => (
   </svg>
 );
 // 하단 알약 네 칸의 그림
-// 자기점검 — 루트에서 '움직이는 쪽'을 가리킨다
-const CheckMark = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 13l4 4L19 7" />
+// 자기점검 — 루트에서 '움직이는 쪽'을 가리킨다. 번개 한 줄기.
+const BoltMark = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+    <path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" />
   </svg>
 );
 // 둘러보기 — 돋보기
@@ -87,7 +87,7 @@ const BackMark = () => (
 const ROOT_NAV = [
   { key: 'diary', label: '다이어리', icon: <Mallang v={4} size={22} noBlink /> },
   { key: 'char' },
-  { key: 'self', label: '자기점검', icon: <CheckMark /> },
+  { key: 'self', label: '자기점검', icon: <BoltMark /> },
 ];
 const DIARY_NAV = [
   { key: 'back', label: '이전', icon: <BackMark /> },
@@ -107,7 +107,12 @@ const SELF_NAV = [
 // 어느 칸을 보고 있느냐로 어느 층을 그릴지 정한다.
 const DIARY_KEYS = ['today', 'discover', 'angle'];
 const SELF_KEYS = ['browse', 'baro', 'box'];
-const TITLE = { diary: '다이어리', self: '자기점검' };
+// 위쪽 제목 — 하단 줄이 통째로 바뀌니 여기가 길잡이다.
+// 아이콘을 앞에 세워 어느 방인지 한눈에 들어오게 한다.
+const TITLE = {
+  diary: { text: '다이어리 타임', icon: <Mallang v={4} size={19} noBlink /> },
+  self: { text: '자기점검 타임', icon: <BoltMark size={18} /> },
+};
 function navFor(active) {
   if (DIARY_KEYS.includes(active)) return { rows: DIARY_NAV, at: 'diary' };
   if (SELF_KEYS.includes(active)) return { rows: SELF_NAV, at: 'self' };
@@ -143,9 +148,12 @@ function AppChrome({ tone, active: from }) {
 
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
-        <div style={{ position: 'absolute', top: 12, left: 0, right: 0, zIndex: 29, pointerEvents: 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', height: 44 }}>
-          <span style={{ fontSize: 15, fontWeight: 900, color: '#111', letterSpacing: '-0.02em' }}>{TITLE[at]}</span>
+        <div style={{ position: 'absolute', top: 12, left: 66, zIndex: 29, pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', gap: 6, height: 44 }}>
+          <span style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
+            {TITLE[at].icon}
+          </span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: '#111', letterSpacing: '-0.03em' }}>{TITLE[at].text}</span>
         </div>
       )}
 
