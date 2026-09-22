@@ -458,9 +458,74 @@ const ICONS = {
   caffeine: IconCaffeine, alcohol: IconAlcohol, snacking: IconSnacking, water: IconWater,
   spicy: IconSpicy, dessert: IconDessert, indigestion: IconIndigestion, supplement: IconSupplement,
   phone: IconPhone, driving: IconDriving, shoes: IconShoes, heavyBag: IconHeavyBag,
+  overwork: IconOverwork, sitLong: IconSitLong, standLong: IconStandLong,
+  walkLot: IconWalkLot, liftHeavy: IconLiftHeavy,
   coldAir: IconColdAir, stress: IconStress, nervous: IconNervous, drained: IconDrained,
   period: IconPeriod, menstrual: IconMenstrual, medicine: IconMedicine,
 };
+
+
+// ── 무리함을 태그로 옮기며 새로 그린 것들 ──
+// 업무과다 — 쌓인 서류 더미
+function IconOverwork({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="6" y="20" width="20" height="5" rx="1.6" fill="#C8A96E" />
+      <rect x="7.5" y="15" width="17" height="5" rx="1.6" fill="#DCC08A" />
+      <rect x="9" y="10" width="14" height="5" rx="1.6" fill="#EFD9A8" />
+      <path d="M12 12.5h8M11 17.5h10M9.5 22.5h13" stroke="#A8854A" strokeWidth="1.3" strokeLinecap="round" opacity="0.55" />
+    </svg>
+  );
+}
+
+// 오래 앉음 — 의자에 앉은 옆모습
+function IconSitLong({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="13" cy="8" r="3.2" fill="#9AA8C7" />
+      <path d="M11 12.5h3.5a3 3 0 0 1 3 3V19h-7z" fill="#9AA8C7" />
+      <path d="M17.5 19h5" stroke="#7B89A8" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M11 19v7M22 15v11" stroke="#7B89A8" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// 오래 선 자세 — 바닥에 선 옆모습
+function IconStandLong({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="7" r="3.2" fill="#8FBF9E" />
+      <path d="M16 11v10" stroke="#8FBF9E" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M16 21l-3 5M16 21l3 5" stroke="#6E9E7D" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M7 28h18" stroke="#6E9E7D" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// 많이 걸음 — 발자국 둘
+function IconWalkLot({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <ellipse cx="11" cy="12" rx="4" ry="5.5" fill="#B49AD6" />
+      <ellipse cx="10.4" cy="18.5" rx="2.6" ry="1.8" fill="#B49AD6" />
+      <ellipse cx="21" cy="19" rx="4" ry="5.5" fill="#9B7EC7" />
+      <ellipse cx="21.6" cy="25.5" rx="2.6" ry="1.8" fill="#9B7EC7" />
+    </svg>
+  );
+}
+
+// 무거운 물건 들기 — 바벨을 든 모양
+function IconLiftHeavy({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M7 14h18" stroke="#8A8378" strokeWidth="2.6" strokeLinecap="round" />
+      <rect x="3.5" y="9.5" width="4" height="9" rx="1.6" fill="#7A7E8C" />
+      <rect x="24.5" y="9.5" width="4" height="9" rx="1.6" fill="#7A7E8C" />
+      <path d="M16 16v6" stroke="#A9A296" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M16 22l-3.5 5M16 22l3.5 5" stroke="#A9A296" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export function DiaryIcon({ name, size = 28, color }) {
   const Icon = ICONS[name];

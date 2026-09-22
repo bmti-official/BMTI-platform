@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import CurationAdmin from './CurationAdmin';
+import DiaryPreview from './DiaryPreview';
 import QuickCardAdmin from './QuickCardAdmin';
 import RoutineAdmin from './RoutineAdmin';
 import SearchPreview from './SearchPreview';
@@ -184,10 +185,12 @@ function Dashboard({ session }) {
           {tabBtn('search', '🔎 검색 분류')}
           {tabBtn('flow', '🎬 동작 영상')}
           {tabBtn('voice', '🔊 공통 음성')}
+          {tabBtn('diary', '🗓 다이어리')}
           {tabBtn('clean', '🧹 파일 정리')}
         </div>
         {tab === 'metrics' && <MetricsView />}
         {tab === 'users' && <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
+        {tab === 'diary' && <DiaryPreview />}
         {tab === 'curation' && <CurationAdmin />}
         {tab === 'cards' && <QuickCardAdmin />}
         {tab === 'routines' && <RoutineAdmin />}

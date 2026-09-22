@@ -132,12 +132,15 @@ function AppChrome({ tone, active: from }) {
   // 관리자에서 층을 오가며 모양을 볼 수 있게, 누르면 자리만 옮겨 준다.
   // 내용은 지금 만들고 있는 것 하나뿐이라 바뀌지 않는다.
   const [active, setActive] = useState(from);
+  // 어느 쪽에서 펼쳐질지 — 다이어리는 왼쪽 칸이라 오른쪽으로, 자기점검은 오른쪽 칸이라 왼쪽으로.
+  // 누른 자리에서 줄이 자라나는 것처럼 보이게 한다.
+  const [grow, setGrow] = useState('');
   const { rows, at } = navFor(active);
   const go = (key) => {
-    if (key === 'back') { setActive('root'); return; }
-    if (key === 'diary') { setActive('today'); return; }
-    if (key === 'self') { setActive('browse'); return; }
-    setActive(key);
+    if (key === 'back') { setGrow(''); setActive('root'); return; }
+    if (key === 'diary') { setGrow('right'); setActive('today'); return; }
+    if (key === 'self') { setGrow('left'); setActive('browse'); return; }
+    setActive(key);   // 같은 층 안에서 옮길 땐 펼치지 않는다
   };
   return (
     <>
@@ -177,8 +180,14 @@ function AppChrome({ tone, active: from }) {
 
       {/* 아래 알약 */}
       <div style={{ position: 'absolute', left: 8, right: 8, bottom: 12, zIndex: 30 }}>
-        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 999,
-          border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '4px 6px' }}>
+        <div key={`${at}-${grow}`}
+          style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 999,
+            border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '4px 6px',
+            animation: grow ? `navGrow${grow === 'right' ? 'R' : 'L'} .34s cubic-bezier(.22,.9,.3,1)` : 'none' }}>
+          <style>{
+            '@keyframes navGrowR{from{clip-path:inset(0 100% 0 0);opacity:.5}to{clip-path:inset(0 0 0 0);opacity:1}}'
+            + '@keyframes navGrowL{from{clip-path:inset(0 0 0 100%);opacity:.5}to{clip-path:inset(0 0 0 0);opacity:1}}'
+          }</style>
           {rows.map((t) => (t.key === 'char' ? (
             <span key="char" style={{ width: 56, flexShrink: 0 }} />
           ) : (
