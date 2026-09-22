@@ -33,3 +33,15 @@ export function cardSetup(card = {}) {
 export function kindSetup(kind) {
   return KIND_SETUP[kind] || FALLBACK;
 }
+
+/** 이 카드를 기본 설정대로 다 하면 걸리는 시간(초).
+ *  영상 한 바퀴가 아니라 횟수·세트·쉬는 시간을 모두 더한 값이다.
+ *  손님이 격자에서 보는 '얼마나 걸리나'는 이쪽이 맞다. */
+export function cardTotalSec(card = {}) {
+  const one = Number(card.duration_sec) || 0;
+  if (one <= 0) return 0;
+  const { reps, sets, rest } = cardSetup(card);
+  // '한쪽씩 둘 다'가 기본인 카드는 두 바퀴를 돈다
+  const rounds = card.has_side && !card.can_alternate ? sets * 2 : sets;
+  return Math.round(one * reps * rounds + rest * Math.max(0, rounds - 1));
+}

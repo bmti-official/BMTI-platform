@@ -109,12 +109,15 @@ const DIARY_KEYS = ['today', 'discover', 'angle'];
 const SELF_KEYS = ['browse', 'baro', 'box'];
 // 위쪽 제목 — 하단 줄이 통째로 바뀌니 여기가 길잡이다.
 // 아이콘을 앞에 세워 어느 방인지 한눈에 들어오게 한다.
+// 방마다 글씨체를 달리 준다 — 글씨만 봐도 어느 방인지 알게.
+//   다이어리 … 손글씨(개구). 쓰는 곳이라는 결
+//   자기점검 … 각진 것(도현). 움직이는 곳이라는 결
 const TITLE = {
-  diary: { text: '다이어리', icon: <Mallang v={4} size={19} noBlink /> },
-  self: { text: '자기점검', icon: <BoltMark size={18} /> },
+  diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink />,
+    font: "'Gaegu','Pretendard',-apple-system,sans-serif", size: 24 },
+  self: { text: '자기점검', icon: <BoltMark size={21} />,
+    font: "'Do Hyeon','Pretendard',-apple-system,sans-serif", size: 22 },
 };
-// 제목만 둥근 글씨체로 — 나머지 화면과 결을 달리해 '여기가 방 이름'임을 알린다.
-const TITLE_FONT = "'Jua','Pretendard',-apple-system,sans-serif";
 function navFor(active) {
   if (DIARY_KEYS.includes(active)) return { rows: DIARY_NAV, at: 'diary' };
   if (SELF_KEYS.includes(active)) return { rows: SELF_NAV, at: 'self' };
@@ -150,12 +153,13 @@ function AppChrome({ tone, active: from }) {
 
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
-        <div style={{ position: 'absolute', top: 12, left: 80, zIndex: 29, pointerEvents: 'none',
-          display: 'flex', alignItems: 'center', gap: 6, height: 44 }}>
-          <span style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
+        <div style={{ position: 'absolute', top: 12, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
+          height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
             {TITLE[at].icon}
           </span>
-          <span style={{ fontSize: 19, color: '#111', letterSpacing: '-0.01em', fontFamily: TITLE_FONT }}>{TITLE[at].text}</span>
+          <span style={{ fontSize: TITLE[at].size, color: '#111', letterSpacing: '-0.01em',
+            fontFamily: TITLE[at].font, whiteSpace: 'nowrap', lineHeight: 1 }}>{TITLE[at].text}</span>
         </div>
       )}
 

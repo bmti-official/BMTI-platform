@@ -5,9 +5,11 @@
 import { useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import CardFeed from './CardFeed';
-import RoutineView from './RoutineView';
 import RoutinePlayer from './RoutinePlayer';
+import PickRow from './PickRow';
+import PliGrid from './PliGrid';
 import { mmss } from './format';
+import { cardTotalSec } from './cardDefaults';
 import { readMin } from './browseOrder';
 import { CHARACTERS } from '../../data';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
@@ -22,12 +24,6 @@ const EMPTY_WORD = {
   card: '담아 둔 동작이 없어요.\n다시 하고 싶은 동작을 보관해 두세요.',
   read: '담아 둔 읽을거리가 없어요.\n두고두고 볼 글을 보관해 두세요.',
 };
-const pick = (on) => ({
-  flex: 1, minWidth: 0, padding: '6px 0', borderRadius: 9, border: 'none', cursor: 'pointer',
-  fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap',
-  background: on ? YELLOW : '#fff', color: on ? GOLD_INK : SUB,
-  boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}`, transition: 'background .15s, color .15s',
-});
 
 export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
   plis = [], cards = [], reads = [], onOpenRead }) {
@@ -60,28 +56,17 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
       </div>
 
       {/* 갈래 고르개 — 둘러보기와 같은 모양으로 */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-        {TABS.map(([k, lb]) => (
-          <button key={k} type="button" onClick={() => setTab(k)} style={pick(tab === k)}>{lb}</button>
-        ))}
-      </div>
+      <PickRow tabs={TABS} value={tab} onPick={setTab} />
 
       {tab === 'pli' ? (
-        plis.length === 0 ? <Empty text={EMPTY_WORD.pli} /> : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {plis.map((r) => (
-              <RoutineView key={r.id} routine={r} cards={r.cards || []} tone={tone} bmtiCode={bmtiCode}
-                onStart={() => setPlaying(r)} />
-            ))}
-          </div>
-        )
+        <PliGrid plis={plis} tone={tone} onOpen={(r) => setPlaying(r)} empty={EMPTY_WORD.pli} />
       ) : grid.length === 0 ? <Empty text={EMPTY_WORD[tab]} /> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
           {grid.map((item) => {
             const read = tab === 'read';
             const slides = (item.slides || []).length;
             const mark = read ? (slides > 0 ? `${slides}장` : `${readMin(item, tone)}분`)
-              : (item.duration_sec > 0 ? mmss(item.duration_sec) : '');
+              : (cardTotalSec(item) > 0 ? mmss(cardTotalSec(item)) : '');
             return (
               <button key={item.id} type="button"
                 onClick={() => (read ? onOpenRead && onOpenRead(item) : setOpenId(item.id))}

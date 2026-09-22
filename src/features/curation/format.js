@@ -1,3 +1,4 @@
+import { cardTotalSec } from './cardDefaults';
 // 큐레이션·바로카드 표시용 계산 — 컴포넌트 파일과 분리해 Fast Refresh를 살린다.
 export const KIND_LABEL = { massage: '마사지', stretch: '스트레칭', exercise: '운동' };
 
@@ -36,7 +37,8 @@ export function routineSummary(cards) {
   const core = uniq(list.flatMap((c) => c.core_parts || []));
   return {
     count: list.length,
-    durationSec: list.reduce((n, c) => n + (Number(c.duration_sec) || 0), 0),
+    // 기본 설정대로 다 했을 때 걸리는 시간을 더한다 — 영상 길이의 합이 아니다
+    durationSec: list.reduce((n, c) => n + cardTotalSec(c), 0),
     tools: uniq(list.flatMap((c) => c.tools || [])),
     coreParts: core,
     // 연관 부위는 핵심과 겹치면 빼서 중복 표시를 막는다.
