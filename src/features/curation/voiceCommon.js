@@ -13,7 +13,7 @@ export const COUNT_KO = ['', '하나', '둘', '셋', '넷', '다섯', '여섯', 
 
 // 말투를 가리지 않는 갈래 — 하는 말이 정해져 있어 담백하게 읽든 다정하게 읽든 내용이 같다.
 // 이 갈래는 tone을 'a'(둘 다)로 담아 한 벌만 쓴다.
-export const TONE_FREE = ['count', 'side', 'countdown', 'switch', 'bgm'];
+export const TONE_FREE = ['count', 'side', 'countdown', 'switch', 'bgm', 'angle'];
 export const ANY_TONE = 'a';
 /** 말투를 가리는 갈래인지 보고, 안 가리면 'a'로 맞춰 준다. */
 export const toneFor = (kind, tone) => (TONE_FREE.includes(kind) ? ANY_TONE : (tone === 'm' ? 'm' : 'z'));
@@ -86,3 +86,23 @@ export function bgmFade(at, dur) {
   const closing = Math.min(1, Math.max(0, dur - at) / FADE_SEC);
   return FADE_MIN + (1 - FADE_MIN) * Math.min(opening, closing);
 }
+
+// ── 각도 잴 때 나가는 안내 ────────────────────────────────────
+// 재는 동안에는 화면을 볼 수 없다. 옆으로 서 있거나 허리를 굽히는 중이라
+// 글씨가 눈에 안 들어온다. 그래서 귀로 알려 준다.
+// 말투를 가리지 않으니 한 벌이면 된다.
+export const ANGLE_LINES = [
+  { n: 1, key: 'near', text: '조금 더 가까이 와 주세요' },
+  { n: 2, key: 'far', text: '한 걸음만 뒤로 가 주세요' },
+  { n: 3, key: 'turn', text: '몸을 옆으로 더 돌려 주세요' },
+  { n: 4, key: 'face', text: '화면을 정면으로 봐 주세요' },
+  { n: 5, key: 'frame', text: '머리부터 골반까지 화면에 들어오게 해 주세요' },
+  { n: 6, key: 'hold', text: '좋아요. 그대로 계세요' },
+  { n: 7, key: 'go1', text: '시작합니다. 가만히 서 계세요' },
+  { n: 8, key: 'mid1', text: '이제 천천히 허리를 굽혀 주세요' },
+  { n: 9, key: 'next', text: '옆모습 다 쟀어요. 정면으로 서 주세요' },
+  { n: 10, key: 'go2', text: '시작합니다. 두 팔을 천천히 올려 주세요' },
+  { n: 11, key: 'mid2', text: '끝까지 올린 채로 잠깐 멈춰 주세요' },
+  { n: 12, key: 'done', text: '다 쟀어요. 수고하셨어요' },
+];
+export const ANGLE_N = Object.fromEntries(ANGLE_LINES.map((l) => [l.key, l.n]));

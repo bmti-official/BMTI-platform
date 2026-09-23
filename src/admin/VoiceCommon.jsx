@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { INK, SUB, LINE, BG, ACCENT, box, btn } from './theme';
 import { uploadOne, AUDIO_ACCEPT } from './upload';
-import { COUNT_MAX, REST_LENS, COUNT_KO, BGM_GROUPS, BGM_PARTS, bgmN, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
+import { COUNT_MAX, REST_LENS, COUNT_KO, BGM_GROUPS, BGM_PARTS, bgmN, ANGLE_LINES, voiceKey as key, toneFor } from '../features/curation/voiceCommon';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { useSavedNote } from './editorState';
 
@@ -163,7 +163,7 @@ export default function VoiceCommon() {
             </span>
           )}
           <span style={{ marginLeft: saved ? 0 : 'auto', alignSelf: 'center', fontSize: 12, fontWeight: 800, color: SUB }}>
-            배경음악 {BGM_GROUPS.reduce((k, g) => k + BGM_PARTS.filter((b) => at('bgm', bgmN(g.n, b.p))).length, 0)}/12 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 다음 동작 {at('next', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
+            배경음악 {BGM_GROUPS.reduce((k, g) => k + BGM_PARTS.filter((b) => at('bgm', bgmN(g.n, b.p))).length, 0)}/12 · 인사 {Object.keys(hello).length}/16 · 숫자 {countDone}/{COUNT_MAX} · 쉼 {restDone}/{REST_LENS.length} · 카운트다운 {at('countdown', 0) ? 1 : 0}/1 · 방향 {(at('side', 1) ? 1 : 0) + (at('side', 2) ? 1 : 0)}/2 · 자리 바꾸기 {at('switch', 0) ? 1 : 0}/1 · 각도 안내 {ANGLE_LINES.filter((l) => at('angle', l.n)).length}/{ANGLE_LINES.length} · 다음 동작 {at('next', 0) ? 1 : 0}/1 · 마무리 {at('finish', 0) ? 1 : 0}/1
           </span>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}
@@ -281,6 +281,18 @@ export default function VoiceCommon() {
               busy={busy === 'hello-' + code} onPick={() => pickHello(code)} onClear={() => clearHello(code)}
               onDrop={(file) => uploadHello(code, file)} />
           ))}
+        </div>
+      </div>
+
+      <div style={{ ...box, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>각도 잴 때 안내</div>
+        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12, lineHeight: 1.7 }}>
+          각도를 재는 동안에는 <b>화면을 볼 수 없습니다.</b> 옆으로 서 있거나 허리를 굽히는 중이라 글씨가 눈에 안 들어와요.
+          그래서 귀로 알려 줍니다. <b>말투를 가리지 않으니 한 벌</b>이면 됩니다.
+          <br />같은 말을 연달아 틀지 않으니, <b>짧고 담백하게</b> 한 번만 읽어 주세요.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+          {ANGLE_LINES.map((l) => slot('angle', l.n, l.text))}
         </div>
       </div>
 

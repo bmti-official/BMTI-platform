@@ -1,33 +1,53 @@
-// 말로 알려 주기 — 각도를 재는 동안에는 화면을 볼 수 없다.
-// 옆으로 서 있거나 허리를 굽히는 중이라 글씨가 눈에 안 들어온다. 그래서 귀로 알려 준다.
+// 각도 잴 때 귀로 알려 주기.
 //
-// 브라우저가 가진 목소리를 쓴다. 따로 받아 올 파일이 없다.
+// 브라우저가 읽어 주는 소리는 값싸게 들리고, 되풀이되면 듣기 싫어진다.
+// 그래서 사람이 읽어 담아 둔 파일(🔊 공통 음성 → 각도 잴 때 안내)을 쓴다.
+// 파일이 없으면 아무 소리도 내지 않는다 — 어설픈 소리보다 조용한 편이 낫다.
+//
+// **같은 말을 연달아 틀지 않는다.** 자세를 고치는 동안 같은 문장이 계속 나오면
+// 그것만으로 그만두고 싶어진다. 고칠 것이 '바뀌었을 때'만 한 번 말한다.
+import { loadVoiceAssets, voiceKey, ANGLE_N } from '../features/curation/voiceCommon';
 
-let last = '';
-let lastAt = 0;
+let bank = null;
+let el = null;
+let saidKey = '';      // 방금 무엇을 말했는지
+let quiet = false;
 
-export const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
+/** 파일을 한 번 읽어 둔다. 화면에 들어올 때 부른다. */
+export async function loadAngleVoice() {
+  if (bank) return bank;
+  bank = await loadVoiceAssets().catch(() => ({}));
+  return bank;
+}
 
-/** 한 마디 한다. 같은 말을 연달아 쏟아 내지 않게 텀을 둔다. */
-export function say(text, { gap = 2600, force = false } = {}) {
-  if (!canSpeak() || !text) return;
-  const now = Date.now();
-  if (!force && text === last && now - lastAt < gap) return;
-  last = text; lastAt = now;
+export const hasAngleVoice = () => !!bank && Object.keys(bank).some((k) => k.startsWith('angle|'));
+
+/** 한 마디 한다. 방금 한 말과 같으면 넘어간다. */
+export function say(key, { force = false } = {}) {
+  if (quiet || !bank) return;
+  const n = ANGLE_N[key];
+  if (!n) return;
+  if (!force && key === saidKey) return;     // 같은 말을 되풀이하지 않는다
+  const url = bank[voiceKey('angle', 'a', n)];
+  if (!url) { saidKey = key; return; }
+  saidKey = key;
   try {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR';
-    u.rate = 1.05;
-    u.pitch = 1.0;
-    // 앞말이 길면 잘라 내고 새 말을 먼저 들려준다 — 지금 고칠 것이 더 급하다
-    if (force) window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+    if (!el) { el = new Audio(); el.preload = 'auto'; }
+    el.pause();
+    el.src = url;
+    el.currentTime = 0;
+    el.play().catch(() => {});
   } catch { /* 소리가 안 나도 화면 안내는 그대로 있다 */ }
 }
 
-/** 하던 말을 멈춘다. 화면을 떠날 때 부른다. */
+/** 자세가 맞아 고칠 것이 없어졌을 때 — 다음에 어긋나면 다시 말하게 풀어 준다. */
+export const clearSaid = () => { saidKey = ''; };
+
+/** 하던 말을 멈춘다. */
 export function hush() {
-  if (!canSpeak()) return;
-  try { window.speechSynthesis.cancel(); } catch { /* 무시 */ }
-  last = ''; lastAt = 0;
+  try { el?.pause(); } catch { /* 무시 */ }
+  saidKey = '';
 }
+
+export const setQuiet = (v) => { quiet = v; if (v) hush(); };
+export const isQuiet = () => quiet;

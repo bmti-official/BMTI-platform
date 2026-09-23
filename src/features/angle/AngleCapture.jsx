@@ -11,7 +11,7 @@ import {
   neckBend, trunkFlex, armRaise, distanceOk, sideOk, frontOk, kneeStraight, seenWell,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
-import { say, hush, canSpeak } from '../../lib/speak';
+import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -22,16 +22,12 @@ const STEPS = [
   {
     id: 'side', title: '옆으로 서 주세요', sec: 8,
     how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.',
-    ready: '옆으로 서 주세요',
-    go: '시작합니다. 가만히 서 계세요.',
-    mid: '이제 천천히 허리를 굽혀 주세요.',
+    go: 'go1', mid: 'mid1',
   },
   {
     id: 'front', title: '정면으로 서 주세요', sec: 8,
     how: '화면을 마주 봅니다.\n두 팔을 옆으로 천천히 올렸다 내립니다.',
-    ready: '이번엔 정면으로 서 주세요',
-    go: '시작합니다. 두 팔을 천천히 올려 주세요.',
-    mid: '끝까지 올린 채로 잠깐 멈춰 주세요.',
+    go: 'go2', mid: 'mid2',
   },
 ];
 
@@ -51,7 +47,13 @@ export default function AngleCapture({ onDone, onClose }) {
   const tryRef = useRef(0);                      // 몇 번 어긋났는지
   const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
   const startRef = useRef(null);                 // 저절로 시작하는 손잡이
-  const [voice, setVoice] = useState(canSpeak());
+  const [voice, setVoice] = useState(true);
+  const [hasClips, setHasClips] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    loadAngleVoice().then(() => { if (alive) setHasClips(hasAngleVoice()); });
+    return () => { alive = false; };
+  }, []);
 
   // 한 프레임씩 보며 자세를 검사하고, 재는 중이면 값을 모은다.
   const check = (pts) => {
@@ -62,13 +64,20 @@ export default function AngleCapture({ onDone, onClose }) {
       ? [L.earL, L.earR, L.shoulderL, L.shoulderR, L.hipL, L.hipR]
       : [L.shoulderL, L.shoulderR, L.wristL, L.wristR, L.hipL, L.hipR]);
 
-    let why = '';
-    if (!dist.inFrame) why = '머리부터 골반까지 화면에 들어오게 해 주세요';
-    else if (!dist.ok) why = dist.h <= 0.14 ? '조금 더 가까이 와 주세요' : '한 걸음만 뒤로 가 주세요';
-    else if (!face.ok) why = side ? '몸을 옆으로 더 돌려 주세요' : '화면을 정면으로 봐 주세요';
-    else if (seen < 0.5) why = '밝은 곳에서 몸이 다 보이게 서 주세요';
+    // 고칠 것 하나만 짚는다. 여러 개를 쏟아 내면 무엇부터 할지 모른다.
+    let why = '', cue = '';
+    if (!dist.inFrame) { why = '머리부터 골반까지 화면에 들어오게 해 주세요'; cue = 'frame'; }
+    else if (!dist.ok) {
+      const near = dist.h <= 0.14;
+      why = near ? '조금 더 가까이 와 주세요' : '한 걸음만 뒤로 가 주세요';
+      cue = near ? 'near' : 'far';
+    } else if (!face.ok) {
+      why = side ? '몸을 옆으로 더 돌려 주세요' : '화면을 정면으로 봐 주세요';
+      cue = side ? 'turn' : 'face';
+    } else if (seen < 0.5) { why = '밝은 곳에서 몸이 다 보이게 서 주세요'; cue = 'frame'; }
     setMsg(why);
-    if (voice && why) say(why);
+    // 무엇이 어긋났는지 바뀔 때만 한 번 말한다. 같은 말이 이어지면 듣기 싫어진다.
+    if (why) say(cue);
 
     // 자세가 그대로 이어지면 저절로 시작한다 — 버튼을 누르러 오가면 자세가 흐트러진다
     if (!runRef.current) {
@@ -76,7 +85,8 @@ export default function AngleCapture({ onDone, onClose }) {
       const t0 = performance.now();
       if (!okSinceRef.current) {
         okSinceRef.current = t0;
-        if (voice) say('좋아요. 그대로 계세요.', { force: true });
+        clearSaid();
+        say('hold');
       } else if (t0 - okSinceRef.current > HOLD_MS) {
         okSinceRef.current = 0;
         startRef.current?.();
@@ -166,9 +176,8 @@ export default function AngleCapture({ onDone, onClose }) {
     const n = tryRef.current;
     setRetry(n);
     okSinceRef.current = 0;
-    const word = n >= MAX_RETRY ? '잘 잡히지 않네요. 찍는 방법을 다시 볼게요.' : '잘 잡히지 않았어요. 한 번 더 해 볼까요?';
-    setMsg(n >= MAX_RETRY ? '' : word);
-    if (voice) say(word, { force: true });
+    setMsg(n >= MAX_RETRY ? '' : '잘 잡히지 않았어요. 한 번 더 해 볼까요?');
+    clearSaid();
     if (n >= MAX_RETRY) setStep(-1);               // 세 번 어긋나면 가이드부터 다시
   };
 
@@ -184,7 +193,7 @@ export default function AngleCapture({ onDone, onClose }) {
       if (!neck && !trunk) { again(); return; }
       gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad };
       tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
-      if (voice) say('옆모습 다 쟀어요. ' + STEPS[1].ready + '.', { force: true });
+      say('next', { force: true });
       setStep(1);
       return;
     }
@@ -198,10 +207,12 @@ export default function AngleCapture({ onDone, onClose }) {
     });
     gotRef.current = all;
     tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
-    if (voice) say('다 쟀어요. 수고하셨어요.', { force: true });
+    say('done', { force: true });
     setStep(2);
     if (onDone) onDone({ ...all, quality, retries: retry });
   };
+
+  const flipVoice = () => { const v = !voice; setVoice(v); setQuiet(!v); };
 
   // 재기 시작 — 몇 초 동안 값을 모은다. 버튼이 아니라 자세가 맞으면 저절로 불린다.
   const start = () => {
@@ -209,11 +220,11 @@ export default function AngleCapture({ onDone, onClose }) {
     const s0 = STEPS[step];
     runRef.current = { neck: [], trunk: [], arm: [], seen: 0, kneeBad: 0 };
     setCount(s0.sec);
-    if (voice) say(s0.go, { force: true });
+    say(s0.go, { force: true });
     const tick = setInterval(() => {
       setCount((n) => {
         // 절반쯤 왔을 때 다음에 뭘 할지 알려 준다
-        if (n === Math.ceil(s0.sec / 2) + 1 && voice) say(s0.mid, { force: true });
+        if (n === Math.ceil(s0.sec / 2) + 1) say(s0.mid, { force: true });
         if (n > 1) return n - 1;
         clearInterval(tick);
         finishStep();
@@ -226,7 +237,7 @@ export default function AngleCapture({ onDone, onClose }) {
   // ── 화면 ────────────────────────────────────────────────
   if (step === -1) {
     return (
-      <Shell onClose={onClose} title="각도기록" voice={voice} onVoice={() => { setVoice((v) => !v); hush(); }}>
+      <Shell onClose={onClose} title="각도기록" voice={voice} hasClips={hasClips} onVoice={flipVoice}>
         <div style={{ padding: '6px 4px 0' }}>
           <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 10, letterSpacing: '-0.02em' }}>1분이면 끝나요</div>
           <div style={{ fontSize: 13, color: SUB, fontWeight: 600, lineHeight: 1.85, marginBottom: 16 }}>
@@ -261,7 +272,7 @@ export default function AngleCapture({ onDone, onClose }) {
 
   if (step === 2) {
     return (
-      <Shell onClose={onClose} title="각도기록" voice={voice} onVoice={() => { setVoice((v) => !v); hush(); }}>
+      <Shell onClose={onClose} title="각도기록" voice={voice} hasClips={hasClips} onVoice={flipVoice}>
         <div style={{ padding: '30px 4px', textAlign: 'center' }}>
           <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 8 }}>다 쟀어요</div>
           <div style={{ fontSize: 13, color: SUB, fontWeight: 600, lineHeight: 1.8, marginBottom: 22 }}>
@@ -277,7 +288,7 @@ export default function AngleCapture({ onDone, onClose }) {
   const ready = !msg;
   const off = count > 0 || !!err;
   return (
-    <Shell onClose={onClose} title={`각도기록 — ${step + 1}/2`} voice={voice} onVoice={() => { setVoice((v) => !v); hush(); }}>
+    <Shell onClose={onClose} title={`각도기록 — ${step + 1}/2`} voice={voice} hasClips={hasClips} onVoice={flipVoice}>
       <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', borderRadius: 16,
         overflow: 'hidden', background: '#111' }}>
         <video ref={videoRef} playsInline muted
@@ -347,7 +358,7 @@ function drawBones(g, pts, w, h) {
   });
 }
 
-function Shell({ children, onClose, title, voice, onVoice }) {
+function Shell({ children, onClose, title, voice, hasClips, onVoice }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -362,7 +373,7 @@ function Shell({ children, onClose, title, voice, onVoice }) {
           style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F4F1EB',
             fontSize: 17, fontWeight: 800, color: INK, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>‹</button>
         <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 900 }}>{title}</span>
-        {canSpeak() && (
+        {hasClips && (
           <button type="button" onClick={onVoice} aria-label={voice ? '말 끄기' : '말 켜기'}
             style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800,
