@@ -44,31 +44,46 @@ export function angleAt(a, center, b) {
 // ── 잘 찍혔는지 보는 눈 ─────────────────────────────────────
 // 각도 자체보다 이쪽이 중요하다. 흔들림이 변화보다 크면 추세가 무의미해진다.
 
-/** 어깨 너비로 거리를 잰다. 너무 멀거나 가까우면 각도가 왜곡된다. */
+/** 어깨에서 골반까지의 길이 — 몸 크기의 잣대. 거리가 달라도 이 길이로 나누면 견줄 수 있다. */
+export const torsoLen = (pts) =>
+  Math.abs(mid(pts[L.shoulderL], pts[L.shoulderR]).y - mid(pts[L.hipL], pts[L.hipR]).y);
+
+/** 거리 — 재는 데 필요한 건 머리부터 골반까지다. 무릎·발목은 없어도 된다.
+ *  그래서 온몸이 다 들어오지 않아도 괜찮고, 가까이 서도 된다.
+ *  너무 가까우면 렌즈가 휘어 각도가 어긋나므로 그때만 물린다. */
 export function distanceOk(pts) {
-  const w = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x);
-  const h = Math.abs(mid(pts[L.shoulderL], pts[L.shoulderR]).y - mid(pts[L.hipL], pts[L.hipR]).y);
-  return { ok: h > 0.16 && h < 0.46, w, h };
+  const h = torsoLen(pts);
+  const head = pts[L.nose];
+  const hip = mid(pts[L.hipL], pts[L.hipR]);
+  // 머리와 골반이 화면 안에 있는지 — 이 둘만 있으면 잴 수 있다
+  const inFrame = head && head.y > 0.02 && hip.y < 0.99;
+  return { ok: inFrame && h > 0.14 && h < 0.62, h, inFrame };
 }
 
-/** 측면으로 제대로 섰나. 좌우 어깨가 겹쳐 보여야 옆모습이다. */
+/** 측면으로 제대로 섰나. 좌우 어깨가 겹쳐 보여야 옆모습이다.
+ *  가까이 서면 어깨 간격이 그냥 커지므로, 몸 크기로 나눠서 본다. */
 export function sideOk(pts) {
-  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x);
-  const hip = Math.abs(pts[L.hipL].x - pts[L.hipR].x);
-  return { ok: shoulder < 0.09 && hip < 0.09, shoulder, hip };
+  const t = torsoLen(pts) || 1;
+  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
+  const hip = Math.abs(pts[L.hipL].x - pts[L.hipR].x) / t;
+  return { ok: shoulder < 0.38 && hip < 0.38, shoulder, hip };
 }
 
 /** 정면으로 제대로 섰나. 좌우 어깨가 벌어져 보여야 앞모습이다. */
 export function frontOk(pts) {
-  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x);
-  return { ok: shoulder > 0.14, shoulder };
+  const t = torsoLen(pts) || 1;
+  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
+  return { ok: shoulder > 0.55, shoulder };
 }
 
-/** 무릎을 폈나. 허리를 굽힐 때 무릎이 굽으면 각도가 부풀려진다. */
+/** 무릎을 폈나. 허리를 굽힐 때 무릎이 굽으면 각도가 부풀려진다.
+ *  무릎이 화면에 없으면 따지지 않는다 — 가까이 서서 재는 경우다. */
 export function kneeStraight(pts) {
-  const a = angleAt(pts[L.hipL], pts[L.kneeL], pts[L.ankleL]);
-  const b = angleAt(pts[L.hipR], pts[L.kneeR], pts[L.ankleR]);
-  return Math.max(a, b) > 150;
+  const seen = (i) => (pts[i]?.v ?? pts[i]?.visibility ?? 0) > 0.5;
+  const pair = (h, k, a) => (seen(k) && seen(a) ? angleAt(pts[h], pts[k], pts[a]) : null);
+  const vs = [pair(L.hipL, L.kneeL, L.ankleL), pair(L.hipR, L.kneeR, L.ankleR)].filter((v) => v !== null);
+  if (!vs.length) return true;                   // 안 보이면 넘어간다
+  return Math.max(...vs) > 150;
 }
 
 /** 점이 얼마나 또렷하게 잡혔나(0~1). 낮으면 그 판은 버린다. */

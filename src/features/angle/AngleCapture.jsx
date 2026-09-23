@@ -17,7 +17,7 @@ const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 const MAX_RETRY = 3;   // 세 번 연달아 안 잡히면 가이드를 다시 보여 준다
 
 const STEPS = [
-  { id: 'side', title: '옆으로 서 주세요', how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.', sec: 8 },
+  { id: 'side', title: '옆으로 서 주세요', how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.', sec: 8 },
   { id: 'front', title: '정면으로 서 주세요', how: '화면을 마주 봅니다.\n두 팔을 옆으로 천천히 올렸다 내립니다.', sec: 8 },
 ];
 
@@ -46,7 +46,8 @@ export default function AngleCapture({ onDone, onClose }) {
       : [L.shoulderL, L.shoulderR, L.wristL, L.wristR, L.hipL, L.hipR]);
 
     let why = '';
-    if (!dist.ok) why = dist.h <= 0.16 ? '조금 더 가까이 와 주세요' : '조금 더 뒤로 가 주세요';
+    if (!dist.inFrame) why = '머리부터 골반까지 화면에 들어오게 해 주세요';
+    else if (!dist.ok) why = dist.h <= 0.14 ? '조금 더 가까이 와 주세요' : '한 걸음만 뒤로 가 주세요';
     else if (!face.ok) why = side ? '몸을 옆으로 더 돌려 주세요' : '화면을 정면으로 봐 주세요';
     else if (seen < 0.5) why = '밝은 곳에서 몸이 다 보이게 서 주세요';
     setMsg(why);
@@ -196,11 +197,15 @@ export default function AngleCapture({ onDone, onClose }) {
             </div>
           )}
           <ul style={{ margin: '0 0 18px', paddingLeft: 18, fontSize: 13, color: INK, fontWeight: 600, lineHeight: 2 }}>
-            <li>휴대폰을 세워서 <b>허리 높이</b>에 두세요</li>
-            <li>온몸이 화면에 들어오게 <b>두세 걸음</b> 떨어지세요</li>
+            <li><b>머리부터 골반까지</b>만 보이면 돼요. 다리는 안 나와도 괜찮아요</li>
+            <li>휴대폰을 세워서 <b>가슴 높이</b>에 두세요</li>
             <li><b>몸에 붙는 옷</b>이 좋아요. 헐렁하면 어깨선이 안 잡혀요</li>
             <li>밝은 곳에서, 뒤에 사람이 없게 해 주세요</li>
           </ul>
+          <div style={{ fontSize: 12, color: SUB, fontWeight: 600, lineHeight: 1.75, marginBottom: 16 }}>
+            매주 <b>같은 자리·같은 거리</b>에서 재는 게 가장 중요해요.
+            거리가 달라지면 달라진 만큼이 몸이 바뀐 것처럼 보입니다.
+          </div>
           <div style={{ background: YELLOW, borderRadius: 12, padding: '12px 14px', fontSize: 12.5,
             color: GOLD_INK, fontWeight: 700, lineHeight: 1.75, marginBottom: 18 }}>
             사진과 영상은 <b>이 기기 밖으로 나가지 않습니다.</b><br />남는 건 각도 숫자뿐이에요.
@@ -238,9 +243,14 @@ export default function AngleCapture({ onDone, onClose }) {
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
 
         {/* 서 있을 자리 — 이 안에 몸이 들어오게 */}
-        <span style={{ position: 'absolute', left: '22%', right: '22%', top: '8%', bottom: '6%',
+        {/* 머리부터 골반까지 들어갈 자리. 다리까지 넣으려고 멀리 물러설 필요가 없다. */}
+        <span style={{ position: 'absolute', left: '18%', right: '18%', top: '10%', bottom: '22%',
           border: `2px dashed ${ready ? 'rgba(180,240,190,0.8)' : 'rgba(255,255,255,0.45)'}`,
           borderRadius: 999, pointerEvents: 'none', transition: 'border-color .2s' }} />
+        <span style={{ position: 'absolute', left: 0, right: 0, bottom: '15%', textAlign: 'center',
+          fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,0.75)', pointerEvents: 'none' }}>
+          이 안에 머리~골반이 들어오면 돼요
+        </span>
 
         <div style={{ position: 'absolute', left: 12, right: 12, top: 12, textAlign: 'center' }}>
           <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',

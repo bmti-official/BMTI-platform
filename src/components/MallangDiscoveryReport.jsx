@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
 import { CHARACTERS, CHARACTER_NAMES } from "../data";
 import { DiaryIcon } from "./DiaryIcons";
+import { tagShare } from "../lib/diaryTags";
 import { SLEEP_ICON } from "../lib/diaryEntryLabels";
 
 // 오늘의 태그 라벨 → 아이콘 이름 (DiaryWriteFlow의 TAG_CATEGORIES와 동일하게 유지)
@@ -270,7 +271,11 @@ function buildExampleEntries() {
 const EXAMPLE_ENTRIES = buildExampleEntries();
 const EXAMPLE_USER = { nickname: "회원", kakao_gender: "female", kakaoGender: "female", exercise_frequency: "sometimes", common_posture: "sitting", exercise_goals: ["flexibility"] };
 
-export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, isLoggedIn = true, onRequireLogin }) {
+export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, isLoggedIn = true, onRequireLogin,
+  // ── 10월 개편 미리보기 ──
+  // 넘기지 않으면 지금 손님 화면 그대로다.
+  //   oct  true면 포도 송이·연속과 공백·처음의 다짐을 빼고, 태그 막대를 넣는다
+  oct = false }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
@@ -517,7 +522,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                 if (s.id === "overwork" || s.id === "rest" || s.id === "sore_moments" || s.id === "sleep" || s.id === "mood_distribution") return; // 수면(말랑이의 밤)은 '이번 달 발견'으로 옮김
                 if (s.id === "movement") {
                   const locked = !(find("movement")?.unlocked || find("rest")?.unlocked || find("overwork")?.unlocked);
-                  items.push({ locked, node: <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
+                  if (!oct) items.push({ locked, node: <ActivityTrackCard key="activity" topMood={topMood} move={find("movement")} rest={find("rest")} over={find("overwork")}
                     exTopMood={exTopMood} exMove={exFind("movement")} exRest={exFind("rest")} exOver={exFind("overwork")} /> });
                   return;
                 }
@@ -532,7 +537,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
         )}
         </div>
         </div>
@@ -1410,6 +1415,47 @@ function GrapeRow({ slides }) {
       </div>
       <style>{`.grape-row{scrollbar-width:none;-ms-overflow-style:none}.grape-row::-webkit-scrollbar{display:none}`}</style>
     </>
+  );
+}
+
+// ── 이번 달 태그: 갈래마다 많이 고른 것을 막대로 ──
+// 분모는 '기록한 날 수'다. 고른 횟수 총합으로 나누면 태그를 많이 고른 날이 과하게 반영된다.
+function TagBarCard({ entries }) {
+  const t = getTypeAccent();
+  const days = (entries || []).length;
+  const share = tagShare(entries || []);
+  return (
+    <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+        <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: t.accentSoft, color: t.accentDeep }}>
+          <DiaryIcon name="phone" size={18} />
+        </span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>이번 달 태그</span>
+      </div>
+      <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 16 }}>
+        기록한 {days}일 가운데 며칠에 나왔는지예요.
+      </div>
+      {share.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600 }}>아직 고른 태그가 없어요.</div>
+      ) : share.map((c) => (
+        <div key={c.id} style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.sub, marginBottom: 9 }}>{c.title}</div>
+          {c.rows.slice(0, 6).map((r) => (
+            <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+              <DiaryIcon name={r.icon} size={19} />
+              <span style={{ flex: "0 0 80px", fontSize: 11.5, fontWeight: 700, color: C.ink, wordBreak: "keep-all" }}>{r.label}</span>
+              <span style={{ flex: 1, height: 9, borderRadius: 999, background: "#F3F1EC", overflow: "hidden" }}>
+                <span style={{ display: "block", height: "100%", width: `${r.pct}%`, borderRadius: 999,
+                  background: r.strain >= 2 ? "#D9A24B" : r.strain === 1 ? "#E8CB8E" : "#CFCFC7" }} />
+              </span>
+              <span style={{ flex: "0 0 54px", textAlign: "right", fontSize: 11, fontWeight: 800, color: C.sub, fontVariantNumeric: "tabular-nums" }}>
+                {r.days}일 {r.pct}%
+              </span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -2519,7 +2565,7 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false }) {
   const ins = computeInsights(entries, userData, report, bmtiCode);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
@@ -2544,7 +2590,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   items.push({ locked: !hasAny, node: <Fragment key="night">{maybeLock(
     <MallangNightCard entries={entries} nickname={nickname} pdfMode={pdfMode} />,
     <MallangNightCard entries={EXAMPLE_ENTRIES} nickname={nickname} pdfMode={pdfMode} />, hasAny)}</Fragment> }); // {닉네임}의 밤
-  add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
+  if (!oct) add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
   if (female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
@@ -2552,7 +2598,8 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />,
     <WeatherFindingCards entries={EXAMPLE_ENTRIES} />, hasAny)}</Fragment> });
   const fcUnlocked = !!(ins.factcheck || hasProfile);
-  if (fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
+  if (oct) items.push({ locked: !(entries || []).length, node: <TagBarCard key="tagbar" entries={entries} /> });
+  else if (fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
   else if (exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
   items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
     <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />,

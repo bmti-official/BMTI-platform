@@ -6,11 +6,12 @@ import { useMemo, useState } from 'react';
 import { INK, SUB, BG, box, btn } from './theme';
 import PreviewModal from './PreviewModal';
 import DiaryWriteFlow from '../components/DiaryWriteFlow';
+import MallangDiscoveryReport from '../components/MallangDiscoveryReport';
 import AngleView from '../features/angle/AngleView';
 import AngleCapture from '../features/angle/AngleCapture';
 import PushToggle from '../features/angle/PushToggle';
 import { DiaryIcon } from '../components/DiaryIcons';
-import { TAG_CATEGORIES, strainScore, strainWord, tagShare } from '../lib/diaryTags';
+import { TAG_CATEGORIES, strainScore, strainWord } from '../lib/diaryTags';
 
 const GOLD_INK = '#8A6A3A';
 
@@ -32,26 +33,12 @@ function fakeWeeks(n) {
   return out;
 }
 
-// 막대그래프를 보려면 한 달치 기록이 있어야 한다. 그럴듯한 한 달을 지어 낸다.
-function fakeMonth(days = 18) {
-  const pool = TAG_CATEGORIES.flatMap((c) => c.tags.map((t) => t.label));
-  let seed = 7;
-  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  return [...Array(days)].map(() => {
-    const n = 1 + Math.floor(rnd() * 4);
-    const tags = [...new Set([...Array(n)].map(() => pool[Math.floor(rnd() * pool.length)]))];
-    return { tags };
-  });
-}
-
 export default function DiaryPreview() {
   const [picked, setPicked] = useState(['진통제', '업무과다', '카페인']);
   const [female, setFemale] = useState(true);
-  const [screen, setScreen] = useState('');   // '' | 'tag' | 'chart' | 'angle' | 'capture'
+  const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'angle' | 'capture'
   const [weeks, setWeeks] = useState(3);      // 몇 주치가 쌓인 셈 칠지
-  const month = useMemo(() => fakeMonth(18), []);
   const checks = useMemo(() => fakeWeeks(weeks), [weeks]);
-  const share = useMemo(() => tagShare(month), [month]);
   const score = strainScore(picked);
 
 
@@ -70,33 +57,6 @@ export default function DiaryPreview() {
     />
   );
 
-  // 리포트에 들어갈 막대그래프
-  const chart = (
-    <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
-      <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 3 }}>이번 달 태그</div>
-      <div style={{ fontSize: 11.5, color: SUB, fontWeight: 600, marginBottom: 16 }}>
-        기록한 {month.length}일 가운데 며칠에 나왔는지예요.
-      </div>
-      {share.map((c) => (
-        <div key={c.id} style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: SUB, marginBottom: 9 }}>{c.title}</div>
-          {c.rows.map((r) => (
-            <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-              <DiaryIcon name={r.icon} size={20} />
-              <span style={{ flex: '0 0 82px', fontSize: 11.5, fontWeight: 700, wordBreak: 'keep-all' }}>{r.label}</span>
-              <span style={{ flex: 1, height: 9, borderRadius: 999, background: '#F3F1EC', overflow: 'hidden' }}>
-                <span style={{ display: 'block', height: '100%', width: `${r.pct}%`, borderRadius: 999,
-                  background: r.strain >= 2 ? '#D9A24B' : r.strain === 1 ? '#E8CB8E' : '#CFCFC7' }} />
-              </span>
-              <span style={{ flex: '0 0 52px', textAlign: 'right', fontSize: 11, fontWeight: 800, color: SUB,
-                fontVariantNumeric: 'tabular-nums' }}>{r.days}일 {r.pct}%</span>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <div>
       <div style={{ ...box, marginBottom: 16 }}>
@@ -112,7 +72,7 @@ export default function DiaryPreview() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setScreen('tag')} style={btn(true)}>📱 다이어리 화면</button>
-          <button onClick={() => setScreen('chart')} style={btn(false)}>📊 이번 달 태그 막대</button>
+          <button onClick={() => setScreen('report')} style={btn(false)}>📊 기록·발견</button>
           <button onClick={() => setScreen('angle')} style={btn(false)}>📐 각도기록 화면</button>
           <button onClick={() => setScreen('capture')} style={btn(false)}>📷 각도 재는 화면</button>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
@@ -165,17 +125,22 @@ export default function DiaryPreview() {
         </div>
       </div>
 
+      {screen === 'report' && (
+        <MallangDiscoveryReport oct bmtiCode="ACDZ" isLoggedIn userData={{ nickname: '회원' }}
+          onClose={() => setScreen('')} />
+      )}
+
       {screen === 'capture' && (
         <AngleCapture onClose={() => setScreen('angle')} onDone={() => {}} />
       )}
 
-      {screen && screen !== 'capture' && (
-        <PreviewModal navActive={screen === 'angle' ? 'angle' : 'today'}
-          title={screen === 'tag' ? '다이어리 — 10월 모습' : screen === 'chart' ? '이번 달 태그 막대' : '각도기록'}
+      {screen && screen !== 'capture' && screen !== 'report' && (
+        <PreviewModal navActive={screen === 'angle' ? 'angle' : screen === 'report' ? 'discover' : 'today'}
+          title={screen === 'tag' ? '다이어리 — 10월 모습' : '각도기록'}
           onClose={() => setScreen('')}>
           {() => (screen === 'tag' ? realDiary
-            : screen === 'chart' ? chart
-              : <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />)}
+            : screen === 'angle' ? <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />
+              : null)}
         </PreviewModal>
       )}
     </div>
