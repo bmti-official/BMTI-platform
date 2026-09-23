@@ -49,3 +49,30 @@ self.addEventListener('fetch', (e) => {
     }))
   );
 });
+
+// ── 웹 푸시 ────────────────────────────────────────────────
+// 서버(Supabase Edge Function)가 보낸 알림을 띄우고, 누르면 그 화면으로 데려간다.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
+  const title = d.title || 'BMTI';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: d.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: d.tag || 'bmti',
+    data: { url: d.url || '/' },
+    renotify: false,
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // 이미 열려 있는 창이 있으면 그 창을 쓴다. 새 창을 자꾸 띄우지 않는다.
+    for (const w of wins) { if ('focus' in w) { await w.focus(); if ('navigate' in w) await w.navigate(url); return; } }
+    if (self.clients.openWindow) await self.clients.openWindow(url);
+  })());
+});
