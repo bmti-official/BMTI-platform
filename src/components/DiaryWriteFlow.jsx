@@ -13,6 +13,7 @@ import {
 import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, saveSleepSettingToServer, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
+import { todayFinishes } from "../lib/cardFinish";
 
 // 하루 기록에서 고를 수 있는 불편한 부위 최대 개수 (BodySelector3D의 MAX_PARTS와 맞춘다)
 const MAX_SORE_PARTS = 3;
@@ -67,6 +68,7 @@ const TAG_CATEGORIES = [
 
 // ── 운동 카테고리 (개인 집중형에 스트레칭 포함) ──
 const EXERCISE_CATS = [
+  { name: "BMTI", items: ["바로카드"] },
   { name: "개인 집중형 (실내)", items: ["헬스·PT", "요가", "필라테스", "스트레칭", "명상·호흡", "수영"] },
   { name: "야외 활동형 (실외)", items: ["걷기/산책", "러닝·조깅", "자전거", "등산"] },
   { name: "그룹 및 파트너형", items: ["축구", "농구", "배드민턴", "테니스", "크로스핏", "댄스"] },
@@ -230,6 +232,14 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
   // 운동
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
+  // 오늘 바로카드·바로플리를 몇 번 했는지. 있으면 운동 칸을 저절로 채워 준다.
+  const [baro, setBaro] = useState({ count: 0, full: 0 });
+  useEffect(() => {
+    let alive = true;
+    todayFinishes().then((r) => { if (alive) setBaro(r); });
+    return () => { alive = false; };
+  }, []);
+
   const [exerciseReason, setExerciseReason] = useState(() => (
     initialEntry?.exercise?.did === false ? (REASON_TO_EXERCISE_LABEL[initialEntry.exercise.reason] || null) : null
   ));
@@ -644,6 +654,24 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       return (
         <AccordionCard question="오늘 운동·스트레칭·산책 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
           expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
+          {/* 오늘 바로카드를 한 기록이 있으면 알려 준다. 고르는 건 손님 몫으로 둔다. */}
+          {baro.count > 0 && (
+            <button type="button"
+              onClick={() => {
+                setExerciseDidIt("yes");
+                setExerciseTypes(prev => (prev.includes("바로카드") || prev.length >= 2 ? prev : [...prev, "바로카드"]));
+              }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, marginBottom: 12,
+                padding: "11px 13px", borderRadius: 14, border: "none", cursor: "pointer", fontFamily: "inherit",
+                background: C.yellow, color: GOLD, fontSize: 12.5, fontWeight: 800, textAlign: "left" }}>
+              <DiaryIcon name="flex" size={22} />
+              <span style={{ flex: 1, color: C.ink }}>
+                오늘 바로카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}
+              </span>
+              <span style={{ color: GOLD }}>담기 →</span>
+            </button>
+          )}
+
           {exerciseDidIt === null && (
             <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
               <EmojiTile icon="restNo" label="안했어요!" on={false} onClick={() => setExerciseDidIt("no")} tint={C.yellow} />

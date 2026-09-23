@@ -10,6 +10,9 @@ export const EXERCISE_REASON_KEY = { "바빴어요": "busy", "피곤해요": "ti
 export const PART_KEY = { "머리": "head", "목": "neck", "어깨": "shoulder", "팔꿈치": "elbow", "손목": "wrist", "등": "back", "복부": "abdomen", "허리": "waist", "골반": "pelvis", "무릎": "knee", "발목": "ankle", "팔": "arm", "다리": "leg", "기타": "etc" };
 export const WHEN_KEY = { "오늘 아침 일어날 때": "morning", "움직일 때": "moving", "오래 앉아있을 때": "sitting", "오래 서있을 때": "standing", "일할 때": "working", "하루 종일": "allday" };
 export const EXERCISE_TYPE_KEY = {
+  // 바로카드·바로플리를 끝내면 이 종목으로 저절로 담긴다.
+  // 따로 세어야 각도 변화와 견줘 볼 수 있다.
+  "바로카드": "baro",
   "헬스·PT": "gym", "요가": "yoga", "필라테스": "pilates", "스트레칭": "stretch", "명상·호흡": "meditation", "수영": "swim",
   "걷기/산책": "walk", "러닝·조깅": "run", "자전거": "bike", "등산": "hike",
   "축구": "soccer", "농구": "basketball", "배드민턴": "badminton", "테니스": "tennis", "크로스핏": "crossfit", "댄스": "dance",

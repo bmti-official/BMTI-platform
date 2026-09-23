@@ -11,6 +11,7 @@ import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { CHARACTERS } from '../../data';
 import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
 import { axisOf } from './typeTint';
+import { markFinish } from '../../lib/cardFinish';
 import { HELLO_LINE } from './helloLine';
 import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
@@ -262,6 +263,15 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (allDone && onAllDone) onAllDone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allDone]);
+
+  // 한 세트를 마치면 '했음', 다 채우면 '완주'로 남긴다.
+  // 일기를 열 때 '오늘 몇 번 하셨네요'로 채워 주는 데 쓴다.
+  useEffect(() => {
+    if (stage !== 'move') return;
+    if (allDone) markFinish({ kind: 'card', cardId: card.id, done: true, setsDone: sets });
+    else if (done >= 1) markFinish({ kind: 'card', cardId: card.id, done: false, setsDone: done });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done, allDone, stage]);
 
   // 전체 화면일 땐 뒤쪽이 움직이지 않고, ESC로 빠져나온다.
   useEffect(() => {

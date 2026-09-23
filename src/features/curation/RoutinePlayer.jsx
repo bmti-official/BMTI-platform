@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
+import { markFinish } from '../../lib/cardFinish';
 import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS, BGM_PARTS, bgmN, bgmSet, bgmFade, XFADE_SEC, UNDER } from './voiceCommon';
 import { pickCardTone, pickRoutineTone, subLines } from './format';
 import PartnerStage from './PartnerStage';
@@ -131,6 +132,12 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
     setPart('outro');
   };
 
+  // 한 동작이라도 끝냈으면 플리를 '했음'으로 남긴다. 끝까지 가면 위에서 '완주'로 덮는다.
+  useEffect(() => {
+    if (at > 0) markFinish({ kind: 'routine', routineId: routine?.id, done: false, setsDone: at });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [at]);
+
   // 한 셈씩 줄이다가 0이 되면 저절로 다음 동작으로 넘어간다.
   useEffect(() => {
     if (gap <= 0) return undefined;
@@ -205,7 +212,10 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
             hideFinish={!last}
             onQuiet={setQuiet}
             onFinalStretch={() => { if (last) toOutro(); }}
-            onAllDone={() => { if (!last) { setGap(GAP_SEC); setQuiet(false); } }} />
+            onAllDone={() => {
+              if (last) markFinish({ kind: 'routine', routineId: routine?.id, done: true, setsDone: cards.length });
+              else { setGap(GAP_SEC); setQuiet(false); }
+            }} />
         )}
       </div>
 
