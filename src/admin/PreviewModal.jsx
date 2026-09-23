@@ -144,6 +144,14 @@ function AppChrome({ tone, active: from }) {
   };
   return (
     <>
+      {/* 위 줄 — 반투명 블러 띠를 깔아 둔다.
+          스크롤을 내리면 글과 사진이 이 밑으로 지나가는데, 띠가 없으면 방 이름과 겹쳐 읽히지 않는다. */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68, zIndex: 28, pointerEvents: 'none',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.86) 62%, rgba(255,255,255,0) 100%)',
+        backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+        maskImage: 'linear-gradient(180deg, #000 0%, #000 62%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(180deg, #000 0%, #000 62%, transparent 100%)' }} />
+
       {/* 왼쪽 위 홈 — 동그란 버튼 안에 집과 이름을 함께 담는다 */}
       <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 30, pointerEvents: 'none' }}>
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0,
@@ -157,16 +165,12 @@ function AppChrome({ tone, active: from }) {
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
         <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
-          height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* 흰 판을 깔아 둔다. 글이 밑으로 지나가도 방 이름이 가려지지 않는다. */}
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.97)',
-            borderRadius: 999, padding: '6px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
-            <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
-              {TITLE[at].icon}
-            </span>
-            <span style={{ fontSize: TITLE[at].size, color: '#111', letterSpacing: '-0.01em',
-              fontFamily: TITLE[at].font, whiteSpace: 'nowrap', lineHeight: 1 }}>{TITLE[at].text}</span>
+          height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
+            {TITLE[at].icon}
           </span>
+          <span style={{ fontSize: TITLE[at].size, color: '#111', letterSpacing: '-0.01em',
+            fontFamily: TITLE[at].font, whiteSpace: 'nowrap', lineHeight: 1 }}>{TITLE[at].text}</span>
         </div>
       )}
 
