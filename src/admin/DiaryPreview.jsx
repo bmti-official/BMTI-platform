@@ -6,10 +6,31 @@ import { useMemo, useState } from 'react';
 import { INK, SUB, BG, box, btn } from './theme';
 import PreviewModal from './PreviewModal';
 import DiaryWriteFlow from '../components/DiaryWriteFlow';
+import AngleView from '../features/angle/AngleView';
+import AngleCapture from '../features/angle/AngleCapture';
+import PushToggle from '../features/angle/PushToggle';
 import { DiaryIcon } from '../components/DiaryIcons';
 import { TAG_CATEGORIES, strainScore, strainWord, tagShare } from '../lib/diaryTags';
 
 const GOLD_INK = '#8A6A3A';
+
+// 각도기록 화면을 보려면 주간 기록이 있어야 한다. 그럴듯한 몇 주를 지어 낸다.
+function fakeWeeks(n) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() - i * 7);
+    const w = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    out.push({
+      week: w, measured_at: `${w}T09:00:00Z`,
+      neck_bend: Math.round((16 + i * 1.4 + (i % 2 ? 1.1 : -0.6)) * 10) / 10,
+      trunk_flex: Math.round((72 - i * 2.2 + (i % 3 ? 1.5 : -1.2)) * 10) / 10,
+      arm_raise: Math.round((148 - i * 1.8) * 10) / 10,
+      quality: 82,
+    });
+  }
+  return out;
+}
 
 // 막대그래프를 보려면 한 달치 기록이 있어야 한다. 그럴듯한 한 달을 지어 낸다.
 function fakeMonth(days = 18) {
@@ -26,8 +47,10 @@ function fakeMonth(days = 18) {
 export default function DiaryPreview() {
   const [picked, setPicked] = useState(['진통제', '업무과다', '카페인']);
   const [female, setFemale] = useState(true);
-  const [screen, setScreen] = useState('');   // '' | 'tag' | 'chart'
+  const [screen, setScreen] = useState('');   // '' | 'tag' | 'chart' | 'angle' | 'capture'
+  const [weeks, setWeeks] = useState(3);      // 몇 주치가 쌓인 셈 칠지
   const month = useMemo(() => fakeMonth(18), []);
+  const checks = useMemo(() => fakeWeeks(weeks), [weeks]);
   const share = useMemo(() => tagShare(month), [month]);
   const score = strainScore(picked);
 
@@ -90,6 +113,15 @@ export default function DiaryPreview() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setScreen('tag')} style={btn(true)}>📱 다이어리 화면</button>
           <button onClick={() => setScreen('chart')} style={btn(false)}>📊 이번 달 태그 막대</button>
+          <button onClick={() => setScreen('angle')} style={btn(false)}>📐 각도기록 화면</button>
+          <button onClick={() => setScreen('capture')} style={btn(false)}>📷 각도 재는 화면</button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
+            쌓인 주
+            <select value={weeks} onChange={(e) => setWeeks(Number(e.target.value))}
+              style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, padding: '4px 6px', borderRadius: 8 }}>
+              {[0, 1, 2, 3, 5, 8].map((n) => <option key={n} value={n}>{n}주</option>)}
+            </select>
+          </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB, cursor: 'pointer' }}>
             <input type="checkbox" checked={female} onChange={(e) => setFemale(e.target.checked)} />
             여성 회원으로 보기
@@ -133,10 +165,17 @@ export default function DiaryPreview() {
         </div>
       </div>
 
-      {screen && (
-        <PreviewModal navActive="today" title={screen === 'tag' ? '다이어리 — 10월 모습' : '이번 달 태그 막대'}
+      {screen === 'capture' && (
+        <AngleCapture onClose={() => setScreen('angle')} onDone={() => {}} />
+      )}
+
+      {screen && screen !== 'capture' && (
+        <PreviewModal navActive={screen === 'angle' ? 'angle' : 'today'}
+          title={screen === 'tag' ? '다이어리 — 10월 모습' : screen === 'chart' ? '이번 달 태그 막대' : '각도기록'}
           onClose={() => setScreen('')}>
-          {() => (screen === 'tag' ? realDiary : chart)}
+          {() => (screen === 'tag' ? realDiary
+            : screen === 'chart' ? chart
+              : <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />)}
         </PreviewModal>
       )}
     </div>

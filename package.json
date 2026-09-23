@@ -19,6 +19,7 @@
     "gen:pages": "npm run gen:types && npm run gen:info && npm run gen:magazine && npm run gen:sitemap"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@supabase/supabase-js": "^2.110.0",
     "html2canvas": "^1.4.1",
     "jsdom": "^29.1.1",
