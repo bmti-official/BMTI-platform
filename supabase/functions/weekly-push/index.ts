@@ -9,6 +9,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
+// 비밀값은 붙여넣을 때 줄바꿈·공백이 딸려 오기 쉽다. 여기서 털어 낸다.
+// 일반 Base64(+ / =)로 넣었더라도 URL용으로 고쳐 준다.
+const tidy = (v: string | undefined) =>
+  (v ?? '').replace(/\s+/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
 // 이번 주의 일요일 — posture_checks.week 와 같은 기준으로 센다.
 function thisSunday(): string {
   const d = new Date();
@@ -23,13 +28,20 @@ Deno.serve(async () => {
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
   try {
-    const pub = Deno.env.get('VAPID_PUBLIC');
-    const priv = Deno.env.get('VAPID_PRIVATE');
-    const subj = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@bmti-official.co.kr';
-    const missing = [!pub && 'VAPID_PUBLIC', !priv && 'VAPID_PRIVATE'].filter(Boolean);
-    if (missing.length) return out({ error: '비밀값이 없습니다', missing }, 500);
+    const pub = tidy(Deno.env.get('VAPID_PUBLIC'));
+    const priv = tidy(Deno.env.get('VAPID_PRIVATE'));
+    const subj = (Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@bmti-official.co.kr').trim();
+    // 길이가 맞지 않으면 값이 잘못 들어온 것이다. 무엇이 어떻게 들어왔는지 알려 준다.
+    if (pub.length !== 87 || priv.length !== 43) {
+      return out({
+        error: '비밀값 길이가 맞지 않습니다',
+        공개키: { 글자수: pub.length, 있어야: 87, 앞8: pub.slice(0, 8), 뒤8: pub.slice(-8) },
+        비밀키: { 글자수: priv.length, 있어야: 43 },
+        주소: subj,
+      }, 500);
+    }
 
-    webpush.setVapidDetails(subj, pub!, priv!);
+    webpush.setVapidDetails(subj, pub, priv);
 
     const db = createClient(
       Deno.env.get('SUPABASE_URL')!,
