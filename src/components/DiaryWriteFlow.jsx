@@ -127,7 +127,12 @@ const REORDERABLE_LABEL = {
 // ============================================
 // initialEntry: 캘린더에서 '이전 기록 수정하기'로 들어온 경우, 그날 저장돼있던 전체 기록
 // (mallangReportEngine.js가 쓰는 key 형태 그대로) — 이 화면의 라벨로 되돌려 폼을 미리 채운다.
-export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, mallangSore = null, isLoggedIn = true, onRequireLogin = null, userInfo = null, setUserProfile = null }) {
+export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form", initialDayMood = null, targetDate = null, charImage = null, initialEntry = null, gender = null, mallangSore = null, isLoggedIn = true, onRequireLogin = null, userInfo = null, setUserProfile = null,
+  // ── 관리자 미리보기용 ──
+  // 아무것도 넘기지 않으면 지금 손님 화면 그대로다.
+  //   tagCats   오늘의 태그 목록을 갈아 끼운다(10월 개편본을 미리 보려고)
+  //   dropBlock 안 보이게 할 블럭 id들 (예: ['sitting'] — 무리했나요를 뺀 모습)
+  tagCats = null, dropBlock = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
@@ -611,7 +616,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "0 0 14px" }}>오늘 있었던 일을 가볍게 눌러두면, 나중에 뭐랑 자주 겹치는지 찾아드려요.</div>
           <style>{`@keyframes tagArrowBlink{0%,100%{opacity:.2}50%{opacity:.75}} .tag-scroll::-webkit-scrollbar{display:none}`}</style>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {TAG_CATEGORIES.map(cat => {
+            {(tagCats || TAG_CATEGORIES).map(cat => {
               const items = cat.tags.filter(tg => !tg.femaleOnly || isFemale);
               if (!items.length) return null;
               const arrow = { position: "absolute", top: "34%", fontSize: 22, fontWeight: 800, color: "#C9C4BB", pointerEvents: "none", animation: "tagArrowBlink 1.3s ease-in-out infinite" };
@@ -845,7 +850,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     return null;
   };
 
-  const visibleOrder = editMode ? blockOrder : blockOrder.filter(id => !hiddenBlocks.includes(id));
+  const gone = dropBlock || [];
+  const visibleOrder = (editMode ? blockOrder : blockOrder.filter(id => !hiddenBlocks.includes(id)))
+    .filter(id => !gone.includes(id));
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: C.bg, display: "flex", justifyContent: "center", fontFamily: F, color: C.ink }}>

@@ -3,12 +3,13 @@
 // 아직 진짜 다이어리에는 물려 두지 않았다. 여기서 모양과 셈을 확인하고,
 // 괜찮으면 그때 손님 화면으로 옮긴다.
 import { useMemo, useState } from 'react';
-import { INK, SUB, LINE, BG, box, btn } from './theme';
+import { INK, SUB, BG, box, btn } from './theme';
 import PreviewModal from './PreviewModal';
+import DiaryWriteFlow from '../components/DiaryWriteFlow';
 import { DiaryIcon } from '../components/DiaryIcons';
 import { TAG_CATEGORIES, strainScore, strainWord, tagShare } from '../lib/diaryTags';
 
-const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
+const GOLD_INK = '#8A6A3A';
 
 // 막대그래프를 보려면 한 달치 기록이 있어야 한다. 그럴듯한 한 달을 지어 낸다.
 function fakeMonth(days = 18) {
@@ -23,43 +24,27 @@ function fakeMonth(days = 18) {
 }
 
 export default function DiaryPreview() {
-  const [picked, setPicked] = useState([]);
+  const [picked, setPicked] = useState(['진통제', '업무과다', '카페인']);
   const [female, setFemale] = useState(true);
   const [screen, setScreen] = useState('');   // '' | 'tag' | 'chart'
   const month = useMemo(() => fakeMonth(18), []);
   const share = useMemo(() => tagShare(month), [month]);
   const score = strainScore(picked);
 
-  const toggle = (lb) => setPicked((p) => (p.includes(lb) ? p.filter((x) => x !== lb) : [...p, lb]));
 
-  // 손님이 보는 태그 고르개
-  const tagPicker = (
-    <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
-      <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 3 }}>오늘의 태그</div>
-      <div style={{ fontSize: 11.5, color: SUB, fontWeight: 600, marginBottom: 14 }}>
-        오늘 있었던 일을 골라 주세요. 여러 개 골라도 괜찮아요.
-      </div>
-      {TAG_CATEGORIES.map((c) => (
-        <div key={c.id} style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: SUB, marginBottom: 8 }}>{c.title}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-            {c.tags.filter((t) => !t.femaleOnly || female).map((t) => {
-              const on = picked.includes(t.label);
-              return (
-                <button key={t.label} type="button" onClick={() => toggle(t.label)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: 66,
-                    padding: '9px 2px', borderRadius: 13, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    background: on ? YELLOW : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
-                  <DiaryIcon name={t.icon} size={26} />
-                  <span style={{ fontSize: 9.5, fontWeight: 800, color: on ? GOLD_INK : SUB, lineHeight: 1.25,
-                    wordBreak: 'keep-all', textAlign: 'center' }}>{t.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
+  // 손님이 보는 다이어리 그대로 — 화면을 새로 그리지 않고 진짜 것을 띄운다.
+  // 여기서 본 모습이 곧 손님이 볼 모습이다.
+  //   tagCats   10월 태그 목록으로 갈아 끼운다
+  //   dropBlock '오늘 평소보다 무리했나요'를 뺀 모습
+  const realDiary = (
+    <DiaryWriteFlow
+      tagCats={TAG_CATEGORIES}
+      dropBlock={['sitting']}
+      gender={female ? 'female' : 'male'}
+      isLoggedIn
+      onClose={() => setScreen('')}
+      onFinish={() => setScreen('')}
+    />
   );
 
   // 리포트에 들어갈 막대그래프
@@ -99,9 +84,11 @@ export default function DiaryPreview() {
           예전 무리한 이유 넷(오래 앉음·오래 선 자세·많이 걸음·무거운 물건 들기)이 <b>활동·환경</b>으로 들어왔고 <b>업무과다</b>가 새로 생겼습니다.
           <br />부담인지 아닌지는 갈래가 아니라 <b>태그마다</b> 정해 둡니다. 갈래로 묶으면 나중에 항목을 더할 때 저도 모르게 부담이 됩니다.
           <br /><b>음식 섭취는 부담 점수에서 뺍니다.</b> 막대그래프에는 그대로 나옵니다.
+          <br />아래 <b>📱 다이어리 화면</b>은 손님이 쓰는 그 화면을 그대로 띄웁니다. 태그 목록만 10월 것으로 갈아 끼우고
+          &lsquo;무리했나요&rsquo; 블럭을 뺐습니다. <b>여기서 저장해도 기록은 남지 않습니다.</b>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => setScreen('tag')} style={btn(true)}>📱 태그 고르는 화면</button>
+          <button onClick={() => setScreen('tag')} style={btn(true)}>📱 다이어리 화면</button>
           <button onClick={() => setScreen('chart')} style={btn(false)}>📊 이번 달 태그 막대</button>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB, cursor: 'pointer' }}>
             <input type="checkbox" checked={female} onChange={(e) => setFemale(e.target.checked)} />
@@ -114,6 +101,23 @@ export default function DiaryPreview() {
       <div style={{ ...box, background: BG, marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 8 }}>
           부담 점수 <span style={{ fontWeight: 700, color: SUB }}>— 고른 태그의 무게를 더한 값</span>
+        </div>
+        {/* 태그를 켜 보며 점수가 어떻게 움직이는지 본다 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 12 }}>
+          {TAG_CATEGORIES.flatMap((c) => c.tags).filter((t) => !t.femaleOnly || female).map((t) => {
+            const on = picked.includes(t.label);
+            return (
+              <button key={t.label} type="button"
+                onClick={() => setPicked((p) => (on ? p.filter((x) => x !== t.label) : [...p, t.label]))}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 999,
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800,
+                  background: on ? '#FDF6DC' : '#fff', color: on ? GOLD_INK : SUB,
+                  boxShadow: on ? 'none' : 'inset 0 0 0 1px #EDE9E2' }}>
+                <DiaryIcon name={t.icon} size={15} />{t.label}
+                <span style={{ opacity: 0.6 }}>{t.scored === false ? '·0' : `·${t.strain}`}</span>
+              </button>
+            );
+          })}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 30, fontWeight: 900, color: GOLD_INK, fontVariantNumeric: 'tabular-nums' }}>{score}</span>
@@ -130,9 +134,9 @@ export default function DiaryPreview() {
       </div>
 
       {screen && (
-        <PreviewModal navActive="today" title={screen === 'tag' ? '오늘의 태그' : '이번 달 태그 막대'}
+        <PreviewModal navActive="today" title={screen === 'tag' ? '다이어리 — 10월 모습' : '이번 달 태그 막대'}
           onClose={() => setScreen('')}>
-          {() => (screen === 'tag' ? tagPicker : chart)}
+          {() => (screen === 'tag' ? realDiary : chart)}
         </PreviewModal>
       )}
     </div>

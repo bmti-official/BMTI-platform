@@ -137,7 +137,7 @@ function AppChrome({ tone, active: from }) {
   const [grow, setGrow] = useState('');
   const { rows, at } = navFor(active);
   const go = (key) => {
-    if (key === 'back') { setGrow(''); setActive('root'); return; }
+    if (key === 'back') { setGrow('right'); setActive('root'); return; }
     if (key === 'diary') { setGrow('right'); setActive('today'); return; }
     if (key === 'self') { setGrow('left'); setActive('browse'); return; }
     setActive(key);   // 같은 층 안에서 옮길 땐 펼치지 않는다
@@ -183,16 +183,26 @@ function AppChrome({ tone, active: from }) {
         <div key={`${at}-${grow}`}
           style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 999,
             border: '1px solid #F1F1F1', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '4px 6px',
-            animation: grow ? `navGrow${grow === 'right' ? 'R' : 'L'} .34s cubic-bezier(.22,.9,.3,1)` : 'none' }}>
+            animation: grow ? `navGrow${grow === 'right' ? 'R' : 'L'} .5s cubic-bezier(.16,.84,.28,1) both` : 'none' }}>
+          {/* 펼쳐지는 결 — 끝에서 천천히 놓아 주는 곡선을 쓴다.
+              칸이 뒤따라 떠오르게 두면 딱딱하게 열리지 않는다. */}
           <style>{
-            '@keyframes navGrowR{from{clip-path:inset(0 100% 0 0);opacity:.5}to{clip-path:inset(0 0 0 0);opacity:1}}'
-            + '@keyframes navGrowL{from{clip-path:inset(0 0 0 100%);opacity:.5}to{clip-path:inset(0 0 0 0);opacity:1}}'
+            '@keyframes navGrowR{'
+            + '0%{clip-path:inset(0 100% 0 0);opacity:.35;transform:translateX(-6px)}'
+            + '55%{opacity:1}'
+            + '100%{clip-path:inset(0 0 0 0);opacity:1;transform:translateX(0)}}'
+            + '@keyframes navGrowL{'
+            + '0%{clip-path:inset(0 0 0 100%);opacity:.35;transform:translateX(6px)}'
+            + '55%{opacity:1}'
+            + '100%{clip-path:inset(0 0 0 0);opacity:1;transform:translateX(0)}}'
+            + '@keyframes navTabIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}'
           }</style>
-          {rows.map((t) => (t.key === 'char' ? (
+          {rows.map((t, i) => (t.key === 'char' ? (
             <span key="char" style={{ width: 56, flexShrink: 0 }} />
           ) : (
             <button key={t.key} type="button" onClick={() => go(t.key)}
               style={{ flex: 1, minWidth: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              animation: grow ? `navTabIn .34s ease-out ${0.08 + i * 0.045}s both` : 'none',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
               padding: '6px 0', borderRadius: 16, background: active === t.key ? '#F3F1EC' : 'transparent' }}>
               <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
