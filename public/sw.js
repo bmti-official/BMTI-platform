@@ -53,7 +53,7 @@ self.addEventListener('fetch', (e) => {
 // ── 웹 푸시 ────────────────────────────────────────────────
 // 서버(Supabase Edge Function)가 보낸 알림을 띄우고, 누르면 그 화면으로 데려간다.
 self.addEventListener('push', (e) => {
-  let d = {};
+  let d;
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
   const title = d.title || 'BMTI';
   e.waitUntil(self.registration.showNotification(title, {

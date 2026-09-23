@@ -5,6 +5,8 @@ import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
 import { PillPicker, OnePicker, PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
+import SlideEditor from './SlideEditor';
+import { slidesToBody } from '../features/curation/newsSlides';
 import BrowseView from '../features/curation/BrowseView';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { SearchBox, MoveButtons } from './listTools';
@@ -27,7 +29,7 @@ const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: 
 const EMPTY = {
   published: false, sort_order: 0,
   title_z: '', title_m: '', cover_url: '',
-  thumb_text: '', read_min: 0,
+  thumb_text: '', read_min: 0, slides_z: [], slides_m: [],
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   chars_z: [], chars_m: [],
   ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [
@@ -93,11 +95,13 @@ function normalize(row) {
     if (!Array.isArray(f[`s${n}_caps`])) f[`s${n}_caps`] = [];
   });
   ['card_ids', 'routine_ids', 'body_groups', 'core_parts', 'related_parts'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
+  ['slides_z', 'slides_m'].forEach((k) => { if (!Array.isArray(f[k])) f[k] = []; });
   return f;
 }
 
 function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => withDraft(normalize(row), 'curation', row));
+  const [slideTone, setSlideTone] = useState('z');   // 카드뉴스를 어느 말투로 손볼지
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -140,6 +144,11 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
     setSaving(true); setErr('');
     const payload = { ...f, updated_at: new Date().toISOString() };
     ['view_count', 'save_count', 'created_at'].forEach((k) => delete payload[k]);
+    // 슬라이드 글을 이어 붙여 본문에도 담아 둔다. 글자만 읽는 곳에서도 내용이 남는다.
+    ['z', 'm'].forEach((t) => {
+      const g = f[`slides_${t}`] || [];
+      if (g.length) payload[`body_${t}`] = slidesToBody(g);
+    });
     const q = f.id
       ? supabase.from('curation_items').update(payload).eq('id', f.id)
       : supabase.from('curation_items').insert(payload);
@@ -402,9 +411,29 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
         </label>
       </div>
 
+      {/* 카드뉴스 — 사진마다 글을 얹어 옆으로 넘겨 보는 모양 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>
+          카드뉴스 <span style={{ fontWeight: 600, color: SUB }}>— 비워 두면 예전처럼 긴 글</span>
+        </div>
+        <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, marginBottom: 12,
+          boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+          {[['z', 'Z 유형 · 담백'], ['m', 'M 유형 · 다정']].map(([k, lb]) => (
+            <button key={k} type="button" onClick={() => setSlideTone(k)}
+              style={{ padding: '7px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12, fontWeight: 800, background: slideTone === k ? ACCENT : 'transparent',
+                color: slideTone === k ? '#fff' : SUB }}>
+              {lb}
+            </button>
+          ))}
+        </div>
+        <SlideEditor value={f[`slides_${slideTone}`] || []} onChange={set(`slides_${slideTone}`)} />
+      </div>
+
       {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
       <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
         background: '#fff', margin: '4px -18px -18px', padding: '12px 18px', borderTop: `1px solid ${LINE}`,
+
         borderRadius: '0 0 13px 13px', boxShadow: '0 -6px 14px rgba(23,21,15,0.06)' }}>
         <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
         <button onClick={() => onPreview(f)} style={btn(false)}>미리보기</button>

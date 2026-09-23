@@ -6,9 +6,11 @@
 import { useMemo, useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import CardFeed from './CardFeed';
+import NewsCard from './NewsCard';
 import { mmss } from './format';
 import PickRow from './PickRow';
 import { cardTotalSec } from './cardDefaults';
+import { cardCount } from './newsSlides';
 import { mixGrid, readMin, matches } from './browseOrder';
 
 const SUB = '#8A8378', LINE = '#EDE9E2';
@@ -17,6 +19,7 @@ const SUB = '#8A8378', LINE = '#EDE9E2';
 const TABS = [['all', '전체'], ['read', '읽을거리'], ['card', '바로카드']];
 
 export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCode, onOpenRead }) {
+  const [openRead, setOpenRead] = useState(null);   // 펼쳐 본 읽을거리
   const [seed] = useState(() => Math.floor(Math.random() * 2000000) + 1);
   const [tab, setTab] = useState('all');
   const [q, setQ] = useState('');
@@ -51,12 +54,17 @@ export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCod
         {grid.map(({ kind, item }) => {
           const read = kind === 'read';
           // 카드뉴스로 만든 글이면 장수를, 아직 긴 글이면 읽는 시간을 적는다
-          const slides = (item.slides || []).length;
+          const slides = cardCount((tone === 'm' ? item.slides_m : item.slides_z) || []);
           const mark = read ? (slides > 0 ? `${slides}장` : `${readMin(item, tone)}분`)
             : (cardTotalSec(item) > 0 ? mmss(cardTotalSec(item)) : '');
           return (
             <button key={`${kind}-${item.id}`} type="button"
-              onClick={() => (read ? onOpenRead && onOpenRead(item) : setOpenId(item.id))}
+              onClick={() => {
+                if (!read) { setOpenId(item.id); return; }
+                // 카드뉴스로 만든 글이면 옆으로 넘겨 보고, 아직 긴 글이면 바깥에 넘긴다
+                const g = (tone === 'm' ? item.slides_m : item.slides_z) || [];
+                if (g.length) setOpenRead(item); else if (onOpenRead) onOpenRead(item);
+              }}
               style={{ position: 'relative', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
               <CurationThumb item={item} radius={2} ratio="4 / 5" showRead={false}
                 clip={read ? '' : (item.video_url || '')} emptyText="" />
@@ -75,6 +83,10 @@ export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCod
 
       {openId != null && (
         <CardFeed cards={cards} startId={openId} tone={tone} bmtiCode={bmtiCode} onClose={() => setOpenId(null)} />
+      )}
+      {openRead && (
+        <NewsCard item={openRead} tone={tone} onClose={() => setOpenRead(null)}
+          slides={(tone === 'm' ? openRead.slides_m : openRead.slides_z) || []} />
       )}
     </div>
   );
