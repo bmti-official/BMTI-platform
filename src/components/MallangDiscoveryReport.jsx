@@ -530,7 +530,14 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                   distribution={s.id === "mood_calendar" ? find("mood_distribution")?.data : null}
                   exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} pdfMode={savingPDF} />;
                 // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
-                if (s.id === "notes") { items.push({ locked: !s.unlocked, node: <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment> }); return; }
+                if (s.id === "notes") {
+                  // 10월부터는 피라미드 대신 갈래별 막대를 둔다 — 무엇을 얼마나 골랐는지가 더 쓸모 있다
+                  const tagCard = oct
+                    ? <TagBarCard entries={entries} />
+                    : <SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />;
+                  items.push({ locked: !s.unlocked, node: <Fragment key="notes-group">{tagCard}{card}</Fragment> });
+                  return;
+                }
                 items.push({ locked: !s.unlocked, node: card });
               });
               return [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)].map((i) => i.node);
@@ -2598,9 +2605,8 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />,
     <WeatherFindingCards entries={EXAMPLE_ENTRIES} />, hasAny)}</Fragment> });
   const fcUnlocked = !!(ins.factcheck || hasProfile);
-  if (oct) items.push({ locked: !(entries || []).length, node: <TagBarCard key="tagbar" entries={entries} /> });
-  else if (fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
-  else if (exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
+  if (!oct && fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
+  else if (!oct && exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
   items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
     <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />,
     <LetterCard data={exIns.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />, hasAny)}</Fragment> });

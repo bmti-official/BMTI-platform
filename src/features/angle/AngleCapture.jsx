@@ -11,14 +11,28 @@ import {
   neckBend, trunkFlex, armRaise, distanceOk, sideOk, frontOk, kneeStraight, seenWell,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
+import { say, hush, canSpeak } from '../../lib/speak';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 const MAX_RETRY = 3;   // 세 번 연달아 안 잡히면 가이드를 다시 보여 준다
+const HOLD_MS = 1500;  // 자세가 이만큼 그대로면 저절로 시작한다
 
 const STEPS = [
-  { id: 'side', title: '옆으로 서 주세요', how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.', sec: 8 },
-  { id: 'front', title: '정면으로 서 주세요', how: '화면을 마주 봅니다.\n두 팔을 옆으로 천천히 올렸다 내립니다.', sec: 8 },
+  {
+    id: 'side', title: '옆으로 서 주세요', sec: 8,
+    how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.',
+    ready: '옆으로 서 주세요',
+    go: '시작합니다. 가만히 서 계세요.',
+    mid: '이제 천천히 허리를 굽혀 주세요.',
+  },
+  {
+    id: 'front', title: '정면으로 서 주세요', sec: 8,
+    how: '화면을 마주 봅니다.\n두 팔을 옆으로 천천히 올렸다 내립니다.',
+    ready: '이번엔 정면으로 서 주세요',
+    go: '시작합니다. 두 팔을 천천히 올려 주세요.',
+    mid: '끝까지 올린 채로 잠깐 멈춰 주세요.',
+  },
 ];
 
 export default function AngleCapture({ onDone, onClose }) {
@@ -35,6 +49,9 @@ export default function AngleCapture({ onDone, onClose }) {
   const runRef = useRef(null);                   // 지금 판의 모아 둔 값
   const gotRef = useRef({});                     // 단계마다 얻은 값
   const tryRef = useRef(0);                      // 몇 번 어긋났는지
+  const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
+  const startRef = useRef(null);                 // 저절로 시작하는 손잡이
+  const [voice, setVoice] = useState(canSpeak());
 
   // 한 프레임씩 보며 자세를 검사하고, 재는 중이면 값을 모은다.
   const check = (pts) => {
@@ -51,6 +68,21 @@ export default function AngleCapture({ onDone, onClose }) {
     else if (!face.ok) why = side ? '몸을 옆으로 더 돌려 주세요' : '화면을 정면으로 봐 주세요';
     else if (seen < 0.5) why = '밝은 곳에서 몸이 다 보이게 서 주세요';
     setMsg(why);
+    if (voice && why) say(why);
+
+    // 자세가 그대로 이어지면 저절로 시작한다 — 버튼을 누르러 오가면 자세가 흐트러진다
+    if (!runRef.current) {
+      if (why) { okSinceRef.current = 0; return; }
+      const t0 = performance.now();
+      if (!okSinceRef.current) {
+        okSinceRef.current = t0;
+        if (voice) say('좋아요. 그대로 계세요.', { force: true });
+      } else if (t0 - okSinceRef.current > HOLD_MS) {
+        okSinceRef.current = 0;
+        startRef.current?.();
+      }
+      return;
+    }
 
     const run = runRef.current;
     if (!run || why) return;                       // 자세가 어긋나면 그 프레임은 안 센다
@@ -133,7 +165,10 @@ export default function AngleCapture({ onDone, onClose }) {
     tryRef.current += 1;
     const n = tryRef.current;
     setRetry(n);
-    setMsg(n >= MAX_RETRY ? '' : '잘 잡히지 않았어요. 한 번 더 해 볼까요?');
+    okSinceRef.current = 0;
+    const word = n >= MAX_RETRY ? '잘 잡히지 않네요. 찍는 방법을 다시 볼게요.' : '잘 잡히지 않았어요. 한 번 더 해 볼까요?';
+    setMsg(n >= MAX_RETRY ? '' : word);
+    if (voice) say(word, { force: true });
     if (n >= MAX_RETRY) setStep(-1);               // 세 번 어긋나면 가이드부터 다시
   };
 
@@ -148,7 +183,8 @@ export default function AngleCapture({ onDone, onClose }) {
       const trunk = peakOf(run.trunk);
       if (!neck && !trunk) { again(); return; }
       gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad };
-      tryRef.current = 0; setRetry(0);
+      tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+      if (voice) say('옆모습 다 쟀어요. ' + STEPS[1].ready + '.', { force: true });
       setStep(1);
       return;
     }
@@ -161,17 +197,23 @@ export default function AngleCapture({ onDone, onClose }) {
       retries: retry,
     });
     gotRef.current = all;
-    tryRef.current = 0; setRetry(0);
+    tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+    if (voice) say('다 쟀어요. 수고하셨어요.', { force: true });
     setStep(2);
     if (onDone) onDone({ ...all, quality, retries: retry });
   };
 
-  // 재기 시작 — 몇 초 동안 값을 모은다
+  // 재기 시작 — 몇 초 동안 값을 모은다. 버튼이 아니라 자세가 맞으면 저절로 불린다.
   const start = () => {
+    if (runRef.current) return;
+    const s0 = STEPS[step];
     runRef.current = { neck: [], trunk: [], arm: [], seen: 0, kneeBad: 0 };
-    setCount(STEPS[step].sec);
+    setCount(s0.sec);
+    if (voice) say(s0.go, { force: true });
     const tick = setInterval(() => {
       setCount((n) => {
+        // 절반쯤 왔을 때 다음에 뭘 할지 알려 준다
+        if (n === Math.ceil(s0.sec / 2) + 1 && voice) say(s0.mid, { force: true });
         if (n > 1) return n - 1;
         clearInterval(tick);
         finishStep();
@@ -179,11 +221,12 @@ export default function AngleCapture({ onDone, onClose }) {
       });
     }, 1000);
   };
+  useEffect(() => { startRef.current = start; });
 
   // ── 화면 ────────────────────────────────────────────────
   if (step === -1) {
     return (
-      <Shell onClose={onClose} title="각도기록">
+      <Shell onClose={onClose} title="각도기록" voice={voice} onVoice={() => { setVoice((v) => !v); hush(); }}>
         <div style={{ padding: '6px 4px 0' }}>
           <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 10, letterSpacing: '-0.02em' }}>1분이면 끝나요</div>
           <div style={{ fontSize: 13, color: SUB, fontWeight: 600, lineHeight: 1.85, marginBottom: 16 }}>
@@ -218,7 +261,7 @@ export default function AngleCapture({ onDone, onClose }) {
 
   if (step === 2) {
     return (
-      <Shell onClose={onClose} title="각도기록">
+      <Shell onClose={onClose} title="각도기록" voice={voice} onVoice={() => { setVoice((v) => !v); hush(); }}>
         <div style={{ padding: '30px 4px', textAlign: 'center' }}>
           <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 8 }}>다 쟀어요</div>
           <div style={{ fontSize: 13, color: SUB, fontWeight: 600, lineHeight: 1.8, marginBottom: 22 }}>
@@ -234,7 +277,7 @@ export default function AngleCapture({ onDone, onClose }) {
   const ready = !msg;
   const off = count > 0 || !!err;
   return (
-    <Shell onClose={onClose} title={`각도기록 — ${step + 1}/2`}>
+    <Shell onClose={onClose} title={`각도기록 — ${step + 1}/2`} voice={voice} onVoice={() => { setVoice((v) => !v); hush(); }}>
       <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', borderRadius: 16,
         overflow: 'hidden', background: '#111' }}>
         <video ref={videoRef} playsInline muted
@@ -255,7 +298,7 @@ export default function AngleCapture({ onDone, onClose }) {
         <div style={{ position: 'absolute', left: 12, right: 12, top: 12, textAlign: 'center' }}>
           <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
             color: msg ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
-            {msg || (count > 0 ? '그대로 천천히 움직여 주세요' : '준비됐어요')}
+            {msg || (count > 0 ? '그대로 천천히 움직여 주세요' : '좋아요, 그대로 계세요')}
           </span>
         </div>
 
@@ -272,8 +315,9 @@ export default function AngleCapture({ onDone, onClose }) {
           {s.how}
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
+        {/* 자세가 맞으면 저절로 시작한다. 이 버튼은 기다리기 답답할 때 쓰는 자리다. */}
         <button type="button" onClick={start} disabled={off} style={bigBtn(!off)}>
-          {count > 0 ? `재는 중… ${count}` : '재기 시작'}
+          {count > 0 ? `재는 중… ${count}` : ready ? '곧 시작해요 — 눌러서 바로 시작' : '자세를 맞춰 주세요'}
         </button>
       </div>
     </Shell>
@@ -303,11 +347,12 @@ function drawBones(g, pts, w, h) {
   });
 }
 
-function Shell({ children, onClose, title }) {
+function Shell({ children, onClose, title, voice, onVoice }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    // 화면을 떠날 땐 하던 말을 멈춘다
+    return () => { document.body.style.overflow = prev; hush(); };
   }, []);
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 74, background: '#fff', overflowY: 'auto',
@@ -316,7 +361,15 @@ function Shell({ children, onClose, title }) {
         <button type="button" onClick={onClose} aria-label="닫기"
           style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F4F1EB',
             fontSize: 17, fontWeight: 800, color: INK, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>‹</button>
-        <span style={{ fontSize: 14, fontWeight: 900 }}>{title}</span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 900 }}>{title}</span>
+        {canSpeak() && (
+          <button type="button" onClick={onVoice} aria-label={voice ? '말 끄기' : '말 켜기'}
+            style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800,
+              background: voice ? '#FDF6DC' : '#F4F1EB', color: voice ? '#8A6A3A' : SUB }}>
+            {voice ? '🔊 말 켬' : '🔇 말 끔'}
+          </button>
+        )}
       </div>
       {children}
     </div>

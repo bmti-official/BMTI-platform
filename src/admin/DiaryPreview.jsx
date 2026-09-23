@@ -126,8 +126,17 @@ export default function DiaryPreview() {
       </div>
 
       {screen === 'report' && (
-        <MallangDiscoveryReport oct bmtiCode="ACDZ" isLoggedIn userData={{ nickname: '회원' }}
-          onClose={() => setScreen('')} />
+        <>
+          <MallangDiscoveryReport oct bmtiCode="ACDZ" isLoggedIn userData={{ nickname: '회원' }}
+            onClose={() => setScreen('')} />
+          {/* 기록·발견은 제 화면을 통째로 쓴다. 관리자에서 나올 길을 위에 따로 둔다. */}
+          <button type="button" onClick={() => setScreen('')}
+            style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, color: '#fff', background: '#1C1A17',
+              borderRadius: 999, padding: '9px 16px', boxShadow: '0 3px 14px rgba(0,0,0,0.3)' }}>
+            ✕ 미리보기 닫기
+          </button>
+        </>
       )}
 
       {screen === 'capture' && (
