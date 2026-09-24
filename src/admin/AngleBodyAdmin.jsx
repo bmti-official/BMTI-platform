@@ -7,13 +7,18 @@ import { useEffect, useState } from 'react';
 import { INK, SUB, BG, box, btn, label } from './theme';
 import ImageInput from './ImageInput';
 import { loadAssets, saveAsset, ANGLE_BODY, DEFAULT_META } from '../lib/appAssets';
-import AngleBoxCard from '../components/AngleBoxCard';
+import AngleBoxCard, { PhotoFigure } from '../components/AngleBoxCard';
+import { getTypeAccent } from '../lib/typeAccent';
 
 const SLIDERS = [
-  { k: 'shoulderX', label: '어깨 좌우', min: 20, max: 80, hint: '머리가 도는 축의 가로 자리' },
-  { k: 'shoulderY', label: '어깨 높이', min: 15, max: 60, hint: '여기 위쪽이 머리로 떨어져 나간다' },
-  { k: 'hipY', label: '골반 높이', min: 35, max: 80, hint: '허리 굽힘 부채꼴이 걸리는 자리' },
-  { k: 'baseNeck', label: '기준 목 각도', min: 0, max: 20, hint: '그림 자체가 이미 기울어 있는 만큼' },
+  { k: 'shoulderX', label: '어깨 좌우', min: 20, max: 80, color: '#E0554F',
+    hint: '빨간 세로선을 목이 몸통에서 갈라지는 자리에 맞춥니다' },
+  { k: 'shoulderY', label: '어깨 높이', min: 15, max: 60, color: '#E0554F',
+    hint: '빨간 가로선을 어깨선(목 뿌리)에 맞춥니다 — 여기 위쪽이 머리로 떨어져 나갑니다' },
+  { k: 'hipY', label: '골반 높이', min: 35, max: 80, color: '#2F6FE0',
+    hint: '파란 가로선을 엉덩이 옆선, 허리가 접히는 자리에 맞춥니다' },
+  { k: 'baseNeck', label: '기준 목 각도', min: 0, max: 20, color: '#8A6A3A',
+    hint: '그림 자체가 이미 기울어 있는 만큼. 미리보기를 이 값에 두면 머리가 그대로여야 합니다' },
 ];
 
 // 미리보기용 가짜 판 — 목 각도만 손으로 돌려 본다
@@ -66,7 +71,10 @@ export default function AngleBodyAdmin() {
       <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8, marginBottom: 14 }}>
         남/여 한 장씩 올립니다. <b>옆을 보고 선 전신</b>이어야 하고, 배경은 흰색이 좋습니다.
         <br />화면에서는 <b>어깨 위쪽만 떼어</b> 잰 각도만큼 돌립니다. 그래서 어깨가 그림 어디쯤인지 맞춰 둬야 합니다.
-        <br />아래 <b>목 각도</b>를 흔들어 보면서 머리가 제자리에서 도는지 확인하세요. 목이 잘리거나 어깨가 같이 돌면 <b>어깨 높이</b>를 조절합니다.
+        <br /><b style={{ color: '#E0554F' }}>빨간 선 둘</b>이 만나는 자리가 머리가 도는 축입니다 — <b>목이 몸통에서 갈라지는 자리</b>에 놓으세요.
+        <b style={{ color: '#2F6FE0' }}> 파란 가로선</b>은 <b>엉덩이 옆선(허리가 접히는 자리)</b>에 놓으면 됩니다.
+        <br />맞췄으면 아래 <b>미리보기 목 각도</b>를 흔들어 보세요. <b>머리만 제자리에서 돌고 어깨는 가만히</b> 있으면 맞은 겁니다.
+        목이 잘리거나 어깨가 같이 돌면 <b>어깨 높이</b>를 다시 조절합니다.
       </div>
 
       <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, marginBottom: 14,
@@ -79,7 +87,7 @@ export default function AngleBodyAdmin() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 18, alignItems: 'start' }}>
         <div>
           <span style={label}>{who === 'female' ? '여성' : '남성'} 옆모습 사진</span>
           <ImageInput value={cur.url} onChange={(v) => put({ url: v })} />
@@ -92,7 +100,9 @@ export default function AngleBodyAdmin() {
                   <span style={{ fontSize: 11, fontWeight: 800, color: '#C9975A', fontVariantNumeric: 'tabular-nums' }}>
                     {cur.meta[s.k]}{s.k === 'baseNeck' ? '°' : '%'}
                   </span>
-                  <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>— {s.hint}</span>
+                  </div>
+                <div style={{ fontSize: 11, color: SUB, fontWeight: 600, lineHeight: 1.6, marginBottom: 5, wordBreak: 'keep-all' }}>
+                  <b style={{ color: s.color }}>▪</b> {s.hint}
                 </div>
                 <input type="range" min={s.min} max={s.max} step={0.5} value={cur.meta[s.k]}
                   onChange={(e) => putMeta(s.k)(e.target.value)}
@@ -117,8 +127,21 @@ export default function AngleBodyAdmin() {
           </div>
         </div>
 
-        {/* 손님이 볼 그대로 — 저장 전에도 여기서 바로 보인다 */}
-        <div>
+        {/* 맞추는 창 — 크게. 작으면 선이 어디 걸쳤는지 안 보인다 */}
+        <div style={{ position: 'sticky', top: 12 }}>
+          <span style={label}>맞추는 창 <span style={{ fontWeight: 600 }}>— 선을 보고 조절하세요</span></span>
+          <div style={{ background: '#FAF7F0', borderRadius: 16, padding: 10, marginBottom: 14 }}>
+            {cur.url ? (
+              <div style={{ width: 300, maxWidth: '100%', margin: '0 auto' }}>
+                <PhotoFigure src={cur.url} meta={cur.meta} neck={neck} trunk={72} arm={148}
+                  ghostNeck={null} t={getTypeAccent()} sel={null} guide />
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: SUB, fontWeight: 600, lineHeight: 1.7, padding: '24px 6px', textAlign: 'center' }}>
+                사진을 올리면 여기에 맞추는 선이 함께 나옵니다.
+              </div>
+            )}
+          </div>
           <span style={label}>손님 화면</span>
           <div style={{ background: '#fff', borderRadius: 16, padding: 8 }}>
             <LivePreview url={cur.url} meta={cur.meta} neck={neck} />

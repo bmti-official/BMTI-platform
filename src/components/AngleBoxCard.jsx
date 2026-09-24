@@ -18,6 +18,7 @@ import { loadAssets, ANGLE_BODY, DEFAULT_META } from '../lib/appAssets';
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
 const GOLD = '#C9975A';
+const PURPLE = '#7C6BD0';   // 사진 위에서 잘 보이는 보라. 흰 테를 밑에 깔고 쓴다.
 
 const GOOD = 55;
 const usable = (r) => r && (r.quality == null || r.quality >= GOOD);
@@ -104,7 +105,29 @@ function Figure({ neck, trunk, arm, ghostNeck, t, sel }) {
 // 한 장짜리 그림이라 관절이 움직이지 않는다. 그래서 **어깨 위쪽만 따로 떼어**
 // 잰 각도만큼 돌린다. 아래는 그대로 두니 목만 앞으로 나온 모습이 된다.
 // 어깨가 그림 어디쯤인지는 관리자에서 맞춰 둔다 — 그림마다 다르다.
-function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel }) {
+// 사진 위에 얇은 선 하나만 두면 옷·배경에 묻힌다. 흰 테를 밑에 깔고 그 위에 보라를 얹는다.
+function Halo({ d, on, purple }) {
+  return (
+    <>
+      <path d={d} stroke="#fff" strokeWidth={on ? 5 : 3.5} fill="none" strokeLinecap="round"
+        vectorEffect="non-scaling-stroke" opacity="0.95" />
+      <path d={d} stroke={purple} strokeWidth={on ? 2.4 : 1.6} fill="none" strokeLinecap="round"
+        strokeDasharray="2.5 2.5" vectorEffect="non-scaling-stroke" />
+    </>
+  );
+}
+function HaloLine({ x1, y1, x2, y2, on, purple }) {
+  return (
+    <>
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={on ? 6 : 4}
+        strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity="0.95" />
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={purple} strokeWidth={on ? 3 : 2}
+        strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </>
+  );
+}
+
+export function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel, guide = false }) {
   const m = { ...DEFAULT_META, ...(meta || {}) };
   const turn = (v) => (v == null ? 0 : Math.max(-25, Math.min(45, v - m.baseNeck)));
   const body = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' };
@@ -140,35 +163,52 @@ function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel }) {
         style={{ ...body, clipPath: headClip, WebkitClipPath: headClip, transformOrigin: origin,
           transform: `rotate(${turn(neck).toFixed(1)}deg)`, transition: 'transform .4s ease' }} />
 
-      {/* 굽힘·들림 범위 부채꼴 */}
+      {/* 굽힘·들림 범위 부채꼴 — 보라 선에 흰 테 */}
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
         {trunk != null && show('trunk_flex') && (
           <>
-            <path d={arc(m.shoulderX, m.hipY, 14, trunk, 'up')} stroke={GOLD} strokeWidth={sel === 'trunk_flex' ? 2 : 1}
-              fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity={dim('trunk_flex')} />
-            <line x1={m.shoulderX} y1={m.hipY} x2={m.shoulderX + Math.sin(rad(Math.min(trunk, 90))) * 14}
+            <Halo d={arc(m.shoulderX, m.hipY, 14, trunk, 'up')} on={sel === 'trunk_flex'} purple={PURPLE} />
+            <HaloLine x1={m.shoulderX} y1={m.hipY}
+              x2={m.shoulderX + Math.sin(rad(Math.min(trunk, 90))) * 14}
               y2={m.hipY - Math.cos(rad(Math.min(trunk, 90))) * 14 * 1.6}
-              stroke={GOLD} strokeWidth={sel === 'trunk_flex' ? 2.4 : 1.4} strokeLinecap="round"
-              vectorEffect="non-scaling-stroke" opacity={dim('trunk_flex')} />
+              on={sel === 'trunk_flex'} purple={PURPLE} />
           </>
         )}
         {arm != null && show('arm_raise') && (
           <>
-            <path d={arc(m.shoulderX, m.shoulderY, 10, arm, 'down')} stroke={GOLD} strokeWidth={sel === 'arm_raise' ? 2 : 1}
-              fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity={dim('arm_raise')} />
-            <line x1={m.shoulderX} y1={m.shoulderY} x2={m.shoulderX + Math.sin(rad(Math.min(arm, 175))) * 10}
+            <Halo d={arc(m.shoulderX, m.shoulderY, 10, arm, 'down')} on={sel === 'arm_raise'} purple={PURPLE} />
+            <HaloLine x1={m.shoulderX} y1={m.shoulderY}
+              x2={m.shoulderX + Math.sin(rad(Math.min(arm, 175))) * 10}
               y2={m.shoulderY + Math.cos(rad(Math.min(arm, 175))) * 10 * 1.6}
-              stroke={GOLD} strokeWidth={sel === 'arm_raise' ? 2.4 : 1.4} strokeLinecap="round"
-              vectorEffect="non-scaling-stroke" opacity={dim('arm_raise')} />
+              on={sel === 'arm_raise'} purple={PURPLE} />
           </>
         )}
         {/* 곧게 선 기준선 — 목을 볼 때만 */}
         {show('neck_bend') && (
-          <line x1={m.shoulderX} y1={m.shoulderY - 16} x2={m.shoulderX} y2={m.shoulderY}
-            stroke="#C9C3B7" strokeWidth="1" strokeDasharray="2 3" vectorEffect="non-scaling-stroke"
-            opacity={dim('neck_bend')} />
+          <Halo d={`M${m.shoulderX} ${m.shoulderY - 16} L${m.shoulderX} ${m.shoulderY}`}
+            on={sel === 'neck_bend'} purple="#B7B0A3" />
+        )}
+
+        {/* 맞추기 안내선 — 관리자에서만 켠다 */}
+        {guide && (
+          <>
+            <line x1="0" y1={m.shoulderY} x2="100" y2={m.shoulderY} stroke="#E0554F" strokeWidth="1.2"
+              strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+            <line x1={m.shoulderX} y1="0" x2={m.shoulderX} y2="100" stroke="#E0554F" strokeWidth="1.2"
+              strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+            <line x1="0" y1={m.hipY} x2="100" y2={m.hipY} stroke="#2F6FE0" strokeWidth="1.2"
+              strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+          </>
         )}
       </svg>
+      {guide && (
+        <>
+          <span style={{ position: 'absolute', left: 3, top: `${m.shoulderY}%`, transform: 'translateY(-115%)',
+            fontSize: 10, fontWeight: 900, color: '#E0554F', textShadow: '0 0 3px #fff, 0 0 3px #fff' }}>어깨선</span>
+          <span style={{ position: 'absolute', left: 3, top: `${m.hipY}%`, transform: 'translateY(-115%)',
+            fontSize: 10, fontWeight: 900, color: '#2F6FE0', textShadow: '0 0 3px #fff, 0 0 3px #fff' }}>골반선</span>
+        </>
+      )}
       {/* 각도 눈금 — 사진 위라 글씨에 흰 테를 두른다 */}
       {neck != null && show('neck_bend') && (
         <span style={{ position: 'absolute', left: `${m.shoulderX + 7}%`, top: `${Math.max(2, m.shoulderY - 19)}%`,
@@ -177,19 +217,19 @@ function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel }) {
       )}
       {trunk != null && sel === 'trunk_flex' && (
         <span style={{ position: 'absolute', left: `${m.shoulderX + 16}%`, top: `${m.hipY - 12}%`,
-          fontSize: 12.5, fontWeight: 900, color: GOLD,
+          fontSize: 12.5, fontWeight: 900, color: PURPLE,
           textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{trunk}°</span>
       )}
       {arm != null && sel === 'arm_raise' && (
         <span style={{ position: 'absolute', left: `${m.shoulderX + 13}%`, top: `${m.shoulderY + 10}%`,
-          fontSize: 12.5, fontWeight: 900, color: GOLD,
+          fontSize: 12.5, fontWeight: 900, color: PURPLE,
           textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{arm}°</span>
       )}
     </div>
   );
 }
 
-export default function AngleBoxCard({ rows = [], gender = null, previewBody = null }) {
+export default function AngleBoxCard({ rows = [], gender = null, previewBody = null, guide = false }) {
   const t = getTypeAccent();
   const [open, setOpen] = useState(null);
   const [asset, setAsset] = useState(null);
@@ -247,7 +287,7 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
         <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
           {body
             ? <PhotoFigure src={body.url} meta={body.meta} neck={num(now.neck_bend)} trunk={num(now.trunk_flex)}
-                arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />
+                arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} guide={guide} />
             : <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
                 ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />}
         </div>
@@ -286,9 +326,7 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
                 {on && (
                   <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}` }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, lineHeight: 1.6, marginBottom: 8, wordBreak: 'keep-all' }}>
-                      {meta.kind === 'range'
-                        ? '굽혔다 돌아올 때 가장 크게 나온 값이에요. 클수록 잘 움직인 거예요.'
-                        : '가만히 섰을 때 고개가 앞으로 나온 정도예요. 작을수록 곧게 선 거예요.'}
+                      {meta.plain}
                     </div>
                     {trend ? <Spark rows={line} field={item.key} /> : (
                       <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>
@@ -323,7 +361,7 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
         )}
         {(open === 'trunk_flex' || open === 'arm_raise') && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 10, height: 3, borderRadius: 2, background: GOLD }} />움직인 범위
+            <span style={{ width: 10, height: 3, borderRadius: 2, background: PURPLE }} />움직인 범위
           </span>
         )}
       </div>
