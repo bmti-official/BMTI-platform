@@ -34,6 +34,7 @@ const EMPTY = {
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
+  good_when: '', avoid_when: '', focus_body: '',
   sub_open_z: '', sub_open_m: '', sub_sets_z: [], sub_sets_m: [],
   has_side: false, can_alternate: false,
   default_reps: null, default_sets: null, default_rest: null, voice_open_z: '', voice_open_m: '', voice_sets_z: [], voice_sets_m: [],
@@ -335,11 +336,11 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <div style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>대본 붙여넣기</div>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
-              AI에게 받은 대본을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·대본·종류·소요 시간·도구·검색 분류가 각 칸으로 들어갑니다.
+              AI에게 받은 대본을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·대본·종류·소요 시간·도구·검색 분류와 알아 두기 세 칸(좋은 상황·피할 상황·쓰는 곳)이 각 칸으로 들어갑니다.
               <br />채팅창에서 딸려오는 <b>MD</b>, <b>+ 1</b> 같은 줄은 알아서 버립니다. 동작 데이터는 따로 올려 주세요.
             </div>
             <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-              placeholder={'[제목 · Z] …\n[제목 · M] …\n종류: 스트레칭\n소요 시간: 3분\n[대본 · Z] …'}
+              placeholder={'[제목 · Z] …\n[제목 · M] …\n종류: 스트레칭\n소요 시간: 3분\n[대본 · Z] …\n좋은 상황: …\n피할 상황: …\n쓰는 곳: …'}
               style={{ ...area, flex: 1, minHeight: 320, fontSize: 12.5, lineHeight: 1.6 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
@@ -528,6 +529,25 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <HiliteBox placeholder="편하게 앉아서 어깨에 힘을 빼 보세요." minHeight={120} value={f.script_m} onChange={set('script_m')}>
             <CharCount a={f.script_m} b={f.script_z} maxPara={160} />
           </HiliteBox>
+        </div>
+      </div>
+
+      {/* 알아 두기 — 손님 화면에서 대본 자리를 대신한다. 한 줄에 하나씩 적는다. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div>
+          <span style={label}>👍 이럴 때 좋습니다 <span style={{ fontWeight: 600 }}>— 한 줄에 하나</span></span>
+          <HiliteBox placeholder={'오래 앉아 있다 일어난 직후\n어깨가 앞으로 말린 느낌이 들 때'}
+            minHeight={92} value={f.good_when} onChange={set('good_when')} />
+        </div>
+        <div>
+          <span style={label}>⛔ 이럴 땐 하지 마세요 <span style={{ color: '#B23B36' }}>안전</span></span>
+          <HiliteBox placeholder={'목을 돌릴 때 찌릿한 통증이 있는 경우\n최근 목·어깨를 다쳤거나 수술한 경우'}
+            minHeight={92} value={f.avoid_when} onChange={set('avoid_when')} />
+        </div>
+        <div>
+          <span style={label}>🎯 쓰는 곳 <span style={{ fontWeight: 600 }}>— 근육·관절·신경</span></span>
+          <HiliteBox placeholder={'위등세모근(상부 승모근)\n어깨올림근(견갑거근)\n목뼈 관절'}
+            minHeight={92} value={f.focus_body} onChange={set('focus_body')} />
         </div>
       </div>
 

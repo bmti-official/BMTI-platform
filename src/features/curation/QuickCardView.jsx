@@ -18,7 +18,6 @@ import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY } from './format';
-import { BodyPreview } from './CurationCard';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
@@ -64,7 +63,7 @@ const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'],
 const SIDE_KO = Object.fromEntries(SIDES);
 
 export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch }) {
-  const { title, script } = pickCardTone(card, tone);
+  const { title } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
   // 전체 화면 — 바로플리는 동작이 바뀌어도 그대로여야 해서 바깥에서 쥐어 줄 수도 있다.
@@ -753,13 +752,74 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         </div>
         {stage === 'move' && <div style={{ marginTop: 10 }}>{optBox}</div>}
         <AiNote top={10} />
-        {script && (
-          <details style={{ marginTop: 10 }}>
-            <summary style={{ fontSize: 11.5, color: SUB, fontWeight: 700, cursor: 'pointer' }}>음성 안내 대본 보기</summary>
-            <div style={{ fontSize: 13, margin: '8px 0 0' }}><BodyPreview text={script} /></div>
-          </details>
-        )}
+        <KnowBox card={card} />
       </div>
     </article>
+  );
+}
+
+// 알아 두기 — 대본이 있던 자리를 대신한다.
+//
+// 대본은 어차피 귀로 듣는다. 눈으로 볼 자리에는 손이 먼저 가는 정보를 둔다.
+// '피하세요'는 다치지 않게 하는 칸이라 늘 펼쳐 둔다. 나머지 둘은 접어 둔다.
+const LINES = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+
+function Rows({ items, color }) {
+  return (
+    <ul style={{ margin: '6px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 4 }}>
+      {items.map((x) => (
+        <li key={x} style={{ display: 'flex', gap: 6, fontSize: 12.5, lineHeight: 1.5, color: INK, wordBreak: 'keep-all' }}>
+          <span style={{ flexShrink: 0, color, fontWeight: 900 }}>·</span>
+          <span>{x}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function KnowBox({ card }) {
+  const good = LINES(card?.good_when);
+  const avoid = LINES(card?.avoid_when);
+  const focus = LINES(card?.focus_body);
+  const [open, setOpen] = useState(false);
+  if (!good.length && !avoid.length && !focus.length) return null;
+
+  const head = (txt, color) => (
+    <span style={{ fontSize: 11.5, fontWeight: 900, color, letterSpacing: '-0.01em' }}>{txt}</span>
+  );
+  return (
+    <div style={{ marginTop: 10, padding: '11px 13px', borderRadius: 13, background: '#FAF7F0' }}>
+      {avoid.length > 0 && (
+        <div>
+          {head('⛔ 이럴 땐 하지 마세요', '#B23B36')}
+          <Rows items={avoid} color="#B23B36" />
+        </div>
+      )}
+      {(good.length > 0 || focus.length > 0) && (
+        <>
+          {open && (
+            <div style={{ display: 'grid', gap: 10, marginTop: avoid.length ? 10 : 0 }}>
+              {good.length > 0 && (
+                <div>
+                  {head('👍 이럴 때 좋습니다', '#3F7F5B')}
+                  <Rows items={good} color="#3F7F5B" />
+                </div>
+              )}
+              {focus.length > 0 && (
+                <div>
+                  {head('🎯 쓰는 곳', '#8A6A3A')}
+                  <Rows items={focus} color="#8A6A3A" />
+                </div>
+              )}
+            </div>
+          )}
+          <button type="button" onClick={() => setOpen((v) => !v)}
+            style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: SUB }}>
+            {open ? '접기 ▲' : '이 동작 알아 두기 ▼'}
+          </button>
+        </>
+      )}
+    </div>
   );
 }

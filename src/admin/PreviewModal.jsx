@@ -110,14 +110,12 @@ const DIARY_KEYS = ['today', 'record', 'discover', 'angle'];
 const SELF_KEYS = ['browse', 'baro', 'box'];
 // 위쪽 제목 — 하단 줄이 통째로 바뀌니 여기가 길잡이다.
 // 아이콘을 앞에 세워 어느 방인지 한눈에 들어오게 한다.
-// 방마다 글씨체를 달리 준다 — 글씨만 봐도 어느 방인지 알게.
-//   다이어리 … 손글씨(개구). 쓰는 곳이라는 결
-//   자기점검 … 각진 것(도현). 움직이는 곳이라는 결
+// 글씨체는 둘 다 둥근 고딕(주아)으로 맞춘다. 손글씨와 각진 글씨를 나눠 썼더니
+// 같은 자리에서 결이 튀었다 — 방은 아이콘이 가르고, 글씨는 한 식구로 둔다.
+const ROUND = "'Jua','Pretendard',-apple-system,sans-serif";
 const TITLE = {
-  diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink />,
-    font: "'Gaegu','Pretendard',-apple-system,sans-serif", size: 24 },
-  self: { text: '자기점검', icon: <BoltMark size={21} />,
-    font: "'Do Hyeon','Pretendard',-apple-system,sans-serif", size: 22 },
+  diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink />, font: ROUND, size: 22 },
+  self: { text: '자기점검', icon: <BoltMark size={21} />, font: ROUND, size: 22 },
 };
 function navFor(active) {
   if (DIARY_KEYS.includes(active)) return { rows: DIARY_NAV, at: 'diary' };
