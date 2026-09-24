@@ -7,7 +7,8 @@
 //   · **지금 바로 보이는 것을 앞에 둔다.** 큰 숫자 하나, 그다음에 줄들.
 import { useEffect, useState } from 'react';
 import { recentChecks } from '../lib/angleRecord';
-import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek } from '../lib/octFindings';
+import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
+  sideBySide, weekdayLoad, monthOverMonth } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { DiaryIcon } from './DiaryIcons';
 
@@ -171,8 +172,130 @@ export function LightestWeekCard({ entries }) {
   );
 }
 
-/** 각도기록 카드 셋 — 기록을 직접 읽어 온다. 한 판도 없으면 아무것도 내지 않는다. */
-export function AngleFindings({ rows: given = null }) {
+// ── 6. 나란히 놓아 본 주 ───────────────────────────────────
+// 여기서 가장 조심해야 하는 게 인과다. 각도가 나빠서 부담이 컸다고 읽히면 안 된다.
+// 우리가 아는 건 '같은 주에 이랬다'까지다. 그 선을 문구로 못 박아 둔다.
+export function SideBySideCard({ rows, entries }) {
+  const d = sideBySide(rows, entries);
+  if (!d) return null;
+  const t = getTypeAccent();
+  const span = Math.max(1, d.maxA - d.minA);
+  return (
+    <Card icon="🔗" title="나란히 놓아 본 주"
+      sub={`주마다 ${d.item.label}과 하루 평균 부담을 나란히 뒀어요. 어느 쪽이 먼저인지는 이 기록만으로 알 수 없어요.`}>
+      <div style={{ display: 'flex', gap: 9, marginTop: 4 }}>
+        {d.rows.map((x) => (
+          <div key={x.week} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 62 }}>
+              <span title={`${d.item.label} ${x.angle}°`} style={{ width: 11, borderRadius: 5,
+                height: Math.max(6, Math.round(((x.angle - d.minA) / span) * 44) + 10), background: t.accentDeep }} />
+              <span title={`부담 ${x.load}`} style={{ width: 11, borderRadius: 5,
+                height: Math.max(6, Math.round((x.load / d.maxL) * 54)), background: '#E3D9C4' }} />
+            </div>
+            <span style={{ fontSize: 9.5, fontWeight: 700, color: C.sub, whiteSpace: 'nowrap' }}>{x.when.replace('월 ', '/').replace('일', '')}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 11, fontWeight: 800, color: C.sub }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: t.accentDeep }} />{d.item.label}
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: '#E3D9C4' }} />하루 평균 부담
+        </span>
+      </div>
+    </Card>
+  );
+}
+
+// ── 7. 요일의 결 ───────────────────────────────────────────
+export function WeekdayLoadCard({ entries }) {
+  const d = weekdayLoad(entries);
+  if (!d) return null;
+  const t = getTypeAccent();
+  return (
+    <Card icon="📅" title="요일의 결"
+      sub={d.flat ? '요일마다 크게 다르지 않았어요. 고르게 지나간 달이에요.'
+        : `${d.heavy.day}요일에 부담이 가장 많이 얹혔어요. 가장 가벼운 건 ${d.light.day}요일이었고요.`}>
+      {!d.flat && <Big value={d.heavy.avg} unit="점" note={`${d.heavy.day}요일 하루 평균 · ${d.heavy.n}일 기록`} />}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 70, marginTop: d.flat ? 6 : 0 }}>
+        {d.rows.map((r) => {
+          const on = !d.flat && r.day === d.heavy.day;
+          return (
+            <div key={r.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 10, fontWeight: 900, color: on ? t.accentDeep : C.sub, fontVariantNumeric: 'tabular-nums' }}>
+                {r.avg == null ? '' : r.avg}
+              </span>
+              <span style={{ width: '100%', height: r.avg == null ? 4 : Math.max(5, Math.round((r.avg / d.max) * 40)),
+                borderRadius: 6, background: r.avg == null ? '#F5F2EC' : on ? t.accentDeep : '#EDE9E2' }} />
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: on ? C.ink : C.sub }}>{r.day}</span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ── 8. 지난달과 이번 달 ────────────────────────────────────
+export function MonthOverMonthCard({ rows, entries }) {
+  const d = monthOverMonth(rows, entries);
+  if (!d) return null;
+  const t = getTypeAccent();
+  const mark = (better, same) => (same ? C.sub : better ? t.accentDeep : '#B9B2A6');
+  return (
+    <Card icon="🌗" title={`${d.lastLabel}과 ${d.nowLabel}`}
+      sub="달 평균끼리 견줬어요. 한 판씩은 흔들려도 달 평균은 잘 흔들리지 않아요.">
+      {d.angles.map((a) => (
+        <Row key={a.key} label={a.label}
+          right={<span style={{ flex: '0 0 56px', textAlign: 'right', fontSize: 12, fontWeight: 900,
+            fontVariantNumeric: 'tabular-nums', color: mark(a.better, a.same) }}>
+            {a.same ? '그대로' : `${a.diff > 0 ? '+' : ''}${a.diff}°`}
+          </span>}>
+          {a.last}° → {a.now}°
+        </Row>
+      ))}
+      {d.load && (
+        <Row label="하루 부담"
+          right={<span style={{ flex: '0 0 56px', textAlign: 'right', fontSize: 12, fontWeight: 900,
+            fontVariantNumeric: 'tabular-nums', color: mark(d.load.diff < 0, Math.abs(d.load.diff) < 0.3) }}>
+            {Math.abs(d.load.diff) < 0.3 ? '그대로' : `${d.load.diff > 0 ? '+' : ''}${d.load.diff}`}
+          </span>}>
+          {d.load.last}점 → {d.load.now}점
+        </Row>
+      )}
+    </Card>
+  );
+}
+
+/** 바로 보이는 것 — '이번달 기록'에 선다. 오늘 열어서 오늘 쓸 수 있는 것들이다. */
+export function QuickFindings({ rows: given = null, entries }) {
+  const rows = useAngleRows(given);
+  return (
+    <>
+      {rows.length > 0 && <BestAngleCard rows={rows} />}
+      {rows.length > 0 && <OneThingCard rows={rows} />}
+      <LightDaysCard entries={entries} />
+    </>
+  );
+}
+
+/** 시간이 걸리는 것 — '이번달 발견'에 선다. 몇 주가 쌓여야 모양이 잡힌다. */
+export function SlowFindings({ rows: given = null, entries }) {
+  const rows = useAngleRows(given);
+  return (
+    <>
+      {rows.length > 0 && <FirstNowCard rows={rows} />}
+      <LightestWeekCard entries={entries} />
+      <WeekdayLoadCard entries={entries} />
+      {rows.length > 0 && <SideBySideCard rows={rows} entries={entries} />}
+      {rows.length > 0 && <MonthOverMonthCard rows={rows} entries={entries} />}
+    </>
+  );
+}
+
+/** 각도 판 읽어 오기 — 밖에서 넘겨주면 그걸 쓰고, 아니면 직접 가져온다. */
+function useAngleRows(given) {
   const [fetched, setFetched] = useState(null);
   useEffect(() => {
     if (given) return undefined;              // 미리보기는 지어낸 판을 그대로 넘겨 준다
@@ -180,13 +303,5 @@ export function AngleFindings({ rows: given = null }) {
     recentChecks(20).then((r) => { if (alive) setFetched(r || []); });
     return () => { alive = false; };
   }, [given]);
-  const rows = given || fetched || [];
-  if (!rows.length) return null;
-  return (
-    <>
-      <BestAngleCard rows={rows} />
-      <FirstNowCard rows={rows} />
-      <OneThingCard rows={rows} />
-    </>
-  );
+  return given || fetched || [];
 }

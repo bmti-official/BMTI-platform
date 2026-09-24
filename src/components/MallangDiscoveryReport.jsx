@@ -21,7 +21,7 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
-import { AngleFindings, LightDaysCard, LightestWeekCard } from "./OctFindingCards";
+import { QuickFindings, SlowFindings } from "./OctFindingCards";
 import { getSleepSetting, sleepWindow, sleepBaseIdx, SLEEP_HOURS, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
@@ -544,7 +544,10 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                 }
                 items.push({ locked: !s.unlocked, node: card });
               });
-              return [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)].map((i) => i.node);
+              const sorted = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
+              // 바로 보이는 것 — 오늘 열어서 오늘 쓸 수 있는 것들을 맨 앞에 세운다
+              if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} entries={entries} /></Fragment> });
+              return sorted.map((i) => i.node);
             })()}
           </div>
         ) : (
@@ -2593,13 +2596,9 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     if (cond) items.push({ locked: false, node: <Fragment key={key}>{realNode}</Fragment> });
     else if (exNode) items.push({ locked: true, node: <Fragment key={key}>{lock(exNode)}</Fragment> });
   };
-  // 10월 개편 — 각도기록 셋과 부담 점수 둘을 맨 앞에 둔다.
-  // 숫자 하나가 바로 보여야 다음 달에도 열어 본다. 잠그지 않는다 — 값이 없으면 카드가 아예 안 나온다.
-  if (oct) {
-    items.push({ locked: false, node: <Fragment key="angleFind"><AngleFindings rows={angleRows} /></Fragment> });
-    items.push({ locked: false, node: <Fragment key="lightDays"><LightDaysCard entries={entries} /></Fragment> });
-    items.push({ locked: false, node: <Fragment key="lightWeek"><LightestWeekCard entries={entries} /></Fragment> });
-  }
+  // 10월 개편 — 여기(발견)에는 **시간이 걸리는 것**만 둔다.
+  // 오늘 바로 보이는 것은 '이번달 기록'이 맡는다. 두 탭이 같은 성격이면 나눈 뜻이 없다.
+  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings rows={angleRows} entries={entries} /></Fragment> });
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.

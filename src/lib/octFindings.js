@@ -105,3 +105,84 @@ export function lightestWeek(entries = []) {
   const sorted = weeks.slice().sort((a, b) => String(a.week).localeCompare(String(b.week)));
   return { best: { ...best, when: dayOf(best.week) }, weeks: sorted, max: Math.max(...weeks.map((w) => w.avg), 1) };
 }
+
+// ── 시간이 걸리는 발견 ─────────────────────────────────────
+// 위의 것들이 '오늘 바로 보이는 것'이라면, 아래는 몇 주가 쌓여야 비로소 모양이 잡힌다.
+
+const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
+const weekKey = (dateISO) => {
+  const d = new Date(dateISO); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - d.getDay());
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const avg = (vs) => (vs.length ? vs.reduce((n, v) => n + v, 0) / vs.length : null);
+
+/** 주마다 각도와 부담을 나란히 놓는다.
+ *  **인과로 읽히지 않게 쓴다.** 어느 쪽이 먼저인지 우리는 모른다. 같이 있었다는 것만 보인다. */
+export function sideBySide(rows = [], entries = [], key = 'neck_bend') {
+  const angle = {};
+  rows.filter(usable).forEach((r) => {
+    const v = num(r[key]);
+    if (v != null) angle[r.week] = v;
+  });
+  const load = {};
+  (entries || []).filter((e) => e && e.date && Array.isArray(e.tags)).forEach((e) => {
+    const k = weekKey(e.date);
+    (load[k] = load[k] || []).push(strainScore(e.tags));
+  });
+  const weeks = Object.keys(angle).filter((k) => (load[k] || []).length >= 2).sort();
+  if (weeks.length < 3) return null;
+  const out = weeks.map((k) => ({ week: k, when: dayOf(k), angle: r1(angle[k]), load: r1(avg(load[k])) }));
+  const item = ANGLE_ITEMS.find((x) => x.key === key) || ANGLE_ITEMS[0];
+  return {
+    rows: out, item,
+    maxA: Math.max(...out.map((x) => x.angle)),
+    minA: Math.min(...out.map((x) => x.angle)),
+    maxL: Math.max(...out.map((x) => x.load), 1),
+  };
+}
+
+/** 요일의 결 — 어느 요일에 부담이 몰리는지. 열흘은 쌓여야 흔들림이 가라앉는다. */
+export function weekdayLoad(entries = []) {
+  const days = (entries || []).filter((e) => e && e.date && Array.isArray(e.tags));
+  if (days.length < 10) return null;
+  const bucket = Array.from({ length: 7 }, () => []);
+  days.forEach((e) => bucket[new Date(e.date).getDay()].push(strainScore(e.tags)));
+  const rows = bucket.map((vs, i) => ({ day: WEEKDAY[i], n: vs.length, avg: vs.length ? r1(avg(vs)) : null }));
+  const seen = rows.filter((r) => r.n >= 2);
+  if (seen.length < 4) return null;
+  const heavy = seen.reduce((a, b) => (b.avg > a.avg ? b : a));
+  const light = seen.reduce((a, b) => (b.avg < a.avg ? b : a));
+  if (heavy.avg - light.avg < 0.5) return { rows, flat: true, max: Math.max(...seen.map((r) => r.avg), 1) };
+  return { rows, heavy, light, max: Math.max(...seen.map((r) => r.avg), 1) };
+}
+
+/** 지난달과 이번 달 — 각도와 부담을 달 단위로 견준다. 두 달치가 있어야 나온다. */
+export function monthOverMonth(rows = [], entries = [], now = new Date()) {
+  const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const thisM = key(now);
+  const prevD = new Date(now); prevD.setMonth(prevD.getMonth() - 1);
+  const lastM = key(prevD);
+
+  const angleAvg = (m, k) => {
+    const vs = rows.filter((r) => usable(r) && String(r.week).slice(0, 7) === m).map((r) => num(r[k])).filter((v) => v != null);
+    return vs.length ? r1(avg(vs)) : null;
+  };
+  const loadAvg = (m) => {
+    const vs = (entries || []).filter((e) => e && e.date && Array.isArray(e.tags) && String(e.date).slice(0, 7) === m)
+      .map((e) => strainScore(e.tags));
+    return vs.length >= 3 ? { avg: r1(avg(vs)), days: vs.length } : null;
+  };
+
+  const angles = ANGLE_ITEMS.map((it) => {
+    const a = angleAvg(lastM, it.key), b = angleAvg(thisM, it.key);
+    if (a == null || b == null) return null;
+    const diff = r1(b - a);
+    return { ...it, last: a, now: b, diff, better: it.better === 'low' ? diff < 0 : diff > 0, same: Math.abs(diff) < 0.5 };
+  }).filter(Boolean);
+  const lastLoad = loadAvg(lastM), nowLoad = loadAvg(thisM);
+  const load = lastLoad && nowLoad
+    ? { last: lastLoad.avg, now: nowLoad.avg, diff: r1(nowLoad.avg - lastLoad.avg), days: nowLoad.days }
+    : null;
+  if (!angles.length && !load) return null;
+  return { angles, load, lastLabel: `${Number(lastM.slice(5))}월`, nowLabel: `${Number(thisM.slice(5))}월` };
+}
