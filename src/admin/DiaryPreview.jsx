@@ -8,6 +8,8 @@ import PreviewModal from './PreviewModal';
 import DiaryWriteFlow from '../components/DiaryWriteFlow';
 import DiaryCalendar from '../components/DiaryCalendar';
 import MallangDiscoveryReport from '../components/MallangDiscoveryReport';
+import OctFindingSamples from '../components/OctFindingSamples';
+import { getDiaryHistory } from '../lib/diaryHistory';
 import { setDiaryDryRun, todayISO } from '../lib/diaryHistory';
 import AngleView from '../features/angle/AngleView';
 import AngleCapture from '../features/angle/AngleCapture';
@@ -38,7 +40,7 @@ function fakeWeeks(n) {
 export default function DiaryPreview() {
   const [picked, setPicked] = useState(['진통제', '업무과다', '카페인']);
   const [female, setFemale] = useState(true);
-  const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'angle' | 'capture'
+  const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'angle' | 'capture' | 'draft'
   const [weeks, setWeeks] = useState(3);      // 몇 주치가 쌓인 셈 칠지
   const [tone, setTone] = useState('z');      // 미리보기 말투
   const [writing, setWriting] = useState(null);   // 쓰는 중 — { mood, date, entry }
@@ -117,6 +119,7 @@ export default function DiaryPreview() {
           <button onClick={() => { setReportTab('discovery'); setScreen('report'); }} style={btn(false)}>📊 이번달 발견</button>
           <button onClick={() => setScreen('angle')} style={btn(false)}>📐 각도기록 화면</button>
           <button onClick={() => setScreen('capture')} style={btn(false)}>📷 각도 재는 화면</button>
+          <button onClick={() => setScreen('draft')} style={btn(false)}>🧪 발견 박스 원안</button>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
             말투
             <select value={tone} onChange={(e) => setTone(e.target.value)}
@@ -195,12 +198,13 @@ export default function DiaryPreview() {
       )}
 
       {screen && screen !== 'capture' && screen !== 'report' && (
-        <PreviewModal navActive={screen === 'angle' ? 'angle' : screen === 'report' ? 'discover' : 'today'}
-          title={screen === 'tag' ? '다이어리 — 10월 모습' : '각도기록'}
+        <PreviewModal navActive={screen === 'angle' ? 'angle' : screen === 'draft' ? 'discover' : screen === 'report' ? 'discover' : 'today'}
+          title={screen === 'tag' ? '다이어리 — 10월 모습' : screen === 'draft' ? '이번달 발견 — 원안' : '각도기록'}
           onClose={() => { setScreen(''); setWriting(null); setJustSaved(null); }}>
           {() => (screen === 'tag' ? realDiary
             : screen === 'angle' ? <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />
-              : null)}
+              : screen === 'draft' ? <OctFindingSamples rows={checks} entries={getDiaryHistory()} />
+                : null)}
         </PreviewModal>
       )}
     </div>
