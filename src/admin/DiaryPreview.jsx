@@ -7,6 +7,10 @@ import { INK, SUB, BG, box, btn } from './theme';
 import PreviewModal from './PreviewModal';
 import DiaryWriteFlow from '../components/DiaryWriteFlow';
 import MallangDiscoveryReport from '../components/MallangDiscoveryReport';
+import MallangStressPopup from '../components/MallangStressPopup';
+import { dailyWord } from '../lib/dailyWord';
+import { CHARACTER_NAMES } from '../lib/bmtiTypes';
+import { CHARACTERS } from '../data';
 import AngleView from '../features/angle/AngleView';
 import AngleCapture from '../features/angle/AngleCapture';
 import PushToggle from '../features/angle/PushToggle';
@@ -38,6 +42,9 @@ export default function DiaryPreview() {
   const [female, setFemale] = useState(true);
   const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'angle' | 'capture'
   const [weeks, setWeeks] = useState(3);      // 몇 주치가 쌓인 셈 칠지
+  const [tone, setTone] = useState('z');      // 미리보기 말투
+  const [done, setDone] = useState(null);     // 기록을 마쳤을 때 — 말랑이 팝업에 넘길 것
+  const [reportTab, setReportTab] = useState('records');
   const checks = useMemo(() => fakeWeeks(weeks), [weeks]);
   const score = strainScore(picked);
 
@@ -46,6 +53,10 @@ export default function DiaryPreview() {
   // 여기서 본 모습이 곧 손님이 볼 모습이다.
   //   tagCats   10월 태그 목록으로 갈아 끼운다
   //   dropBlock '오늘 평소보다 무리했나요'를 뺀 모습
+  const code = tone === 'm' ? 'OCDM' : 'ACDZ';
+  const charImage = CHARACTERS.find((c) => c.id === code)?.image || '';
+  const partner = String(CHARACTER_NAMES[code] || '').replace(/\n/g, ' ');
+
   const realDiary = (
     <DiaryWriteFlow
       tagCats={TAG_CATEGORIES}
@@ -54,7 +65,8 @@ export default function DiaryPreview() {
       gender={female ? 'female' : 'male'}
       isLoggedIn
       onClose={() => setScreen('')}
-      onFinish={() => setScreen('')}
+      // 손님 화면과 같은 흐름 — 저장하면 말랑이 팝업이 뜨고, 거기서 한마디를 연다
+      onFinish={(mood, extra) => setDone({ mood, entry: { mood, ...(extra || {}) } })}
     />
   );
 
@@ -73,9 +85,18 @@ export default function DiaryPreview() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setScreen('tag')} style={btn(true)}>📱 다이어리 화면</button>
-          <button onClick={() => setScreen('report')} style={btn(false)}>📊 기록·발견</button>
+          <button onClick={() => { setReportTab('records'); setScreen('report'); }} style={btn(false)}>📅 이번달 기록</button>
+          <button onClick={() => { setReportTab('discovery'); setScreen('report'); }} style={btn(false)}>📊 이번달 발견</button>
           <button onClick={() => setScreen('angle')} style={btn(false)}>📐 각도기록 화면</button>
           <button onClick={() => setScreen('capture')} style={btn(false)}>📷 각도 재는 화면</button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
+            말투
+            <select value={tone} onChange={(e) => setTone(e.target.value)}
+              style={{ fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, padding: '4px 6px', borderRadius: 8 }}>
+              <option value="z">Z 담백</option>
+              <option value="m">M 다정</option>
+            </select>
+          </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
             쌓인 주
             <select value={weeks} onChange={(e) => setWeeks(Number(e.target.value))}
@@ -128,8 +149,8 @@ export default function DiaryPreview() {
 
       {screen === 'report' && (
         <>
-          <MallangDiscoveryReport oct bmtiCode="ACDZ" isLoggedIn userData={{ nickname: '회원' }}
-            onClose={() => setScreen('')} />
+          <MallangDiscoveryReport oct initialTab={reportTab} bmtiCode={code} isLoggedIn
+            userData={{ nickname: '회원' }} onClose={() => setScreen('')} />
           {/* 기록·발견은 제 화면을 통째로 쓴다. 관리자에서 나올 길을 위에 따로 둔다. */}
           <button type="button" onClick={() => setScreen('')}
             style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, border: 'none', cursor: 'pointer',
@@ -138,6 +159,12 @@ export default function DiaryPreview() {
             ✕ 미리보기 닫기
           </button>
         </>
+      )}
+
+      {done && (
+        <MallangStressPopup mood={done.mood} charImage={charImage} partner={partner}
+          word={dailyWord(done.entry, tone, new Date().toISOString().slice(0, 10))}
+          onNext={() => { setDone(null); setScreen(''); }} />
       )}
 
       {screen === 'capture' && (

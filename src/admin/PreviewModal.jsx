@@ -94,8 +94,8 @@ const DIARY_NAV = [
   { key: 'back', label: '이전', icon: <BackMark /> },
   { key: 'today', label: '오늘 쓰기', icon: <PenMark /> },
   { key: 'char' },
-  { key: 'record', label: '기록', icon: <CalMark /> },
-  { key: 'discover', label: '발견', icon: <ChartMark /> },
+  { key: 'record', label: '이번달 기록', icon: <CalMark /> },
+  { key: 'discover', label: '이번달 발견', icon: <ChartMark /> },
 ];
 const SELF_NAV = [
   { key: 'back', label: '이전', icon: <BackMark /> },
@@ -216,7 +216,8 @@ function AppChrome({ tone, active: from }) {
               padding: '6px 0', borderRadius: 16, background: active === t.key ? '#F3F1EC' : 'transparent' }}>
               <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 ...(active === t.key ? { color: '#111' } : { ...off, opacity: t.key === 'back' ? 0.8 : 0.45, filter: t.key === 'back' ? 'none' : 'grayscale(1)' }) }}>{t.icon}</span>
-              <span style={{ fontSize: 9.5, fontWeight: 800, whiteSpace: 'nowrap', color: active === t.key ? '#000' : '#9CA3AF' }}>{t.label}</span>
+              <span style={{ fontSize: t.label.length > 4 ? 8.5 : 9.5, fontWeight: 800, whiteSpace: 'nowrap',
+                color: active === t.key ? '#000' : '#9CA3AF' }}>{t.label}</span>
             </button>
           )))}
         </div>

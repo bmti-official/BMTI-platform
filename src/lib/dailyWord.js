@@ -63,16 +63,28 @@ function gist(e, tone, seed) {
   const didMove = e.exercise?.did === true;
   const baro = (e.exercise?.types || []).includes('baro') || (e.exercise?.types || []).includes('바로카드');
 
-  // 몸이 먼저 신호를 보낸 날 — 이게 가장 급하다
+  // 무리가 컸던 날 — 이게 가장 급하다
   if (heavy.length) {
-    return z ? `${eul(heavy[0])} 적어 두셨네요. 오늘은 몸이 먼저 신호를 보낸 날입니다.`
-      : `${eul(heavy[0])} 적어 두셨네요. 오늘은 몸이 먼저 신호를 보냈나 봐요.`;
+    const w = eul(heavy[0]);
+    return pick(z
+      ? [`${w} 적어 두셨군요. 오늘은 무리가 컸던 하루였습니다.`,
+        `${w} 적어 두셨네요. 몸이 꽤 고단했겠습니다.`,
+        `${w} 적어 두셨군요. 오늘만큼은 일찍 쉬어 가시죠.`]
+      : [`${w} 적어 두셨네요. 오늘은 무리가 컸나 봐요.`,
+        `${w} 적어 두셨네요. 몸이 꽤 고단했겠어요.`,
+        `${w} 적어 두셨네요. 오늘만큼은 일찍 쉬어 가요.`], seed);
   }
   if (parts.length) {
     const p = parts.length > 1 ? gwa(parts[0], parts[1]) : parts[0];
     const last = parts.length > 1 ? parts[1] : parts[0];
-    return z ? `${p}${hasJong(last) ? '이' : '가'} 불편했군요. 그 자리는 기억해 두겠습니다.`
-      : `${p}${hasJong(last) ? '이' : '가'} 불편하셨죠. 그 자리는 제가 기억해 둘게요.`;
+    const sub = `${p}${hasJong(last) ? '이' : '가'}`;
+    return pick(z
+      ? [`${sub} 불편했군요. 그 자리는 기억해 두겠습니다.`,
+        `${sub} 불편했던 날이군요. 며칠 이어지는지 지켜보죠.`,
+        `${sub} 불편했군요. 오늘은 그쪽을 좀 아껴 주세요.`]
+      : [`${sub} 불편하셨죠. 그 자리는 제가 기억해 둘게요.`,
+        `${sub} 불편했던 날이네요. 며칠 이어지는지 볼게요.`,
+        `${sub} 불편하셨군요. 오늘은 그쪽을 좀 아껴 주세요.`], seed);
   }
   if (Number(e.sleep) === 0 || Number(e.sleep) === 1) return pick(SLEEP_WORD[z ? 'z' : 'm'], seed);
   if (baro) return z ? '바로카드까지 하셨네요. 오늘 몫은 충분합니다.' : '바로카드까지 하셨네요. 오늘 몫은 충분해요.';

@@ -275,12 +275,13 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   // ── 10월 개편 미리보기 ──
   // 넘기지 않으면 지금 손님 화면 그대로다.
   //   oct  true면 포도 송이·연속과 공백·처음의 다짐을 빼고, 태그 막대를 넣는다
-  oct = false }) {
+  //   initialTab  'records' | 'discovery' — 어느 탭으로 열지. 보던 달은 그대로 둔다.
+  oct = false, initialTab = null }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
   const [showExample, setShowExample] = useState(false);
-  const [tab, setTab] = useState("records"); // "records" | "discovery"
+  const [tab, setTab] = useState(initialTab || "records"); // "records" | "discovery"
   const [, forceWeatherRefresh] = useState(0); // 날씨를 붙인 뒤 리포트를 다시 읽게 하는 트리거
   const [savingPDF, setSavingPDF] = useState(false);
   const contentRef = useRef(null);
