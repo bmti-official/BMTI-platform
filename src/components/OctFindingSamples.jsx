@@ -5,6 +5,8 @@
 //   부담 점수  부담이 몰린 주 · 부담과 움직임
 import { monthMove, biggestMove, steadiness, heaviestWeek, loadAndMove } from '../lib/octFindingsDraft';
 import { getTypeAccent } from '../lib/typeAccent';
+import { riskBand, riskFill } from '../lib/riskBands';
+import { DiaryIcon } from './DiaryIcons';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', card: '#FFFFFF' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
@@ -127,28 +129,77 @@ export function SteadyCard({ rows }) {
 
 // ── 4) 부담이 몰린 주 ──────────────────────────────────────
 // 원안 문구: "셋째 주에 가장 많이 쌓였어요"
+// 그림은 '기분·불편함 추이'와 같은 짜임으로 둔다 — 막대는 부담(초록·노랑·빨강),
+// 꺾은선은 그 주의 불편함 평균. 같은 뜻의 색이 화면마다 다르면 매번 다시 배워야 한다.
 export function HeavyWeekCard({ entries }) {
   const h = heaviestWeek(entries);
   if (!h) return null;
   const t = getTypeAccent();
   const NTH = ['', '첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째'];
+  const H = 92, barH = 62;
+  const n = h.weeks.length;
+  const xOf = (i) => (n === 1 ? 50 : (i / (n - 1)) * 100);
+  const yOf = (v) => (h.maxSore ? 100 - (v / h.maxSore) * 74 - 13 : 50);
+  const line = h.weeks.map((w, i) => (w.sore == null ? null : `${xOf(i).toFixed(1)} ${yOf(w.sore).toFixed(1)}`))
+    .filter(Boolean).map((p, i) => `${i ? 'L' : 'M'}${p}`).join(' ');
+
   return (
-    <Card icon="📊" title="부담이 몰린 주"
+    <Card icon={<DiaryIcon name="stress" size={19} />} title="부담이 몰린 주"
       sub={`${NTH[h.top.nth] || `${h.top.nth}번째`} 주에 가장 많이 쌓였어요.`}>
       <Big value={h.top.sum} unit="점" note={`${h.top.when}이 든 주 · ${h.top.days}일 기록`} />
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 78, marginTop: 4 }}>
-        {h.weeks.map((w) => {
-          const on = w.week === h.top.week;
-          return (
-            <div key={w.week} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-              <span style={{ fontSize: 10.5, fontWeight: 900, color: on ? t.accentDeep : C.sub, fontVariantNumeric: 'tabular-nums' }}>{w.sum}</span>
-              <span style={{ width: '100%', height: Math.max(5, Math.round((w.sum / h.max) * 46)), borderRadius: 6,
-                background: on ? t.accentDeep : '#EDE9E2' }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: C.sub }}>{dd(w.week)}</span>
-            </div>
-          );
-        })}
+
+      {/* 점수가 어떻게 나온 값인지 — 숫자만 보면 '내가 몇 점짜리 사람인가'가 된다 */}
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.sub, lineHeight: 1.7, margin: '0 0 12px', wordBreak: 'keep-all' }}>
+        오늘의 태그마다 무게가 있어요. <b style={{ color: C.ink }}>진통제·업무과다처럼 몸이 이미 신호를 보낸 것은 2점</b>,
+        오래 앉음·카페인처럼 쌓이면 부담이 되는 것은 1점, 수분 보충·영양제는 0점이에요.
+        한 주에 고른 것을 모두 더한 값입니다. <b style={{ color: C.ink }}>음식 섭취는 세지 않아요.</b>
       </div>
+
+      <div style={{ position: 'relative', height: H }}>
+        {/* 부담 막대 */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', gap: 7, zIndex: 1 }}>
+          {h.weeks.map((w) => {
+            const ratio = Math.min(1, w.sum / h.max);
+            const band = riskBand(ratio);
+            return (
+              <div key={w.week} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 3, height: '100%' }}>
+                <span style={{ fontSize: 9.5, fontWeight: 800, color: band.text }}>{w.sum}</span>
+                <div style={{ width: '64%', maxWidth: 22, height: Math.max(4, Math.round(ratio * barH)),
+                  borderRadius: 6, background: riskFill(ratio), transition: 'height .3s' }} />
+              </div>
+            );
+          })}
+        </div>
+        {/* 불편함 꺾은선 */}
+        {line && (
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'none' }}>
+            <path d={line} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+        )}
+        {h.weeks.map((w, i) => (w.sore == null ? null : (
+          <span key={w.week} style={{ position: 'absolute', left: `${xOf(i)}%`, top: `${yOf(w.sore)}%`,
+            transform: 'translate(-50%,-50%)', width: 7, height: 7, borderRadius: '50%',
+            background: t.accent, boxShadow: '0 0 0 2px #fff', zIndex: 3 }} />
+        )))}
+      </div>
+      <div style={{ display: 'flex', gap: 7, marginTop: 6 }}>
+        {h.weeks.map((w) => (
+          <span key={w.week} style={{ flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.sub }}>{dd(w.week)}</span>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 10.5, fontWeight: 800, color: C.sub, flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: 'linear-gradient(180deg,#F0917C,#E0554F)' }} />부담 점수
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accent }} />그 주 불편함 평균
+        </span>
+      </div>
+      {h.hotSore && (
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginTop: 10, lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          불편함이 가장 컸던 건 <b>{h.hotSore.when}</b>이 든 주였어요 (평균 {h.hotSore.sore}).
+        </div>
+      )}
     </Card>
   );
 }

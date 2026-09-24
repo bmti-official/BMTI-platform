@@ -5,6 +5,7 @@ import { Mallang } from "./Mallang";
 import { CHARACTERS, CHARACTER_NAMES } from "../data";
 import { DiaryIcon } from "./DiaryIcons";
 import { tagShare, strainScore } from "../lib/diaryTags";
+import { riskBand, riskFill } from "../lib/riskBands";
 import { SLEEP_ICON } from "../lib/diaryEntryLabels";
 
 // 오늘의 태그 라벨 → 아이콘 이름 (DiaryWriteFlow의 TAG_CATEGORIES와 동일하게 유지)
@@ -546,7 +547,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
               });
               const sorted = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
               // 바로 보이는 것 — 오늘 열어서 오늘 쓸 수 있는 것들을 맨 앞에 세운다
-              if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} /></Fragment> });
+              if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} gender={gender} /></Fragment> });
               return sorted.map((i) => i.node);
             })()}
           </div>
@@ -2859,13 +2860,6 @@ function ButterflyCard({ data }) {
 // 부위 드롭다운의 '전체' 항목 키
 const ALL_PARTS = "__all";
 
-const RISK_BANDS = [
-  { upto: 0.34, from: "#C7E7C3", to: "#A5D6A0", text: "#5E9463" },
-  { upto: 0.67, from: "#F7D879", to: "#E9BC44", text: "#9A7A16" },
-  { upto: 1.01, from: "#F0917C", to: "#E0554F", text: "#B23B36" },
-];
-const riskBand = (ratio) => RISK_BANDS.find((b) => (Number(ratio) || 0) <= b.upto) || RISK_BANDS[2];
-const riskFill = (ratio) => { const b = riskBand(ratio); return `linear-gradient(180deg,${b.from},${b.to})`; };
 
 // 기분·불편함 추이 — 불편함 막대그래프 + 기분 꺾은선(말랑이 표정). 주간/일간 스와이프 알약으로 전환.
 const trendPillBtn = (active, t) => ({ position: "relative", zIndex: 1, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "5px 13px", color: active ? t.accentDeep : C.sub, transition: "color .2s" });

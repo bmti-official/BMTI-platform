@@ -9,10 +9,11 @@
 //   허리 굽힘 … '굽혔다 돌아오기'의 최댓값, 곧 가동 범위다. 자세가 아니라 부채꼴로 그린다.
 //   어깨 들림 … 팔을 올린 최댓값. 이것도 부채꼴이다.
 // 자세와 가동 범위를 같은 모양으로 그리면 '허리가 70도 굽은 사람'처럼 읽힌다.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ITEMS, vsLastWeek, vsLastMonth, canTrend } from '../lib/angleRecord';
 import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
+import { loadAssets, ANGLE_BODY, DEFAULT_META } from '../lib/appAssets';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
@@ -95,9 +96,82 @@ function Figure({ neck, trunk, arm, ghostNeck, t }) {
   );
 }
 
-export default function AngleBoxCard({ rows = [] }) {
+
+// 사진으로 그리는 옆모습.
+//
+// 한 장짜리 그림이라 관절이 움직이지 않는다. 그래서 **어깨 위쪽만 따로 떼어**
+// 잰 각도만큼 돌린다. 아래는 그대로 두니 목만 앞으로 나온 모습이 된다.
+// 어깨가 그림 어디쯤인지는 관리자에서 맞춰 둔다 — 그림마다 다르다.
+function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t }) {
+  const m = { ...DEFAULT_META, ...(meta || {}) };
+  const turn = (v) => (v == null ? 0 : Math.max(-25, Math.min(45, v - m.baseNeck)));
+  const body = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' };
+  const headClip = `inset(0 0 ${100 - m.shoulderY}% 0)`;
+  const bodyClip = `inset(${m.shoulderY}% 0 0 0)`;
+  const origin = `${m.shoulderX}% ${m.shoulderY}%`;
+  const rad = (d) => (d * Math.PI) / 180;
+
+  // 부채꼴은 그림 위에 겹쳐 그린다. 0~100 좌표를 쓰므로 그림 크기와 상관없다.
+  const arc = (cx, cy, r, deg, from) => {
+    const p = (d) => (from === 'up'
+      ? [cx + Math.sin(rad(d)) * r, cy - Math.cos(rad(d)) * r * 1.6]
+      : [cx + Math.sin(rad(d)) * r, cy + Math.cos(rad(d)) * r * 1.6]);
+    const [x0, y0] = p(0), [x1, y1] = p(Math.min(deg, 170));
+    return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${(r * 1.6).toFixed(1)} 0 ${deg > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  };
+
+  return (
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 2', overflow: 'hidden' }}>
+      {/* 지난주 머리 — 흐리게 뒤에 */}
+      {ghostNeck != null && Math.abs(turn(ghostNeck) - turn(neck)) >= 0.5 && (
+        <img src={src} alt="" aria-hidden
+          style={{ ...body, clipPath: headClip, WebkitClipPath: headClip, transformOrigin: origin,
+            transform: `rotate(${turn(ghostNeck).toFixed(1)}deg)`, opacity: 0.32, filter: 'grayscale(1)' }} />
+      )}
+      {/* 몸 — 어깨 아래 */}
+      <img src={src} alt="옆모습" style={{ ...body, clipPath: bodyClip, WebkitClipPath: bodyClip }} />
+      {/* 머리 — 잰 각도만큼 앞으로 */}
+      <img src={src} alt="" aria-hidden
+        style={{ ...body, clipPath: headClip, WebkitClipPath: headClip, transformOrigin: origin,
+          transform: `rotate(${turn(neck).toFixed(1)}deg)`, transition: 'transform .4s ease' }} />
+
+      {/* 굽힘·들림 범위 부채꼴 */}
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+        {trunk != null && (
+          <path d={arc(m.shoulderX, m.hipY, 12, trunk, 'up')} stroke={GOLD} strokeWidth="1"
+            fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity="0.9" />
+        )}
+        {arm != null && (
+          <path d={arc(m.shoulderX, m.shoulderY, 9, arm, 'down')} stroke={GOLD} strokeWidth="1"
+            fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity="0.9" />
+        )}
+        {/* 곧게 선 기준선 */}
+        <line x1={m.shoulderX} y1={m.shoulderY - 16} x2={m.shoulderX} y2={m.shoulderY}
+          stroke="#C9C3B7" strokeWidth="1" strokeDasharray="2 3" vectorEffect="non-scaling-stroke" />
+      </svg>
+      {/* 목 각도 눈금 — 사진 위라 글씨에 흰 테를 두른다 */}
+      {neck != null && (
+        <span style={{ position: 'absolute', left: `${m.shoulderX + 6}%`, top: `${Math.max(2, m.shoulderY - 18)}%`,
+          fontSize: 11, fontWeight: 900, color: t.accentDeep,
+          textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{neck}°</span>
+      )}
+    </div>
+  );
+}
+
+export default function AngleBoxCard({ rows = [], gender = null, previewBody = null }) {
   const t = getTypeAccent();
   const [open, setOpen] = useState(null);
+  const [asset, setAsset] = useState(null);
+  const g = String(gender || '').toLowerCase();
+  const key = g.includes('female') || g.includes('여') ? ANGLE_BODY.female : ANGLE_BODY.male;
+  useEffect(() => {
+    let alive = true;
+    loadAssets([ANGLE_BODY.male, ANGLE_BODY.female]).then((m) => { if (alive) setAsset(m || {}); });
+    return () => { alive = false; };
+  }, []);
+  // previewBody — 관리자에서 저장 전 값으로 바로 보려고 넘긴다. 손님 화면에선 늘 null.
+  const body = previewBody?.url ? previewBody : (asset?.[key]?.url ? asset[key] : null);
   const ok = (rows || []).filter(usable);
   if (!ok.length) return null;
 
@@ -139,9 +213,12 @@ export default function AngleBoxCard({ rows = [] }) {
 
       {/* 그림 — 목은 실제 기울기, 허리·어깨는 범위 부채꼴 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0 4px' }}>
-        <div style={{ flex: '0 0 150px', background: '#FAF7F0', borderRadius: 16, padding: '8px 0' }}>
-          <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
-            ghostNeck={prev ? num(prev.neck_bend) : null} t={t} />
+        <div style={{ flex: '0 0 132px', background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
+          {body
+            ? <PhotoFigure src={body.url} meta={body.meta} neck={num(now.neck_bend)} trunk={num(now.trunk_flex)}
+                arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} />
+            : <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
+                ghostNeck={prev ? num(prev.neck_bend) : null} t={t} />}
         </div>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
           {ANGLE_ITEMS.map((it) => {

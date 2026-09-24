@@ -69,19 +69,40 @@ export function steadiness(rows = [], now = new Date()) {
   return { all, hit, n: hit.length, of: all.length, missed: all.filter((w) => !done.has(w)) };
 }
 
-/** 4) 부담이 몰린 주 — 주마다 부담을 더해 막대로. 합계다(평균이 아니다). */
+/** 4) 부담이 몰린 주 — 주마다 부담을 더해 막대로. 합계다(평균이 아니다).
+ *  불편함은 따로 주 평균을 내어 꺾은선으로 겹친다 — '기분·불편함 추이'와 같은 짜임이다. */
 export function heaviestWeek(entries = []) {
   const days = (entries || []).filter((e) => e && e.date && Array.isArray(e.tags));
   if (days.length < 3) return null;
   const bucket = {};
-  days.forEach((e) => { const k = weekKey(e.date); (bucket[k] = bucket[k] || []).push(strainScore(e.tags)); });
+  const soreBucket = {};
+  days.forEach((e) => {
+    const k = weekKey(e.date);
+    (bucket[k] = bucket[k] || []).push(strainScore(e.tags));
+    const lv = (Array.isArray(e.soreness) ? e.soreness : []).map((x) => Number(x?.level)).filter(Number.isFinite);
+    if (lv.length) (soreBucket[k] = soreBucket[k] || []).push(Math.max(...lv));
+  });
   const weeks = Object.entries(bucket)
-    .map(([week, vs]) => ({ week, when: dayOf(week), sum: vs.reduce((n, v) => n + v, 0), days: vs.length }))
+    .map(([week, vs]) => {
+      const sv = soreBucket[week] || [];
+      return {
+        week, when: dayOf(week),
+        sum: vs.reduce((n, v) => n + v, 0),
+        days: vs.length,
+        sore: sv.length ? r1(sv.reduce((n, v) => n + v, 0) / sv.length) : null,
+      };
+    })
     .sort((a, b) => String(a.week).localeCompare(String(b.week)));
   if (weeks.length < 2) return null;
   const top = weeks.reduce((a, b) => (b.sum > a.sum ? b : a));
   const nth = weeks.findIndex((w) => w.week === top.week) + 1;
-  return { weeks, top: { ...top, nth }, max: Math.max(...weeks.map((w) => w.sum), 1) };
+  const sores = weeks.map((w) => w.sore).filter((v) => v != null);
+  return {
+    weeks, top: { ...top, nth },
+    max: Math.max(...weeks.map((w) => w.sum), 1),
+    maxSore: sores.length ? Math.max(...sores, 1) : null,
+    hotSore: sores.length ? weeks.filter((w) => w.sore != null).reduce((a, b) => (b.sore > a.sore ? b : a)) : null,
+  };
 }
 
 /** 5) 부담과 움직임 — 부담이 많았던 주와 각도를 나란히 놓는다.

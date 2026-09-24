@@ -9,6 +9,7 @@ import DiaryWriteFlow from '../components/DiaryWriteFlow';
 import DiaryCalendar from '../components/DiaryCalendar';
 import MallangDiscoveryReport from '../components/MallangDiscoveryReport';
 import OctFindingSamples from '../components/OctFindingSamples';
+import AngleBodyAdmin from './AngleBodyAdmin';
 import { getDiaryHistory } from '../lib/diaryHistory';
 import { setDiaryDryRun, todayISO } from '../lib/diaryHistory';
 import AngleView from '../features/angle/AngleView';
@@ -141,6 +142,8 @@ export default function DiaryPreview() {
           </label>
         </div>
       </div>
+
+      <AngleBodyAdmin />
 
       {/* 고른 태그로 부담이 얼마나 되는지 바로 보여 준다 */}
       <div style={{ ...box, background: BG, marginBottom: 16 }}>

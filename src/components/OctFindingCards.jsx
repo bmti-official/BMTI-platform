@@ -277,9 +277,9 @@ export function MonthOverMonthCard({ rows, entries }) {
 /** 이번달 기록 — 각도기록 한 상자.
  *  흩어져 있던 넷(이번 달 움직임·최고 기록·가장 많이 달라진 곳·옆모습 견주기)을
  *  여기 하나로 합쳤다. 같은 숫자를 네 번 돌려 말하고 있었다. */
-export function QuickFindings({ rows: given = null }) {
+export function QuickFindings({ rows: given = null, gender = null }) {
   const rows = useAngleRows(given);
-  return <AngleBoxCard rows={rows} />;
+  return <AngleBoxCard rows={rows} gender={gender} />;
 }
 
 /** 이번달 발견 — 부담 쪽 셋. 각도 자체는 '기록'의 각도기록 상자가 맡는다.
