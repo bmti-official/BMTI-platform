@@ -3,16 +3,11 @@
 //   📸 옆모습 견주기        숫자만으로는 스스로 판단이 안 된다. 그림이 필요하다.
 //   🌙 무리한 날, 그 다음 날  인과는 못 말해도 **순서**는 말할 수 있다.
 //   🔄 주기와 함께           여성 이용자에게 가장 현실적인 물음. 재료는 태그에 이미 있다.
-import { sideShapes, dayAfterHeavy, withCycle } from '../lib/octFindings';
+import { sideShapes, dayAfterHeavy } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', card: '#FFFFFF' };
 
-// '목이었어요 / 어깨였어요' — 받침을 보고 붙인다. 틀리면 사람이 쓴 글로 안 읽힌다.
-const hasJong = (w) => {
-  const c = String(w || '').trim().slice(-1).charCodeAt(0);
-  return !Number.isNaN(c) && c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0;
-};
 
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
 
@@ -124,16 +119,55 @@ export function SideShapeCard({ rows }) {
 }
 
 // ── 2) 무리한 날, 그 다음 날 ───────────────────────────────
+// 비율만 적어 두면 결국 '무리해서 아팠다'로 읽힌다.
+// 날짜를 왼쪽·오른쪽에 나란히 놓고 화살표로 이어야 **순서**로 읽힌다.
 export function DayAfterCard({ entries }) {
   const d = dayAfterHeavy(entries);
   if (!d) return null;
   const t = getTypeAccent();
   return (
     <Card icon="🌙" title="무리한 날, 그 다음 날"
-      sub="부담이 컸던 날 바로 다음 날을 모아 봤어요. 앞뒤 순서일 뿐, 무엇이 원인인지는 알 수 없어요.">
+      sub="부담이 컸던 날과 바로 다음 날을 나란히 놓았어요. 앞뒤 순서일 뿐, 무엇이 원인인지는 알 수 없어요.">
       <Big value={`${d.withSore}`} unit={`/ ${d.n}번`} note={`다음 날 불편한 곳을 적으셨어요 (${d.pct}%)`} />
+
+      {/* 머리글 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, marginBottom: 2 }}>
+        <span style={{ flex: '0 0 40%', fontSize: 11, fontWeight: 900, color: C.sub }}>무리한 날</span>
+        <span style={{ flex: '0 0 18px' }} />
+        <span style={{ flex: 1, fontSize: 11, fontWeight: 900, color: C.sub }}>다음 날</span>
+      </div>
+
+      {d.lines.map((x) => (
+        <div key={x.from} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', borderTop: '1px solid #F3F1EC' }}>
+          {/* 왼쪽 — 무리한 날 */}
+          <div style={{ flex: '0 0 40%', minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.accentDeep, flexShrink: 0 }} />
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 12.5, fontWeight: 900, color: C.ink, fontVariantNumeric: 'tabular-nums' }}>{x.from}</span>
+              <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: C.sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {x.tags.length ? x.tags.join(' · ') : `부담 ${x.load}점`}
+              </span>
+            </span>
+          </div>
+          {/* 화살표 — 순서를 눈으로 보여 주는 자리 */}
+          <span aria-hidden style={{ flex: '0 0 18px', textAlign: 'center', fontSize: 13, fontWeight: 900, color: '#D6CFC1' }}>→</span>
+          {/* 오른쪽 — 그 다음 날 */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
+              background: x.parts.length ? '#C9807A' : '#E7E2D8' }} />
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 12.5, fontWeight: 900, color: C.ink, fontVariantNumeric: 'tabular-nums' }}>{x.to}</span>
+              <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                color: x.parts.length ? '#B23B36' : C.sub }}>
+                {x.parts.length ? x.parts.join(' · ') : '적은 곳 없음'}
+              </span>
+            </span>
+          </div>
+        </div>
+      ))}
+
       {d.calmPct != null && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '4px 0 12px' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14, paddingTop: 12, borderTop: '1px solid #F3F1EC' }}>
           {[['무리한 날 다음', d.pct, true], ['그 밖의 날 다음', d.calmPct, false]].map(([lb, pct, on]) => (
             <div key={lb} style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: C.sub, marginBottom: 5 }}>{lb}</div>
@@ -145,45 +179,10 @@ export function DayAfterCard({ entries }) {
           ))}
         </div>
       )}
-      {d.top.length > 0 && (
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, lineHeight: 1.7, wordBreak: 'keep-all', borderTop: '1px solid #F3F1EC', paddingTop: 11 }}>
-          그런 날 다음에 가장 자주 적힌 곳은 <b>{d.top.map((x) => x.label).join(' · ')}</b>
-          {hasJong(d.top[d.top.length - 1].label) ? '이었어요.' : '였어요.'}
-        </div>
-      )}
     </Card>
   );
 }
 
-// ── 3) 주기와 함께 ─────────────────────────────────────────
-export function CycleCard({ entries }) {
-  const d = withCycle(entries);
-  if (!d) return null;
-  const t = getTypeAccent();
-  const more = d.diff > 0;
-  return (
-    <Card icon="🔄" title="주기와 함께"
-      sub={`'생리 중'을 적은 ${d.days}일과 나머지 날을 견줬어요.`}>
-      <Big value={`${more ? '+' : ''}${d.diff}`} unit="점"
-        note={more ? '그 기간에 부담이 더 높았어요' : d.diff === 0 ? '거의 같았어요' : '그 기간에 오히려 낮았어요'} />
-      <div style={{ display: 'flex', gap: 8, margin: '2px 0 12px' }}>
-        {[['생리 중', d.onAvg, true], ['그 밖의 날', d.offAvg, false]].map(([lb, v, on]) => (
-          <div key={lb} style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: C.sub, marginBottom: 5 }}>{lb}</div>
-            <div style={{ height: 10, borderRadius: 999, background: '#F3F1EC', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${Math.min(100, (v / Math.max(d.onAvg, d.offAvg, 1)) * 100)}%`,
-                borderRadius: 999, background: on ? t.accentDeep : '#DCD6C9' }} />
-            </div>
-            <div style={{ fontSize: 11.5, fontWeight: 900, color: on ? t.accentDeep : C.sub, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>{v}점</div>
-          </div>
-        ))}
-      </div>
-      {d.top.length > 0 && (
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, lineHeight: 1.7, wordBreak: 'keep-all', borderTop: '1px solid #F3F1EC', paddingTop: 11 }}>
-          그 기간에 가장 자주 적힌 곳은 <b>{d.top.map((x) => x.label).join(' · ')}</b>
-          {hasJong(d.top[d.top.length - 1].label) ? '이었어요.' : '였어요.'}
-        </div>
-      )}
-    </Card>
-  );
-}
+// 주기와 함께(CycleCard)는 걷어냈다.
+// 여성 전용 상자 하나를 두는 대신, '이번 달 태그'에서 아무 태그나 눌러 그 날들을
+// 달력으로 보는 쪽으로 옮겼다 — 생리 중이든 카페인이든 같은 방식으로 보인다.

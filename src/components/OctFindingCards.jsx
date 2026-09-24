@@ -11,7 +11,7 @@ import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
   sideBySide, weekdayLoad, monthOverMonth } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { MonthMoveCard, BiggestMoveCard, LoadAndMoveCard } from './OctFindingSamples';
-import { SideShapeCard, DayAfterCard, CycleCard } from './OctNewCards';
+import { SideShapeCard, DayAfterCard } from './OctNewCards';
 import { DiaryIcon } from './DiaryIcons';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', card: '#FFFFFF' };
@@ -287,15 +287,14 @@ export function QuickFindings({ rows: given = null, entries }) {
 }
 
 /** 시간이 걸리는 것 — '이번달 발견'에 선다. 몇 주가 쌓여야 모양이 잡힌다.
- *  차례는 원안 그대로: 이번 달 움직임 → 가장 많이 달라진 곳 → (새) 다음 날 → (새) 주기 → 부담과 움직임 */
-export function SlowFindings({ rows: given = null, entries, female = true }) {
+ *  차례는 원안 그대로: 이번 달 움직임 → 가장 많이 달라진 곳 → (새) 다음 날 → 부담과 움직임 */
+export function SlowFindings({ rows: given = null, entries }) {
   const rows = useAngleRows(given);
   return (
     <>
       {rows.length > 0 && <MonthMoveCard rows={rows} />}
       {rows.length > 0 && <BiggestMoveCard rows={rows} />}
       <DayAfterCard entries={entries} />
-      {female && <CycleCard entries={entries} />}
       {rows.length > 0 && <LoadAndMoveCard rows={rows} entries={entries} />}
     </>
   );

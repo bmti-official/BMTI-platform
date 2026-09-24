@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
 import { CHARACTERS, CHARACTER_NAMES } from "../data";
 import { DiaryIcon } from "./DiaryIcons";
-import { tagShare } from "../lib/diaryTags";
+import { tagShare, strainScore } from "../lib/diaryTags";
 import { SLEEP_ICON } from "../lib/diaryEntryLabels";
 
 // 오늘의 태그 라벨 → 아이콘 이름 (DiaryWriteFlow의 TAG_CATEGORIES와 동일하게 유지)
@@ -1434,10 +1434,15 @@ function GrapeRow({ slides }) {
 
 // ── 이번 달 태그: 갈래마다 많이 고른 것을 막대로 ──
 // 분모는 '기록한 날 수'다. 고른 횟수 총합으로 나누면 태그를 많이 고른 날이 과하게 반영된다.
+//
+// 막대를 누르면 그 아래에 **달력**이 펼쳐져, 그 태그를 적은 날이 달의 어디에 몰려 있는지
+// 보인다. 여성 전용 상자를 따로 두는 대신 이 길을 택했다 —
+// 생리 중이든 카페인이든 야식이든 같은 방식으로 볼 수 있다.
 function TagBarCard({ entries }) {
   const t = getTypeAccent();
   const days = (entries || []).length;
   const share = tagShare(entries || []);
+  const [open, setOpen] = useState(null);   // 지금 달력을 펼친 태그 이름
   return (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -1446,29 +1451,104 @@ function TagBarCard({ entries }) {
         </span>
         <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: C.ink }}>이번 달 태그</span>
       </div>
-      <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 16 }}>
+      <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 16, lineHeight: 1.6 }}>
         기록한 {days}일 가운데 며칠에 나왔는지예요.
+        <br />눌러 보시면 그 태그를 적은 날이 달력에 표시돼요.
       </div>
       {share.length === 0 ? (
         <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600 }}>아직 고른 태그가 없어요.</div>
       ) : share.map((c) => (
         <div key={c.id} style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: C.sub, marginBottom: 9 }}>{c.title}</div>
-          {c.rows.slice(0, 6).map((r) => (
-            <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
-              <DiaryIcon name={r.icon} size={19} />
-              <span style={{ flex: "0 0 80px", fontSize: 11.5, fontWeight: 700, color: C.ink, wordBreak: "keep-all" }}>{r.label}</span>
-              <span style={{ flex: 1, height: 9, borderRadius: 999, background: "#F3F1EC", overflow: "hidden" }}>
-                <span style={{ display: "block", height: "100%", width: `${r.pct}%`, borderRadius: 999,
-                  background: r.strain >= 2 ? "#D9A24B" : r.strain === 1 ? "#E8CB8E" : "#CFCFC7" }} />
-              </span>
-              <span style={{ flex: "0 0 54px", textAlign: "right", fontSize: 11, fontWeight: 800, color: C.sub, fontVariantNumeric: "tabular-nums" }}>
-                {r.days}일 {r.pct}%
-              </span>
-            </div>
-          ))}
+          {c.rows.slice(0, 6).map((r) => {
+            const on = open === r.label;
+            return (
+              <div key={r.label}>
+                <button type="button" onClick={() => setOpen(on ? null : r.label)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, marginBottom: 7,
+                    border: "none", background: on ? "#FAF7F0" : "transparent", cursor: "pointer",
+                    fontFamily: "inherit", borderRadius: 10, padding: "4px 6px", margin: "0 -6px 7px" }}>
+                  <DiaryIcon name={r.icon} size={19} />
+                  <span style={{ flex: "0 0 80px", fontSize: 11.5, fontWeight: 700, color: C.ink, wordBreak: "keep-all", textAlign: "left" }}>{r.label}</span>
+                  <span style={{ flex: 1, height: 9, borderRadius: 999, background: "#F3F1EC", overflow: "hidden" }}>
+                    <span style={{ display: "block", height: "100%", width: `${r.pct}%`, borderRadius: 999,
+                      background: r.strain >= 2 ? "#D9A24B" : r.strain === 1 ? "#E8CB8E" : "#CFCFC7" }} />
+                  </span>
+                  <span style={{ flex: "0 0 54px", textAlign: "right", fontSize: 11, fontWeight: 800, color: C.sub, fontVariantNumeric: "tabular-nums" }}>
+                    {r.days}일 {r.pct}%
+                  </span>
+                </button>
+                {on && <TagMonthMap entries={entries} label={r.label} />}
+              </div>
+            );
+          })}
         </div>
       ))}
+    </div>
+  );
+}
+
+// 태그 달력 — 한 달을 주 단위로 깔고, 그 태그를 적은 날에 점을 찍는다.
+// 칸 색은 그날의 부담 점수다. 태그가 몰린 구간과 무거웠던 구간이 같이 보인다.
+function TagMonthMap({ entries, label }) {
+  const t = getTypeAccent();
+  const list = (entries || []).filter((e) => e && e.date);
+  if (!list.length) return null;
+  const dates = list.map((e) => e.date).sort();
+  const base = new Date(dates[0]);
+  const y = base.getFullYear(), m = base.getMonth();
+  const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+  const at = {};
+  list.forEach((e) => { at[e.date] = e; });
+  const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  const cells = [];
+  for (let i = 0; i < first.getDay(); i += 1) cells.push(null);
+  for (let d = 1; d <= last.getDate(); d += 1) {
+    const dt = new Date(y, m, d);
+    const e = at[key(dt)];
+    const s = e ? strainScore(e.tags || []) : null;
+    cells.push({ d, has: !!e && (e.tags || []).includes(label), load: s });
+  }
+  const hit = cells.filter((c) => c && c.has);
+  const loadOn = hit.filter((c) => c.load != null);
+  const avgOn = loadOn.length ? Math.round((loadOn.reduce((n, c) => n + c.load, 0) / loadOn.length) * 10) / 10 : null;
+  const others = cells.filter((c) => c && !c.has && c.load != null);
+  const avgOff = others.length ? Math.round((others.reduce((n, c) => n + c.load, 0) / others.length) * 10) / 10 : null;
+  const tint = (v) => (v == null ? "#F7F5F0" : v >= 5 ? "#E8C98A" : v >= 3 ? "#F2E2BE" : v >= 1 ? "#F8F1DF" : "#F7F5F0");
+
+  return (
+    <div style={{ background: "#FAF7F0", borderRadius: 14, padding: "12px 12px 14px", margin: "2px 0 12px" }}>
+      <div style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, marginBottom: 9 }}>
+        {m + 1}월 — &lsquo;{label}&rsquo;을 적은 날
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+        {"일월화수목금토".split("").map((w) => (
+          <div key={w} style={{ fontSize: 9, fontWeight: 800, color: C.sub, textAlign: "center", paddingBottom: 2 }}>{w}</div>
+        ))}
+        {cells.map((c, i) => (
+          <div key={i} style={{ aspectRatio: "1 / 1", borderRadius: 7, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 1,
+            background: c ? tint(c.load) : "transparent",
+            boxShadow: c && c.has ? `inset 0 0 0 2px ${t.accentDeep}` : "none" }}>
+            {c && <span style={{ fontSize: 9.5, fontWeight: c.has ? 900 : 700, color: c.has ? t.accentDeep : "#BDB7AC", fontVariantNumeric: "tabular-nums" }}>{c.d}</span>}
+            {c && c.has && <span style={{ width: 4, height: 4, borderRadius: "50%", background: t.accentDeep }} />}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: "wrap" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, boxShadow: `inset 0 0 0 2px ${t.accentDeep}` }} />적은 날
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: "#E8C98A" }} />칸 색은 그날 부담
+        </span>
+      </div>
+      {avgOn != null && avgOff != null && (
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.ink, marginTop: 9, lineHeight: 1.6, wordBreak: "keep-all" }}>
+          적은 날 부담은 하루 평균 <b>{avgOn}점</b>, 그 밖의 날은 <b>{avgOff}점</b>이었어요.
+        </div>
+      )}
     </div>
   );
 }
@@ -2598,7 +2678,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   };
   // 10월 개편 — 여기(발견)에는 **시간이 걸리는 것**만 둔다.
   // 오늘 바로 보이는 것은 '이번달 기록'이 맡는다. 두 탭이 같은 성격이면 나눈 뜻이 없다.
-  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings rows={angleRows} entries={entries} female={female} /></Fragment> });
+  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings rows={angleRows} entries={entries} /></Fragment> });
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.

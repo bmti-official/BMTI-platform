@@ -160,7 +160,7 @@ export function LoadAndMoveCard({ rows, entries }) {
   const d = loadAndMove(rows, entries);
   if (!d) return null;
   const t = getTypeAccent();
-  const span = Math.max(1, d.maxA - d.minA);
+
   const dir = Math.abs(d.gap) < 0.5 ? null : d.gap < 0;
   return (
     <Card icon="⭐" title="부담과 움직임"
@@ -170,28 +170,60 @@ export function LoadAndMoveCard({ rows, entries }) {
           ? <>부담이 많았던 주와 적었던 주의 {d.item.label}이 거의 같았어요.</>
           : <>부담 태그가 많았던 주에는 {d.item.label}이 {Math.abs(d.gap)}도 {dir ? '줄어드는' : '늘어나는'} 편이었어요.</>}
       </div>
-      <div style={{ display: 'flex', gap: 9 }}>
-        {d.rows.map((x) => (
-          <div key={x.week} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 62 }}>
-              <span style={{ width: 11, borderRadius: 5, background: t.accentDeep,
-                height: Math.max(6, Math.round(((x.angle - d.minA) / span) * 44) + 10) }} />
-              <span style={{ width: 11, borderRadius: 5, background: '#E3D9C4',
-                height: Math.max(6, Math.round((x.load / d.maxL) * 54)) }} />
-            </div>
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: C.sub, whiteSpace: 'nowrap' }}>{dd(x.week)}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 11, fontWeight: 800, color: C.sub }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 9, height: 9, borderRadius: 3, background: t.accentDeep }} />{d.item.label}
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 9, height: 9, borderRadius: 3, background: '#E3D9C4' }} />하루 평균 부담
-        </span>
-      </div>
+      {/* 꺾은선 둘 — 막대로 두면 색 설명을 읽어야 무엇인지 안다.
+          선이면 '같이 오르내리는지'가 한눈에 들어오고, 이름을 선 끝에 바로 붙일 수 있다. */}
+      <TwoLines rows={d.rows} minA={d.minA} maxA={d.maxA} maxL={d.maxL} item={d.item} t={t} />
     </Card>
+  );
+}
+
+
+// 두 갈래를 꺾은선으로 겹쳐 그린다.
+// 세로 눈금은 서로 다르다(각도는 도, 부담은 점) — 그래서 숫자 축을 그리지 않고
+// 각자 제 범위 안에서 높낮이만 보여 준다. 보려는 건 '같이 움직였나'이지 값이 아니다.
+function TwoLines({ rows, minA, maxA, maxL, item, t }) {
+  const W = 300, H = 108, padX = 10, padTop = 14, padBot = 26;
+  const n = rows.length;
+  const x = (i) => padX + (n === 1 ? (W - padX * 2) / 2 : (i * (W - padX * 2)) / (n - 1));
+  const spanA = Math.max(0.1, maxA - minA);
+  const yA = (v) => padTop + (1 - (v - minA) / spanA) * (H - padTop - padBot);
+  const yL = (v) => padTop + (1 - v / Math.max(maxL, 0.1)) * (H - padTop - padBot);
+  const path = (f, k) => rows.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${f(r[k]).toFixed(1)}`).join(' ');
+  const last = rows[n - 1];
+  // 선 끝 두 개가 가까우면 이름이 겹친다. 위에 있는 쪽은 더 위로, 아래쪽은 더 아래로.
+  const labelY = (() => {
+    const a = yA(last.angle), l = yL(last.load);
+    const up = a <= l;
+    const gapOk = Math.abs(a - l) >= 26;
+    return {
+      a: gapOk ? a - 8 : (up ? a - 9 : a + 16),
+      l: gapOk ? l + 15 : (up ? l + 16 : l - 9),
+    };
+  })();
+  return (
+    <div style={{ width: '100%', overflow: 'hidden' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block' }}>
+        <path d={path(yL, 'load')} stroke="#DCC79B" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path(yA, 'angle')} stroke={t.accentDeep} strokeWidth="2.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        {rows.map((r, i) => (
+          <g key={r.week}>
+            <circle cx={x(i)} cy={yL(r.load)} r="3.1" fill="#DCC79B" />
+            <circle cx={x(i)} cy={yA(r.angle)} r="3.4" fill={t.accentDeep} />
+            <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#9B9489">
+              {`${Number(r.week.slice(5, 7))}/${Number(r.week.slice(8, 10))}`}
+            </text>
+          </g>
+        ))}
+        {/* 이름은 선 끝에 바로 붙인다 — 아래 색 설명을 찾아 읽지 않게.
+            두 끝이 가까우면 글씨가 겹치므로, 위아래로 벌려 둔다. */}
+        <text x={x(n - 1) - 4} y={labelY.a} textAnchor="end" fontSize="10" fontWeight="900" fill={t.accentDeep}>
+          {item.label}
+        </text>
+        <text x={x(n - 1) - 4} y={labelY.l} textAnchor="end" fontSize="10" fontWeight="900" fill="#B9A176">
+          하루 부담
+        </text>
+      </svg>
+    </div>
   );
 }
 

@@ -243,11 +243,21 @@ export function dayAfterHeavy(entries = [], cut = 3) {
   }));
   const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label, n]) => ({ label, n }));
 
+  // 한 줄씩 눈으로 따라갈 수 있게 짝을 그대로 넘긴다.
+  // 비율만 적어 두면 결국 '무리해서 아팠다'로 읽힌다 — 날짜가 나란히 보여야 순서로 읽힌다.
+  const md = (d) => `${Number(String(d).slice(5, 7))}/${Number(String(d).slice(8, 10))}`;
+  const lines = pairs.slice(-6).map((p) => ({
+    from: md(p.heavy.date), to: md(p.after.date),
+    load: strainScore(p.heavy.tags || []),
+    tags: (p.heavy.tags || []).filter((lb) => (TAG_BY_LABEL[lb]?.strain ?? 0) >= 2).slice(0, 2),
+    parts: sore(p.after).map((x) => x?.partOther || KEY_TO_PART_LABEL[x?.part] || x?.part).filter(Boolean).slice(0, 2),
+  }));
+
   return {
     n: pairs.length, withSore,
     pct: Math.round((withSore / pairs.length) * 100),
     calmPct: calm.length >= 3 ? Math.round((calmSore / calm.length) * 100) : null,
-    calmN: calm.length, top,
+    calmN: calm.length, top, lines,
   };
 }
 
