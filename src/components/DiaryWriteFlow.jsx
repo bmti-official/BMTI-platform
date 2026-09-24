@@ -14,7 +14,7 @@ import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, saveSleepSettingToServer, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
 import { todayFinishes } from "../lib/cardFinish";
-import { recentChecks, sundayOf } from "../lib/angleRecord";
+import { recentChecks } from "../lib/angleRecord";
 
 // 하루 기록에서 고를 수 있는 불편한 부위 최대 개수 (BodySelector3D의 MAX_PARTS와 맞춘다)
 const MAX_SORE_PARTS = 3;
@@ -235,13 +235,11 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
   // 운동
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
-  // 오늘 바로카드·바로플리를 몇 번 했는지. 있으면 운동 칸을 저절로 채워 준다.
+  // 오늘 바로카드·바로플리를 몇 번 했는지. **있으면 저절로 담는다.**
+  // 우리가 이미 아는 것을 손님에게 다시 고르게 하는 건 두 번 일을 시키는 셈이다.
+  // 대신 아래 '바로카드 뺄게요'로 손님이 언제든 되돌릴 수 있다.
   const [baro, setBaro] = useState({ count: 0, full: 0 });
-  useEffect(() => {
-    let alive = true;
-    todayFinishes().then((r) => { if (alive) setBaro(r); });
-    return () => { alive = false; };
-  }, []);
+  const [baroOff, setBaroOff] = useState(false);   // 손님이 손수 뺐으면 다시 담지 않는다
 
   const [exerciseReason, setExerciseReason] = useState(() => (
     initialEntry?.exercise?.did === false ? (REASON_TO_EXERCISE_LABEL[initialEntry.exercise.reason] || null) : null
@@ -249,6 +247,18 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [exerciseTypes, setExerciseTypes] = useState(() => (
     initialEntry?.exercise?.did === true ? (initialEntry.exercise.types || []).map(t => KEY_TO_EXERCISE_TYPE_LABEL[t] || t).slice(0, 2) : []
   ));
+  useEffect(() => {
+    let alive = true;
+    todayFinishes().then((r) => {
+      if (!alive || !r || !r.count) return;
+      setBaro(r);
+      // 이미 쓴 기록을 고치러 들어온 경우엔 그때 고른 것을 건드리지 않는다
+      if (initialEntry?.exercise) return;
+      setExerciseDidIt((v) => v || "yes");
+      setExerciseTypes((prev) => (prev.includes("바로카드") || prev.length >= 2 ? prev : ["바로카드", ...prev]));
+    });
+    return () => { alive = false; };
+  }, [initialEntry]);
   const [customExercise, setCustomExercise] = useState("");
   const [showCustomExercise, setShowCustomExercise] = useState(false);
 
@@ -295,13 +305,22 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [whenEditParts, setWhenEditParts] = useState([]);
 
   const [blockOrder, setBlockOrder] = useState(["sore", "sleep", "tags", "exercise", "sitting", "oneLine"]);
-  // 각도는 주 1회다. 이번 주에 이미 쟀으면 블럭을 감춘다 —
-  // 엿새 내내 '다 쟀어요'만 떠 있으면 자리만 차지한다.
-  const [angleDone, setAngleDone] = useState(true);
+  // 각도는 주 1회다. 최근 네 주를 가져와 '쟀는지 안 쟀는지'를 칸으로 보여 준다.
+  // 이번 주만 묻고 말면 흐름이 안 보인다 — 네 칸이 나란히 있어야 빠진 주가 눈에 띈다.
+  const [angleWeeks, setAngleWeeks] = useState(null);
   useEffect(() => {
     let alive = true;
-    recentChecks(2).then((rows) => {
-      if (alive) setAngleDone((rows || []).some((r) => r.week === sundayOf()));
+    recentChecks(8).then((rows) => {
+      if (!alive) return;
+      const done = new Set((rows || []).map((r) => String(r.week)));
+      const out = [];
+      const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - d.getDay());
+      for (let i = 3; i >= 0; i -= 1) {
+        const x = new Date(d); x.setDate(x.getDate() - i * 7);
+        const w = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+        out.push({ week: w, on: done.has(w), now: i === 0 });
+      }
+      setAngleWeeks(out);
     });
     return () => { alive = false; };
   }, []);
@@ -637,24 +656,19 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
         <AccordionCard question="오늘의 태그" answerText={tags.length ? `${tags.length}개 선택` : null}
           expanded={expanded.tags} onToggle={() => toggle("tags")} done={tags.length > 0}>
           <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "0 0 14px" }}>오늘 있었던 일을 가볍게 눌러두면, 나중에 뭐랑 자주 겹치는지 찾아드려요.</div>
-          <style>{`@keyframes tagArrowBlink{0%,100%{opacity:.2}50%{opacity:.75}} .tag-scroll::-webkit-scrollbar{display:none}`}</style>
+          {/* 갈래마다 통째로 펼쳐 둔다. 좌우로 밀어야 보이면 뒤쪽 태그는 끝내 안 눌린다.
+              한 줄에 다섯씩 — 그래야 갈래 하나가 두 줄 안에 들어온다. */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {(tagCats || TAG_CATEGORIES).map(cat => {
               const items = cat.tags.filter(tg => !tg.femaleOnly || isFemale);
               if (!items.length) return null;
-              const arrow = { position: "absolute", top: "34%", fontSize: 22, fontWeight: 800, color: "#C9C4BB", pointerEvents: "none", animation: "tagArrowBlink 1.3s ease-in-out infinite" };
               return (
                 <div key={cat.title}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: C.sub, marginBottom: 8 }}>{cat.title}</div>
-                  <div style={{ position: "relative" }}>
-                    <div className="tag-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, padding: "0 14px 4px", margin: "0 -14px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
-                      {items.map(tg => (
-                        <TagBox key={tg.label} icon={tg.icon} label={tg.label} on={tags.includes(tg.label)} onClick={() => toggleTag(tg.label)} t={t} />
-                      ))}
-                    </div>
-                    {/* 항목이 더 있다는 좌우 깜박이는 화살표 */}
-                    <span style={{ ...arrow, left: -2 }}>‹</span>
-                    <span style={{ ...arrow, right: -2 }}>›</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", columnGap: 4, rowGap: 12 }}>
+                    {items.map(tg => (
+                      <TagBox key={tg.label} icon={tg.icon} label={tg.label} on={tags.includes(tg.label)} onClick={() => toggleTag(tg.label)} t={t} />
+                    ))}
                   </div>
                 </div>
               );
@@ -667,22 +681,37 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       return (
         <AccordionCard question="오늘 운동·스트레칭·산책 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
           expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
-          {/* 오늘 바로카드를 한 기록이 있으면 알려 준다. 고르는 건 손님 몫으로 둔다. */}
+          {/* 오늘 바로카드를 한 기록이 있으면 저절로 담아 두고, 틀렸으면 손님이 되돌린다. */}
           {baro.count > 0 && (
-            <button type="button"
-              onClick={() => {
-                setExerciseDidIt("yes");
-                setExerciseTypes(prev => (prev.includes("바로카드") || prev.length >= 2 ? prev : [...prev, "바로카드"]));
-              }}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, marginBottom: 12,
-                padding: "11px 13px", borderRadius: 14, border: "none", cursor: "pointer", fontFamily: "inherit",
-                background: C.yellow, color: GOLD, fontSize: 12.5, fontWeight: 800, textAlign: "left" }}>
-              <DiaryIcon name="flex" size={22} />
-              <span style={{ flex: 1, color: C.ink }}>
-                오늘 바로카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}
-              </span>
-              <span style={{ color: GOLD }}>담기 →</span>
-            </button>
+            <div style={{ marginBottom: 12, padding: "11px 13px", borderRadius: 14, background: C.yellow }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <DiaryIcon name="flex" size={22} />
+                <span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5, wordBreak: "keep-all" }}>
+                  오늘 바로카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}
+                  <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>
+                    {baroOff ? "빼 두었어요. 다시 담을 수 있어요." : "따로 고르지 않아도 담아 뒀어요."}
+                  </span>
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+                <button type="button"
+                  onClick={() => {
+                    if (baroOff) {
+                      setBaroOff(false);
+                      setExerciseDidIt("yes");
+                      setExerciseTypes(prev => (prev.includes("바로카드") || prev.length >= 2 ? prev : ["바로카드", ...prev]));
+                    } else {
+                      setBaroOff(true);
+                      setExerciseTypes(prev => prev.filter(x => x !== "바로카드"));
+                    }
+                  }}
+                  style={{ border: "none", background: "#fff", cursor: "pointer", fontFamily: "inherit",
+                    borderRadius: 999, padding: "6px 12px", fontSize: 11.5, fontWeight: 800, color: GOLD,
+                    boxShadow: "0 2px 7px rgba(0,0,0,0.09)" }}>
+                  {baroOff ? "다시 담기 ↩" : "바로카드 뺄게요 ✕"}
+                </button>
+              </div>
+            </div>
           )}
 
           {exerciseDidIt === null && (
@@ -960,20 +989,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 )}
               </div>
 
-              {/* 각도기록 — 이번 주에 안 쟀을 때만 보인다. 재고 나면 그 주엔 사라진다.
+              {/* 각도기록 — 최근 네 주를 칸으로. 쟀는지 안 쟀는지가 한눈에 보인다.
                   카메라는 전체 화면으로 따로 뜬다. 여기서 켜면 쓰던 흐름이 끊긴다. */}
-              {!angleDone && onAngle && (
-                <button type="button" onClick={onAngle}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
-                    padding: "14px 15px", borderRadius: 16, border: "none", cursor: "pointer", fontFamily: "inherit",
-                    background: C.yellow, textAlign: "left" }}>
-                  <span style={{ fontSize: 20 }}>📐</span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: 13.5, fontWeight: 900, color: C.ink }}>이번 주 각도, 아직이에요</span>
-                    <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: C.sub, marginTop: 2 }}>1분이면 끝나요</span>
-                  </span>
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: GOLD, flexShrink: 0 }}>재러 가기 →</span>
-                </button>
+              {onAngle && angleWeeks && (
+                <AngleWeekStrip weeks={angleWeeks} onAngle={onAngle} t={t} />
               )}
 
               {/* ━━━ 순서 변경·숨기기 가능한 5개 블럭 ━━━ */}
@@ -1124,18 +1143,67 @@ function Chip({ label, on, onClick, disabled }) {
 
 // 오늘의 태그 — 둥근 모서리 네모 박스(아이콘 + 라벨), 가로 스크롤 목록에 들어간다.
 // '오늘 평소보다 무리했나요?'의 EmojiTile과 동일한 연한 옐로우 배경 스타일.
+
+// 각도기록 — 최근 네 주를 칸으로 보여 준다.
+//
+// 이번 주만 묻고 말면 "아직이에요"만 뜨고 흐름이 안 보인다.
+// 네 칸이 나란히 있어야 빠진 주가 눈에 띄고, 이번 주 칸이 비어 있으면 손이 간다.
+function AngleWeekStrip({ weeks, onAngle, t }) {
+  const now = weeks[weeks.length - 1];
+  const done = weeks.filter((w) => w.on).length;
+  const dd = (w) => `${Number(w.slice(5, 7))}/${Number(w.slice(8, 10))}`;
+  return (
+    <div style={{ marginBottom: 14, padding: "14px 15px", borderRadius: 16, background: C.yellow }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 18 }}>📐</span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 900, color: C.ink }}>
+          각도기록 <span style={{ fontWeight: 700, color: C.sub, fontSize: 11.5 }}>최근 4주 중 {done}번</span>
+        </span>
+        {!now.on && (
+          <button type="button" onClick={onAngle}
+            style={{ flexShrink: 0, border: "none", background: "#fff", cursor: "pointer", fontFamily: "inherit",
+              borderRadius: 999, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: GOLD,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
+            재러 가기 →
+          </button>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 7 }}>
+        {weeks.map((w) => (
+          <button key={w.week} type="button" onClick={w.now && !w.on ? onAngle : undefined}
+            style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+              border: "none", background: "transparent", padding: 0, fontFamily: "inherit",
+              cursor: w.now && !w.on ? "pointer" : "default" }}>
+            <span style={{ width: "100%", height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 14, fontWeight: 900,
+              background: w.on ? t.accent : "#fff",
+              color: w.on ? "#fff" : "#C6C0B5",
+              boxShadow: w.now && !w.on ? `inset 0 0 0 2px ${t.accent}` : "none" }}>
+              {w.on ? "✓" : w.now ? "＋" : "·"}
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: w.now ? C.ink : C.sub, letterSpacing: "-0.02em" }}>
+              {w.now ? "이번 주" : dd(w.week)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 한 줄에 다섯 칸이 들어가야 해서 아이콘도 글씨도 한 단계씩 줄였다.
 function TagBox({ icon, label, on, onClick, t }) {
   return (
-    <button onClick={onClick} style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, width: 72 }}>
+    <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, border: "none", background: "transparent", cursor: "pointer", padding: 0, width: "100%", minWidth: 0 }}>
       <div style={{
-        width: 54, height: 54, borderRadius: "32%", background: on ? t.accent : C.yellow,
+        width: 42, height: 42, borderRadius: "32%", background: on ? t.accent : C.yellow,
         display: "flex", alignItems: "center", justifyContent: "center",
         filter: on ? "none" : "grayscale(0.25) opacity(0.9)",
-        boxShadow: on ? "0 4px 14px rgba(0,0,0,0.12)" : "none", transition: "all .15s",
+        boxShadow: on ? "0 3px 10px rgba(0,0,0,0.12)" : "none", transition: "all .15s",
       }}>
-        <DiaryIcon name={icon} size={28} />
+        <DiaryIcon name={icon} size={22} />
       </div>
-      <span style={{ fontSize: 10.5, fontWeight: 700, color: on ? C.ink : C.sub, textAlign: "center", lineHeight: 1.15, wordBreak: "keep-all" }}>{label}</span>
+      <span style={{ fontSize: 9.5, fontWeight: 700, color: on ? C.ink : C.sub, textAlign: "center", lineHeight: 1.2, wordBreak: "keep-all", letterSpacing: "-0.02em" }}>{label}</span>
     </button>
   );
 }
