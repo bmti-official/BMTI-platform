@@ -30,10 +30,14 @@ export const todayISO = () => {
 // 이게 없으면 미리보기에서 무드를 고르는 순간 관리자 본인의 오늘 기록이 덮어써진다.
 let dryRun = null;   // null이면 꺼짐, 배열이면 켜짐(그 배열이 연습용 사본)
 
-export function setDiaryDryRun(on) {
+// dropToday — 오늘 것만 빼고 복사한다. 미리보기는 늘 '오늘 쓰기'부터 시작해야
+// 기분 묻기 → 기록 → 말랑이 팝업 → 매일 한마디까지 한 바퀴를 볼 수 있다.
+// 오늘 기록이 이미 있으면 캘린더가 기분 묻기를 건너뛰어 그 길이 막힌다.
+export function setDiaryDryRun(on, dropToday = false) {
   if (!on) { dryRun = null; return; }
   dryRun = null;                 // 먼저 끄고 읽어야 진짜 기록을 복사해 온다
-  dryRun = getDiaryHistory();
+  const copy = getDiaryHistory();
+  dryRun = dropToday ? copy.filter((e) => e.date !== todayISO()) : copy;
 }
 
 export const getDiaryHistory = () => {

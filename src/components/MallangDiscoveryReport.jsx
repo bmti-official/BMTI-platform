@@ -21,6 +21,7 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
+import { AngleFindings, LightDaysCard, LightestWeekCard } from "./OctFindingCards";
 import { getSleepSetting, sleepWindow, sleepBaseIdx, SLEEP_HOURS, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
@@ -274,9 +275,11 @@ const EXAMPLE_USER = { nickname: "회원", kakao_gender: "female", kakaoGender: 
 export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, isLoggedIn = true, onRequireLogin,
   // ── 10월 개편 미리보기 ──
   // 넘기지 않으면 지금 손님 화면 그대로다.
-  //   oct  true면 포도 송이·연속과 공백·처음의 다짐을 빼고, 태그 막대를 넣는다
+  //   oct  true면 포도 송이·연속과 공백·처음의 다짐을 빼고, 태그 막대와
+  //        각도·부담 발견 박스를 넣는다
+  //   angleRows  각도 판을 밖에서 넘길 때(관리자 미리보기). 없으면 직접 읽어 온다
   //   initialTab  'records' | 'discovery' — 어느 탭으로 열지. 보던 달은 그대로 둔다.
-  oct = false, initialTab = null }) {
+  oct = false, initialTab = null, angleRows = null }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
@@ -545,7 +548,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} angleRows={angleRows} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
         )}
         </div>
         </div>
@@ -2573,7 +2576,7 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false, angleRows = null }) {
   const ins = computeInsights(entries, userData, report, bmtiCode);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
@@ -2590,6 +2593,13 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     if (cond) items.push({ locked: false, node: <Fragment key={key}>{realNode}</Fragment> });
     else if (exNode) items.push({ locked: true, node: <Fragment key={key}>{lock(exNode)}</Fragment> });
   };
+  // 10월 개편 — 각도기록 셋과 부담 점수 둘을 맨 앞에 둔다.
+  // 숫자 하나가 바로 보여야 다음 달에도 열어 본다. 잠그지 않는다 — 값이 없으면 카드가 아예 안 나온다.
+  if (oct) {
+    items.push({ locked: false, node: <Fragment key="angleFind"><AngleFindings rows={angleRows} /></Fragment> });
+    items.push({ locked: false, node: <Fragment key="lightDays"><LightDaysCard entries={entries} /></Fragment> });
+    items.push({ locked: false, node: <Fragment key="lightWeek"><LightestWeekCard entries={entries} /></Fragment> });
+  }
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.

@@ -44,15 +44,17 @@ export default function DiaryPreview() {
   const [writing, setWriting] = useState(null);   // 쓰는 중 — { mood, date, entry }
   const [justSaved, setJustSaved] = useState(null); // 방금 적은 것 — 캘린더로 돌아가 팝업을 띄운다
   const [reportTab, setReportTab] = useState('records');
+  const [round, setRound] = useState(0);      // 연습을 처음부터 다시 돌릴 때
   const checks = useMemo(() => fakeWeeks(weeks), [weeks]);
 
   // 연습 모드 — 미리보기를 여는 동안만 켠다.
   // 켜 두면 기록이 메모리에만 쌓여, 화면은 진짜처럼 돌면서도 관리자 본인의
   // 오늘 기록을 덮어쓰지 않는다. 창을 닫으면 원래대로 돌아간다.
+  // round — '처음부터 다시'를 누르면 올라간다. 연습 기록을 지우고 새로 시작한다.
   useEffect(() => {
-    setDiaryDryRun(true);
+    setDiaryDryRun(true, true);
     return () => setDiaryDryRun(false);
-  }, []);
+  }, [round]);
   const score = strainScore(picked);
 
 
@@ -81,6 +83,7 @@ export default function DiaryPreview() {
     />
   ) : (
     <DiaryCalendar
+      key={round}
       bmtiCode={code}
       isLoggedIn
       gender={female ? 'female' : 'male'}
@@ -108,7 +111,8 @@ export default function DiaryPreview() {
           브라우저에도 서버에도 남지 않습니다. 창을 닫으면 사라집니다 — 관리자 본인의 오늘 기록이 덮어써지지 않게 한 것입니다.
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => setScreen('tag')} style={btn(true)}>📱 다이어리 화면</button>
+          <button onClick={() => { setRound((n) => n + 1); setWriting(null); setJustSaved(null); setScreen('tag'); }}
+            style={btn(true)}>📱 다이어리 화면</button>
           <button onClick={() => { setReportTab('records'); setScreen('report'); }} style={btn(false)}>📅 이번달 기록</button>
           <button onClick={() => { setReportTab('discovery'); setScreen('report'); }} style={btn(false)}>📊 이번달 발견</button>
           <button onClick={() => setScreen('angle')} style={btn(false)}>📐 각도기록 화면</button>
@@ -173,7 +177,8 @@ export default function DiaryPreview() {
 
       {screen === 'report' && (
         <>
-          <MallangDiscoveryReport oct initialTab={reportTab} bmtiCode={code} isLoggedIn
+          {/* 각도 판은 지어낸 것을 그대로 넘긴다. 위 '쌓인 주'를 돌리면 박스가 같이 바뀐다 */}
+          <MallangDiscoveryReport oct initialTab={reportTab} bmtiCode={code} isLoggedIn angleRows={checks}
             userData={{ nickname: '회원' }} onClose={() => setScreen('')} />
           {/* 기록·발견은 제 화면을 통째로 쓴다. 관리자에서 나올 길을 위에 따로 둔다. */}
           <button type="button" onClick={() => setScreen('')}

@@ -378,7 +378,7 @@ function Shell({ children, onClose, title, voice, hasClips, onVoice }) {
             style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800,
               background: voice ? '#FDF6DC' : '#F4F1EB', color: voice ? '#8A6A3A' : SUB }}>
-            {voice ? '🔊 말 켬' : '🔇 말 끔'}
+            {voice ? '🔊 안내 켬' : '🔇 안내 끔'}
           </button>
         )}
       </div>
