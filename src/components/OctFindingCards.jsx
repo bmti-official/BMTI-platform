@@ -10,7 +10,7 @@ import { recentChecks } from '../lib/angleRecord';
 import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
   sideBySide, weekdayLoad, monthOverMonth } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
-import { LoadAndMoveCard, HeavyWeekCard } from './OctFindingSamples';
+import StrainTrendCard from './StrainTrendCard';
 import { DayAfterCard } from './OctNewCards';
 import AngleBoxCard from './AngleBoxCard';
 import { DiaryIcon } from './DiaryIcons';
@@ -282,15 +282,12 @@ export function QuickFindings({ rows: given = null, gender = null }) {
   return <AngleBoxCard rows={rows} gender={gender} />;
 }
 
-/** 이번달 발견 — 부담 쪽 셋. 각도 자체는 '기록'의 각도기록 상자가 맡는다.
- *  여기 남는 건 부담과 엮여야만 보이는 것들이다. */
-export function SlowFindings({ rows: given = null, entries }) {
-  const rows = useAngleRows(given);
+/** 이번달 발견 — 부담 쪽 둘. 각도 자체는 '기록'의 각도기록 상자가 맡는다. */
+export function SlowFindings({ entries }) {
   return (
     <>
       <DayAfterCard entries={entries} />
-      <HeavyWeekCard entries={entries} />
-      {rows.length > 0 && <LoadAndMoveCard rows={rows} entries={entries} />}
+      <StrainTrendCard entries={entries} />
     </>
   );
 }

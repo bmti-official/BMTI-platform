@@ -27,11 +27,13 @@ const md = (w) => `${Number(String(w).slice(5, 7))}월 ${Number(String(w).slice(
 
 // ── 옆모습 그림 ────────────────────────────────────────────
 // 선 하나에 각도 하나. 목은 실제로 기울이고, 허리·어깨는 부채꼴로 범위를 보인다.
-function Figure({ neck, trunk, arm, ghostNeck, t }) {
+function Figure({ neck, trunk, arm, ghostNeck, t, sel }) {
   const W = 150, H = 210;
   const shX = 70, shY = 74;          // 어깨
   const hipY = 140, kneeY = 174, ankY = 200;
   const rad = (d) => (d * Math.PI) / 180;
+  // 하나를 고르면 그것만 그린다. 셋이 한꺼번에 있으면 뭐가 뭔지 모른다.
+  const show = (k) => sel == null || sel === k;
   // 목 — 어깨에서 위로, 앞(오른쪽)으로 기운다
   const neckLen = 34;
   const headAt = (deg) => [shX + Math.sin(rad(deg)) * neckLen, shY - Math.cos(rad(deg)) * neckLen];
@@ -58,7 +60,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', maxWidth: 150 }}>
       {/* 허리 굽힘 범위 — 부채꼴과 흐린 몸통 */}
-      {bent && (
+      {bent && show('trunk_flex') && (
         <>
           <path d={arc(shX, hipY, trunkLen * 0.82, 0, Math.min(trunk, 90), 'up')}
             stroke={GOLD} strokeWidth="1.6" fill="none" strokeDasharray="3 4" opacity="0.8" />
@@ -66,7 +68,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t }) {
         </>
       )}
       {/* 어깨 들림 범위 */}
-      {armEnd && (
+      {armEnd && show('arm_raise') && (
         <>
           <path d={arc(shX, shY, armLen * 0.9, 0, Math.min(arm, 175), 'down')}
             stroke={GOLD} strokeWidth="1.6" fill="none" strokeDasharray="3 4" opacity="0.8" />
@@ -75,7 +77,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t }) {
       )}
 
       {/* 지난주 목 — 흐리게 뒤에 */}
-      {ghostNeck != null && Math.abs((ghostNeck ?? 0) - (neck ?? 0)) >= 0.5 && (
+      {show('neck_bend') && ghostNeck != null && Math.abs((ghostNeck ?? 0) - (neck ?? 0)) >= 0.5 && (
         <>
           <line x1={shX} y1={shY} x2={gx} y2={gy} stroke="#C6BFB2" strokeWidth="6" strokeLinecap="round" opacity="0.55" />
           <circle cx={gx} cy={gy - 8} r="13" fill="#C6BFB2" opacity="0.4" />
@@ -102,7 +104,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t }) {
 // 한 장짜리 그림이라 관절이 움직이지 않는다. 그래서 **어깨 위쪽만 따로 떼어**
 // 잰 각도만큼 돌린다. 아래는 그대로 두니 목만 앞으로 나온 모습이 된다.
 // 어깨가 그림 어디쯤인지는 관리자에서 맞춰 둔다 — 그림마다 다르다.
-function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t }) {
+function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel }) {
   const m = { ...DEFAULT_META, ...(meta || {}) };
   const turn = (v) => (v == null ? 0 : Math.max(-25, Math.min(45, v - m.baseNeck)));
   const body = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' };
@@ -110,6 +112,9 @@ function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t }) {
   const bodyClip = `inset(${m.shoulderY}% 0 0 0)`;
   const origin = `${m.shoulderX}% ${m.shoulderY}%`;
   const rad = (d) => (d * Math.PI) / 180;
+  // 하나를 고르면 그것만 진하게, 나머지는 지운다. 셋이 한꺼번에 있으면 뭐가 뭔지 모른다.
+  const show = (k) => sel == null || sel === k;
+  const dim = (k) => (sel === k ? 1 : 0.5);
 
   // 부채꼴은 그림 위에 겹쳐 그린다. 0~100 좌표를 쓰므로 그림 크기와 상관없다.
   const arc = (cx, cy, r, deg, from) => {
@@ -122,8 +127,8 @@ function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t }) {
 
   return (
     <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 2', overflow: 'hidden' }}>
-      {/* 지난주 머리 — 흐리게 뒤에 */}
-      {ghostNeck != null && Math.abs(turn(ghostNeck) - turn(neck)) >= 0.5 && (
+      {/* 지난주 머리 — 흐리게 뒤에. 목을 고른 때만 보여 준다 */}
+      {(sel == null || sel === 'neck_bend') && ghostNeck != null && Math.abs(turn(ghostNeck) - turn(neck)) >= 0.5 && (
         <img src={src} alt="" aria-hidden
           style={{ ...body, clipPath: headClip, WebkitClipPath: headClip, transformOrigin: origin,
             transform: `rotate(${turn(ghostNeck).toFixed(1)}deg)`, opacity: 0.32, filter: 'grayscale(1)' }} />
@@ -137,23 +142,48 @@ function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t }) {
 
       {/* 굽힘·들림 범위 부채꼴 */}
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-        {trunk != null && (
-          <path d={arc(m.shoulderX, m.hipY, 12, trunk, 'up')} stroke={GOLD} strokeWidth="1"
-            fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity="0.9" />
+        {trunk != null && show('trunk_flex') && (
+          <>
+            <path d={arc(m.shoulderX, m.hipY, 14, trunk, 'up')} stroke={GOLD} strokeWidth={sel === 'trunk_flex' ? 2 : 1}
+              fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity={dim('trunk_flex')} />
+            <line x1={m.shoulderX} y1={m.hipY} x2={m.shoulderX + Math.sin(rad(Math.min(trunk, 90))) * 14}
+              y2={m.hipY - Math.cos(rad(Math.min(trunk, 90))) * 14 * 1.6}
+              stroke={GOLD} strokeWidth={sel === 'trunk_flex' ? 2.4 : 1.4} strokeLinecap="round"
+              vectorEffect="non-scaling-stroke" opacity={dim('trunk_flex')} />
+          </>
         )}
-        {arm != null && (
-          <path d={arc(m.shoulderX, m.shoulderY, 9, arm, 'down')} stroke={GOLD} strokeWidth="1"
-            fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity="0.9" />
+        {arm != null && show('arm_raise') && (
+          <>
+            <path d={arc(m.shoulderX, m.shoulderY, 10, arm, 'down')} stroke={GOLD} strokeWidth={sel === 'arm_raise' ? 2 : 1}
+              fill="none" strokeDasharray="2 2.5" vectorEffect="non-scaling-stroke" opacity={dim('arm_raise')} />
+            <line x1={m.shoulderX} y1={m.shoulderY} x2={m.shoulderX + Math.sin(rad(Math.min(arm, 175))) * 10}
+              y2={m.shoulderY + Math.cos(rad(Math.min(arm, 175))) * 10 * 1.6}
+              stroke={GOLD} strokeWidth={sel === 'arm_raise' ? 2.4 : 1.4} strokeLinecap="round"
+              vectorEffect="non-scaling-stroke" opacity={dim('arm_raise')} />
+          </>
         )}
-        {/* 곧게 선 기준선 */}
-        <line x1={m.shoulderX} y1={m.shoulderY - 16} x2={m.shoulderX} y2={m.shoulderY}
-          stroke="#C9C3B7" strokeWidth="1" strokeDasharray="2 3" vectorEffect="non-scaling-stroke" />
+        {/* 곧게 선 기준선 — 목을 볼 때만 */}
+        {show('neck_bend') && (
+          <line x1={m.shoulderX} y1={m.shoulderY - 16} x2={m.shoulderX} y2={m.shoulderY}
+            stroke="#C9C3B7" strokeWidth="1" strokeDasharray="2 3" vectorEffect="non-scaling-stroke"
+            opacity={dim('neck_bend')} />
+        )}
       </svg>
-      {/* 목 각도 눈금 — 사진 위라 글씨에 흰 테를 두른다 */}
-      {neck != null && (
-        <span style={{ position: 'absolute', left: `${m.shoulderX + 6}%`, top: `${Math.max(2, m.shoulderY - 18)}%`,
-          fontSize: 11, fontWeight: 900, color: t.accentDeep,
+      {/* 각도 눈금 — 사진 위라 글씨에 흰 테를 두른다 */}
+      {neck != null && show('neck_bend') && (
+        <span style={{ position: 'absolute', left: `${m.shoulderX + 7}%`, top: `${Math.max(2, m.shoulderY - 19)}%`,
+          fontSize: 12.5, fontWeight: 900, color: t.accentDeep, opacity: dim('neck_bend'),
           textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{neck}°</span>
+      )}
+      {trunk != null && sel === 'trunk_flex' && (
+        <span style={{ position: 'absolute', left: `${m.shoulderX + 16}%`, top: `${m.hipY - 12}%`,
+          fontSize: 12.5, fontWeight: 900, color: GOLD,
+          textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{trunk}°</span>
+      )}
+      {arm != null && sel === 'arm_raise' && (
+        <span style={{ position: 'absolute', left: `${m.shoulderX + 13}%`, top: `${m.shoulderY + 10}%`,
+          fontSize: 12.5, fontWeight: 900, color: GOLD,
+          textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{arm}°</span>
       )}
     </div>
   );
@@ -211,87 +241,91 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
         </div>
       )}
 
-      {/* 그림 — 목은 실제 기울기, 허리·어깨는 범위 부채꼴 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0 4px' }}>
-        <div style={{ flex: '0 0 132px', background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
+      {/* 그림 — 목은 실제 기울기, 허리·어깨는 범위 부채꼴.
+          오른쪽 항목을 누르면 그것만 강조되고, 자세한 내용도 그 자리에서 펼쳐진다. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
+        <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
           {body
             ? <PhotoFigure src={body.url} meta={body.meta} neck={num(now.neck_bend)} trunk={num(now.trunk_flex)}
-                arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} />
+                arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />
             : <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
-                ghostNeck={prev ? num(prev.neck_bend) : null} t={t} />}
+                ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />}
         </div>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
-          {ANGLE_ITEMS.map((it) => {
-            const v = num(now[it.key]);
-            const b = best.find((x) => x.key === it.key);
+
+        {/* 오른쪽 — 누르면 그림에서 강조되고, 아래로 자세한 내용이 펼쳐진다 */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {ITEMS.map((item) => {
+            const meta = ANGLE_ITEMS.find((x) => x.key === item.key) || {};
+            const v = num(now[item.key]);
+            const b = best.find((x) => x.key === item.key);
+            const wk = vsLastWeek(ok, item.key);
+            const mo = vsLastMonth(ok, item.key);
+            const on = open === item.key;
+            const line = ok.filter((r) => Number.isFinite(Number(r[item.key]))).slice(0, 8).reverse();
             return (
-              <div key={it.key}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: C.sub }}>{it.label}</div>
+              <button key={item.key} type="button" onClick={() => setOpen(on ? null : item.key)}
+                style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  background: on ? '#FAF7F0' : '#fff', borderRadius: 13, padding: '9px 10px',
+                  boxShadow: on ? `inset 0 0 0 2px ${t.accent}` : `inset 0 0 0 1px ${C.line}`, transition: 'box-shadow .15s' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span style={{ fontSize: 19, fontWeight: 900, color: C.ink, fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 900, color: C.ink }}>{item.label}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 17, fontWeight: 900, color: on ? t.accentDeep : C.ink, fontVariantNumeric: 'tabular-nums' }}>
                     {v == null ? '—' : v}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: C.ink }}>°</span>
-                  {b && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.sub }}>최고 {b.v}°</span>}
+                  <span style={{ fontSize: 11, fontWeight: 800, color: on ? t.accentDeep : C.ink }}>°</span>
+                  <span style={{ fontSize: 11, fontWeight: 900, color: C.sub, width: 11, textAlign: 'right' }}>
+                    {on ? '▴' : '▾'}
+                  </span>
                 </div>
-              </div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, marginTop: 2, wordBreak: 'keep-all', lineHeight: 1.4 }}>
+                  {wk === null ? '지난주 기록이 없어요'
+                    : wk === 0 ? '지난주와 그대로예요'
+                      : `지난주보다 ${Math.abs(wk)}도 ${wk < 0 ? item.less : item.more}`}
+                </div>
+
+                {on && (
+                  <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}` }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, lineHeight: 1.6, marginBottom: 8, wordBreak: 'keep-all' }}>
+                      {meta.kind === 'range'
+                        ? '굽혔다 돌아올 때 가장 크게 나온 값이에요. 클수록 잘 움직인 거예요.'
+                        : '가만히 섰을 때 고개가 앞으로 나온 정도예요. 작을수록 곧게 선 거예요.'}
+                    </div>
+                    {trend ? <Spark rows={line} field={item.key} /> : (
+                      <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>
+                        네 번 재면 흐름을 그려 드려요. 지금은 {line.length}번.
+                      </div>
+                    )}
+                    <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 700, marginTop: 8, lineHeight: 1.6 }}>
+                      {b && <>이번 달 최고 {b.v}°<br /></>}
+                      {mo === null ? '지난달과 견주려면 두 달치가 필요해요.'
+                        : mo === 0 ? '지난달 평균과 그대로예요.'
+                          : `지난달 평균보다 ${Math.abs(mo)}도 ${mo < 0 ? item.less : item.more}`}
+                    </div>
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 11, margin: '8px 0 12px', fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accentDeep }} />지금 자세
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 3, borderRadius: 2, background: '#C6BFB2' }} />지난주 목
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 3, borderRadius: 2, background: GOLD }} />굽히고 올린 범위
-        </span>
-      </div>
-
-      {/* 지난주와 견준 세 줄 — 각도기록 화면과 같은 말투로 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {ITEMS.map((item) => {
-          const wk = vsLastWeek(ok, item.key);
-          const mo = vsLastMonth(ok, item.key);
-          const on = open === item.key;
-          const line = ok.filter((r) => Number.isFinite(Number(r[item.key]))).slice(0, 8).reverse();
-          return (
-            <button key={item.key} type="button" onClick={() => setOpen(on ? null : item.key)}
-              style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                background: on ? '#FAF7F0' : '#fff', borderRadius: 14, padding: '12px 13px',
-                boxShadow: `inset 0 0 0 1px ${C.line}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <span style={{ flex: '0 0 62px', fontSize: 12.5, fontWeight: 900, color: C.ink }}>{item.label}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 700, color: C.sub, wordBreak: 'keep-all' }}>
-                  {wk === null ? '지난주 기록이 없어요'
-                    : wk === 0 ? <>지난주와 <b style={{ color: C.ink }}>그대로예요</b></>
-                      : <>지난주보다 <b style={{ color: C.ink }}>{Math.abs(wk)}도 {wk < 0 ? item.less : item.more}</b></>}
-                </span>
-                <span style={{ flexShrink: 0, fontSize: 14, fontWeight: 900, color: C.sub }}>
-                  {wk === null ? '' : wk === 0 ? '—' : wk < 0 ? '▼' : '▲'}
-                </span>
-              </div>
-              {on && (
-                <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${C.line}` }}>
-                  {trend ? <Spark rows={line} field={item.key} /> : (
-                    <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600 }}>
-                      네 번 재면 흐름을 그려 드릴게요. 지금은 {line.length}번 쟀어요.
-                    </div>
-                  )}
-                  <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 9 }}>
-                    {mo === null ? '지난달과 견주려면 두 달치가 필요해요.'
-                      : mo === 0 ? '지난달 평균과 그대로예요.'
-                        : `지난달 평균보다 ${Math.abs(mo)}도 ${mo < 0 ? item.less : item.more}`}
-                  </div>
-                </div>
-              )}
-            </button>
-          );
-        })}
+      <div style={{ display: 'flex', gap: 11, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap' }}>
+        {open === null && <span>항목을 누르면 그림에서 그것만 짚어 드려요</span>}
+        {open === 'neck_bend' && (
+          <>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accentDeep }} />지금
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 3, borderRadius: 2, background: '#C6BFB2' }} />지난주
+            </span>
+          </>
+        )}
+        {(open === 'trunk_flex' || open === 'arm_raise') && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 10, height: 3, borderRadius: 2, background: GOLD }} />움직인 범위
+          </span>
+        )}
       </div>
     </div>
   );

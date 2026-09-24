@@ -552,7 +552,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} angleRows={angleRows} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
         )}
         </div>
         </div>
@@ -2660,7 +2660,7 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false, angleRows = null }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false }) {
   const ins = computeInsights(entries, userData, report, bmtiCode);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
@@ -2679,7 +2679,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   };
   // 10월 개편 — 여기(발견)에는 **시간이 걸리는 것**만 둔다.
   // 오늘 바로 보이는 것은 '이번달 기록'이 맡는다. 두 탭이 같은 성격이면 나눈 뜻이 없다.
-  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings rows={angleRows} entries={entries} /></Fragment> });
+  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings entries={entries} /></Fragment> });
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.
