@@ -14,6 +14,7 @@ import { getTypeAccent, GOLD, YELLOW, YELLOW_LINE } from "../lib/typeAccent";
 import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSetting, sleepOptionsFor, sleepWindowByIdx, sleepBaseIdx, saveSleepSettingToServer, SLEEP_HOURS, SLEEP_BASE_MIN, SLEEP_BASE_MAX } from "../lib/mallangProfile";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
 import { todayFinishes } from "../lib/cardFinish";
+import { recentChecks, sundayOf } from "../lib/angleRecord";
 
 // 하루 기록에서 고를 수 있는 불편한 부위 최대 개수 (BodySelector3D의 MAX_PARTS와 맞춘다)
 const MAX_SORE_PARTS = 3;
@@ -134,7 +135,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 아무것도 넘기지 않으면 지금 손님 화면 그대로다.
   //   tagCats   오늘의 태그 목록을 갈아 끼운다(10월 개편본을 미리 보려고)
   //   dropBlock 안 보이게 할 블럭 id들 (예: ['sitting'] — 무리했나요를 뺀 모습)
-  tagCats = null, dropBlock = null }) {
+  tagCats = null, dropBlock = null,
+  // 각도 재러 갈 때 — 카메라는 전체 화면으로 따로 뜬다
+  onAngle = null }) {
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
@@ -292,6 +295,16 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [whenEditParts, setWhenEditParts] = useState([]);
 
   const [blockOrder, setBlockOrder] = useState(["sore", "sleep", "tags", "exercise", "sitting", "oneLine"]);
+  // 각도는 주 1회다. 이번 주에 이미 쟀으면 블럭을 감춘다 —
+  // 엿새 내내 '다 쟀어요'만 떠 있으면 자리만 차지한다.
+  const [angleDone, setAngleDone] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    recentChecks(2).then((rows) => {
+      if (alive) setAngleDone((rows || []).some((r) => r.week === sundayOf()));
+    });
+    return () => { alive = false; };
+  }, []);
   const [hiddenBlocks, setHiddenBlocks] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
@@ -946,6 +959,22 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                   </div>
                 )}
               </div>
+
+              {/* 각도기록 — 이번 주에 안 쟀을 때만 보인다. 재고 나면 그 주엔 사라진다.
+                  카메라는 전체 화면으로 따로 뜬다. 여기서 켜면 쓰던 흐름이 끊긴다. */}
+              {!angleDone && onAngle && (
+                <button type="button" onClick={onAngle}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
+                    padding: "14px 15px", borderRadius: 16, border: "none", cursor: "pointer", fontFamily: "inherit",
+                    background: C.yellow, textAlign: "left" }}>
+                  <span style={{ fontSize: 20 }}>📐</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 13.5, fontWeight: 900, color: C.ink }}>이번 주 각도, 아직이에요</span>
+                    <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: C.sub, marginTop: 2 }}>1분이면 끝나요</span>
+                  </span>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: GOLD, flexShrink: 0 }}>재러 가기 →</span>
+                </button>
+              )}
 
               {/* ━━━ 순서 변경·숨기기 가능한 5개 블럭 ━━━ */}
               <div ref={blocksContainerRef} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

@@ -3511,7 +3511,7 @@ function LetterCard({ data, isM, bmtiCode, pdfMode = false }) {
   const charData = CHARACTERS.find(c => c.id === axis);
   const charName = CHARACTER_NAMES[axis] ? String(CHARACTER_NAMES[axis]).replace(/\n/g, " ") : "말랑이";
   return (
-    <div style={{ background: "linear-gradient(180deg,#FFFDF7,#FBF4E6)", borderRadius: 20, padding: "20px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #EEE4CE", position: "relative", overflow: "hidden" }}>
+    <div style={{ background: C.card, borderRadius: 20, padding: "20px 18px 22px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8", position: "relative", overflow: "hidden" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>이번 달의 피날레</div>
       <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, wordBreak: "keep-all", textWrap: "balance" }}>내 BMTI 유형의 편지</div>
 

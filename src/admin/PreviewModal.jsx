@@ -66,12 +66,11 @@ const ChartMark = () => (
     <path d="M5 20V12M12 20V5M19 20v-6" />
   </svg>
 );
-// 각도기록 — 각도기
-const AngleMark = () => (
+// 기록 — 달력
+const CalMark = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19h16" />
-    <path d="M4 19L15 6" />
-    <path d="M10.5 19a7 7 0 0 0-1.8-4.6" />
+    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+    <path d="M3.5 10h17M8 3.5v3M16 3.5v3" />
   </svg>
 );
 // 이전 — 루트로 나가기
@@ -89,12 +88,14 @@ const ROOT_NAV = [
   { key: 'char' },
   { key: 'self', label: '자기점검', icon: <BoltMark /> },
 ];
+// 각도기록은 다이어리 안으로 들어갔다 — 이번 주에 안 쟀을 때만 블럭이 뜬다.
+// 주 1회짜리를 네비 한 칸으로 두면 엿새는 빈 걸음이 된다.
 const DIARY_NAV = [
   { key: 'back', label: '이전', icon: <BackMark /> },
   { key: 'today', label: '오늘 쓰기', icon: <PenMark /> },
   { key: 'char' },
-  { key: 'discover', label: '기록·발견', icon: <ChartMark /> },
-  { key: 'angle', label: '각도기록', icon: <AngleMark /> },
+  { key: 'record', label: '기록', icon: <CalMark /> },
+  { key: 'discover', label: '발견', icon: <ChartMark /> },
 ];
 const SELF_NAV = [
   { key: 'back', label: '이전', icon: <BackMark /> },
@@ -105,7 +106,7 @@ const SELF_NAV = [
 ];
 
 // 어느 칸을 보고 있느냐로 어느 층을 그릴지 정한다.
-const DIARY_KEYS = ['today', 'discover', 'angle'];
+const DIARY_KEYS = ['today', 'record', 'discover', 'angle'];
 const SELF_KEYS = ['browse', 'baro', 'box'];
 // 위쪽 제목 — 하단 줄이 통째로 바뀌니 여기가 길잡이다.
 // 아이콘을 앞에 세워 어느 방인지 한눈에 들어오게 한다.

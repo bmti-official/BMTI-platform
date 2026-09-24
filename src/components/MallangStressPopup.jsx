@@ -15,13 +15,16 @@ const RAPID_MS = 700;
 const TAPS_PER_LEVEL = 3; // 한 단계 올리는 데 필요한 연속 연타 횟수
 const BABY_COUNT = 4;
 
-export default function MallangStressPopup({ mood, charImage, onNext, nextLabel = "다음" }) {
+export default function MallangStressPopup({ mood, charImage, onNext, nextLabel = "다음",
+  // 오늘 기록을 마쳤을 때 — 내 파트너가 건네는 한마디. 넘기지 않으면 안 뜬다.
+  word = "", partner = "" }) {
   const t = getTypeAccent();
   const [tapKey, setTapKey] = useState(0);
   const [level, setLevel] = useState(mood);
   const [showBabies, setShowBabies] = useState(false);
   const [babyTapKey, setBabyTapKey] = useState(0);
   const [phase, setPhase] = useState("idle"); // idle | press | release — 젤리 스쿼시&스트레치
+  const [openWord, setOpenWord] = useState(false);
   const lastTapAt = useRef(0);
   const comboRef = useRef(0);
   const releaseTimer = useRef(null);
@@ -107,6 +110,31 @@ export default function MallangStressPopup({ mood, charImage, onNext, nextLabel 
             </div>
           )}
         </div>
+
+        {/* 매일 한마디 — 누르면 펼쳐진다. 빨리 나가려는 사람을 붙잡지 않는다. */}
+        {word && (
+          <div style={{ marginTop: 4 }}>
+            {openWord ? (
+              <div style={{ display: "flex", gap: 9, alignItems: "flex-end", justifyContent: "center", textAlign: "left",
+                animation: "mallangPopIn .28s cubic-bezier(.22,.9,.32,1)" }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
+                  {charImage ? <img src={charImage} alt="" style={{ width: "85%", height: "85%", objectFit: "contain" }} /> : "🤖"}
+                </div>
+                <div style={{ maxWidth: 260, background: "#fff", border: "1px solid #EDE9E2", borderRadius: "16px 16px 16px 4px",
+                  padding: "13px 16px", fontSize: 13.5, lineHeight: 1.75, fontWeight: 700, color: "#1C1A17", whiteSpace: "pre-line" }}>
+                  {word}
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setOpenWord(true)}
+                style={{ border: "none", cursor: "pointer", fontFamily: "inherit", background: "#fff",
+                  borderRadius: 999, padding: "11px 18px", fontSize: 12.5, fontWeight: 800, color: "#1C1A17",
+                  boxShadow: "0 3px 12px rgba(0,0,0,0.12)" }}>
+                {partner ? `'${partner}'의 매일 한마디` : "매일 한마디"} →
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
       <style>{`

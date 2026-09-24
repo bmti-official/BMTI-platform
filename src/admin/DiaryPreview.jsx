@@ -50,6 +50,7 @@ export default function DiaryPreview() {
     <DiaryWriteFlow
       tagCats={TAG_CATEGORIES}
       dropBlock={['sitting']}
+      onAngle={() => setScreen('capture')}
       gender={female ? 'female' : 'male'}
       isLoggedIn
       onClose={() => setScreen('')}

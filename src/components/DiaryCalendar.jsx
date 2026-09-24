@@ -1,6 +1,8 @@
 import { useState, useRef, useLayoutEffect } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
+import { dailyWord } from "../lib/dailyWord";
+import { CHARACTER_NAMES } from "../lib/bmtiTypes";
 import { DiaryIcon } from "./DiaryIcons";
 import DiaryHelpPopup from "./DiaryHelpPopup";
 import KakaoSavePromptPopup from "./KakaoSavePromptPopup";
@@ -139,6 +141,10 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [poppedMood, setPoppedMood] = useState(null);
   const [showStressPopup, setShowStressPopup] = useState(initialStressMood != null);
   const [stressMood, setStressMood] = useState(initialStressMood);
+  // 오늘 기록을 마쳤을 때 건넬 한마디 — 오늘 적은 것만 보고 짓는다.
+  const todayEntry = getEntryForDate(todayStr);
+  const todayWord = todayEntry ? dailyWord(todayEntry, axisCode.endsWith("M") ? "m" : "z", todayStr) : "";
+  const partnerName = String(CHARACTER_NAMES[axisCode] || "").replace(/\n/g, " ");
   // 기록 완료 후 캘린더로 돌아오며 넘어온 무드가 있으면, 부모의 상태를 한 번만 비운다.
   useLayoutEffect(() => { if (initialStressMood != null) onStressShown && onStressShown(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -264,7 +270,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
       )}
 
       {showStressPopup && (
-        <MallangStressPopup mood={stressMood} charImage={charImage} onNext={() => { setShowStressPopup(false); if (!isLoggedIn) setShowKakaoPrompt(true); }} />
+        <MallangStressPopup mood={stressMood} charImage={charImage}
+          word={todayWord} partner={partnerName}
+          onNext={() => { setShowStressPopup(false); if (!isLoggedIn) setShowKakaoPrompt(true); }} />
       )}
 
       {showKakaoPrompt && (
