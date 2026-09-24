@@ -10,8 +10,9 @@ import { recentChecks } from '../lib/angleRecord';
 import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
   sideBySide, weekdayLoad, monthOverMonth } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
-import { MonthMoveCard, BiggestMoveCard, LoadAndMoveCard } from './OctFindingSamples';
-import { SideShapeCard, DayAfterCard } from './OctNewCards';
+import { LoadAndMoveCard, HeavyWeekCard } from './OctFindingSamples';
+import { DayAfterCard } from './OctNewCards';
+import AngleBoxCard from './AngleBoxCard';
 import { DiaryIcon } from './DiaryIcons';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', card: '#FFFFFF' };
@@ -273,28 +274,22 @@ export function MonthOverMonthCard({ rows, entries }) {
   );
 }
 
-/** 바로 보이는 것 — '이번달 기록'에 선다. 오늘 열어서 오늘 쓸 수 있는 것들이다.
- *  숫자는 스스로 판단이 안 되므로 옆모습을 맨 앞에 세운다. */
-export function QuickFindings({ rows: given = null, entries }) {
+/** 이번달 기록 — 각도기록 한 상자.
+ *  흩어져 있던 넷(이번 달 움직임·최고 기록·가장 많이 달라진 곳·옆모습 견주기)을
+ *  여기 하나로 합쳤다. 같은 숫자를 네 번 돌려 말하고 있었다. */
+export function QuickFindings({ rows: given = null }) {
   const rows = useAngleRows(given);
-  return (
-    <>
-      <SideShapeCard rows={rows} />
-      {rows.length > 0 && <BestAngleCard rows={rows} />}
-      <LightDaysCard entries={entries} />
-    </>
-  );
+  return <AngleBoxCard rows={rows} />;
 }
 
-/** 시간이 걸리는 것 — '이번달 발견'에 선다. 몇 주가 쌓여야 모양이 잡힌다.
- *  차례는 원안 그대로: 이번 달 움직임 → 가장 많이 달라진 곳 → (새) 다음 날 → 부담과 움직임 */
+/** 이번달 발견 — 부담 쪽 셋. 각도 자체는 '기록'의 각도기록 상자가 맡는다.
+ *  여기 남는 건 부담과 엮여야만 보이는 것들이다. */
 export function SlowFindings({ rows: given = null, entries }) {
   const rows = useAngleRows(given);
   return (
     <>
-      {rows.length > 0 && <MonthMoveCard rows={rows} />}
-      {rows.length > 0 && <BiggestMoveCard rows={rows} />}
       <DayAfterCard entries={entries} />
+      <HeavyWeekCard entries={entries} />
       {rows.length > 0 && <LoadAndMoveCard rows={rows} entries={entries} />}
     </>
   );

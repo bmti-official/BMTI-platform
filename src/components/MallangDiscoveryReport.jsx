@@ -546,7 +546,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
               });
               const sorted = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
               // 바로 보이는 것 — 오늘 열어서 오늘 쓸 수 있는 것들을 맨 앞에 세운다
-              if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} entries={entries} /></Fragment> });
+              if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} /></Fragment> });
               return sorted.map((i) => i.node);
             })()}
           </div>

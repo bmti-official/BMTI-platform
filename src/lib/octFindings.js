@@ -8,11 +8,15 @@
 import { strainScore, TAG_BY_LABEL } from './diaryTags';
 import { KEY_TO_PART_LABEL } from './diaryEntryLabels';
 
-// 항목마다 어느 쪽이 좋은지. 목·허리는 덜 굽힐수록, 어깨는 더 올릴수록 좋다.
+// 항목마다 어느 쪽이 좋은지.
+//   목 숙임  … 가만히 섰을 때의 자세다. 덜 숙일수록 좋다.
+//   허리 굽힘 … '천천히 굽혔다 돌아오기'의 최댓값, 곧 **가동 범위**다. 더 굽힐수록 좋다.
+//   어깨 들림 … 팔을 옆으로 올린 최댓값. 더 올릴수록 좋다.
+// 허리를 '덜 굽힐수록 좋다'로 두면 몸이 굳은 날을 잘한 날로 세게 된다.
 export const ANGLE_ITEMS = [
-  { key: 'neck_bend', label: '목 숙임', better: 'low', best: '가장 덜 숙인', gain: '덜 숙였습니다' },
-  { key: 'trunk_flex', label: '허리 굽힘', better: 'low', best: '가장 덜 굽힌', gain: '덜 굽혔습니다' },
-  { key: 'arm_raise', label: '어깨 들림', better: 'high', best: '가장 높이 올린', gain: '더 올렸습니다' },
+  { key: 'neck_bend', label: '목 숙임', kind: 'posture', better: 'low', best: '가장 덜 숙인', gain: '덜 숙였습니다' },
+  { key: 'trunk_flex', label: '허리 굽힘', kind: 'range', better: 'high', best: '가장 많이 굽힌', gain: '더 굽혔습니다' },
+  { key: 'arm_raise', label: '어깨 들림', kind: 'range', better: 'high', best: '가장 높이 올린', gain: '더 올렸습니다' },
 ];
 
 const GOOD = 55;                                   // 흔들린 판은 견주지 않는다
