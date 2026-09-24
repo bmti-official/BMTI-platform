@@ -14,6 +14,7 @@ import { useSearch } from './useSearch';
 import { moveRow, duplicateRow } from './listActions';
 import ImageInput, { ImageListInput } from './ImageInput';
 import { parseArticle } from './pasteParse';
+import { parseSlides, looksLikeSlides } from './pasteSlides';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { CharCount, HiliteBox, DraftMark } from './editorBits';
 import CurationCard, { CurationDetail, CurationThumb } from '../features/curation/CurationCard';
@@ -102,6 +103,15 @@ function normalize(row) {
 function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
   const [f, setF] = useState(() => withDraft(normalize(row), 'curation', row));
   const [slideTone, setSlideTone] = useState('z');   // 카드뉴스를 어느 말투로 손볼지
+  // 이 글을 어느 모양으로 만들지.
+  // 새로 쓰는 글은 카드뉴스가 기본이다 — 이제 읽을거리는 이쪽으로 만든다.
+  // 예전에 긴 글로 써 둔 것을 열면 그대로 긴 글로 연다.
+  const [mode, setMode] = useState(() => {
+    const hasSlides = (row?.slides_z || []).length || (row?.slides_m || []).length;
+    if (hasSlides) return 'cards';
+    return row?.id ? 'long' : 'cards';
+  });
+  const [shotNotes, setShotNotes] = useState([]);   // 붙여넣기가 알려 준 사진 설명
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -111,14 +121,20 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
 
   // 통째로 붙여넣은 원고를 칸마다 나눠 담는다.
   const applyPaste = () => {
-    const { fields, report, count } = parseArticle(pasteText);
+    // '=== 사진 1 ===' 이 들어 있으면 카드뉴스 원고다. 긴 글 해석기로는 읽히지 않는다.
+    const cards = looksLikeSlides(pasteText);
+    const { fields, report, count, notes } = cards ? parseSlides(pasteText) : parseArticle(pasteText);
     if (!count) {
-      setPasteNote('형식을 알아보지 못했습니다. [제목 · Z] 처럼 대괄호 머리말이 들어 있는지 확인해 주세요.');
+      setPasteNote(cards
+        ? '사진 묶음을 찾지 못했습니다. 글 1 · Z: 처럼 적혀 있는지 확인해 주세요.'
+        : '형식을 알아보지 못했습니다. [제목 · Z] 처럼 대괄호 머리말이 들어 있는지 확인해 주세요.');
       return;
     }
     setF((prev) => ({ ...prev, ...fields }));
+    if (cards) { setMode('cards'); setShotNotes(notes || []); }
     const need = countNeedsCheck(fields);
     setPasteNote(`${report.join(' · ')} — 채웠습니다. 아래에서 확인하고 저장해 주세요.`
+      + (cards ? ' / 사진은 아직 비어 있습니다. 묶음마다 올려 주세요.' : '')
       + (need ? ` / ${NEEDS_CHECK} 표시가 ${need}군데 있습니다. 사실을 확인하고 표시를 지워야 공개할 수 있어요.` : ''));
     setPasteOpen(false);
     setPasteText('');
@@ -183,11 +199,12 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
           <div style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>원고 붙여넣기</div>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
-              AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·썸네일 문구·소제목·본문·핵심 한 줄·곁다리 팁·사진 설명·검색 분류가 각 칸으로 들어갑니다.
+              AI에게 받은 글을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. <b>긴 글과 카드뉴스 둘 다 받습니다.</b>
+              <br />원고에 <b>=== 사진 1 ===</b> 이 들어 있으면 카드뉴스로 읽어 사진 묶음까지 만들어 둡니다. 없으면 예전처럼 네 마디 본문으로 채웁니다.
               <br />채팅창에서 함께 딸려오는 <b>MD</b>, <b>+ 1</b> 같은 줄은 알아서 버립니다. 사진은 따로 올려 주세요.
             </div>
             <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-              placeholder={'[제목 · Z] …\n[제목 · M] …\n[썸네일 문구] …\n[1. 문제제기 · 편견의 원인] …'}
+              placeholder={'[제목 · Z] …\n[제목 · M] …\n[썸네일 문구] …\n\n=== 사진 1 ===\n사진 설명: …\n글 1 · Z: …\n글 1 · M: …'}
               style={{ ...area, flex: 1, minHeight: 320, fontSize: 12.5, lineHeight: 1.6 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
@@ -197,6 +214,30 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
           </div>
         </div>
       )}
+
+      {/* 어느 모양으로 만들지 — 이걸 먼저 고르면 아래에 필요한 칸만 남는다.
+          두 벌을 한 화면에 다 펼쳐 두면 어느 쪽을 채워야 하는지 헷갈린다. */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 8 }}>
+          이 글의 모양
+        </div>
+        <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3,
+          boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+          {[['cards', '🖼 카드뉴스'], ['long', '📄 긴 글']].map(([k, lb]) => (
+            <button key={k} type="button" onClick={() => setMode(k)}
+              style={{ padding: '8px 17px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12.5, fontWeight: 800, background: mode === k ? ACCENT : 'transparent',
+                color: mode === k ? '#fff' : SUB }}>
+              {lb}
+            </button>
+          ))}
+        </div>
+        <div style={{ fontSize: 11.5, color: SUB, marginTop: 9, lineHeight: 1.7 }}>
+          {mode === 'cards'
+            ? <>사진마다 글을 얹어 옆으로 넘겨 봅니다. <b>한 장 90자, 모두 20장까지.</b> 네 마디 본문 칸은 숨겨 둡니다 — 슬라이드를 저장할 때 본문에도 이어 붙습니다.</>
+            : <>예전처럼 네 마디로 이어지는 긴 글입니다. 카드뉴스 칸은 숨겨 둡니다.</>}
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <div>
@@ -289,7 +330,37 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
         </div>
       </div>
 
-      {/* 본문 — 네 마디 */}
+      {/* 카드뉴스 — 사진마다 글을 얹어 옆으로 넘겨 보는 모양.
+          긴 글 모드에서는 숨긴다. 두 벌을 같이 두면 어느 쪽이 나가는지 헷갈린다. */}
+      {mode === 'cards' && (
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>
+          카드뉴스 <span style={{ fontWeight: 600, color: SUB }}>— 사진마다 글을 얹어 옆으로 넘겨 봅니다</span>
+        </div>
+        {shotNotes.length > 0 && (
+          <div style={{ fontSize: 11.5, color: '#8A6A3A', background: '#FDF6DC', borderRadius: 9,
+            padding: '10px 12px', margin: '8px 0 12px', lineHeight: 1.8 }}>
+            <b>AI가 적어 준 사진 설명</b> — 이대로 사진을 만들어 묶음마다 올려 주세요.
+            {shotNotes.map((n, i) => <div key={i}>사진 {i + 1}. {n}</div>)}
+          </div>
+        )}
+        <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, marginBottom: 12,
+          boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+          {[['z', 'Z 유형 · 담백'], ['m', 'M 유형 · 다정']].map(([k, lb]) => (
+            <button key={k} type="button" onClick={() => setSlideTone(k)}
+              style={{ padding: '7px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12, fontWeight: 800, background: slideTone === k ? ACCENT : 'transparent',
+                color: slideTone === k ? '#fff' : SUB }}>
+              {lb}
+            </button>
+          ))}
+        </div>
+        <SlideEditor value={f[`slides_${slideTone}`] || []} onChange={set(`slides_${slideTone}`)} />
+      </div>
+      )}
+
+      {/* 본문 — 네 마디. 카드뉴스에서는 슬라이드가 대신하므로 숨긴다 */}
+      {mode === 'long' && (
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>본문</div>
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>소제목은 글 첫머리 목차에도 그대로 올라갑니다 — 누르면 그 마디로 내려갑니다</div>
@@ -348,6 +419,7 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
           );
         })}
       </div>
+      )}
 
       {/* 추천 바로플리 3~4개 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
@@ -409,25 +481,6 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
           <input type="checkbox" checked={f.published} onChange={(e) => set('published')(e.target.checked)} />
           공개 <span style={{ fontWeight: 600, color: SUB }}>(체크해야 이용자에게 보입니다)</span>
         </label>
-      </div>
-
-      {/* 카드뉴스 — 사진마다 글을 얹어 옆으로 넘겨 보는 모양 */}
-      <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>
-          카드뉴스 <span style={{ fontWeight: 600, color: SUB }}>— 비워 두면 예전처럼 긴 글</span>
-        </div>
-        <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, marginBottom: 12,
-          boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-          {[['z', 'Z 유형 · 담백'], ['m', 'M 유형 · 다정']].map(([k, lb]) => (
-            <button key={k} type="button" onClick={() => setSlideTone(k)}
-              style={{ padding: '7px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: 12, fontWeight: 800, background: slideTone === k ? ACCENT : 'transparent',
-                color: slideTone === k ? '#fff' : SUB }}>
-              {lb}
-            </button>
-          ))}
-        </div>
-        <SlideEditor value={f[`slides_${slideTone}`] || []} onChange={set(`slides_${slideTone}`)} />
       </div>
 
       {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}

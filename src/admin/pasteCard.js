@@ -1,11 +1,11 @@
-// 바로카드 대본을 통째로 붙여넣으면 칸마다 나눠 담는다 — 관리자 화면 전용.
+// 바로카드 원고를 통째로 붙여넣으면 칸마다 나눠 담는다 — 관리자 화면 전용.
 // 큐레이션 붙여넣기(pasteParse.js)와 같은 방식이되, 바로카드 칸에 맞춘다.
 import { PART_KEY } from '../lib/diaryEntryLabels';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 
 const NOISE = /^(MD|\+\s*\d+|\d+\s*\/\s*\d+|-{3,}|={3,})$/;
 const HEADER = /^\[\s*([^\]]+?)\s*\]\s*(.*)$/;
-const KEY = /^(제목|대본|동작\s*이름|썸네일\s*문구|썸네일|종류|소요\s*시간|도구|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|좋은\s*상황|피할\s*상황|쓰는\s*곳)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
+const KEY = /^(제목|동작\s*이름|썸네일\s*문구|썸네일|종류|소요\s*시간|도구|핵심\s*부위|연관\s*부위|부위\s*그룹|도구\s*성향|좋은\s*상황|피할\s*상황|쓰는\s*곳)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
 
 const bare = (s) => String(s || '').replace(/\s+/g, '');
 const splitList = (s) => String(s || '').split(/[,、·・]|\s{2,}/).map((x) => x.trim()).filter(Boolean);
@@ -34,7 +34,7 @@ const toToolMode = (s) => TOOL_MODES.find((t) => t.label === String(s || '').tri
 // 짧은 표지('본문' '팁' '제목' …)는 '소제목' 안의 '제목'처럼 남의 이름 속에 들어 있을 수
 // 있어서, 문장이 끝난 자리(. ! ? … ])에서만 끊는다.
 const LONG_LABELS = '좋은\\s*상황|피할\\s*상황|쓰는\\s*곳|동작\\s*이름|썸네일\\s*문구|종류|소제목|핵심\\s*한\\s*줄|곁다리\\s*팁\\s*질문|곁다리\\s*팁\\s*답변|곁다리\\s*팁|숫자\\s*카드|핵심\\s*부위|연관\\s*부위|부위\\s*그룹|도구\\s*성향|소요\\s*시간|그림\\s*프롬프트|사진\\s*설명';
-const SHORT_LABELS = '본문|제목|대본|도구|썸네일|팁';
+const SHORT_LABELS = '본문|제목|도구|썸네일|팁';
 const TAIL = '\\s*[ZMzm]?\\s*[:：]';
 
 function unglue(text) {
@@ -72,7 +72,6 @@ export function parseCard(text) {
 
     if (t.kind === 'header') {
       if (t.name.startsWith('제목')) { put(t.name.endsWith('M') ? 'title_m' : 'title_z', t.value); continue; }
-      if (t.name.startsWith('대본')) { put(t.name.endsWith('M') ? 'script_m' : 'script_z', t.value); continue; }
       if (t.name === '동작이름' || t.name.startsWith('썸네일')) { put('thumb_text', t.value.split('\n')[0].trim()); continue; }
       // C묶음 — 음성으로 만들 글이 곧 자막이다
       // 오프닝은 이제 공통 음성의 캐릭터 인사가 맡는다. 원고에 있어도 담지 않는다.
@@ -95,7 +94,6 @@ export function parseCard(text) {
     }
 
     if (t.name === '제목') { put(`title_${tone}`, t.value); continue; }
-    if (t.name === '대본') { put(`script_${tone}`, t.value); continue; }
     if (t.name === '동작이름' || t.name.startsWith('썸네일')) { put('thumb_text', t.value.split('\n')[0].trim()); continue; }
     if (t.name === '종류') { const v = KIND_BY_LABEL[t.value.trim()]; if (v) put('kind', v); continue; }
     if (t.name === '소요시간') {
@@ -119,7 +117,6 @@ export function parseCard(text) {
   const has = (re) => filled.filter((k) => re.test(k)).length;
   const report = [
     has(/^title_/) ? `제목 ${has(/^title_/)}` : null,
-    has(/^script_/) ? `대본 ${has(/^script_/)}` : null,
     has(/^(good_when|avoid_when|focus_body)$/) ? `알아 두기 ${has(/^(good_when|avoid_when|focus_body)$/)}` : null,
     filled.includes('thumb_text') ? '동작 이름' : null,
     has(/^sub_/) ? `자막 ${has(/^sub_/)}` : null,

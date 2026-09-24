@@ -2,15 +2,13 @@
 //
 // 아직 진짜 다이어리에는 물려 두지 않았다. 여기서 모양과 셈을 확인하고,
 // 괜찮으면 그때 손님 화면으로 옮긴다.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { INK, SUB, BG, box, btn } from './theme';
 import PreviewModal from './PreviewModal';
 import DiaryWriteFlow from '../components/DiaryWriteFlow';
+import DiaryCalendar from '../components/DiaryCalendar';
 import MallangDiscoveryReport from '../components/MallangDiscoveryReport';
-import MallangStressPopup from '../components/MallangStressPopup';
-import { dailyWord } from '../lib/dailyWord';
-import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-import { CHARACTERS } from '../data';
+import { setDiaryDryRun, todayISO } from '../lib/diaryHistory';
 import AngleView from '../features/angle/AngleView';
 import AngleCapture from '../features/angle/AngleCapture';
 import PushToggle from '../features/angle/PushToggle';
@@ -43,9 +41,18 @@ export default function DiaryPreview() {
   const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'angle' | 'capture'
   const [weeks, setWeeks] = useState(3);      // 몇 주치가 쌓인 셈 칠지
   const [tone, setTone] = useState('z');      // 미리보기 말투
-  const [done, setDone] = useState(null);     // 기록을 마쳤을 때 — 말랑이 팝업에 넘길 것
+  const [writing, setWriting] = useState(null);   // 쓰는 중 — { mood, date, entry }
+  const [justSaved, setJustSaved] = useState(null); // 방금 적은 것 — 캘린더로 돌아가 팝업을 띄운다
   const [reportTab, setReportTab] = useState('records');
   const checks = useMemo(() => fakeWeeks(weeks), [weeks]);
+
+  // 연습 모드 — 미리보기를 여는 동안만 켠다.
+  // 켜 두면 기록이 메모리에만 쌓여, 화면은 진짜처럼 돌면서도 관리자 본인의
+  // 오늘 기록을 덮어쓰지 않는다. 창을 닫으면 원래대로 돌아간다.
+  useEffect(() => {
+    setDiaryDryRun(true);
+    return () => setDiaryDryRun(false);
+  }, []);
   const score = strainScore(picked);
 
 
@@ -54,19 +61,33 @@ export default function DiaryPreview() {
   //   tagCats   10월 태그 목록으로 갈아 끼운다
   //   dropBlock '오늘 평소보다 무리했나요'를 뺀 모습
   const code = tone === 'm' ? 'OCDM' : 'ACDZ';
-  const charImage = CHARACTERS.find((c) => c.id === code)?.image || '';
-  const partner = String(CHARACTER_NAMES[code] || '').replace(/\n/g, ' ');
 
-  const realDiary = (
+  // 손님이 지나는 길을 그대로 따라간다(AiChatHub와 같은 셈).
+  //   오늘 쓰기(캘린더) → 기분 고르기 → 상세 기록 → 저장 → 캘린더 위 말랑이 팝업 → 매일 한마디
+  // 다른 것은 진짜 부품을 그대로 쓰고, 저장만 하지 않는다.
+  const realDiary = writing ? (
     <DiaryWriteFlow
       tagCats={TAG_CATEGORIES}
       dropBlock={['sitting']}
       onAngle={() => setScreen('capture')}
+      initialPhase="form"
+      initialDayMood={writing.mood}
+      initialEntry={writing.entry}
+      targetDate={writing.date}
       gender={female ? 'female' : 'male'}
       isLoggedIn
-      onClose={() => setScreen('')}
-      // 손님 화면과 같은 흐름 — 저장하면 말랑이 팝업이 뜨고, 거기서 한마디를 연다
-      onFinish={(mood, extra) => setDone({ mood, entry: { mood, ...(extra || {}) } })}
+      onClose={() => setWriting(null)}
+      onFinish={(mood, extra) => { setWriting(null); setJustSaved({ mood, ...(extra || {}) }); }}
+    />
+  ) : (
+    <DiaryCalendar
+      bmtiCode={code}
+      isLoggedIn
+      gender={female ? 'female' : 'male'}
+      onPickMood={(mood) => setWriting({ mood, date: todayISO(), entry: null })}
+      onEditDay={(dateStr, entry) => setWriting({ mood: entry?.mood ?? null, date: dateStr, entry: entry || null })}
+      initialStressMood={justSaved ? justSaved.mood : null}
+      onStressShown={() => setJustSaved(null)}
     />
   );
 
@@ -80,8 +101,11 @@ export default function DiaryPreview() {
           예전 무리한 이유 넷(오래 앉음·오래 선 자세·많이 걸음·무거운 물건 들기)이 <b>활동·환경</b>으로 들어왔고 <b>업무과다</b>가 새로 생겼습니다.
           <br />부담인지 아닌지는 갈래가 아니라 <b>태그마다</b> 정해 둡니다. 갈래로 묶으면 나중에 항목을 더할 때 저도 모르게 부담이 됩니다.
           <br /><b>음식 섭취는 부담 점수에서 뺍니다.</b> 막대그래프에는 그대로 나옵니다.
-          <br />아래 <b>📱 다이어리 화면</b>은 손님이 쓰는 그 화면을 그대로 띄웁니다. 태그 목록만 10월 것으로 갈아 끼우고
-          &lsquo;무리했나요&rsquo; 블럭을 뺐습니다. <b>여기서 저장해도 기록은 남지 않습니다.</b>
+          <br />아래 <b>📱 다이어리 화면</b>은 손님이 지나는 길을 그대로 따라갑니다.
+          <b>오늘 쓰기(캘린더) → 기분 고르기 → 상세 기록 → 저장 → 말랑이 팝업 → 매일 한마디</b>까지 진짜 부품이 그대로 돕니다.
+          태그 목록만 10월 것으로 갈아 끼우고 &lsquo;무리했나요&rsquo; 블럭을 뺐습니다.
+          <br /><b>연습 모드로 돕니다.</b> 여기서 남긴 기록은 달력에도 보이고 한마디도 나오지만,
+          브라우저에도 서버에도 남지 않습니다. 창을 닫으면 사라집니다 — 관리자 본인의 오늘 기록이 덮어써지지 않게 한 것입니다.
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setScreen('tag')} style={btn(true)}>📱 다이어리 화면</button>
@@ -161,12 +185,6 @@ export default function DiaryPreview() {
         </>
       )}
 
-      {done && (
-        <MallangStressPopup mood={done.mood} charImage={charImage} partner={partner}
-          word={dailyWord(done.entry, tone, new Date().toISOString().slice(0, 10))}
-          onNext={() => { setDone(null); setScreen(''); }} />
-      )}
-
       {screen === 'capture' && (
         <AngleCapture onClose={() => setScreen('angle')} onDone={() => {}} />
       )}
@@ -174,7 +192,7 @@ export default function DiaryPreview() {
       {screen && screen !== 'capture' && screen !== 'report' && (
         <PreviewModal navActive={screen === 'angle' ? 'angle' : screen === 'report' ? 'discover' : 'today'}
           title={screen === 'tag' ? '다이어리 — 10월 모습' : '각도기록'}
-          onClose={() => setScreen('')}>
+          onClose={() => { setScreen(''); setWriting(null); setJustSaved(null); }}>
           {() => (screen === 'tag' ? realDiary
             : screen === 'angle' ? <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />
               : null)}

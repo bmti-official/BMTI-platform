@@ -11,7 +11,6 @@ export const pickCurationTone = (item, tone) => ({
 });
 export const pickCardTone = (c, tone) => ({
   title: (tone === 'm' ? c.title_m : c.title_z) || c.title_z || c.title_m || '',
-  script: (tone === 'm' ? c.script_m : c.script_z) || '',
 });
 
 export const fmtCount = (n) => (Number(n) || 0).toLocaleString('ko-KR');

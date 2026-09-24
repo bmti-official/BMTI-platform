@@ -24,7 +24,20 @@ export const todayISO = () => {
   return `${d.getFullYear()}-${mm}-${dd}`;
 };
 
+// ── 연습 모드 ──────────────────────────────────────────────
+// 관리자 미리보기에서만 켠다. 켜 두면 기록이 메모리에만 쌓인다.
+// 화면·팝업·한마디는 진짜와 똑같이 돌지만, 브라우저에도 서버에도 남지 않는다.
+// 이게 없으면 미리보기에서 무드를 고르는 순간 관리자 본인의 오늘 기록이 덮어써진다.
+let dryRun = null;   // null이면 꺼짐, 배열이면 켜짐(그 배열이 연습용 사본)
+
+export function setDiaryDryRun(on) {
+  if (!on) { dryRun = null; return; }
+  dryRun = null;                 // 먼저 끄고 읽어야 진짜 기록을 복사해 온다
+  dryRun = getDiaryHistory();
+}
+
 export const getDiaryHistory = () => {
+  if (dryRun) return dryRun;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -70,6 +83,8 @@ export const saveDiaryEntry = (dateISO, mood, extra = {}) => {
   const createdAt = existing?.created_at || new Date().toISOString();
   const history = prev.filter(e => e.date !== dateISO);
   history.push({ date: dateISO, mood, ...extra, created_at: createdAt });
+  // 연습 모드에서는 여기서 멈춘다 — 메모리에만 담고 밖으로 내보내지 않는다
+  if (dryRun) { dryRun = history; return history; }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
   // 오늘 기록을 남긴 경우, 네비게이션 하단의 '오늘 아직 안 썼어요' 빨간 점을 끈다.

@@ -31,7 +31,9 @@ const pick = (arr, seed) => arr[seed % arr.length];
 // 말투에 따라 고른다. z는 담백하게, m은 다정하게.
 const say = (z, zs, ms, seed) => pick(z ? zs : ms, seed);
 
-// 기분 0(힘듦) ~ 4(좋음)
+// 기분 — 기록에는 1(힘들었어요) ~ 5(좋았어요)로 들어온다(data.js의 MOODS.v).
+// 여기 목록은 0부터 세므로 하나를 뺀다. 이걸 빼먹으면 '괜찮았어요'에
+// '좋았어요' 문장이 나가 한 칸씩 밀린다.
 const OPEN = {
   z: [
     ['오늘은 버거웠군요.', '고단한 하루였네요.', '쉽지 않은 하루였습니다.',
@@ -175,7 +177,8 @@ function gist(e, tone, seed) {
 
   // 3) 잠
   if (sleep === 0 || sleep === 1) return pick(SLEEP_BAD[z ? 'z' : 'm'], seed);
-  if (sleep === 3 && Number(e.mood) >= 3) return pick(SLEEP_GOOD[z ? 'z' : 'm'], seed);
+  // 기분도 1~5로 들어온다. 4 이상이 '괜찮았어요·좋았어요'다.
+  if (sleep === 3 && Number(e.mood) >= 4) return pick(SLEEP_GOOD[z ? 'z' : 'm'], seed);
 
   // 4) 바로카드까지 마친 날
   if (baro) {
@@ -295,7 +298,7 @@ function gist(e, tone, seed) {
 export function dailyWord(entry, tone = 'z', dateISO = '') {
   const e = entry || {};
   const t = tone === 'm' ? 'm' : 'z';
-  const mood = Number.isFinite(Number(e.mood)) ? Math.max(0, Math.min(4, Number(e.mood))) : 2;
+  const mood = Number.isFinite(Number(e.mood)) ? Math.max(1, Math.min(5, Number(e.mood))) - 1 : 2;
   // 자리마다 씨앗을 새로 뽑는다. 같은 씨앗에 7, 13을 더해 봐야 목록이 다
   // 여섯 칸이라 세 자리가 나란히 돌아간다 — 여섯 가지 조합밖에 안 나온다.
   const at = (slot) => seedOf(`${dateISO}-${t}-${slot}`);

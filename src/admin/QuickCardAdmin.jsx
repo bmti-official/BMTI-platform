@@ -11,7 +11,7 @@ import { SearchBox, MoveButtons } from './listTools';
 import { useSearch } from './useSearch';
 import { moveRow, duplicateRow } from './listActions';
 import { NEEDS_CHECK, countNeedsCheck, withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
-import { CharCount, HiliteBox, DraftMark } from './editorBits';
+import { HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
 import ImageInput from './ImageInput';
 import { CurationThumb } from '../features/curation/CurationCard';
@@ -30,7 +30,7 @@ const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label
 
 const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
-  title_z: '', title_m: '', script_z: '', script_m: '', video_url: '', intro_url: '', duration_sec: 0, sub_y: 78,
+  title_z: '', title_m: '', video_url: '', intro_url: '', duration_sec: 0, sub_y: 78,
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
@@ -271,7 +271,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
   const draftAt = useAutoDraft('card', row, f);
   useUnsavedGuard(f);
 
-  // 통째로 붙여넣은 대본을 칸마다 나눠 담는다.
+  // 통째로 붙여넣은 원고를 칸마다 나눠 담는다.
   const applyPaste = () => {
     const { fields, report, count } = parseCard(pasteText);
     if (!count) {
@@ -302,6 +302,8 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
     setSaving(true); setErr('');
     const payload = { ...f, updated_at: new Date().toISOString() };
     ['view_count', 'save_count', 'finish_count', 'start_count', 'created_at'].forEach((k) => delete payload[k]);
+    // 음성 대본은 걷어냈다. 예전 행을 열면 f 안에 남아 있으므로 여기서 떨군다.
+    ['script_z', 'script_m'].forEach((k) => delete payload[k]);
     const q = f.id
       ? supabase.from('quick_cards').update(payload).eq('id', f.id)
       : supabase.from('quick_cards').insert(payload);
@@ -319,7 +321,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           {f.id ? `바로카드 #${f.id} 수정` : '새 바로카드'}
         </div>
         <button onClick={() => { setPasteNote(''); setPasteOpen(true); }} style={{ ...btn(false), marginLeft: 'auto' }}>
-          📋 대본 붙여넣기
+          📋 원고 붙여넣기
         </button>
       </div>
 
@@ -334,13 +336,13 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         <div onClick={(e) => { if (e.target === e.currentTarget) setPasteOpen(false); }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,14,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#fff', borderRadius: 14, padding: 18, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>대본 붙여넣기</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>원고 붙여넣기</div>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
-              AI에게 받은 대본을 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·대본·종류·소요 시간·도구·검색 분류와 알아 두기 세 칸(좋은 상황·피할 상황·쓰는 곳)이 각 칸으로 들어갑니다.
+              AI에게 받은 원고를 통째로 붙여넣고 &lsquo;칸 채우기&rsquo;를 누르세요. 제목·종류·소요 시간·도구·검색 분류와 알아 두기 세 칸(좋은 상황·피할 상황·쓰는 곳)이 각 칸으로 들어갑니다.
               <br />채팅창에서 딸려오는 <b>MD</b>, <b>+ 1</b> 같은 줄은 알아서 버립니다. 동작 데이터는 따로 올려 주세요.
             </div>
             <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-              placeholder={'[제목 · Z] …\n[제목 · M] …\n종류: 스트레칭\n소요 시간: 3분\n[대본 · Z] …\n좋은 상황: …\n피할 상황: …\n쓰는 곳: …'}
+              placeholder={'[제목 · Z] …\n[제목 · M] …\n종류: 스트레칭\n소요 시간: 3분\n좋은 상황: …\n피할 상황: …\n쓰는 곳: …'}
               style={{ ...area, flex: 1, minHeight: 320, fontSize: 12.5, lineHeight: 1.6 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ ...btn(true), opacity: pasteText.trim() ? 1 : 0.45 }}>칸 채우기</button>
@@ -517,18 +519,6 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
           <span style={label}>제목 · M 유형 <span style={{ color: '#B23B36' }}>다정하게</span></span>
           <input style={input} value={f.title_m} onChange={(e) => set('title_m')(e.target.value)}
             placeholder="오늘 하루 고생한 몸, 침대에서 폼롤러로 풀어봐요" />
-        </div>
-        <div>
-          <span style={label}>음성 대본 · Z 유형</span>
-          <HiliteBox placeholder="바르게 앉아 어깨를 내립니다." minHeight={120} value={f.script_z} onChange={set('script_z')}>
-            <CharCount a={f.script_z} b={f.script_m} maxPara={160} />
-          </HiliteBox>
-        </div>
-        <div>
-          <span style={label}>음성 대본 · M 유형</span>
-          <HiliteBox placeholder="편하게 앉아서 어깨에 힘을 빼 보세요." minHeight={120} value={f.script_m} onChange={set('script_m')}>
-            <CharCount a={f.script_m} b={f.script_z} maxPara={160} />
-          </HiliteBox>
         </div>
       </div>
 
