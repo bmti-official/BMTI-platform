@@ -26,6 +26,9 @@ export const TAG_CATEGORIES = [
       { label: '맵거나 짠 음식', icon: 'spicy', strain: 1 },
       { label: '달달 디저트', icon: 'dessert', strain: 1 },
       { label: '영양제', icon: 'supplement', strain: 0 },
+      { label: '아침 거름', icon: 'skipMeal', strain: 1 },
+      { label: '밀가루·면', icon: 'noodle', strain: 1 },
+      { label: '단백질 챙김', icon: 'protein', strain: 0 },
     ],
   },
   {
@@ -57,6 +60,11 @@ export const TAG_CATEGORIES = [
       // 본인이 고를 수 있는 게 아니다. 점수에는 넣되 '무리했다'는 말은 붙이지 않는다.
       { label: '생리 중', icon: 'period', strain: 1, femaleOnly: true, notMyFault: true },
       { label: '진통제', icon: 'medicine', strain: 2 },
+      { label: '두통', icon: 'headache', strain: 2 },
+      { label: '붓기', icon: 'swollen', strain: 1 },
+      { label: '몸살기', icon: 'feverish', strain: 2 },
+      // 부담이 아니라 '가벼웠다'는 기록. 가벼웠던 날을 찾는 재료가 된다.
+      { label: '여유 있었음', icon: 'calm', strain: 0 },
     ],
   },
 ];

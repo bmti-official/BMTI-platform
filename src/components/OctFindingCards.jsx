@@ -10,6 +10,8 @@ import { recentChecks } from '../lib/angleRecord';
 import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
   sideBySide, weekdayLoad, monthOverMonth } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
+import { MonthMoveCard, BiggestMoveCard, LoadAndMoveCard } from './OctFindingSamples';
+import { SideShapeCard, DayAfterCard, CycleCard } from './OctNewCards';
 import { DiaryIcon } from './DiaryIcons';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', card: '#FFFFFF' };
@@ -68,6 +70,7 @@ export function BestAngleCard({ rows }) {
 }
 
 // ── 2. 처음과 지금 ─────────────────────────────────────────
+// 최종 배치에서는 쓰지 않는다. 원안의 '이번 달 움직임'이 같은 자리를 맡는다.
 export function FirstNowCard({ rows }) {
   const f = firstVsNow(rows);
   if (!f) return null;
@@ -95,6 +98,7 @@ export function FirstNowCard({ rows }) {
 }
 
 // ── 3. 오늘 해 볼 한 가지 ──────────────────────────────────
+// 최종 배치에서는 쓰지 않는다. 옆모습 견주기가 같은 자리를 맡는다.
 export function OneThingCard({ rows }) {
   const o = oneThing(rows);
   if (!o) return null;
@@ -147,6 +151,7 @@ export function LightDaysCard({ entries }) {
 }
 
 // ── 5. 가장 가벼웠던 주 ────────────────────────────────────
+// 최종 배치에서는 쓰지 않는다. 원안의 '부담이 몰린 주'와 겹친다.
 export function LightestWeekCard({ entries }) {
   const w = lightestWeek(entries);
   if (!w) return null;
@@ -268,28 +273,30 @@ export function MonthOverMonthCard({ rows, entries }) {
   );
 }
 
-/** 바로 보이는 것 — '이번달 기록'에 선다. 오늘 열어서 오늘 쓸 수 있는 것들이다. */
+/** 바로 보이는 것 — '이번달 기록'에 선다. 오늘 열어서 오늘 쓸 수 있는 것들이다.
+ *  숫자는 스스로 판단이 안 되므로 옆모습을 맨 앞에 세운다. */
 export function QuickFindings({ rows: given = null, entries }) {
   const rows = useAngleRows(given);
   return (
     <>
+      <SideShapeCard rows={rows} />
       {rows.length > 0 && <BestAngleCard rows={rows} />}
-      {rows.length > 0 && <OneThingCard rows={rows} />}
       <LightDaysCard entries={entries} />
     </>
   );
 }
 
-/** 시간이 걸리는 것 — '이번달 발견'에 선다. 몇 주가 쌓여야 모양이 잡힌다. */
-export function SlowFindings({ rows: given = null, entries }) {
+/** 시간이 걸리는 것 — '이번달 발견'에 선다. 몇 주가 쌓여야 모양이 잡힌다.
+ *  차례는 원안 그대로: 이번 달 움직임 → 가장 많이 달라진 곳 → (새) 다음 날 → (새) 주기 → 부담과 움직임 */
+export function SlowFindings({ rows: given = null, entries, female = true }) {
   const rows = useAngleRows(given);
   return (
     <>
-      {rows.length > 0 && <FirstNowCard rows={rows} />}
-      <LightestWeekCard entries={entries} />
-      <WeekdayLoadCard entries={entries} />
-      {rows.length > 0 && <SideBySideCard rows={rows} entries={entries} />}
-      {rows.length > 0 && <MonthOverMonthCard rows={rows} entries={entries} />}
+      {rows.length > 0 && <MonthMoveCard rows={rows} />}
+      {rows.length > 0 && <BiggestMoveCard rows={rows} />}
+      <DayAfterCard entries={entries} />
+      {female && <CycleCard entries={entries} />}
+      {rows.length > 0 && <LoadAndMoveCard rows={rows} entries={entries} />}
     </>
   );
 }

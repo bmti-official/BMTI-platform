@@ -305,22 +305,27 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [whenEditParts, setWhenEditParts] = useState([]);
 
   const [blockOrder, setBlockOrder] = useState(["sore", "sleep", "tags", "exercise", "sitting", "oneLine"]);
-  // 각도는 주 1회다. 최근 네 주를 가져와 '쟀는지 안 쟀는지'를 칸으로 보여 준다.
-  // 이번 주만 묻고 말면 흐름이 안 보인다 — 네 칸이 나란히 있어야 빠진 주가 눈에 띈다.
-  const [angleWeeks, setAngleWeeks] = useState(null);
+  // 각도는 주 1회다. **이번 주 이레**를 칸으로 깔고, 잰 날에 표시한다.
+  // 네 주를 늘어놓으면 '지난달 것'까지 보여 주게 되는데, 지금 눌러야 할 건 이번 주뿐이다.
+  const [angleWeek, setAngleWeek] = useState(null);
   useEffect(() => {
     let alive = true;
-    recentChecks(8).then((rows) => {
+    recentChecks(3).then((rows) => {
       if (!alive) return;
-      const done = new Set((rows || []).map((r) => String(r.week)));
-      const out = [];
-      const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - d.getDay());
-      for (let i = 3; i >= 0; i -= 1) {
-        const x = new Date(d); x.setDate(x.getDate() - i * 7);
-        const w = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-        out.push({ week: w, on: done.has(w), now: i === 0 });
+      const sun = new Date(); sun.setHours(0, 0, 0, 0); sun.setDate(sun.getDate() - sun.getDay());
+      const key = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+      const mine = (rows || []).find((r) => String(r.week) === key(sun));
+      // 잰 날은 measured_at이 알려 준다. 없으면 일요일(주의 첫날)에 찍어 둔다.
+      const at = mine ? new Date(mine.measured_at || `${mine.week}T09:00:00`) : null;
+      const atKey = at && !Number.isNaN(at.getTime()) ? key(new Date(at.getFullYear(), at.getMonth(), at.getDate())) : null;
+      const today = key(new Date());
+      const days = [];
+      for (let i = 0; i < 7; i += 1) {
+        const x = new Date(sun); x.setDate(x.getDate() + i);
+        const k = key(x);
+        days.push({ key: k, label: '일월화수목금토'[i], on: atKey === k, today: k === today, future: k > today });
       }
-      setAngleWeeks(out);
+      setAngleWeek({ days, done: !!mine });
     });
     return () => { alive = false; };
   }, []);
@@ -989,10 +994,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                 )}
               </div>
 
-              {/* 각도기록 — 최근 네 주를 칸으로. 쟀는지 안 쟀는지가 한눈에 보인다.
+              {/* 각도기록 — 이번 주 이레를 칸으로. 쟀는지 안 쟀는지가 한눈에 보인다.
                   카메라는 전체 화면으로 따로 뜬다. 여기서 켜면 쓰던 흐름이 끊긴다. */}
-              {onAngle && angleWeeks && (
-                <AngleWeekStrip weeks={angleWeeks} onAngle={onAngle} t={t} />
+              {onAngle && angleWeek && (
+                <AngleWeekStrip week={angleWeek} onAngle={onAngle} t={t} />
               )}
 
               {/* ━━━ 순서 변경·숨기기 가능한 5개 블럭 ━━━ */}
@@ -1144,22 +1149,24 @@ function Chip({ label, on, onClick, disabled }) {
 // 오늘의 태그 — 둥근 모서리 네모 박스(아이콘 + 라벨), 가로 스크롤 목록에 들어간다.
 // '오늘 평소보다 무리했나요?'의 EmojiTile과 동일한 연한 옐로우 배경 스타일.
 
-// 각도기록 — 최근 네 주를 칸으로 보여 준다.
+// 각도기록 — 이번 주 이레를 칸으로 보여 준다.
 //
-// 이번 주만 묻고 말면 "아직이에요"만 뜨고 흐름이 안 보인다.
-// 네 칸이 나란히 있어야 빠진 주가 눈에 띄고, 이번 주 칸이 비어 있으면 손이 간다.
-function AngleWeekStrip({ weeks, onAngle, t }) {
-  const now = weeks[weeks.length - 1];
-  const done = weeks.filter((w) => w.on).length;
-  const dd = (w) => `${Number(w.slice(5, 7))}/${Number(w.slice(8, 10))}`;
+// 재는 건 주에 한 번이다. 이레를 깔아 두면 '이번 주에 쟀는지'와 '무슨 요일에 쟀는지'가
+// 한눈에 들어오고, 아직이면 남은 날이 몇인지도 같이 보인다.
+function AngleWeekStrip({ week, onAngle, t }) {
+  const { days, done } = week;
+  const left = days.filter((d) => !d.future).length;
   return (
     <div style={{ marginBottom: 14, padding: "14px 15px", borderRadius: 16, background: C.yellow }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <span style={{ fontSize: 18 }}>📐</span>
         <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 900, color: C.ink }}>
-          각도기록 <span style={{ fontWeight: 700, color: C.sub, fontSize: 11.5 }}>최근 4주 중 {done}번</span>
+          각도기록
+          <span style={{ fontWeight: 700, color: C.sub, fontSize: 11.5, marginLeft: 6 }}>
+            {done ? "이번 주 다 쟀어요" : `이번 주 아직이에요 · ${8 - left}일 남음`}
+          </span>
         </span>
-        {!now.on && (
+        {!done && (
           <button type="button" onClick={onAngle}
             style={{ flexShrink: 0, border: "none", background: "#fff", cursor: "pointer", fontFamily: "inherit",
               borderRadius: 999, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: GOLD,
@@ -1168,24 +1175,25 @@ function AngleWeekStrip({ weeks, onAngle, t }) {
           </button>
         )}
       </div>
-      <div style={{ display: "flex", gap: 7 }}>
-        {weeks.map((w) => (
-          <button key={w.week} type="button" onClick={w.now && !w.on ? onAngle : undefined}
-            style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-              border: "none", background: "transparent", padding: 0, fontFamily: "inherit",
-              cursor: w.now && !w.on ? "pointer" : "default" }}>
-            <span style={{ width: "100%", height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, fontWeight: 900,
-              background: w.on ? t.accent : "#fff",
-              color: w.on ? "#fff" : "#C6C0B5",
-              boxShadow: w.now && !w.on ? `inset 0 0 0 2px ${t.accent}` : "none" }}>
-              {w.on ? "✓" : w.now ? "＋" : "·"}
-            </span>
-            <span style={{ fontSize: 10, fontWeight: 800, color: w.now ? C.ink : C.sub, letterSpacing: "-0.02em" }}>
-              {w.now ? "이번 주" : dd(w.week)}
-            </span>
-          </button>
-        ))}
+      <div style={{ display: "flex", gap: 5 }}>
+        {days.map((d) => {
+          const tap = !done && d.today;
+          return (
+            <button key={d.key} type="button" onClick={tap ? onAngle : undefined}
+              style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                border: "none", background: "transparent", padding: 0, fontFamily: "inherit",
+                cursor: tap ? "pointer" : "default", opacity: d.future ? 0.45 : 1 }}>
+              <span style={{ width: "100%", height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13.5, fontWeight: 900,
+                background: d.on ? t.accent : "#fff",
+                color: d.on ? "#fff" : "#C6C0B5",
+                boxShadow: tap ? `inset 0 0 0 2px ${t.accent}` : "none" }}>
+                {d.on ? "✓" : tap ? "＋" : "·"}
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: d.today ? C.ink : C.sub }}>{d.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

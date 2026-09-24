@@ -6,6 +6,7 @@
 //   2. **인과로 말하지 않는다.** '각도가 좋아져서 덜 아팠다'는 우리가 알 수 없다.
 //      숫자와 함께 있던 것만 나란히 놓는다.
 import { strainScore, TAG_BY_LABEL } from './diaryTags';
+import { KEY_TO_PART_LABEL } from './diaryEntryLabels';
 
 // 항목마다 어느 쪽이 좋은지. 목·허리는 덜 굽힐수록, 어깨는 더 올릴수록 좋다.
 export const ANGLE_ITEMS = [
@@ -185,4 +186,88 @@ export function monthOverMonth(rows = [], entries = [], now = new Date()) {
     : null;
   if (!angles.length && !load) return null;
   return { angles, load, lastLabel: `${Number(lastM.slice(5))}월`, nowLabel: `${Number(thisM.slice(5))}월` };
+}
+
+// ── 최종 배치에서 새로 더한 셈 셋 ──────────────────────────
+
+/** 옆모습 견주기 — 첫 판과 마지막 판의 관절 좌표.
+ *  좌표가 쌓이기 전에는 null. 그럴 땐 카드가 '다음 주부터'라고 말한다. */
+export function sideShapes(rows = []) {
+  const ok = rows.filter((r) => usable(r) && Array.isArray(r.pose) && r.pose.length >= 25)
+    .slice().sort((a, b) => String(a.week).localeCompare(String(b.week)));
+  if (!ok.length) return null;
+  const first = ok[0], now = ok[ok.length - 1];
+  const neck = (r) => (Number.isFinite(Number(r.neck_bend)) ? Math.round(Number(r.neck_bend) * 10) / 10 : null);
+  return {
+    only: ok.length === 1,
+    first: { pose: first.pose, when: dayOf(first.week), neck: neck(first) },
+    now: { pose: now.pose, when: dayOf(now.week), neck: neck(now) },
+    diff: ok.length > 1 && neck(first) != null && neck(now) != null ? Math.round((neck(now) - neck(first)) * 10) / 10 : null,
+  };
+}
+
+/** 무리한 날, 그 다음 날.
+ *  **인과가 아니라 순서다.** 무엇이 먼저 있었는지는 우리가 실제로 아는 사실이라 말할 수 있다.
+ *  '때문에'라고는 쓰지 않는다 — 그건 여전히 모른다. */
+export function dayAfterHeavy(entries = [], cut = 3) {
+  const days = (entries || []).filter((e) => e && e.date).slice()
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  if (days.length < 6) return null;
+  const at = {};
+  days.forEach((e) => { at[e.date] = e; });
+  const next = (d) => { const x = new Date(d); x.setDate(x.getDate() + 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+  const sore = (e) => (Array.isArray(e?.soreness) ? e.soreness : []);
+
+  const pairs = [];
+  days.forEach((e) => {
+    if (strainScore(e.tags || []) < cut) return;
+    const n = at[next(e.date)];
+    if (n) pairs.push({ heavy: e, after: n });
+  });
+  if (pairs.length < 3) return null;
+
+  const withSore = pairs.filter((p) => sore(p.after).length > 0).length;
+  // 견줄 짝 — 무리하지 않은 날의 다음 날
+  const calm = [];
+  days.forEach((e) => {
+    if (strainScore(e.tags || []) >= cut) return;
+    const n = at[next(e.date)];
+    if (n) calm.push(n);
+  });
+  const calmSore = calm.filter((e) => sore(e).length > 0).length;
+
+  const count = {};
+  pairs.forEach((p) => sore(p.after).forEach((x) => {
+    const lb = x?.partOther || KEY_TO_PART_LABEL[x?.part] || x?.part;
+    if (lb) count[lb] = (count[lb] || 0) + 1;
+  }));
+  const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label, n]) => ({ label, n }));
+
+  return {
+    n: pairs.length, withSore,
+    pct: Math.round((withSore / pairs.length) * 100),
+    calmPct: calm.length >= 3 ? Math.round((calmSore / calm.length) * 100) : null,
+    calmN: calm.length, top,
+  };
+}
+
+/** 주기와 함께 — '생리 중'을 적은 날과 그렇지 않은 날의 부담·불편을 견준다.
+ *  여성 이용자에게 가장 현실적인 물음이다. 재료는 이미 태그에 다 있다. */
+export function withCycle(entries = []) {
+  const days = (entries || []).filter((e) => e && Array.isArray(e.tags));
+  if (days.length < 8) return null;
+  const on = days.filter((e) => e.tags.includes('생리 중'));
+  const off = days.filter((e) => !e.tags.includes('생리 중'));
+  if (on.length < 2 || off.length < 4) return null;
+
+  const mean = (list) => Math.round((list.reduce((n, e) => n + strainScore(e.tags), 0) / list.length) * 10) / 10;
+  const sore = (e) => (Array.isArray(e.soreness) ? e.soreness : []);
+  const count = {};
+  on.forEach((e) => sore(e).forEach((x) => {
+    const lb = x?.partOther || KEY_TO_PART_LABEL[x?.part] || x?.part;
+    if (lb) count[lb] = (count[lb] || 0) + 1;
+  }));
+  const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label, n]) => ({ label, n }));
+  const a = mean(on), b = mean(off);
+  return { days: on.length, onAvg: a, offAvg: b, diff: Math.round((a - b) * 10) / 10, top };
 }

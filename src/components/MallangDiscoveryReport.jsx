@@ -2598,7 +2598,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   };
   // 10월 개편 — 여기(발견)에는 **시간이 걸리는 것**만 둔다.
   // 오늘 바로 보이는 것은 '이번달 기록'이 맡는다. 두 탭이 같은 성격이면 나눈 뜻이 없다.
-  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings rows={angleRows} entries={entries} /></Fragment> });
+  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings rows={angleRows} entries={entries} female={female} /></Fragment> });
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.

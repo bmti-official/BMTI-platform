@@ -182,7 +182,7 @@ export default function DiaryPreview() {
         <>
           {/* 각도 판은 지어낸 것을 그대로 넘긴다. 위 '쌓인 주'를 돌리면 박스가 같이 바뀐다 */}
           <MallangDiscoveryReport oct initialTab={reportTab} bmtiCode={code} isLoggedIn angleRows={checks}
-            userData={{ nickname: '회원' }} onClose={() => setScreen('')} />
+            userData={{ nickname: '회원', kakao_gender: female ? 'female' : 'male' }} onClose={() => setScreen('')} />
           {/* 기록·발견은 제 화면을 통째로 쓴다. 관리자에서 나올 길을 위에 따로 둔다. */}
           <button type="button" onClick={() => setScreen('')}
             style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, border: 'none', cursor: 'pointer',

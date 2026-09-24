@@ -30,6 +30,8 @@ export async function saveCheck(vals) {
     user_id: userId, week: sundayOf(), measured_at: new Date().toISOString(),
     neck_bend: vals.neckBend ?? null, trunk_flex: vals.trunkFlex ?? null, arm_raise: vals.armRaise ?? null,
     quality: vals.quality ?? null, retries: vals.retries ?? 0,
+    // 옆모습 실루엣용 좌표. 사진이 아니라 관절 자리만 담는다.
+    pose: vals.pose ?? null,
     device: (navigator.userAgent || '').slice(0, 120),
   }, { onConflict: 'user_id,week' });
   return error ? { ok: false, why: '담지 못했어요: ' + error.message } : { ok: true };

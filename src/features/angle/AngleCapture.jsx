@@ -31,6 +31,13 @@ const STEPS = [
   },
 ];
 
+// 관절 점 33개에서 자리만 꺼낸다. **사진이 아니라 좌표다** — 얼굴도 방도 남지 않는다.
+// 소수점 셋째 자리까지면 화면에 그리기에 충분하고, 한 판이 1KB를 넘지 않는다.
+const shapeOf = (pts) => (pts || []).map((q) => ({
+  x: Math.round((q?.x ?? 0) * 1000) / 1000,
+  y: Math.round((q?.y ?? 0) * 1000) / 1000,
+}));
+
 export default function AngleCapture({ onDone, onClose }) {
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
   const [msg, setMsg] = useState('');            // 지금 무엇을 고쳐야 하는지
@@ -98,7 +105,11 @@ export default function AngleCapture({ onDone, onClose }) {
     if (!run || why) return;                       // 자세가 어긋나면 그 프레임은 안 센다
     const t = performance.now();
     if (side) {
-      run.neck.push({ t, v: neckBend(pts) });
+      const nb = neckBend(pts);
+      run.neck.push({ t, v: nb });
+      // 옆모습 실루엣 — 목이 가장 곧았던 그 순간의 관절 좌표를 붙잡아 둔다.
+      // 숫자만 남기면 15.4도가 좋은 건지 스스로 판단할 수 없다. 겹쳐 볼 그림이 필요하다.
+      if (run.best == null || nb < run.best) { run.best = nb; run.pose = shapeOf(pts); }
       if (kneeStraight(pts)) run.trunk.push({ t, v: trunkFlex(pts) });
       else run.kneeBad += 1;
     } else {
@@ -191,7 +202,7 @@ export default function AngleCapture({ onDone, onClose }) {
       const neck = run.neck.length ? Math.round(Math.min(...run.neck.map((s) => s.v)) * 10) / 10 : 0;
       const trunk = peakOf(run.trunk);
       if (!neck && !trunk) { again(); return; }
-      gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad };
+      gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad, pose: run.pose || null };
       tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
       say('next', { force: true });
       setStep(1);
@@ -218,7 +229,7 @@ export default function AngleCapture({ onDone, onClose }) {
   const start = () => {
     if (runRef.current) return;
     const s0 = STEPS[step];
-    runRef.current = { neck: [], trunk: [], arm: [], seen: 0, kneeBad: 0 };
+    runRef.current = { neck: [], trunk: [], arm: [], seen: 0, kneeBad: 0, best: null, pose: null };
     setCount(s0.sec);
     say(s0.go, { force: true });
     const tick = setInterval(() => {

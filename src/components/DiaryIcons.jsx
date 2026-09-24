@@ -448,6 +448,90 @@ function IconMedicine({ size = 28 }) {
   );
 }
 
+
+// ── 10월에 더한 태그 아이콘 일곱 ────────────────────────────
+// 앞의 것들과 같은 결로 — 둥근 형태, 낮은 채도, 선은 굵게.
+
+function IconSkipMeal({ size = 28 }) {   // 아침 거름
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="15" cy="17" r="10" fill="#EFE7D8" />
+      <circle cx="15" cy="17" r="5.5" fill="#FBF7EF" />
+      <path d="M7 9 L25 27" stroke="#C9807A" strokeWidth="3.4" strokeLinecap="round" />
+      <circle cx="24" cy="8" r="5" fill="#F6D98A" />
+      <path d="M24 5.4 v2.9 l2 1.4" stroke="#8A6A3A" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconNoodle({ size = 28 }) {     // 밀가루·면
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M4 15 h24 a12 12 0 0 1-24 0z" fill="#DCCBAE" />
+      <path d="M6.5 17.5 h19 a9.5 9.5 0 0 1-19 0z" fill="#EFE3CB" />
+      <path d="M10 15 c0-5 2-8 4-9 M16 15 c0-6 1-9 3-10 M22 15 c0-4 1-7 2-8"
+        stroke="#E3C88E" strokeWidth="2.6" strokeLinecap="round" fill="none" />
+      <path d="M9 7 q3 2 6 0 t6 0" stroke="#C9A96A" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconProtein({ size = 28 }) {    // 단백질 챙김
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <ellipse cx="12" cy="17" rx="8" ry="9.5" fill="#F3EDE2" />
+      <ellipse cx="12" cy="18.5" rx="4.6" ry="5.4" fill="#F5C86A" />
+      <path d="M20 12 h8 v3 h-8z" fill="#B9D6B0" />
+      <rect x="21.5" y="9" width="5" height="9" rx="2.2" fill="#8FBF86" />
+      <path d="M24 9 v9" stroke="#6FA267" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconHeadache({ size = 28 }) {   // 두통
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="19" r="9" fill="#E8C6B8" />
+      <path d="M12.5 18.5 q1.5-1.6 3-0.2 M17 18.3 q1.5-1.6 3-0.2" stroke="#8A5A4B" strokeWidth="1.9" strokeLinecap="round" fill="none" />
+      <path d="M13.5 23.5 q2.5-1.6 5 0" stroke="#8A5A4B" strokeWidth="1.9" strokeLinecap="round" fill="none" />
+      <path d="M8 9 l2.5 2.5 M16 6.5 v3.4 M24 9 l-2.5 2.5" stroke="#D2736B" strokeWidth="2.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconSwollen({ size = 28 }) {    // 붓기
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M10 6 h7 a4 4 0 0 1 4 4 v6 a7 7 0 0 1-7 7 h-1 a7 7 0 0 1-7-7 v-6 a4 4 0 0 1 4-4z" fill="#CFC0E4" />
+      <path d="M9 23 h9 l-1 4 h-7z" fill="#B9A7D4" />
+      <path d="M22 13 q3.5 3.4 3.5 5.6 a3.5 3.5 0 0 1-7 0 q0-2.2 3.5-5.6z" fill="#9FC8E8" />
+    </svg>
+  );
+}
+
+function IconFeverish({ size = 28 }) {   // 몸살기
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="17" r="9.5" fill="#E9C9C4" />
+      <rect x="6" y="11" width="20" height="4.6" rx="2.3" fill="#F3F0EA" />
+      <path d="M11.5 20.5 q1.4-1.4 2.8 0 M17.7 20.5 q1.4-1.4 2.8 0" stroke="#8A5A4B" strokeWidth="1.9" strokeLinecap="round" fill="none" />
+      <path d="M13 24.5 q3-1.4 6 0" stroke="#8A5A4B" strokeWidth="1.9" strokeLinecap="round" fill="none" />
+      <path d="M24.5 4 q-2 2.2 0 4.4 t0 4.4" stroke="#D2736B" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconCalm({ size = 28 }) {       // 여유 있었음
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="10" fill="#CFE3D2" />
+      <path d="M11.5 14.5 q1.8-2 3.6 0 M16.9 14.5 q1.8-2 3.6 0" stroke="#4E7A57" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M12 19.5 q4 3.2 8 0" stroke="#4E7A57" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+      <path d="M4.5 21 q3 2.4 6 0 M21.5 21 q3 2.4 6 0" stroke="#A9CBB0" strokeWidth="2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
 const ICONS = {
   walk: IconWalk, chair: IconChair, sofa: IconSofa, slump: IconSlump,
   allNighter: IconAllNighter, toss: IconToss, mehMoon: IconMehMoon, sleepWell: IconSleepWell,
@@ -461,6 +545,8 @@ const ICONS = {
   overwork: IconOverwork,
   coldAir: IconColdAir, stress: IconStress, nervous: IconNervous, drained: IconDrained,
   period: IconPeriod, menstrual: IconMenstrual, medicine: IconMedicine,
+  skipMeal: IconSkipMeal, noodle: IconNoodle, protein: IconProtein,
+  headache: IconHeadache, swollen: IconSwollen, feverish: IconFeverish, calm: IconCalm,
 };
 
 
