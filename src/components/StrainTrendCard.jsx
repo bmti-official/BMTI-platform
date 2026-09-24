@@ -35,6 +35,9 @@ function SwitchPill({ mode, onPick, t }) {
 
 export default function StrainTrendCard({ entries }) {
   const [mode, setMode] = useState('weekly');
+  // 말랑이 얼굴이 막대 위에 얹혀 숫자를 가린다. 그래프를 누르면 막대가 앞으로 나온다.
+  // (손가락으로는 올려놓을 수가 없어서 누르기로도 되게 둔다)
+  const [barsUp, setBarsUp] = useState(false);
   const t = getTypeAccent();
   const d = strainTrend(entries, mode);
   const any = strainTrend(entries, 'weekly') || strainTrend(entries, 'daily');
@@ -93,9 +96,11 @@ export default function StrainTrendCard({ entries }) {
       ) : (
         <div className="hide-scrollbar" style={{ overflowX: scroll ? 'auto' : 'visible', overflowY: 'hidden' }}>
           <div style={{ minWidth: scroll ? cats.length * colW : 'auto' }}>
-            <div style={{ position: 'relative', height: H }}>
+            <div style={{ position: 'relative', height: H, cursor: 'pointer' }}
+              onMouseEnter={() => setBarsUp(true)} onMouseLeave={() => setBarsUp(false)}
+              onClick={() => setBarsUp((v) => !v)}>
               {/* 부담 막대 */}
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', gap, zIndex: 1 }}>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', gap, zIndex: barsUp ? 4 : 1 }}>
                 {cats.map((c) => {
                   const empty = c.strain == null;
                   const ratio = empty ? 0 : Math.min(1, c.strain / d.max);
@@ -112,12 +117,13 @@ export default function StrainTrendCard({ entries }) {
                 })}
               </div>
               {/* 기분 꺾은선 + 말랑이 얼굴 */}
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'none' }}>
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: barsUp ? 2 : 3, pointerEvents: 'none' }}>
                 {dPath && <path d={dPath} fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
               </svg>
               {cats.map((c, i) => (c.mood == null ? null : (
                 <div key={c.key} style={{ position: 'absolute', left: `${xOf(i)}%`, top: `${yOf(c.mood)}%`,
-                  transform: 'translate(-50%,-50%)', zIndex: 3, pointerEvents: 'none' }}>
+                  transform: 'translate(-50%,-50%)', zIndex: barsUp ? 1 : 4, pointerEvents: 'none',
+                  opacity: barsUp ? 0.55 : 1, transition: 'opacity .2s' }}>
                   <Mallang v={Math.round(c.mood)} size={faceSize} noBlink />
                 </div>
               )))}
@@ -146,6 +152,9 @@ export default function StrainTrendCard({ entries }) {
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
           <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accent }} />그때의 기분
+        </span>
+        <span style={{ marginLeft: 'auto', fontWeight: 700 }}>
+          {barsUp ? '그래프가 앞에 있어요' : '그래프를 누르면 막대가 앞으로'}
         </span>
       </div>
     </div>

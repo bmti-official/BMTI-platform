@@ -14,6 +14,7 @@ import { ITEMS, vsLastWeek, vsLastMonth, canTrend } from '../lib/angleRecord';
 import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { loadAssets, ANGLE_BODY, DEFAULT_META } from '../lib/appAssets';
+import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, DEFAULT_CUTS, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
@@ -237,11 +238,14 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
   const key = g.includes('female') || g.includes('여') ? ANGLE_BODY.female : ANGLE_BODY.male;
   useEffect(() => {
     let alive = true;
-    loadAssets([ANGLE_BODY.male, ANGLE_BODY.female]).then((m) => { if (alive) setAsset(m || {}); });
+    loadAssets([ANGLE_BODY.male, ANGLE_BODY.female, LEVELS_KEY, ...allImageKeys()])
+      .then((m) => { if (alive) setAsset(m || {}); });
     return () => { alive = false; };
   }, []);
   // previewBody — 관리자에서 저장 전 값으로 바로 보려고 넘긴다. 손님 화면에선 늘 null.
   const body = previewBody?.url ? previewBody : (asset?.[key]?.url ? asset[key] : null);
+  const who = key === ANGLE_BODY.female ? 'female' : 'male';
+  const cuts = { ...DEFAULT_CUTS, ...(asset?.[LEVELS_KEY]?.meta || {}) };
   const ok = (rows || []).filter(usable);
   if (!ok.length) return null;
 
@@ -265,6 +269,12 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
     return { ...it, v: r1(it.better === 'low' ? Math.min(...vs) : Math.max(...vs)) };
   }).filter(Boolean);
 
+  // 고른 항목에 단계 그림이 올라와 있으면 그걸 쓴다. 한 장을 돌려 쓰는 것보다 정확하다 —
+  // 목은 옆에서, 어깨는 앞에서 봐야 하는데 한 장으로는 둘을 같이 담을 수 없다.
+  const shotItem = LEVEL_ITEMS.find((x) => x.key === open) || null;
+  const shotLv = shotItem ? levelOf(shotItem, num(now[shotItem.key]), cuts) : null;
+  const shot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
+
   return (
     <div style={{ background: '#fff', borderRadius: 20, padding: '18px 18px 20px', boxShadow: SHADOW, border: '1px solid #F1EEE8' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -285,11 +295,13 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
           오른쪽 항목을 누르면 그것만 강조되고, 자세한 내용도 그 자리에서 펼쳐진다. */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
         <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
-          {body
-            ? <PhotoFigure src={body.url} meta={body.meta} neck={num(now.neck_bend)} trunk={num(now.trunk_flex)}
-                arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} guide={guide} />
-            : <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
-                ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />}
+          {shot
+            ? <LevelShot shot={shot} item={shotItem} value={num(now[shotItem.key])} t={t} />
+            : body
+              ? <PhotoFigure src={body.url} meta={body.meta} neck={num(now.neck_bend)} trunk={num(now.trunk_flex)}
+                  arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} guide={guide} />
+              : <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
+                  ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />}
         </div>
 
         {/* 오른쪽 — 누르면 그림에서 강조되고, 아래로 자세한 내용이 펼쳐진다 */}
@@ -349,7 +361,7 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
 
       <div style={{ display: 'flex', gap: 11, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap' }}>
         {open === null && <span>항목을 누르면 그림에서 그것만 짚어 드려요</span>}
-        {open === 'neck_bend' && (
+        {!shot && open === 'neck_bend' && (
           <>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accentDeep }} />지금
@@ -359,12 +371,41 @@ export default function AngleBoxCard({ rows = [], gender = null, previewBody = n
             </span>
           </>
         )}
-        {(open === 'trunk_flex' || open === 'arm_raise') && (
+        {!shot && (open === 'trunk_flex' || open === 'arm_raise') && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 10, height: 3, borderRadius: 2, background: PURPLE }} />움직인 범위
           </span>
         )}
+        {shot && <span>{shotItem.view}으로 본 모습이에요</span>}
       </div>
+    </div>
+  );
+}
+
+// 단계 그림 — 잰 값에 맞는 사진 한 장. 선을 긋지 않아도 모습 자체가 말해 준다.
+function LevelShot({ shot, item, value, t }) {
+  const name = LEVEL_NAME[shot.level];
+  const tint = shot.level === 1 ? '#5E9463' : shot.level === 2 ? '#9A7A16' : '#B23B36';
+  return (
+    <div style={{ position: 'relative' }}>
+      <img src={shot.url} alt={`${item.label} ${name}`}
+        style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block' }} />
+      <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
+        background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>
+        {name}
+      </span>
+      {value != null && (
+        <span style={{ position: 'absolute', right: 6, bottom: 6, fontSize: 14, fontWeight: 900, color: t.accentDeep,
+          background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>
+          {value}°
+        </span>
+      )}
+      {!shot.exact && (
+        <span style={{ position: 'absolute', left: 6, bottom: 6, fontSize: 9.5, fontWeight: 800, color: '#9B9489',
+          background: 'rgba(255,255,255,0.9)', borderRadius: 999, padding: '2px 7px' }}>
+          비슷한 단계 그림
+        </span>
+      )}
     </div>
   );
 }
