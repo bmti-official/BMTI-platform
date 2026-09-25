@@ -90,6 +90,8 @@ export default function AngleCapture({ onDone, onClose }) {
   const tryRef = useRef(0);                      // 몇 번 어긋났는지
   const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
   const startRef = useRef(null);                 // 저절로 시작하는 손잡이
+  const stepRef = useRef(0);                     // 반복문이 읽을 최신 단계
+  const checkRef = useRef(null);                 // 반복문이 읽을 최신 검사
   const [voice, setVoice] = useState(true);
   const [hasClips, setHasClips] = useState(false);
   useEffect(() => {
@@ -163,7 +165,7 @@ export default function AngleCapture({ onDone, onClose }) {
     const run = runRef.current;
     if (run && run.ready > 0) {
       // 카운트 중에 자세가 어긋나면 표시만 해 둔다. 되돌리는 건 타이머 쪽에서 한다.
-      if (why) { run.badFrom = run.badFrom || performance.now(); }
+      if (why && !run.forced) { run.badFrom = run.badFrom || performance.now(); }
       else run.badFrom = 0;
       if (run.badFrom && performance.now() - run.badFrom > STEADY_MS) run.shaken = true;
       return;
@@ -194,8 +196,11 @@ export default function AngleCapture({ onDone, onClose }) {
 
   // 카메라와 미디어파이프는 이 화면에 들어올 때만 불러온다.
   // 처음부터 들고 있으면 첫 화면이 느려진다.
+  // 카메라는 재는 동안 내내 켜 둔다. step이 바뀔 때마다 껐다 켜면
+  // 쉼터를 지날 때마다 미디어파이프를 다시 불러오느라 몇 초가 빈다.
+  const live = step >= 0 && step <= 1;
   useEffect(() => {
-    if (step !== 0 && step !== 1) return undefined;   // 쉼터(0.5)·안내·끝에서는 카메라를 쉰다
+    if (!live) return undefined;
     let alive = true;
     let stream;
     const loop = () => {
@@ -211,7 +216,10 @@ export default function AngleCapture({ onDone, onClose }) {
         g.clearRect(0, 0, c.width, c.height);
         if (pts) drawBones(g, pts, c.width, c.height);
       }
-      if (pts) check(pts); else setMsg('몸이 다 보이게 서 주세요');
+      // 쉼터에선 보기만 한다. 검사와 판정은 최신 것을 ref로 읽는다 —
+      // 효과가 다시 돌지 않으므로 여기 닫힌 값은 처음 것에 머문다.
+      if (stepRef.current === 0.5) { rafRef.current = requestAnimationFrame(loop); return; }
+      if (pts) checkRef.current?.(pts); else setMsg('몸이 다 보이게 서 주세요');
       rafRef.current = requestAnimationFrame(loop);
     };
     (async () => {
@@ -252,8 +260,7 @@ export default function AngleCapture({ onDone, onClose }) {
       poseRef.current?.close?.();
       poseRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [live]);
 
   const again = (why = '잘 잡히지 않았어요. 한 번 더 해 볼까요?') => {
     // 몇 번째 어긋남인지는 ref로 센다 — 여기서 바로 보고 판단해야 한다.
@@ -336,7 +343,7 @@ export default function AngleCapture({ onDone, onClose }) {
 
   // 재기 시작 — 준비 카운트를 세고, 토막마다 할 일을 화면에 띄우며 값을 모은다.
   // 버튼이 아니라 자세가 맞으면 저절로 불린다.
-  const start = () => {
+  const start = (forced = false) => {
     if (runRef.current) return;
     const s0 = STEPS[step];
     const total = stepSec(s0);
@@ -344,6 +351,8 @@ export default function AngleCapture({ onDone, onClose }) {
       neck: [], trunk: [], arm: [], armL: [], armR: [],
       seen: 0, kneeBad: 0, best: null, pose: null,
       take: null, got: 0, bad: 0, ready: READY_SEC, shaken: false, badFrom: 0,
+      // '이대로 시작'으로 들어왔으면 되감지 않는다. 안 그러면 영영 시작되지 않는다.
+      forced,
     };
     setShook(0);
     setReady(READY_SEC);
@@ -396,6 +405,8 @@ export default function AngleCapture({ onDone, onClose }) {
     }, 100);
     tickRef.current = tick;
   };
+  useEffect(() => { stepRef.current = step; });
+  useEffect(() => { checkRef.current = check; });
   useEffect(() => { startRef.current = start; });
   useEffect(() => () => clearInterval(tickRef.current), []);
 
@@ -638,7 +649,7 @@ export default function AngleCapture({ onDone, onClose }) {
               자세가 계속 안 맞나요? <b>이대로 시작</b>해도 됩니다. 값이 많이 흔들리면 그 판은 추세에서 빠져요.
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
-              <button type="button" onClick={start}
+              <button type="button" onClick={() => start(true)}
                 style={{ border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999,
                   padding: '7px 14px', fontSize: 12, fontWeight: 800, color: '#8A6A3A', boxShadow: '0 2px 7px rgba(0,0,0,0.1)' }}>
                 이대로 시작 →
@@ -665,7 +676,7 @@ export default function AngleCapture({ onDone, onClose }) {
           </div>
         )}
         {/* 자세가 맞으면 저절로 시작한다. 이 버튼은 기다리기 답답할 때 쓰는 자리다. */}
-        <button type="button" onClick={start} disabled={off} style={bigBtn(!off)}>
+        <button type="button" onClick={() => start()} disabled={off} style={bigBtn(!off)}>
           {running ? `재는 중… ${count}초`
             : poseOk ? (auto ? '곧 시작해요 — 눌러서 바로 시작' : '눌러서 시작하기')
               : '자세를 맞춰 주세요'}

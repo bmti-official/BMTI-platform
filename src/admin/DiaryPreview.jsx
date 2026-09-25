@@ -12,6 +12,7 @@ import OctFindingSamples from '../components/OctFindingSamples';
 import AngleBodyAdmin from './AngleBodyAdmin';
 import { getDiaryHistory } from '../lib/diaryHistory';
 import { setDiaryDryRun, todayISO } from '../lib/diaryHistory';
+import { toView } from '../lib/angleView';
 import AngleView from '../features/angle/AngleView';
 import AngleCapture from '../features/angle/AngleCapture';
 import PushToggle from '../features/angle/PushToggle';
@@ -206,7 +207,8 @@ export default function DiaryPreview() {
           onClose={() => { setScreen(''); setWriting(null); setJustSaved(null); }}>
           {() => (screen === 'tag' ? realDiary
             : screen === 'angle' ? <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />
-              : screen === 'draft' ? <OctFindingSamples rows={checks} entries={getDiaryHistory()} />
+              // 원안 샘플도 화면용 값(목은 CVA)으로 넘겨야 판정 방향이 맞는다
+              : screen === 'draft' ? <OctFindingSamples rows={toView(checks)} entries={getDiaryHistory()} />
                 : null)}
         </PreviewModal>
       )}

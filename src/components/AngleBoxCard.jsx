@@ -28,6 +28,13 @@ const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 const r1 = (v) => Math.round(v * 10) / 10;
 const md = (w) => `${Number(String(w).slice(5, 7))}월 ${Number(String(w).slice(8, 10))}일`;
 
+// 사람 그림은 '수직에서 얼마나 기울었나'로 그린다. 화면에 쓰는 값은 CVA(수평 기준)라
+// 그림에 넘길 때는 되돌려 줘야 한다. 이걸 빠뜨리면 머리가 75도 돌아간다.
+const tilt = (row) => {
+  const v = num(row?.neck_bend);
+  return v == null ? null : Math.round((90 - v) * 10) / 10;
+};
+
 // ── 옆모습 그림 ────────────────────────────────────────────
 // 선 하나에 각도 하나. 목은 실제로 기울이고, 허리·어깨는 부채꼴로 범위를 보인다.
 function Figure({ neck, trunk, arm, ghostNeck, t, sel }) {
@@ -312,10 +319,10 @@ export default function AngleBoxCard({ rows: raw = [], gender = null, previewBod
           {shot
             ? <LevelShot shot={shot} item={shotItem} value={num(now[shotItem.key])} t={t} />
             : body
-              ? <PhotoFigure src={body.url} meta={body.meta} neck={num(now.neck_bend)} trunk={num(now.trunk_flex)}
-                  arm={num(now.arm_raise)} ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} guide={guide} />
-              : <Figure neck={num(now.neck_bend)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
-                  ghostNeck={prev ? num(prev.neck_bend) : null} t={t} sel={open} />}
+              ? <PhotoFigure src={body.url} meta={body.meta} neck={tilt(now)} trunk={num(now.trunk_flex)}
+                  arm={num(now.arm_raise)} ghostNeck={tilt(prev)} t={t} sel={open} guide={guide} />
+              : <Figure neck={tilt(now)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
+                  ghostNeck={tilt(prev)} t={t} sel={open} />}
         </div>
 
         {/* 오른쪽 — 누르면 그림에서 강조되고, 아래로 자세한 내용이 펼쳐진다 */}
