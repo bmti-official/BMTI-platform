@@ -9,10 +9,11 @@
 //   허리 굽힘 … '굽혔다 돌아오기'의 최댓값, 곧 가동 범위다. 자세가 아니라 부채꼴로 그린다.
 //   어깨 들림 … 팔을 올린 최댓값. 이것도 부채꼴이다.
 // 자세와 가동 범위를 같은 모양으로 그리면 '허리가 70도 굽은 사람'처럼 읽힌다.
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ITEMS, vsLastWeek, vsLastMonth, canTrend } from '../lib/angleRecord';
 import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
+import { toView } from '../lib/angleView';
 import { loadAssets, ANGLE_BODY, DEFAULT_META } from '../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, DEFAULT_CUTS, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
 
@@ -230,8 +231,11 @@ export function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel, gu
   );
 }
 
-export default function AngleBoxCard({ rows = [], gender = null, previewBody = null, guide = false }) {
+export default function AngleBoxCard({ rows: raw = [], gender = null, previewBody = null, guide = false }) {
   const t = getTypeAccent();
+  // 목은 담긴 값(수직 기준)과 보여 줄 값(CVA)의 기준선이 다르다.
+  // 부르는 쪽마다 바꾸면 빠뜨리거나 두 번 하게 된다 — 여기 한 곳에서만 바꾼다.
+  const rows = useMemo(() => toView(raw), [raw]);
   // 처음부터 한 항목을 골라 둔다. 아무것도 안 고른 채로 두면 단계 그림이 안 뜨고,
   // 무엇을 눌러야 하는지도 모른 채 숫자만 셋 보게 된다.
   // 실제로 잰 항목이 우선, 겹치면 목 숙임.

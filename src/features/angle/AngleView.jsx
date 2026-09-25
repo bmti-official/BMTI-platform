@@ -3,6 +3,7 @@
 // **절대 각도를 보여 주지 않는다.** '목 숙임 18도'는 의학 측정으로 읽힌다.
 // 지난주보다 얼마나 달라졌는지만 말한다.
 // 좋아짐·나빠짐 색도 쓰지 않는다. 주 한 번 잰 값으로 판정하면 과하게 반응한다.
+import { toView } from '../../lib/angleView';
 import { useMemo, useState } from 'react';
 import { ITEMS, sundayOf, vsLastWeek, vsLastMonth, canTrend, TREND_FROM } from '../../lib/angleRecord';
 
@@ -14,8 +15,10 @@ const day = (iso) => {
   return m ? `${Number(m)}월 ${Number(d)}일` : '';
 };
 
-export default function AngleView({ rows = [], onMeasure, push = null }) {
+export default function AngleView({ rows: raw = [], onMeasure, push = null }) {
   const [open, setOpen] = useState('');
+  // 목은 담긴 값과 보여 줄 값의 기준선이 다르다. 여기서 한 번만 바꿔 둔다.
+  const rows = useMemo(() => toView(raw), [raw]);
   const week = sundayOf();
   const now = rows.find((r) => r.week === week);
   const trend = canTrend(rows);
