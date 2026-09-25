@@ -91,7 +91,11 @@ export default function AngleCapture({ onDone, onClose }) {
   // 한 프레임씩 보며 자세를 검사하고, 재는 중이면 값을 모은다.
   const check = (pts) => {
     const side = step === 0;
-    const dist = distanceOk(pts);
+    // 허리를 굽히는 동안엔 머리가 화면 밖으로 나가기 쉽다.
+    // 그때 재는 건 어깨~골반 기울기뿐이라 머리는 없어도 된다.
+    const run0 = runRef.current;
+    const bending = !!run0 && run0.ready === 0 && run0.take === 'trunk';
+    const dist = distanceOk(pts, { needHead: !bending });
     const face = side ? sideOk(pts) : frontOk(pts);
     const seen = seenWell(pts, side
       ? [[L.earL, L.earR], [L.shoulderL, L.shoulderR], [L.hipL, L.hipR]]
@@ -231,13 +235,15 @@ export default function AngleCapture({ onDone, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const again = () => {
+  const again = (why = '잘 잡히지 않았어요. 한 번 더 해 볼까요?') => {
     // 몇 번째 어긋남인지는 ref로 센다 — 여기서 바로 보고 판단해야 한다.
     tryRef.current += 1;
     const n = tryRef.current;
     setRetry(n);
     okSinceRef.current = 0;
-    setMsg(n >= MAX_RETRY ? '' : '잘 잡히지 않았어요. 한 번 더 해 볼까요?');
+    badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
+    setCount(0); setReady(0); setPhase(null); setGot(0);
+    setMsg(n >= MAX_RETRY ? '' : why);
     clearSaid();
     if (n >= MAX_RETRY) setStep(-1);               // 세 번 어긋나면 가이드부터 다시
   };
@@ -251,7 +257,17 @@ export default function AngleCapture({ onDone, onClose }) {
       // 가만히 선 자세는 '가장 곧았던' 값을 쓴다. 굽히는 동안의 값이 섞이면 안 된다.
       const neck = run.neck.length ? Math.round(Math.min(...run.neck.map((s) => s.v)) * 10) / 10 : 0;
       const trunk = peakOf(run.trunk);
+      // **둘 중 하나라도 비면 넘어가지 않는다.** 예전엔 목만 잡히면 그대로 갔고,
+      // 굽히는 동안 화면 밖으로 나간 사람은 허리 값이 0인 채로 기록됐다.
       if (!neck && !trunk) { again(); return; }
+      if (!trunk) {
+        again('허리 굽힘이 안 잡혔어요. 굽힐 때 골반이 화면에 남아 있어야 해요 — 한 걸음 뒤로 가서 다시 해 볼까요?');
+        return;
+      }
+      if (!neck) {
+        again('목 각도가 안 잡혔어요. 처음 4초는 가만히 서 계셔야 해요.');
+        return;
+      }
       gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad, pose: run.pose || null };
       setVals(gotRef.current);
       tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
@@ -264,7 +280,7 @@ export default function AngleCapture({ onDone, onClose }) {
       return;
     }
     const arm = peakOf(run.arm);
-    if (!arm) { again(); return; }
+    if (!arm) { again('어깨 들림이 안 잡혔어요. 두 팔이 화면에 다 들어와야 해요.'); return; }
     const all = {
       ...gotRef.current, armRaise: arm,
       armRaiseL: peakOf(run.armL) || null, armRaiseR: peakOf(run.armR) || null,
@@ -490,12 +506,13 @@ export default function AngleCapture({ onDone, onClose }) {
 
         {/* 서 있을 자리 — 이 안에 몸이 들어오게 */}
         {/* 머리부터 골반까지 들어갈 자리. 다리까지 넣으려고 멀리 물러설 필요가 없다. */}
-        <span style={{ position: 'absolute', left: '18%', right: '18%', top: '10%', bottom: '22%',
+        <span style={{ position: 'absolute', left: '18%', right: '18%',
+          top: ph && ph.take === 'trunk' ? '4%' : '10%', bottom: ph && ph.take === 'trunk' ? '8%' : '22%',
           border: `2px dashed ${poseOk ? 'rgba(180,240,190,0.8)' : 'rgba(255,255,255,0.45)'}`,
           borderRadius: 999, pointerEvents: 'none', transition: 'border-color .2s' }} />
         <span style={{ position: 'absolute', left: 0, right: 0, bottom: '15%', textAlign: 'center',
           fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,0.75)', pointerEvents: 'none' }}>
-          이 안에 머리~골반이 들어오면 돼요
+          {ph && ph.take === 'trunk' ? '골반만 이 안에 있으면 돼요' : '이 안에 머리~골반이 들어오면 돼요'}
         </span>
 
         {/* 위 문구 — 재는 중엔 '지금 무엇을 할 차례인지'가 맨 앞이다 */}

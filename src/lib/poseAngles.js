@@ -44,9 +44,16 @@ export function angleAt(a, center, b) {
 // ── 잘 찍혔는지 보는 눈 ─────────────────────────────────────
 // 각도 자체보다 이쪽이 중요하다. 흔들림이 변화보다 크면 추세가 무의미해진다.
 
-/** 어깨에서 골반까지의 길이 — 몸 크기의 잣대. 거리가 달라도 이 길이로 나누면 견줄 수 있다. */
-export const torsoLen = (pts) =>
-  Math.abs(mid(pts[L.shoulderL], pts[L.shoulderR]).y - mid(pts[L.hipL], pts[L.hipR]).y);
+/** 어깨에서 골반까지의 길이 — 몸 크기의 잣대. 거리가 달라도 이 길이로 나누면 견줄 수 있다.
+ *
+ *  **세로 차이가 아니라 실제 길이로 잰다.** 세로만 보면 허리를 굽힐 때
+ *  어깨와 골반이 같은 높이로 와서 길이가 0에 가까워진다. 그러면
+ *  '몸이 너무 작다', '옆으로 안 섰다'로 잘못 읽혀 굽히는 동안 내내 측정이 막힌다. */
+export const torsoLen = (pts) => {
+  const a = mid(pts[L.shoulderL], pts[L.shoulderR]);
+  const b = mid(pts[L.hipL], pts[L.hipR]);
+  return Math.hypot(a.x - b.x, a.y - b.y);
+};
 
 export const vis = (p) => p?.v ?? p?.visibility ?? 0;
 
@@ -57,17 +64,20 @@ export const vis = (p) => p?.v ?? p?.visibility ?? 0;
  *  화면 밖 관절도 미디어파이프는 자리를 지어내서 내놓는다. 좌표만 보면
  *  '있다'고 읽히므로 **보이는 정도(visibility)를 같이** 본다.
  *  머리는 코가 안 잡혀도 귀가 잡히면 된다 — 옆모습에선 코가 자주 가린다. */
-export function distanceOk(pts) {
+export function distanceOk(pts, { needHead = true } = {}) {
   const h = torsoLen(pts);
   const head = pts[L.nose];
   const hip = mid(pts[L.hipL], pts[L.hipR]);
   const headSeen = Math.max(vis(head), vis(pts[L.earL]), vis(pts[L.earR])) > 0.3;
   const hipSeen = Math.max(vis(pts[L.hipL]), vis(pts[L.hipR])) > 0.3;
+  const shSeen = Math.max(vis(pts[L.shoulderL]), vis(pts[L.shoulderR])) > 0.3;
+  // 허리를 굽히는 동안엔 머리가 화면 밖으로 나가기 쉽다. 그때 재는 건 어깨~골반
+  // 기울기뿐이라 머리는 없어도 된다 — 없다고 막으면 굽히는 내내 못 잰다.
   const headIn = headSeen && head.y > -0.03 && head.y < 1;
   const hipIn = hipSeen && hip.y > 0 && hip.y < 1.02;
-  const inFrame = headIn && hipIn;
+  const inFrame = (needHead ? headIn : shSeen) && hipIn;
   // 0.62는 좁았다. 가까이 서서 상체만 담아도 잴 수 있어야 한다.
-  return { ok: inFrame && h > 0.10 && h < 0.80, h, inFrame, headIn, hipIn, headY: head.y, hipY: hip.y };
+  return { ok: inFrame && h > 0.10 && h < 0.80, h, inFrame, headIn, hipIn, needHead, headY: head.y, hipY: hip.y };
 }
 
 /** 측면으로 제대로 섰나. 좌우 어깨가 겹쳐 보여야 옆모습이다.
