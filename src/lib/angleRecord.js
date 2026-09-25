@@ -29,6 +29,8 @@ export async function saveCheck(vals) {
   const { error } = await supabase.from('posture_checks').upsert({
     user_id: userId, week: sundayOf(), measured_at: new Date().toISOString(),
     neck_bend: vals.neckBend ?? null, trunk_flex: vals.trunkFlex ?? null, arm_raise: vals.armRaise ?? null,
+    // 한쪽만 안 올라가는 일이 흔하다. 추세는 큰 쪽으로 보되 양쪽을 함께 남긴다.
+    arm_raise_l: vals.armRaiseL ?? null, arm_raise_r: vals.armRaiseR ?? null,
     quality: vals.quality ?? null, retries: vals.retries ?? 0,
     // 옆모습 실루엣용 좌표. 사진이 아니라 관절 자리만 담는다.
     pose: vals.pose ?? null,

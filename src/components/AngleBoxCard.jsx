@@ -232,7 +232,17 @@ export function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel, gu
 
 export default function AngleBoxCard({ rows = [], gender = null, previewBody = null, guide = false }) {
   const t = getTypeAccent();
-  const [open, setOpen] = useState(null);
+  // 처음부터 한 항목을 골라 둔다. 아무것도 안 고른 채로 두면 단계 그림이 안 뜨고,
+  // 무엇을 눌러야 하는지도 모른 채 숫자만 셋 보게 된다.
+  // 실제로 잰 항목이 우선, 겹치면 목 숙임.
+  const firstItem = (() => {
+    // Number(null)은 0이라 유한수로 통과한다. 빈 칸을 '쟀다'로 읽으면 안 된다.
+    const has = (k) => (rows || []).some((x) => usable(x) && x[k] != null && Number.isFinite(Number(x[k])));
+    if (has('neck_bend')) return 'neck_bend';
+    const hit = LEVEL_ITEMS.find((x) => has(x.key));
+    return hit ? hit.key : 'neck_bend';
+  })();
+  const [open, setOpen] = useState(firstItem);
   const [asset, setAsset] = useState(null);
   const g = String(gender || '').toLowerCase();
   const key = g.includes('female') || g.includes('여') ? ANGLE_BODY.female : ANGLE_BODY.male;

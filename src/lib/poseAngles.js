@@ -123,11 +123,17 @@ export function trunkFlex(pts) {
   return tiltFromVertical(mid(pts[L.shoulderL], pts[L.shoulderR]), mid(pts[L.hipL], pts[L.hipR]));
 }
 
-/** 어깨 들림 — 팔이 몸통에서 얼마나 벌어졌나. 정면에서 팔을 옆으로 올릴 때. */
-export function armRaise(pts) {
+/** 어깨 들림 — 팔이 몸통에서 얼마나 벌어졌나. 정면에서 팔을 옆으로 올릴 때.
+ *  한쪽만 안 올라가는 일이 흔해서 좌우를 따로 돌려준다. */
+export function armRaiseSides(pts) {
   const hip = mid(pts[L.hipL], pts[L.hipR]);
-  const l = angleAt(pts[L.wristL], pts[L.shoulderL], hip);
-  const r = angleAt(pts[L.wristR], pts[L.shoulderR], hip);
+  return {
+    l: angleAt(pts[L.wristL], pts[L.shoulderL], hip),
+    r: angleAt(pts[L.wristR], pts[L.shoulderR], hip),
+  };
+}
+export function armRaise(pts) {
+  const { l, r } = armRaiseSides(pts);
   return Math.max(l, r);
 }
 

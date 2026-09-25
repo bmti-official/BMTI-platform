@@ -34,7 +34,21 @@ const fakeRows = (neck) => {
 };
 
 export default function AngleBodyAdmin() {
-  return <><AngleLevelAdmin /><AngleBasePhoto /></>;
+  const [oldWay, setOldWay] = useState(false);
+  return (
+    <>
+      <AngleLevelAdmin />
+      <div style={{ marginBottom: 16 }}>
+        <button type="button" onClick={() => setOldWay((v) => !v)}
+          style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 12, fontWeight: 800, color: SUB, padding: '4px 0' }}>
+          {oldWay ? '▾' : '▸'} 예전 방식 — 옆모습 한 장으로 돌려 쓰기
+          <span style={{ fontWeight: 600 }}> (단계 그림이 없을 때만 쓰입니다)</span>
+        </button>
+        {oldWay && <AngleBasePhoto />}
+      </div>
+    </>
+  );
 }
 
 function AngleBasePhoto() {

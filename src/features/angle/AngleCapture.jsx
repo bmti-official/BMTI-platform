@@ -8,7 +8,7 @@
 //   정면 … 팔 옆으로 들어 올리기(어깨 들림)
 import { useEffect, useRef, useState } from 'react';
 import {
-  neckBend, trunkFlex, armRaise, distanceOk, sideOk, frontOk, kneeStraight, seenWell,
+  neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, frontOk, kneeStraight, seenWell,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
 import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
@@ -19,18 +19,32 @@ const MAX_RETRY = 3;   // 세 번 연달아 안 잡히면 가이드를 다시 �
 const HOLD_MS = 1500;  // 자세가 이만큼 그대로면 저절로 시작한다
 const STUCK_MS = 6000; // 이만큼 계속 안 맞으면 '이대로 시작' 길을 연다
 
+// 재는 동안 무엇을 할지를 **화면에 토막으로** 드러낸다.
+// 예전엔 8초를 한 덩어리로 재면서 할 일은 음성으로만 말했다. 그래서
+//   · 언제 굽혀야 하는지 몰라 가만히 있다가 허리 값이 안 잡히고
+//   · 잘 되고 있나 궁금해 몸을 움직여 엉뚱한 자세가 찍혔다
+// 토막마다 **그 토막에 필요한 값만** 모은다. 서 있는 동안의 목 각도와
+// 굽히는 동안의 허리 각도가 섞이지 않는다.
 const STEPS = [
   {
-    id: 'side', title: '옆으로 서 주세요', sec: 8,
+    id: 'side', title: '옆으로 서 주세요',
     how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.',
-    go: 'go1', mid: 'mid1',
+    phases: [
+      { sec: 4, text: '가만히 서 계세요', sub: '목 각도를 재고 있어요', take: 'neck', voice: 'go1' },
+      { sec: 5, text: '천천히 허리를 굽혔다 펴세요', sub: '무릎은 편 채로요', take: 'trunk', voice: 'mid1' },
+    ],
   },
   {
-    id: 'front', title: '정면으로 서 주세요', sec: 8,
+    id: 'front', title: '정면으로 서 주세요',
     how: '화면을 마주 봅니다.\n두 팔을 옆으로 천천히 올렸다 내립니다.',
-    go: 'go2', mid: 'mid2',
+    phases: [
+      { sec: 2, text: '팔을 내린 채로 기다려 주세요', sub: '곧 시작해요', take: null, voice: 'go2' },
+      { sec: 6, text: '두 팔을 옆으로 올렸다 내리세요', sub: '천천히, 끝까지 올려 보세요', take: 'arm', voice: 'mid2' },
+    ],
   },
 ];
+const stepSec = (st) => st.phases.reduce((n, p) => n + p.sec, 0);
+const READY_SEC = 3;   // '셋, 둘, 하나' — 준비할 틈을 준다
 
 // 관절 점 33개에서 자리만 꺼낸다. **사진이 아니라 좌표다** — 얼굴도 방도 남지 않는다.
 // 소수점 셋째 자리까지면 화면에 그리기에 충분하고, 한 판이 1KB를 넘지 않는다.
@@ -48,6 +62,12 @@ export default function AngleCapture({ onDone, onClose }) {
   const badSinceRef = useRef(0);
   const stuckRef = useRef(false);            // 지금 무엇을 고쳐야 하는지
   const [count, setCount] = useState(0);         // 남은 초
+  const [ready, setReady] = useState(0);         // 준비 카운트(셋·둘·하나)
+  const [phase, setPhase] = useState(null);      // 지금 몇 번째 토막인가
+  const [got, setGot] = useState(0);             // 몇 판 잡았나 — 잘 되고 있다는 신호
+  const tickRef = useRef(0);
+  const [lastQuality, setLastQuality] = useState(0);   // 잘 잡혔는지 — 끝 화면에서 알려 준다
+  const [vals, setVals] = useState({});                // 담은 값 — 화면에 보여 줄 몫(ref는 그릴 때 못 읽는다)
   const [retry, setRetry] = useState(0);
   const [err, setErr] = useState('');
 
@@ -127,26 +147,31 @@ export default function AngleCapture({ onDone, onClose }) {
     }
 
     const run = runRef.current;
-    if (!run || why) return;                       // 자세가 어긋나면 그 프레임은 안 센다
+    if (!run || run.ready > 0) return;              // 준비 카운트 동안은 안 센다
+    if (why) { run.bad += 1; return; }              // 자세가 어긋나면 그 프레임은 안 센다
     const t = performance.now();
-    if (side) {
+    const take = run.take;
+    if (take === 'neck') {
       const nb = neckBend(pts);
       run.neck.push({ t, v: nb });
       // 옆모습 실루엣 — 목이 가장 곧았던 그 순간의 관절 좌표를 붙잡아 둔다.
-      // 숫자만 남기면 15.4도가 좋은 건지 스스로 판단할 수 없다. 겹쳐 볼 그림이 필요하다.
       if (run.best == null || nb < run.best) { run.best = nb; run.pose = shapeOf(pts); }
+    } else if (take === 'trunk') {
       if (kneeStraight(pts)) run.trunk.push({ t, v: trunkFlex(pts) });
       else run.kneeBad += 1;
-    } else {
-      run.arm.push({ t, v: armRaise(pts) });
+    } else if (take === 'arm') {
+      const { l, r } = armRaiseSides(pts);
+      run.armL.push({ t, v: l });
+      run.armR.push({ t, v: r });
+      run.arm.push({ t, v: Math.max(l, r) });
     }
-    run.seen = Math.max(run.seen, seen);
+    if (take) { run.got += 1; run.seen = Math.max(run.seen, seen); }
   };
 
   // 카메라와 미디어파이프는 이 화면에 들어올 때만 불러온다.
   // 처음부터 들고 있으면 첫 화면이 느려진다.
   useEffect(() => {
-    if (step < 0 || step > 1) return undefined;
+    if (step !== 0 && step !== 1) return undefined;   // 쉼터(0.5)·안내·끝에서는 카메라를 쉰다
     let alive = true;
     let stream;
     const loop = () => {
@@ -228,21 +253,33 @@ export default function AngleCapture({ onDone, onClose }) {
       const trunk = peakOf(run.trunk);
       if (!neck && !trunk) { again(); return; }
       gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad, pose: run.pose || null };
+      setVals(gotRef.current);
       tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+      badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
+      setCount(0); setReady(0); setPhase(null); setGot(0);
       say('next', { force: true });
-      setStep(1);
+      // 바로 정면으로 넘기지 않는다. 몸을 돌릴 틈도 없이 다음 판이 시작되면
+      // 뒤죽박죽이 된다 — 무엇을 쟀고 다음에 뭘 할지 보여 주고 기다린다.
+      setStep(0.5);
       return;
     }
     const arm = peakOf(run.arm);
     if (!arm) { again(); return; }
-    const all = { ...gotRef.current, armRaise: arm, seenFront: run.seen };
+    const all = {
+      ...gotRef.current, armRaise: arm,
+      armRaiseL: peakOf(run.armL) || null, armRaiseR: peakOf(run.armR) || null,
+      seenFront: run.seen,
+    };
     const quality = qualityOf({
       seen: Math.min(all.seenSide ?? 0, all.seenFront ?? 0),
       kneeOk: (all.kneeBad ?? 0) < 20,
       retries: retry,
     });
     gotRef.current = all;
+    setVals(all);
     tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+    setLastQuality(quality);
+    setCount(0); setReady(0); setPhase(null); setGot(0);
     say('done', { force: true });
     setStep(2);
     if (onDone) onDone({ ...all, quality, retries: retry });
@@ -250,25 +287,70 @@ export default function AngleCapture({ onDone, onClose }) {
 
   const flipVoice = () => { const v = !voice; setVoice(v); setQuiet(!v); };
 
-  // 재기 시작 — 몇 초 동안 값을 모은다. 버튼이 아니라 자세가 맞으면 저절로 불린다.
+  // 다시 재기 — 담은 값을 비우고 처음부터. 흔들린 판을 떠안고 가지 않아도 되게.
+  const redo = () => {
+    clearInterval(tickRef.current);
+    runRef.current = null;
+    gotRef.current = {}; setVals({});
+    tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+    badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
+    setCount(0); setReady(0); setPhase(null); setGot(0); setLastQuality(0);
+    setStep(0);
+  };
+
+  // 재기 시작 — 준비 카운트를 세고, 토막마다 할 일을 화면에 띄우며 값을 모은다.
+  // 버튼이 아니라 자세가 맞으면 저절로 불린다.
   const start = () => {
     if (runRef.current) return;
     const s0 = STEPS[step];
-    runRef.current = { neck: [], trunk: [], arm: [], seen: 0, kneeBad: 0, best: null, pose: null };
-    setCount(s0.sec);
-    say(s0.go, { force: true });
+    const total = stepSec(s0);
+    runRef.current = {
+      neck: [], trunk: [], arm: [], armL: [], armR: [],
+      seen: 0, kneeBad: 0, best: null, pose: null,
+      take: null, got: 0, bad: 0, ready: READY_SEC,
+    };
+    setReady(READY_SEC);
+    setPhase(null);
+    setCount(total);
+    setGot(0);
+
+    let tenth = 0;                                  // 0.1초 단위로 센다 — 링이 부드럽게 돈다
     const tick = setInterval(() => {
-      setCount((n) => {
-        // 절반쯤 왔을 때 다음에 뭘 할지 알려 준다
-        if (n === Math.ceil(s0.sec / 2) + 1) say(s0.mid, { force: true });
-        if (n > 1) return n - 1;
-        clearInterval(tick);
-        finishStep();
-        return 0;
-      });
-    }, 1000);
+      tenth += 1;
+      const run = runRef.current;
+      if (!run) { clearInterval(tick); return; }
+
+      // 준비 카운트 — 이 동안은 아무것도 안 센다
+      if (run.ready > 0) {
+        if (tenth % 10 === 0) {
+          run.ready -= 1;
+          setReady(run.ready);
+          if (run.ready === 0) tenth = 0;
+        }
+        return;
+      }
+
+      const el = tenth / 10;
+      // 지금이 몇 번째 토막인가
+      let acc = 0, at = null;
+      for (let i = 0; i < s0.phases.length; i += 1) {
+        acc += s0.phases[i].sec;
+        if (el < acc) { at = i; break; }
+      }
+      if (at === null) { clearInterval(tick); finishStep(); return; }
+      if (run.phase !== at) {
+        run.phase = at;
+        run.take = s0.phases[at].take;
+        setPhase(at);
+        say(s0.phases[at].voice, { force: true });   // 토막이 바뀔 때만 말한다
+      }
+      setCount(Math.max(0, Math.ceil(total - el)));
+      setGot(run.got);
+    }, 100);
+    tickRef.current = tick;
   };
   useEffect(() => { startRef.current = start; });
+  useEffect(() => () => clearInterval(tickRef.current), []);
 
   // ── 화면 ────────────────────────────────────────────────
   if (step === -1) {
@@ -306,23 +388,97 @@ export default function AngleCapture({ onDone, onClose }) {
     );
   }
 
+  // 옆모습을 마친 뒤 — 몸을 돌릴 틈을 주고, 방금 무엇을 쟀는지 보여 준다
+  if (step === 0.5) {
+    const g = vals;
+    return (
+      <Shell onClose={onClose} title="각도기록 — 1/2 끝" voice={voice} hasClips={hasClips} onVoice={flipVoice}>
+        <div style={{ padding: '18px 4px 0' }}>
+          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 10 }}>옆모습 다 쟀어요</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+            {[['목 숙임', g.neckBend], ['허리 굽힘', g.trunkFlex]].map(([lb, v]) => (
+              <div key={lb} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: GOLD_INK }}>{lb}</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: INK, fontVariantNumeric: 'tabular-nums' }}>
+                  {v ? `${v}°` : '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 13, color: INK, fontWeight: 700, lineHeight: 1.85, marginBottom: 8 }}>
+            이제 <b>정면</b>으로 섭니다.
+          </div>
+          <div style={{ fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.85, marginBottom: 20 }}>
+            화면을 마주 보고 서세요. 준비되면 두 팔을 <b>옆으로 천천히 올렸다 내립니다</b>.
+            <br />팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. <b>억지로 올리지 말고</b> 올라가는 만큼만요 — 양쪽을 따로 담습니다.
+          </div>
+          <button type="button" onClick={() => setStep(1)} style={bigBtn(true)}>준비됐어요 →</button>
+        </div>
+      </Shell>
+    );
+  }
+
   if (step === 2) {
+    const g = vals;
+    const gap = g.armRaiseL != null && g.armRaiseR != null
+      ? Math.round(Math.abs(g.armRaiseL - g.armRaiseR) * 10) / 10 : null;
+    const low = gap != null && gap >= 10 ? (g.armRaiseL < g.armRaiseR ? '왼쪽' : '오른쪽') : null;
+    const q = lastQuality;
     return (
       <Shell onClose={onClose} title="각도기록" voice={voice} hasClips={hasClips} onVoice={flipVoice}>
-        <div style={{ padding: '30px 4px', textAlign: 'center' }}>
-          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 8 }}>다 쟀어요</div>
-          <div style={{ fontSize: 13, color: SUB, fontWeight: 600, lineHeight: 1.8, marginBottom: 22 }}>
-            이번 주 기록을 담았어요.<br />지난주와 얼마나 달라졌는지 볼까요?
+        <div style={{ padding: '18px 4px 0' }}>
+          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 12 }}>다 쟀어요</div>
+          <div style={{ display: 'flex', gap: 7, marginBottom: 14 }}>
+            {[['목 숙임', g.neckBend], ['허리 굽힘', g.trunkFlex], ['어깨 들림', g.armRaise]].map(([lb, v]) => (
+              <div key={lb} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: GOLD_INK }}>{lb}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: INK, fontVariantNumeric: 'tabular-nums' }}>
+                  {v ? `${v}°` : '—'}
+                </div>
+              </div>
+            ))}
           </div>
-          <button type="button" onClick={onClose} style={bigBtn(true)}>결과 보기 →</button>
+
+          {/* 잘 잡혔는지 — 손님이 알 수 있어야 다시 잴지 정한다 */}
+          <div style={{ background: q >= 70 ? '#EDF7F0' : q >= 45 ? '#FDF6DC' : '#FBEAE9', borderRadius: 13,
+            padding: '12px 14px', marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: q >= 70 ? '#2E7D50' : q >= 45 ? GOLD_INK : '#B23B36', marginBottom: 3 }}>
+              {q >= 70 ? '잘 잡혔어요' : q >= 45 ? '조금 흔들렸어요' : '많이 흔들렸어요'}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: SUB, lineHeight: 1.7, wordBreak: 'keep-all' }}>
+              {q >= 70 ? '이 판은 추세에 그대로 들어갑니다.'
+                : q >= 45 ? '값은 담았지만 다음엔 더 밝은 곳에서, 몸이 다 보이게 서 보세요.'
+                  : '이 판은 추세에서 빠집니다. 한 번 더 재는 쪽을 권해요.'}
+            </div>
+          </div>
+
+          {low && (
+            <div style={{ background: '#FAF7F0', borderRadius: 13, padding: '12px 14px', marginBottom: 14 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.75, wordBreak: 'keep-all' }}>
+                <b>{low} 팔</b>이 {gap}도 덜 올라갔어요 (왼 {g.armRaiseL}° · 오른 {g.armRaiseR}°).
+                추세는 잘 올라가는 쪽으로 보고, 양쪽 값은 따로 담아 둡니다.
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={onClose} style={bigBtn(true)}>결과 보기 →</button>
+            <button type="button" onClick={redo}
+              style={{ ...bigBtn(false), width: 'auto', flexShrink: 0, padding: '15px 18px', cursor: 'pointer' }}>
+              다시 재기
+            </button>
+          </div>
         </div>
       </Shell>
     );
   }
 
   const s = STEPS[step];
-  const ready = !msg;
-  const off = count > 0 || !!err;
+  const poseOk = !msg;
+  const running = count > 0 || ready > 0;
+  const off = running || !!err;
+  const ph = phase != null ? s.phases[phase] : null;
+  const total = stepSec(s);
   return (
     <Shell onClose={onClose} title={`각도기록 — ${step + 1}/2`} voice={voice} hasClips={hasClips} onVoice={flipVoice}>
       <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', borderRadius: 16,
@@ -335,25 +491,55 @@ export default function AngleCapture({ onDone, onClose }) {
         {/* 서 있을 자리 — 이 안에 몸이 들어오게 */}
         {/* 머리부터 골반까지 들어갈 자리. 다리까지 넣으려고 멀리 물러설 필요가 없다. */}
         <span style={{ position: 'absolute', left: '18%', right: '18%', top: '10%', bottom: '22%',
-          border: `2px dashed ${ready ? 'rgba(180,240,190,0.8)' : 'rgba(255,255,255,0.45)'}`,
+          border: `2px dashed ${poseOk ? 'rgba(180,240,190,0.8)' : 'rgba(255,255,255,0.45)'}`,
           borderRadius: 999, pointerEvents: 'none', transition: 'border-color .2s' }} />
         <span style={{ position: 'absolute', left: 0, right: 0, bottom: '15%', textAlign: 'center',
           fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,0.75)', pointerEvents: 'none' }}>
           이 안에 머리~골반이 들어오면 돼요
         </span>
 
+        {/* 위 문구 — 재는 중엔 '지금 무엇을 할 차례인지'가 맨 앞이다 */}
         <div style={{ position: 'absolute', left: 12, right: 12, top: 12, textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
-            color: msg ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
-            {msg || (count > 0 ? '그대로 천천히 움직여 주세요' : '좋아요, 그대로 계세요')}
-          </span>
+          {ph ? (
+            <span style={{ display: 'inline-block', background: 'rgba(28,26,23,0.86)', color: '#fff',
+              borderRadius: 16, padding: '9px 16px', maxWidth: '100%' }}>
+              <span style={{ display: 'block', fontSize: 14.5, fontWeight: 900, lineHeight: 1.3 }}>{ph.text}</span>
+              <span style={{ display: 'block', fontSize: 11, fontWeight: 700, opacity: 0.8, marginTop: 2 }}>{ph.sub}</span>
+            </span>
+          ) : (
+            <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
+              color: msg ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
+              {msg || (ready > 0 ? '곧 시작해요' : '좋아요, 그대로 계세요')}
+            </span>
+          )}
         </div>
 
-        {count > 0 && (
-          <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-            fontSize: 72, fontWeight: 900, color: 'rgba(255,255,255,0.92)',
-            textShadow: '0 2px 20px rgba(0,0,0,0.5)', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+        {/* 준비 카운트 — 갑자기 시작해 놀라는 일이 없게 */}
+        {ready > 0 && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+            <span style={{ fontSize: 92, fontWeight: 900, color: 'rgba(255,255,255,0.95)',
+              textShadow: '0 2px 24px rgba(0,0,0,0.55)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{ready}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.9)', marginTop: 6,
+              textShadow: '0 1px 10px rgba(0,0,0,0.6)' }}>자세를 잡아 주세요</span>
+          </div>
         )}
+
+        {/* 재는 중 — 남은 시간을 고리로, 잡힌 판을 점으로. 잘 되고 있다는 걸 눈으로 알게 */}
+        {count > 0 && ready === 0 && (
+          <div style={{ position: 'absolute', right: 12, bottom: 12, display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'rgba(28,26,23,0.72)', borderRadius: 999, padding: '5px 11px' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: got > 0 ? '#8FD69B' : '#E0554F',
+                animation: 'angleBlip 1s ease-in-out infinite' }} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>
+                {got > 0 ? '잡히는 중' : '안 잡히는 중'}
+              </span>
+            </span>
+            <Ring left={count} total={total} />
+          </div>
+        )}
+        <style>{'@keyframes angleBlip{0%,100%{opacity:1}50%{opacity:.25}}'}</style>
       </div>
 
       <div style={{ padding: '14px 4px 0' }}>
@@ -398,10 +584,27 @@ export default function AngleCapture({ onDone, onClose }) {
         )}
         {/* 자세가 맞으면 저절로 시작한다. 이 버튼은 기다리기 답답할 때 쓰는 자리다. */}
         <button type="button" onClick={start} disabled={off} style={bigBtn(!off)}>
-          {count > 0 ? `재는 중… ${count}` : ready ? '곧 시작해요 — 눌러서 바로 시작' : '자세를 맞춰 주세요'}
+          {running ? `재는 중… ${count}초` : poseOk ? '곧 시작해요 — 눌러서 바로 시작' : '자세를 맞춰 주세요'}
         </button>
       </div>
     </Shell>
+  );
+}
+
+// 남은 시간 고리 — 숫자만 크게 띄우면 그 숫자를 보려고 고개를 돌린다.
+function Ring({ left, total }) {
+  const r = 15, c = 2 * Math.PI * r;
+  const done = Math.max(0, Math.min(1, 1 - left / total));
+  return (
+    <span style={{ position: 'relative', width: 40, height: 40, display: 'inline-flex',
+      alignItems: 'center', justifyContent: 'center' }}>
+      <svg width="40" height="40" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx="20" cy="20" r={r} fill="rgba(28,26,23,0.72)" stroke="rgba(255,255,255,0.25)" strokeWidth="3.5" />
+        <circle cx="20" cy="20" r={r} fill="none" stroke="#F3D98A" strokeWidth="3.5" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c * (1 - done)} style={{ transition: 'stroke-dashoffset .1s linear' }} />
+      </svg>
+      <span style={{ position: 'relative', fontSize: 13, fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{left}</span>
+    </span>
   );
 }
 
