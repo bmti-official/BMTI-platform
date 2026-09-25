@@ -1156,6 +1156,7 @@ function Chip({ label, on, onClick, disabled }) {
 function AngleWeekStrip({ weeks, onAngle, t }) {
   const now = weeks[weeks.length - 1];
   const done = weeks.filter((w) => w.on).length;
+  const [pick, setPick] = useState(false);
   return (
     <div style={{ marginBottom: 14, padding: "14px 15px", borderRadius: 16, background: C.yellow }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -1166,20 +1167,19 @@ function AngleWeekStrip({ weeks, onAngle, t }) {
             {now.on ? `이번 주 다 쟀어요 · 최근 4주 중 ${done}번` : `이번 주 아직이에요 · 최근 4주 중 ${done}번`}
           </span>
         </span>
-        {!now.on && (
-          <button type="button" onClick={onAngle}
-            style={{ flexShrink: 0, border: "none", background: "#fff", cursor: "pointer", fontFamily: "inherit",
-              borderRadius: 999, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: GOLD,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
-            재러 가기 →
-          </button>
-        )}
+        {/* 셋을 늘 다 잴 필요는 없다. 오늘 보고 싶은 곳만 고를 수 있게 문을 하나 둔다. */}
+        <button type="button" onClick={() => setPick(true)}
+          style={{ flexShrink: 0, border: "none", background: "#fff", cursor: "pointer", fontFamily: "inherit",
+            borderRadius: 999, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: GOLD,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
+          {now.on ? "다시 재기" : "재러 가기 →"}
+        </button>
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         {weeks.map((w) => {
           const tap = w.now && !w.on;
           return (
-            <button key={w.week} type="button" onClick={tap ? onAngle : undefined}
+            <button key={w.week} type="button" onClick={tap ? () => setPick(true) : undefined}
               style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
                 border: "none", background: "transparent", padding: 0, fontFamily: "inherit",
                 cursor: tap ? "pointer" : "default" }}>
@@ -1196,6 +1196,81 @@ function AngleWeekStrip({ weeks, onAngle, t }) {
             </button>
           );
         })}
+      </div>
+      {pick && <AnglePartPick onClose={() => setPick(false)} onGo={(want) => { setPick(false); onAngle(want); }} t={t} />}
+    </div>
+  );
+}
+
+// 어디를 잴지 고르는 창.
+//
+// 셋을 다 재려면 서서 옷을 갖춰 입고 자리를 잡아야 한다. 매주 그걸 다 하긴 어렵다.
+// **목만 고르면 앉아서 잴 수 있다** — 귀와 어깨만 있으면 되기 때문이다.
+// 허리·어깨는 골반을 기준으로 재므로 서 있어야 하고, 그 사정을 창에 적어 둔다.
+const ANGLE_PARTS = [
+  { key: "neck", label: "목 세움", how: "앉아서도 돼요", note: "고개가 얼마나 앞으로 나왔는지" },
+  { key: "trunk", label: "허리 굽힘", how: "서서", note: "허리가 얼마나 숙여지는지" },
+  { key: "arm", label: "어깨 들림", how: "서서", note: "팔이 얼마나 올라가는지" },
+];
+function AnglePartPick({ onClose, onGo, t }) {
+  const [on, setOn] = useState(["neck", "trunk", "arm"]);
+  // 차례는 늘 목→허리→어깨로 두고, 켜고 끄기만 한다
+  const flip = (k) => setOn((p) => ANGLE_PARTS.map((a) => a.key)
+    .filter((x) => (x === k ? !p.includes(k) : p.includes(x))));
+  const sitting = on.length === 1 && on[0] === "neck";
+  const mins = on.includes("trunk") || on.includes("arm") ? "2분" : "1분";
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(20,18,14,0.42)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "22px 22px 0 0", padding: "20px 18px 24px" }}>
+        <div style={{ fontSize: 17, fontWeight: 900, color: C.ink, marginBottom: 4 }}>어디를 재 볼까요?</div>
+        <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, lineHeight: 1.7, marginBottom: 16, wordBreak: "keep-all" }}>
+          고른 것만 잽니다. 매주 같은 것만 재도 흐름은 그대로 이어져요.
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+          {ANGLE_PARTS.map((a) => {
+            const yes = on.includes(a.key);
+            return (
+              <button key={a.key} type="button" onClick={() => flip(a.key)}
+                style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left",
+                  border: "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 14, padding: "13px 14px",
+                  background: yes ? C.yellow : "#fff", boxShadow: yes ? `inset 0 0 0 2px ${t.accent}` : `inset 0 0 0 1px ${C.line}` }}>
+                <span style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, display: "flex", alignItems: "center",
+                  justifyContent: "center", fontSize: 13, fontWeight: 900,
+                  background: yes ? t.accent : "#F1EEE8", color: yes ? "#fff" : "#C6C0B5" }}>{yes ? "✓" : ""}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 900, color: C.ink }}>
+                    {a.label}
+                    <span style={{ fontSize: 11, fontWeight: 800, color: GOLD, marginLeft: 6 }}>{a.how}</span>
+                  </span>
+                  <span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: C.sub, marginTop: 2 }}>{a.note}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: sitting ? "#2E7D50" : C.sub, lineHeight: 1.7,
+          background: sitting ? "#EDF7F0" : "#FAF7F0", borderRadius: 12, padding: "11px 13px", marginBottom: 14, wordBreak: "keep-all" }}>
+          {on.length === 0 ? "하나 이상 골라 주세요."
+            : sitting ? "목만 고르셨네요. 앉은 그대로 재면 됩니다 — 귀와 어깨만 보이면 돼요."
+              : "허리·어깨는 골반을 기준으로 재요. 일어서서, 골반까지 화면에 들어오게 해 주세요."}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => onGo(ANGLE_PARTS.map((a) => a.key).filter((k) => on.includes(k)))}
+            disabled={on.length === 0}
+            style={{ flex: 1, padding: 15, borderRadius: 14, border: "none", cursor: on.length ? "pointer" : "default",
+              fontFamily: "inherit", fontSize: 15, fontWeight: 800,
+              background: on.length ? C.gold : "#F1EEE8", color: on.length ? "#fff" : "#C6C0B5" }}>
+            {on.length ? `${mins}이면 끝나요 — 시작` : "부위를 골라 주세요"}
+          </button>
+          <button type="button" onClick={onClose}
+            style={{ flexShrink: 0, padding: "15px 18px", borderRadius: 14, border: "none", cursor: "pointer",
+              fontFamily: "inherit", fontSize: 14, fontWeight: 800, background: "#fff", color: C.sub,
+              boxShadow: `inset 0 0 0 1px ${C.line}` }}>
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   );

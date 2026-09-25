@@ -6,19 +6,26 @@
 // 두 번 찍어 값 셋을 얻는다.
 //   측면 … 가만히 서기(목 숙임) → 허리 앞으로 굽히기(몸통 굽힘)
 //   정면 … 팔 옆으로 들어 올리기(어깨 들림)
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, frontOk, kneeStraight, seenWell,
+  neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, sideOkNeck, frontOk, kneeStraight, seenWell,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
 import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
 import { toCVA } from '../../lib/angleView';
+import { buildSteps, stepSec } from './anglePlan';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 const MAX_RETRY = 3;   // 세 번 연달아 안 잡히면 가이드를 다시 보여 준다
 const HOLD_MS = 1500;  // 자세가 이만큼 그대로면 저절로 시작한다
 const STUCK_MS = 6000; // 이만큼 계속 안 맞으면 '이대로 시작' 길을 연다
+// 화면에 세우는 칸 — 고른 부위만 나온다
+const TILE = [
+  { take: 'neck', label: '목 세움', val: (g) => toCVA(g.neckBend) },
+  { take: 'trunk', label: '허리 굽힘', val: (g) => g.trunkFlex },
+  { take: 'arm', label: '어깨 들림', val: (g) => g.armRaise },
+];
 const ARM_GAP = 18;    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
 const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로여야 한다
 
@@ -28,25 +35,6 @@ const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로�
 //   · 잘 되고 있나 궁금해 몸을 움직여 엉뚱한 자세가 찍혔다
 // 토막마다 **그 토막에 필요한 값만** 모은다. 서 있는 동안의 목 각도와
 // 굽히는 동안의 허리 각도가 섞이지 않는다.
-const STEPS = [
-  {
-    id: 'side', title: '옆으로 서 주세요',
-    how: '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.',
-    phases: [
-      { sec: 4, text: '가만히 서 계세요', sub: '목 각도를 재고 있어요', take: 'neck', voice: 'go1' },
-      { sec: 5, text: '천천히 허리를 굽혔다 펴세요', sub: '무릎은 편 채로요', take: 'trunk', voice: 'mid1' },
-    ],
-  },
-  {
-    id: 'front', title: '정면으로 서 주세요',
-    how: '화면을 마주 봅니다.\n두 팔을 옆으로 천천히 올렸다 내립니다.',
-    phases: [
-      { sec: 2, text: '팔을 내린 채로 기다려 주세요', sub: '곧 시작해요', take: null, voice: 'go2' },
-      { sec: 6, text: '두 팔을 옆으로 올렸다 내리세요', sub: '천천히, 끝까지 올려 보세요', take: 'arm', voice: 'mid2' },
-    ],
-  },
-];
-const stepSec = (st) => st.phases.reduce((n, p) => n + p.sec, 0);
 const READY_SEC = 3;   // '셋, 둘, 하나' — 준비할 틈을 준다
 
 // 관절 점 33개에서 자리만 꺼낸다. **사진이 아니라 좌표다** — 얼굴도 방도 남지 않는다.
@@ -56,7 +44,8 @@ const shapeOf = (pts) => (pts || []).map((q) => ({
   y: Math.round((q?.y ?? 0) * 1000) / 1000,
 }));
 
-export default function AngleCapture({ onDone, onClose }) {
+export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk', 'arm'] }) {
+  const STEPS = useMemo(() => buildSteps(want), [want]);
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
   const [msg, setMsg] = useState('');
   const [diag, setDiag] = useState(null);       // 무엇이 걸렸는지 — 안 될 때 볼 숫자
@@ -102,29 +91,34 @@ export default function AngleCapture({ onDone, onClose }) {
 
   // 한 프레임씩 보며 자세를 검사하고, 재는 중이면 값을 모은다.
   const check = (pts) => {
-    const side = step === 0;
+    const st = STEPS[step];
+    const side = !st || st.id === 'side';
+    const sitting = !!st?.sitting;
     // 허리를 굽히는 동안엔 머리가 화면 밖으로 나가기 쉽다.
     // 그때 재는 건 어깨~골반 기울기뿐이라 머리는 없어도 된다.
     const run0 = runRef.current;
     const bending = !!run0 && run0.ready === 0 && run0.take === 'trunk';
-    const dist = distanceOk(pts, { needHead: !bending });
-    const face = side ? sideOk(pts) : frontOk(pts);
+    // 앉아서 목만 잴 땐 골반이 없어도 된다. 허리·어깨는 골반을 기준으로 재므로 필요하다.
+    const dist = distanceOk(pts, { needHead: !bending, needHips: !sitting });
+    const face = side ? (sitting ? sideOkNeck(pts) : sideOk(pts)) : frontOk(pts);
     const seen = seenWell(pts, side
-      ? [[L.earL, L.earR], [L.shoulderL, L.shoulderR], [L.hipL, L.hipR]]
+      ? (sitting
+        ? [[L.earL, L.earR], [L.shoulderL, L.shoulderR]]
+        : [[L.earL, L.earR], [L.shoulderL, L.shoulderR], [L.hipL, L.hipR]])
       : [L.shoulderL, L.shoulderR, L.wristL, L.wristR, L.hipL, L.hipR]);
 
     // 고칠 것 하나만 짚는다. 여러 개를 쏟아 내면 무엇부터 할지 모른다.
     let why = '', cue = '';
     if (!dist.inFrame) {
       // 무엇이 빠졌는지 짚어 준다. '머리부터 골반까지'만 보면 이미 다 나와 있다고 여긴다.
-      why = !dist.hipIn
+      why = (!dist.hipIn && dist.needHips)
         ? '골반이 화면 밖이에요. 카메라를 낮추거나 한 걸음 뒤로 가 주세요'
-        : '머리가 화면 밖이에요. 카메라를 조금 올려 주세요';
+        : '머리와 어깨가 화면에 들어오게 해 주세요';
       cue = 'frame';
     }
     else if (!dist.ok) {
-      const near = dist.h <= 0.14;
-      why = near ? '조금 더 가까이 와 주세요' : '한 걸음만 뒤로 가 주세요';
+      const near = dist.h <= dist.lo * 1.4;
+      why = near ? '조금 더 가까이 와 주세요' : (sitting ? '조금만 물러나 주세요' : '한 걸음만 뒤로 가 주세요');
       cue = near ? 'near' : 'far';
     } else if (!face.ok) {
       why = side ? '몸을 옆으로 더 돌려 주세요' : '화면을 정면으로 봐 주세요';
@@ -198,7 +192,7 @@ export default function AngleCapture({ onDone, onClose }) {
   // 처음부터 들고 있으면 첫 화면이 느려진다.
   // 카메라는 재는 동안 내내 켜 둔다. step이 바뀔 때마다 껐다 켜면
   // 쉼터를 지날 때마다 미디어파이프를 다시 불러오느라 몇 초가 빈다.
-  const live = step >= 0 && step <= 1;
+  const live = step >= 0 && step < STEPS.length;
   useEffect(() => {
     if (!live) return undefined;
     let alive = true;
@@ -218,7 +212,7 @@ export default function AngleCapture({ onDone, onClose }) {
       }
       // 쉼터에선 보기만 한다. 검사와 판정은 최신 것을 ref로 읽는다 —
       // 효과가 다시 돌지 않으므로 여기 닫힌 값은 처음 것에 머문다.
-      if (stepRef.current === 0.5) { rafRef.current = requestAnimationFrame(loop); return; }
+      if (!Number.isInteger(stepRef.current)) { rafRef.current = requestAnimationFrame(loop); return; }
       if (pts) checkRef.current?.(pts); else setMsg('몸이 다 보이게 서 주세요');
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -279,53 +273,61 @@ export default function AngleCapture({ onDone, onClose }) {
     const run = runRef.current;
     runRef.current = null;
     if (!run) return;
+    const st = STEPS[step];
+    if (!st) return;
+    const takes = st.phases.map((p) => p.take).filter(Boolean);
+    const next = { ...gotRef.current };
 
-    if (step === 0) {
+    // 잰 토막마다 값이 나왔는지 본다. 하나라도 비면 넘어가지 않는다 —
+    // 예전엔 목만 잡히면 그대로 갔고, 굽히다 화면 밖으로 나간 사람은 0이 기록됐다.
+    if (takes.includes('neck')) {
       // 가만히 선 자세는 '가장 곧았던' 값을 쓴다. 굽히는 동안의 값이 섞이면 안 된다.
-      const neck = run.neck.length ? Math.round(Math.min(...run.neck.map((s) => s.v)) * 10) / 10 : 0;
+      const neck = run.neck.length ? Math.round(Math.min(...run.neck.map((x) => x.v)) * 10) / 10 : 0;
+      if (!neck) { again('목 각도가 안 잡혔어요. 처음 4초는 가만히 계셔야 해요.'); return; }
+      next.neckBend = neck;
+    }
+    if (takes.includes('trunk')) {
       const trunk = peakOf(run.trunk);
-      // **둘 중 하나라도 비면 넘어가지 않는다.** 예전엔 목만 잡히면 그대로 갔고,
-      // 굽히는 동안 화면 밖으로 나간 사람은 허리 값이 0인 채로 기록됐다.
-      if (!neck && !trunk) { again(); return; }
       if (!trunk) {
         again('허리 굽힘이 안 잡혔어요. 굽힐 때 골반이 화면에 남아 있어야 해요 — 한 걸음 뒤로 가서 다시 해 볼까요?');
         return;
       }
-      if (!neck) {
-        again('목 각도가 안 잡혔어요. 처음 4초는 가만히 서 계셔야 해요.');
-        return;
-      }
-      gotRef.current = { ...gotRef.current, neckBend: neck, trunkFlex: trunk, seenSide: run.seen, kneeBad: run.kneeBad, pose: run.pose || null };
-      setVals(gotRef.current);
-      tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
-      badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
-      setCount(0); setReady(0); setPhase(null); setGot(0);
+      next.trunkFlex = trunk;
+      next.kneeBad = run.kneeBad;
+    }
+    if (takes.includes('arm')) {
+      const arm = peakOf(run.arm);
+      if (!arm) { again('어깨 들림이 안 잡혔어요. 두 팔이 화면에 다 들어와야 해요.'); return; }
+      next.armRaise = arm;
+      next.armRaiseL = peakOf(run.armL) || null;
+      next.armRaiseR = peakOf(run.armR) || null;
+    }
+    if (st.id === 'side') { next.seenSide = run.seen; next.pose = run.pose || null; }
+    else { next.seenFront = run.seen; next.poseFront = run.pose || null; }
+
+    gotRef.current = next;
+    setVals(next);
+    tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+    badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
+    setCount(0); setReady(0); setPhase(null); setGot(0);
+
+    // 아직 잴 판이 남았으면 쉼터로. 몸을 돌릴 틈도 없이 다음 판이 시작되면 뒤죽박죽이 된다.
+    if (step < STEPS.length - 1) {
       say('next', { force: true });
-      // 바로 정면으로 넘기지 않는다. 몸을 돌릴 틈도 없이 다음 판이 시작되면
-      // 뒤죽박죽이 된다 — 무엇을 쟀고 다음에 뭘 할지 보여 주고 기다린다.
-      setStep(0.5);
+      setStep(step + 0.5);
       return;
     }
-    const arm = peakOf(run.arm);
-    if (!arm) { again('어깨 들림이 안 잡혔어요. 두 팔이 화면에 다 들어와야 해요.'); return; }
-    const all = {
-      ...gotRef.current, armRaise: arm,
-      armRaiseL: peakOf(run.armL) || null, armRaiseR: peakOf(run.armR) || null,
-      seenFront: run.seen, poseFront: run.pose || null,
-    };
+
+    const seen = [next.seenSide, next.seenFront].filter((v) => v != null);
     const quality = qualityOf({
-      seen: Math.min(all.seenSide ?? 0, all.seenFront ?? 0),
-      kneeOk: (all.kneeBad ?? 0) < 20,
+      seen: seen.length ? Math.min(...seen) : 0,
+      kneeOk: (next.kneeBad ?? 0) < 20,
       retries: retry,
     });
-    gotRef.current = all;
-    setVals(all);
-    tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
     setLastQuality(quality);
-    setCount(0); setReady(0); setPhase(null); setGot(0);
     say('done', { force: true });
-    setStep(2);
-    if (onDone) onDone({ ...all, quality, retries: retry });
+    setStep(STEPS.length);
+    if (onDone) onDone({ ...next, quality, retries: retry, want });
   };
 
   const flipVoice = () => { const v = !voice; setVoice(v); setQuiet(!v); };
@@ -456,36 +458,42 @@ export default function AngleCapture({ onDone, onClose }) {
   }
 
   // 옆모습을 마친 뒤 — 몸을 돌릴 틈을 주고, 방금 무엇을 쟀는지 보여 준다
-  if (step === 0.5) {
+  if (!Number.isInteger(step) && step > 0) {
     const g = vals;
+    const done = STEPS[Math.floor(step)];
+    const nxt = STEPS[Math.ceil(step)];
+    const shown = done.phases.map((p) => p.take).filter(Boolean)
+      .map((k) => TILE.find((x) => x.take === k)).filter(Boolean);
     return (
-      <Shell onClose={onClose} title="각도기록 — 1/2 끝" voice={voice} hasClips={hasClips} onVoice={flipVoice}>
+      <Shell onClose={onClose} title={`각도기록 — ${Math.floor(step) + 1}/${STEPS.length} 끝`} voice={voice} hasClips={hasClips} onVoice={flipVoice}>
         <div style={{ padding: '18px 4px 0' }}>
-          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 10 }}>옆모습 다 쟀어요</div>
+          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 10 }}>
+            {done.id === 'side' ? '옆모습' : '앞모습'} 다 쟀어요
+          </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-            {[['목 세움', toCVA(g.neckBend)], ['허리 굽힘', g.trunkFlex]].map(([lb, v]) => (
-              <div key={lb} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: GOLD_INK }}>{lb}</div>
+            {shown.map((x) => (
+              <div key={x.take} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: GOLD_INK }}>{x.label}</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: INK, fontVariantNumeric: 'tabular-nums' }}>
-                  {v ? `${v}°` : '—'}
+                  {x.val(g) ? `${x.val(g)}°` : '—'}
                 </div>
               </div>
             ))}
           </div>
           <div style={{ fontSize: 13, color: INK, fontWeight: 700, lineHeight: 1.85, marginBottom: 8 }}>
-            이제 <b>정면</b>으로 섭니다.
+            이제 <b>{nxt.title}</b>
           </div>
-          <div style={{ fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.85, marginBottom: 20 }}>
-            화면을 마주 보고 서세요. 준비되면 두 팔을 <b>옆으로 천천히 올렸다 내립니다</b>.
-            <br />팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. <b>억지로 올리지 말고</b> 올라가는 만큼만요 — 양쪽을 따로 담습니다.
+          <div style={{ fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.85, whiteSpace: 'pre-line', marginBottom: 20 }}>
+            {nxt.how}
+            {nxt.id === 'front' && '\n팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. 억지로 올리지 말고 올라가는 만큼만요 — 양쪽을 따로 담습니다.'}
           </div>
-          <button type="button" onClick={() => setStep(1)} style={bigBtn(true)}>준비됐어요 →</button>
+          <button type="button" onClick={() => setStep(Math.ceil(step))} style={bigBtn(true)}>준비됐어요 →</button>
         </div>
       </Shell>
     );
   }
 
-  if (step === 2) {
+  if (step >= STEPS.length) {
     const g = vals;
     const gap = g.armRaiseL != null && g.armRaiseR != null
       ? Math.round(Math.abs(g.armRaiseL - g.armRaiseR) * 10) / 10 : null;
@@ -498,11 +506,11 @@ export default function AngleCapture({ onDone, onClose }) {
         <div style={{ padding: '18px 4px 0' }}>
           <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 12 }}>다 쟀어요</div>
           <div style={{ display: 'flex', gap: 7, marginBottom: 14 }}>
-            {[['목 세움', toCVA(g.neckBend)], ['허리 굽힘', g.trunkFlex], ['어깨 들림', g.armRaise]].map(([lb, v]) => (
-              <div key={lb} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 6px', textAlign: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: GOLD_INK }}>{lb}</div>
+            {TILE.filter((x) => want.includes(x.take)).map((x) => (
+              <div key={x.take} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: GOLD_INK }}>{x.label}</div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: INK, fontVariantNumeric: 'tabular-nums' }}>
-                  {v ? `${v}°` : '—'}
+                  {x.val(g) ? `${x.val(g)}°` : '—'}
                 </div>
               </div>
             ))}
@@ -569,8 +577,18 @@ export default function AngleCapture({ onDone, onClose }) {
   const off = running || !!err;
   const ph = phase != null ? s.phases[phase] : null;
   const total = stepSec(s);
+  const sideNow = s.id === 'side';
+  const sitting = !!s.sitting;
+  // 통과·실패만 보여 주면 어느 쪽으로 더 돌아야 하는지 모른다. 0~1로 바꿔 막대로 보인다.
+  const squareness = (() => {
+    if (!diag) return 0;
+    const v = diag.face;
+    if (!sideNow) return Math.max(0, Math.min(1, (v - 0.2) / 0.55));     // 클수록 정면
+    const cap = sitting ? 1.0 : 0.52;
+    return Math.max(0, Math.min(1, 1 - v / (cap * 1.9)));                 // 작을수록 옆모습
+  })();
   return (
-    <Shell onClose={onClose} title={`각도기록 — ${step + 1}/2`} voice={voice} hasClips={hasClips} onVoice={flipVoice}>
+    <Shell onClose={onClose} title={`각도기록 — ${step + 1}/${STEPS.length}`} voice={voice} hasClips={hasClips} onVoice={flipVoice}>
       <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', borderRadius: 16,
         overflow: 'hidden', background: '#111' }}>
         <video ref={videoRef} playsInline muted
@@ -578,16 +596,51 @@ export default function AngleCapture({ onDone, onClose }) {
         <canvas ref={canvasRef}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
 
-        {/* 서 있을 자리 — 이 안에 몸이 들어오게 */}
-        {/* 머리부터 골반까지 들어갈 자리. 다리까지 넣으려고 멀리 물러설 필요가 없다. */}
-        <span style={{ position: 'absolute', left: '18%', right: '18%',
-          top: ph && ph.take === 'trunk' ? '4%' : '10%', bottom: ph && ph.take === 'trunk' ? '8%' : '22%',
-          border: `2px dashed ${poseOk ? 'rgba(180,240,190,0.8)' : 'rgba(255,255,255,0.45)'}`,
-          borderRadius: 999, pointerEvents: 'none', transition: 'border-color .2s' }} />
-        <span style={{ position: 'absolute', left: 0, right: 0, bottom: '15%', textAlign: 'center',
-          fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,0.75)', pointerEvents: 'none' }}>
-          {ph && ph.take === 'trunk' ? '골반만 이 안에 있으면 돼요' : '이 안에 머리~골반이 들어오면 돼요'}
-        </span>
+        {/* 서 있을 자리 — 임상 앱들이 쓰는 정렬 바.
+            타원 하나만 두면 '어디에 맞춰야 하나'가 안 보인다.
+            위·아래 바 사이에 몸을 넣고, 가운데 세로선에 몸 중심을 맞춘다. */}
+        {(() => {
+          const trunkNow = ph && ph.take === 'trunk';
+          const top = trunkNow ? 4 : 10;
+          const bot = trunkNow ? 8 : 22;
+          const col = poseOk ? 'rgba(140,225,155,0.95)' : 'rgba(255,255,255,0.6)';
+          const bar = { position: 'absolute', left: '12%', right: '12%', height: 3, background: col,
+            borderRadius: 2, pointerEvents: 'none', transition: 'background .2s, top .3s, bottom .3s' };
+          return (
+            <>
+              <span style={{ ...bar, top: `${top}%` }} />
+              <span style={{ ...bar, bottom: `${bot}%` }} />
+              <span style={{ position: 'absolute', left: '50%', top: `${top}%`, bottom: `${bot}%`, width: 1,
+                marginLeft: -0.5, background: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
+              {[['12%', 'left'], ['12%', 'right']].map(([v, side]) => (
+                <span key={side} style={{ position: 'absolute', [side]: v, top: `${top}%`, bottom: `${bot}%`,
+                  width: 2, background: 'rgba(255,255,255,0.28)', pointerEvents: 'none' }} />
+              ))}
+              <span style={{ position: 'absolute', left: 0, right: 0, bottom: `${bot - 7}%`, textAlign: 'center',
+                fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,0.8)', pointerEvents: 'none' }}>
+                {trunkNow ? '골반만 두 선 사이에 있으면 돼요'
+                  : sitting ? '귀와 어깨가 두 선 사이에 들어오면 돼요'
+                    : '머리~골반이 두 선 사이에 들어오면 돼요'}
+              </span>
+            </>
+          );
+        })()}
+
+        {/* 얼마나 옆으로(정면으로) 섰는지 — 통과·실패만 알려 주면 어느 쪽으로 돌지 모른다 */}
+        {diag && !running && (
+          <div style={{ position: 'absolute', left: 12, bottom: 12, background: 'rgba(28,26,23,0.72)',
+            borderRadius: 12, padding: '7px 10px', pointerEvents: 'none' }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>
+              {sideNow ? '옆으로 선 정도' : '정면으로 선 정도'}
+            </div>
+            <div style={{ width: 84, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 999,
+                width: `${Math.round(squareness * 100)}%`,
+                background: squareness > 0.72 ? '#8FD69B' : squareness > 0.45 ? '#F3D98A' : '#E88C84',
+                transition: 'width .15s, background .2s' }} />
+            </div>
+          </div>
+        )}
 
         {/* 위 문구 — 재는 중엔 '지금 무엇을 할 차례인지'가 맨 앞이다 */}
         <div style={{ position: 'absolute', left: 12, right: 12, top: 12, textAlign: 'center' }}>

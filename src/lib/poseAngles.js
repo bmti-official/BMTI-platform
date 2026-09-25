@@ -64,7 +64,22 @@ export const vis = (p) => p?.v ?? p?.visibility ?? 0;
  *  화면 밖 관절도 미디어파이프는 자리를 지어내서 내놓는다. 좌표만 보면
  *  '있다'고 읽히므로 **보이는 정도(visibility)를 같이** 본다.
  *  머리는 코가 안 잡혀도 귀가 잡히면 된다 — 옆모습에선 코가 자주 가린다. */
-export function distanceOk(pts, { needHead = true } = {}) {
+/** 목만 잴 때 쓰는 잣대 — 귀에서 어깨까지. 골반이 없어도 몸 크기를 알 수 있다.
+ *  앉아서 재면 책상에 골반이 가려 torsoLen을 못 쓴다. */
+export const headLen = (pts) => {
+  const ear = vis(pts[L.earR]) >= vis(pts[L.earL]) ? pts[L.earR] : pts[L.earL];
+  const sh = mid(pts[L.shoulderL], pts[L.shoulderR]);
+  return Math.hypot(ear.x - sh.x, ear.y - sh.y);
+};
+
+/** 앉아서 목만 잴 때 — 좌우 어깨가 겹쳐 보이는지만 본다. 골반은 안 본다. */
+export function sideOkNeck(pts) {
+  const t = headLen(pts) || 1;
+  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
+  return { ok: shoulder < 1.0, shoulder };
+}
+
+export function distanceOk(pts, { needHead = true, needHips = true } = {}) {
   const h = torsoLen(pts);
   const head = pts[L.nose];
   const hip = mid(pts[L.hipL], pts[L.hipR]);
@@ -75,9 +90,14 @@ export function distanceOk(pts, { needHead = true } = {}) {
   // 기울기뿐이라 머리는 없어도 된다 — 없다고 막으면 굽히는 내내 못 잰다.
   const headIn = headSeen && head.y > -0.03 && head.y < 1;
   const hipIn = hipSeen && hip.y > 0 && hip.y < 1.02;
-  const inFrame = (needHead ? headIn : shSeen) && hipIn;
+  // 목만 잴 땐 골반이 없어도 된다 — 앉아서 재면 책상에 가린다.
+  const inFrame = (needHead ? headIn : shSeen) && (needHips ? hipIn : shSeen);
   // 0.62는 좁았다. 가까이 서서 상체만 담아도 잴 수 있어야 한다.
-  return { ok: inFrame && h > 0.10 && h < 0.80, h, inFrame, headIn, hipIn, needHead, headY: head.y, hipY: hip.y };
+  // 몸 크기 잣대도 갈아 끼운다. 골반이 없으면 귀~어깨로 잰다.
+  const size = needHips ? h : headLen(pts);
+  const lo = needHips ? 0.10 : 0.05;
+  const hi = needHips ? 0.80 : 0.45;
+  return { ok: inFrame && size > lo && size < hi, h: size, lo, hi, inFrame, headIn, hipIn, needHead, needHips, headY: head.y, hipY: hip.y };
 }
 
 /** 측면으로 제대로 섰나. 좌우 어깨가 겹쳐 보여야 옆모습이다.

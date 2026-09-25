@@ -49,6 +49,7 @@ export default function DiaryPreview() {
   const [justSaved, setJustSaved] = useState(null); // 방금 적은 것 — 캘린더로 돌아가 팝업을 띄운다
   const [reportTab, setReportTab] = useState('records');
   const [round, setRound] = useState(0);      // 연습을 처음부터 다시 돌릴 때
+  const [want, setWant] = useState(['neck', 'trunk', 'arm']);   // 고른 측정 부위
   const checks = useMemo(() => fakeWeeks(weeks), [weeks]);
 
   // 연습 모드 — 미리보기를 여는 동안만 켠다.
@@ -75,7 +76,7 @@ export default function DiaryPreview() {
     <DiaryWriteFlow
       tagCats={TAG_CATEGORIES}
       dropBlock={['sitting']}
-      onAngle={() => setScreen('capture')}
+      onAngle={(w) => { setWant(w || ['neck', 'trunk', 'arm']); setScreen('capture'); }}
       initialPhase="form"
       initialDayMood={writing.mood}
       initialEntry={writing.entry}
@@ -198,7 +199,7 @@ export default function DiaryPreview() {
       )}
 
       {screen === 'capture' && (
-        <AngleCapture onClose={() => setScreen('angle')} onDone={() => {}} />
+        <AngleCapture want={want} onClose={() => setScreen('angle')} onDone={() => {}} />
       )}
 
       {screen && screen !== 'capture' && screen !== 'report' && (
