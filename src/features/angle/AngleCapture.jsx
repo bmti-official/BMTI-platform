@@ -17,6 +17,7 @@ const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 const MAX_RETRY = 3;   // 세 번 연달아 안 잡히면 가이드를 다시 보여 준다
 const HOLD_MS = 1500;  // 자세가 이만큼 그대로면 저절로 시작한다
+const STUCK_MS = 6000; // 이만큼 계속 안 맞으면 '이대로 시작' 길을 연다
 
 const STEPS = [
   {
@@ -40,7 +41,12 @@ const shapeOf = (pts) => (pts || []).map((q) => ({
 
 export default function AngleCapture({ onDone, onClose }) {
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
-  const [msg, setMsg] = useState('');            // 지금 무엇을 고쳐야 하는지
+  const [msg, setMsg] = useState('');
+  const [diag, setDiag] = useState(null);       // 무엇이 걸렸는지 — 안 될 때 볼 숫자
+  const [showDiag, setShowDiag] = useState(false);
+  const [stuck, setStuck] = useState(false);    // 오래 막혔나 — 빠져나갈 길을 연다
+  const badSinceRef = useRef(0);
+  const stuckRef = useRef(false);            // 지금 무엇을 고쳐야 하는지
   const [count, setCount] = useState(0);         // 남은 초
   const [retry, setRetry] = useState(0);
   const [err, setErr] = useState('');
@@ -68,12 +74,18 @@ export default function AngleCapture({ onDone, onClose }) {
     const dist = distanceOk(pts);
     const face = side ? sideOk(pts) : frontOk(pts);
     const seen = seenWell(pts, side
-      ? [L.earL, L.earR, L.shoulderL, L.shoulderR, L.hipL, L.hipR]
+      ? [[L.earL, L.earR], [L.shoulderL, L.shoulderR], [L.hipL, L.hipR]]
       : [L.shoulderL, L.shoulderR, L.wristL, L.wristR, L.hipL, L.hipR]);
 
     // 고칠 것 하나만 짚는다. 여러 개를 쏟아 내면 무엇부터 할지 모른다.
     let why = '', cue = '';
-    if (!dist.inFrame) { why = '머리부터 골반까지 화면에 들어오게 해 주세요'; cue = 'frame'; }
+    if (!dist.inFrame) {
+      // 무엇이 빠졌는지 짚어 준다. '머리부터 골반까지'만 보면 이미 다 나와 있다고 여긴다.
+      why = !dist.hipIn
+        ? '골반이 화면 밖이에요. 카메라를 낮추거나 한 걸음 뒤로 가 주세요'
+        : '머리가 화면 밖이에요. 카메라를 조금 올려 주세요';
+      cue = 'frame';
+    }
     else if (!dist.ok) {
       const near = dist.h <= 0.14;
       why = near ? '조금 더 가까이 와 주세요' : '한 걸음만 뒤로 가 주세요';
@@ -83,12 +95,25 @@ export default function AngleCapture({ onDone, onClose }) {
       cue = side ? 'turn' : 'face';
     } else if (seen < 0.5) { why = '밝은 곳에서 몸이 다 보이게 서 주세요'; cue = 'frame'; }
     setMsg(why);
+    setDiag({
+      h: dist.h, headIn: dist.headIn, hipIn: dist.hipIn,
+      face: side ? face.shoulder : face.shoulder, seen, side,
+    });
     // 무엇이 어긋났는지 바뀔 때만 한 번 말한다. 같은 말이 이어지면 듣기 싫어진다.
     if (why) say(cue);
 
     // 자세가 그대로 이어지면 저절로 시작한다 — 버튼을 누르러 오가면 자세가 흐트러진다
     if (!runRef.current) {
-      if (why) { okSinceRef.current = 0; return; }
+      if (why) {
+        okSinceRef.current = 0;
+        // 여섯 해를 세도 안 맞으면 빠져나갈 길을 연다
+        if (!badSinceRef.current) badSinceRef.current = performance.now();
+        else if (performance.now() - badSinceRef.current > STUCK_MS && !stuckRef.current) {
+          stuckRef.current = true; setStuck(true);
+        }
+        return;
+      }
+      badSinceRef.current = 0;
       const t0 = performance.now();
       if (!okSinceRef.current) {
         okSinceRef.current = t0;
@@ -337,6 +362,40 @@ export default function AngleCapture({ onDone, onClose }) {
           {s.how}
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
+
+        {/* 오래 막히면 빠져나갈 길을 연다. 검사가 완벽할 수 없으니 막다른 길은 두지 않는다. */}
+        {stuck && !off && (
+          <div style={{ background: '#FDF6DC', borderRadius: 13, padding: '11px 13px', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#8A6A3A', lineHeight: 1.7, wordBreak: 'keep-all' }}>
+              자세가 계속 안 맞나요? <b>이대로 시작</b>해도 됩니다. 값이 많이 흔들리면 그 판은 추세에서 빠져요.
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
+              <button type="button" onClick={start}
+                style={{ border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999,
+                  padding: '7px 14px', fontSize: 12, fontWeight: 800, color: '#8A6A3A', boxShadow: '0 2px 7px rgba(0,0,0,0.1)' }}>
+                이대로 시작 →
+              </button>
+              <button type="button" onClick={() => setShowDiag((v) => !v)}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 11.5, fontWeight: 800, color: SUB }}>
+                {showDiag ? '숫자 접기' : '무엇이 걸렸는지 보기'}
+              </button>
+            </div>
+            {showDiag && diag && (
+              <div style={{ fontSize: 11, color: SUB, fontWeight: 700, lineHeight: 1.8, marginTop: 9,
+                fontVariantNumeric: 'tabular-nums' }}>
+                몸 크기 {diag.h.toFixed(2)} <span style={{ color: diag.h > 0.10 && diag.h < 0.80 ? '#2E7D50' : '#B23B36' }}>
+                  (0.10~0.80이면 통과)</span>
+                <br />머리 {diag.headIn ? '보임' : '화면 밖'} · 골반 {diag.hipIn ? '보임' : '화면 밖'}
+                <br />{diag.side ? '옆으로 선 정도' : '정면으로 선 정도'} {diag.face.toFixed(2)}
+                <span style={{ color: (diag.side ? diag.face < 0.52 : diag.face > 0.55) ? '#2E7D50' : '#B23B36' }}>
+                  {diag.side ? ' (0.52 미만이면 통과)' : ' (0.55 넘으면 통과)'}</span>
+                <br />또렷하게 잡힌 정도 {diag.seen.toFixed(2)}
+                <span style={{ color: diag.seen >= 0.5 ? '#2E7D50' : '#B23B36' }}> (0.50 넘으면 통과)</span>
+              </div>
+            )}
+          </div>
+        )}
         {/* 자세가 맞으면 저절로 시작한다. 이 버튼은 기다리기 답답할 때 쓰는 자리다. */}
         <button type="button" onClick={start} disabled={off} style={bigBtn(!off)}>
           {count > 0 ? `재는 중… ${count}` : ready ? '곧 시작해요 — 눌러서 바로 시작' : '자세를 맞춰 주세요'}

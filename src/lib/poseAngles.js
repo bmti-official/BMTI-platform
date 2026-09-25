@@ -48,16 +48,26 @@ export function angleAt(a, center, b) {
 export const torsoLen = (pts) =>
   Math.abs(mid(pts[L.shoulderL], pts[L.shoulderR]).y - mid(pts[L.hipL], pts[L.hipR]).y);
 
+export const vis = (p) => p?.v ?? p?.visibility ?? 0;
+
 /** 거리 — 재는 데 필요한 건 머리부터 골반까지다. 무릎·발목은 없어도 된다.
  *  그래서 온몸이 다 들어오지 않아도 괜찮고, 가까이 서도 된다.
- *  너무 가까우면 렌즈가 휘어 각도가 어긋나므로 그때만 물린다. */
+ *  너무 가까우면 렌즈가 휘어 각도가 어긋나므로 그때만 물린다.
+ *
+ *  화면 밖 관절도 미디어파이프는 자리를 지어내서 내놓는다. 좌표만 보면
+ *  '있다'고 읽히므로 **보이는 정도(visibility)를 같이** 본다.
+ *  머리는 코가 안 잡혀도 귀가 잡히면 된다 — 옆모습에선 코가 자주 가린다. */
 export function distanceOk(pts) {
   const h = torsoLen(pts);
   const head = pts[L.nose];
   const hip = mid(pts[L.hipL], pts[L.hipR]);
-  // 머리와 골반이 화면 안에 있는지 — 이 둘만 있으면 잴 수 있다
-  const inFrame = head && head.y > 0.02 && hip.y < 0.99;
-  return { ok: inFrame && h > 0.14 && h < 0.62, h, inFrame };
+  const headSeen = Math.max(vis(head), vis(pts[L.earL]), vis(pts[L.earR])) > 0.3;
+  const hipSeen = Math.max(vis(pts[L.hipL]), vis(pts[L.hipR])) > 0.3;
+  const headIn = headSeen && head.y > -0.03 && head.y < 1;
+  const hipIn = hipSeen && hip.y > 0 && hip.y < 1.02;
+  const inFrame = headIn && hipIn;
+  // 0.62는 좁았다. 가까이 서서 상체만 담아도 잴 수 있어야 한다.
+  return { ok: inFrame && h > 0.10 && h < 0.80, h, inFrame, headIn, hipIn, headY: head.y, hipY: hip.y };
 }
 
 /** 측면으로 제대로 섰나. 좌우 어깨가 겹쳐 보여야 옆모습이다.
@@ -66,7 +76,8 @@ export function sideOk(pts) {
   const t = torsoLen(pts) || 1;
   const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
   const hip = Math.abs(pts[L.hipL].x - pts[L.hipR].x) / t;
-  return { ok: shoulder < 0.38 && hip < 0.38, shoulder, hip };
+  // 0.38은 빡빡했다. 옆으로 잘 서 있어도 먼 쪽 어깨를 모델이 벌려 놓는 일이 잦다.
+  return { ok: shoulder < 0.52 && hip < 0.52, shoulder, hip };
 }
 
 /** 정면으로 제대로 섰나. 좌우 어깨가 벌어져 보여야 앞모습이다. */
@@ -86,9 +97,15 @@ export function kneeStraight(pts) {
   return Math.max(...vs) > 150;
 }
 
-/** 점이 얼마나 또렷하게 잡혔나(0~1). 낮으면 그 판은 버린다. */
+/** 점이 얼마나 또렷하게 잡혔나(0~1). 낮으면 그 판은 버린다.
+ *
+ *  짝으로 묶어서 본다. 옆모습에선 **먼 쪽 귀·어깨·골반이 몸에 가려** 늘 흐리게 잡히는데,
+ *  낱개로 최솟값을 보면 제대로 서 있어도 늘 떨어진다. 짝 중 하나만 또렷하면 된다. */
 export function seenWell(pts, want) {
-  const vs = want.map((i) => pts[i]?.v ?? 0);
+  const score = (w) => (Array.isArray(w)
+    ? Math.max(...w.map((i) => vis(pts[i])))
+    : vis(pts[w]));
+  const vs = want.map(score);
   return vs.length ? Math.min(...vs) : 0;
 }
 
