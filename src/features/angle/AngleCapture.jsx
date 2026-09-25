@@ -14,6 +14,8 @@ import {
 import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
 import { toCVA } from '../../lib/angleView';
 import { buildSteps, stepSec } from './anglePlan';
+import { useLevel } from './useLevel';
+import { recentChecks } from '../../lib/angleRecord';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -66,6 +68,20 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   useEffect(() => { autoRef.current = auto; }, [auto]);
   const tickRef = useRef(0);
   const [lastQuality, setLastQuality] = useState(0);   // 잘 잡혔는지 — 끝 화면에서 알려 준다
+  const { tilt, ask: askLevel, TILT_OK } = useLevel();
+  // 지난주 자세 — 재는 화면에 흐리게 깔아 같은 자리·같은 거리에 서기 쉽게
+  const [ghost, setGhost] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    recentChecks(3).then((rows) => {
+      if (!alive) return;
+      const hit = (rows || []).find((r) => Array.isArray(r.pose) && r.pose.length >= 25);
+      if (hit) setGhost({ pose: hit.pose, week: String(hit.week) });
+    });
+    return () => { alive = false; };
+  }, []);
+  const [ghostOn, setGhostOn] = useState(true);
+  const ghostRef = useRef(null);
   const [vals, setVals] = useState({});                // 담은 값 — 화면에 보여 줄 몫(ref는 그릴 때 못 읽는다)
   const [retry, setRetry] = useState(0);
   const [err, setErr] = useState('');
@@ -208,6 +224,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         const g = c.getContext('2d');
         c.width = v.videoWidth || 720; c.height = v.videoHeight || 960;
         g.clearRect(0, 0, c.width, c.height);
+        // 지난주 자세를 먼저 흐리게 — 그 위에 지금 자세가 겹친다
+        if (ghostRef.current) drawBones(g, ghostRef.current.pose, c.width, c.height, true);
         if (pts) drawBones(g, pts, c.width, c.height);
       }
       // 쉼터에선 보기만 한다. 검사와 판정은 최신 것을 ref로 읽는다 —
@@ -410,6 +428,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   useEffect(() => { stepRef.current = step; });
   useEffect(() => { checkRef.current = check; });
   useEffect(() => { startRef.current = start; });
+  // 지난주 자세는 옆모습 판에서만, 그리고 재기 전에만 깔아 준다.
+  // (앞모습은 자리가 다르고, 재는 동안엔 지금 자세만 보여야 한다)
+  useEffect(() => {
+    const st = STEPS[Math.floor(step)];
+    const wantGhost = ghostOn && st?.id === 'side' && count === 0 && ready === 0;
+    ghostRef.current = wantGhost ? ghost : null;
+  });
   useEffect(() => () => clearInterval(tickRef.current), []);
 
   // ── 화면 ────────────────────────────────────────────────
@@ -451,7 +476,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             color: GOLD_INK, fontWeight: 700, lineHeight: 1.75, marginBottom: 18 }}>
             사진과 영상은 <b>이 기기 밖으로 나가지 않습니다.</b><br />남는 건 각도 숫자뿐이에요.
           </div>
-          <button type="button" onClick={() => { tryRef.current = 0; setRetry(0); setStep(0); }} style={bigBtn(true)}>시작하기 →</button>
+          <button type="button" onClick={() => { askLevel(); tryRef.current = 0; setRetry(0); setStep(0); }} style={bigBtn(true)}>시작하기 →</button>
         </div>
       </Shell>
     );
@@ -480,6 +505,21 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
               </div>
             ))}
           </div>
+          {/* 이 판이 제대로 잡혔는지 여기서 본다. 다 끝나고서야 알면 되돌리기가 아깝다. */}
+          {g[done.id === 'side' ? 'pose' : 'poseFront'] && (
+            <div style={{ background: '#FAF7F0', borderRadius: 13, padding: '12px 10px', marginBottom: 16, textAlign: 'center' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 900, color: INK, marginBottom: 8 }}>이 자세로 쟀어요. 맞나요?</div>
+              <div style={{ width: 120, margin: '0 auto' }}>
+                <Stick pose={g[done.id === 'side' ? 'pose' : 'poseFront']} kind={done.id} />
+              </div>
+              <button type="button" onClick={() => setStep(Math.floor(step))}
+                style={{ marginTop: 6, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 12, fontWeight: 800, color: GOLD_INK, textDecoration: 'underline' }}>
+                이 판만 다시 재기
+              </button>
+            </div>
+          )}
+
           <div style={{ fontSize: 13, color: INK, fontWeight: 700, lineHeight: 1.85, marginBottom: 8 }}>
             이제 <b>{nxt.title}</b>
           </div>
@@ -626,6 +666,26 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           );
         })()}
 
+        {/* 휴대폰 수평 — 기울면 잰 각도가 통째로 그만큼 어긋난다 */}
+        {tilt && !running && (
+          <div style={{ position: 'absolute', right: 12, top: 56, background: tilt.ok ? 'rgba(28,26,23,0.72)' : 'rgba(178,59,54,0.88)',
+            borderRadius: 12, padding: '7px 10px', pointerEvents: 'none', textAlign: 'center' }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: 5 }}>휴대폰 수평</div>
+            <div style={{ position: 'relative', width: 62, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>
+              <span style={{ position: 'absolute', left: '50%', top: -3, width: 1, height: 12, background: 'rgba(255,255,255,0.5)' }} />
+              <span style={{ position: 'absolute', top: -2, width: 10, height: 10, borderRadius: '50%',
+                background: tilt.ok ? '#8FD69B' : '#fff',
+                left: `${Math.max(0, Math.min(52, 26 + Math.max(-26, Math.min(26, tilt.roll * 2))))}px`,
+                transition: 'left .12s' }} />
+            </div>
+            {!tilt.ok && (
+              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', marginTop: 5 }}>
+                {Math.abs(tilt.roll) > TILT_OK ? '좌우로 기울었어요' : '똑바로 세워 주세요'}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 얼마나 옆으로(정면으로) 섰는지 — 통과·실패만 알려 주면 어느 쪽으로 돌지 모른다 */}
         {diag && !running && (
           <div style={{ position: 'absolute', left: 12, bottom: 12, background: 'rgba(28,26,23,0.72)',
@@ -734,6 +794,14 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             : poseOk ? (auto ? '곧 시작해요 — 눌러서 바로 시작' : '눌러서 시작하기')
               : '자세를 맞춰 주세요'}
         </button>
+        {ghost && sideNow && (
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            marginTop: 11, fontSize: 12, fontWeight: 700, color: SUB, cursor: 'pointer' }}>
+            <input type="checkbox" checked={ghostOn} disabled={running}
+              onChange={(e) => setGhostOn(e.target.checked)} />
+            지난주 자세를 흐리게 겹쳐 보기
+          </label>
+        )}
         <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
           marginTop: 11, fontSize: 12, fontWeight: 700, color: SUB, cursor: 'pointer' }}>
           <input type="checkbox" checked={auto} disabled={running}
@@ -804,15 +872,15 @@ const bigBtn = (on) => ({
 
 // 몸에 선을 그려 준다 — 잘 잡히고 있다는 걸 눈으로 알 수 있게
 const BONES = [[11, 12], [11, 23], [12, 24], [23, 24], [11, 13], [13, 15], [12, 14], [14, 16], [23, 25], [25, 27], [24, 26], [26, 28]];
-function drawBones(g, pts, w, h) {
-  g.strokeStyle = 'rgba(180,240,190,0.85)';
-  g.lineWidth = Math.max(2, w / 220);
+function drawBones(g, pts, w, h, faint = false) {
+  g.strokeStyle = faint ? 'rgba(255,255,255,0.32)' : 'rgba(180,240,190,0.85)';
+  g.lineWidth = faint ? Math.max(2, w / 300) : Math.max(2, w / 220);
   BONES.forEach(([a, b]) => {
     const p = pts[a], q = pts[b];
     if (!p || !q || (p.visibility ?? p.v ?? 1) < 0.4) return;
     g.beginPath(); g.moveTo(p.x * w, p.y * h); g.lineTo(q.x * w, q.y * h); g.stroke();
   });
-  g.fillStyle = 'rgba(255,255,255,0.9)';
+  g.fillStyle = faint ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
   [0, 7, 8, 11, 12, 23, 24].forEach((i) => {
     const p = pts[i]; if (!p) return;
     g.beginPath(); g.arc(p.x * w, p.y * h, Math.max(3, w / 200), 0, Math.PI * 2); g.fill();
