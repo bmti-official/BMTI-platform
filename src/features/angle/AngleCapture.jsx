@@ -21,6 +21,7 @@ import { recentChecks, sundayOf } from '../../lib/angleRecord';
 import { loadAssets } from '../../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../../lib/angleLevels';
 import { resultLine, prevVal, viewVal } from './resultLine';
+import { allSetKeys, setKey, nearestShot } from '../../lib/angleShots';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -108,7 +109,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       const hit = (rows || []).find((r) => Array.isArray(r.pose) && r.pose.length >= 25);
       if (hit) setGhost({ pose: hit.pose, week: String(hit.week) });
     });
-    loadAssets([LEVELS_KEY, ...allImageKeys()]).then((m) => { if (alive) setShots(m || {}); });
+    loadAssets([LEVELS_KEY, ...allImageKeys(), ...allSetKeys()]).then((m) => { if (alive) setShots(m || {}); });
     return () => { alive = false; };
   }, []);
   const [more, setMore] = useState(false);        // 끝 화면 '자세히 보기'
@@ -707,7 +708,10 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       const lv = now == null ? null : levelOf(item, now, cuts);
       return {
         ...x, item, now, lv,
-        shot: pickImage(shots, item, who, lv),
+        // 목·허리는 각도별 그림 모음에서 가장 가까운 것, 팔은 단계 그림(한눈에 보는 자리)
+        shot: (x.take !== 'arm' && nearestShot(shots?.[setKey(x.take, who)]?.meta, now))
+          ? { url: nearestShot(shots[setKey(x.take, who)].meta, now).url, level: lv }
+          : pickImage(shots, item, who, lv),
         line: resultLine(x.take, now, prevVal(pastRows, x.take, thisWeek)),
       };
     });
@@ -742,6 +746,11 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                   <div style={{ fontSize: 14.5, fontWeight: 800, color: INK, lineHeight: 1.5, wordBreak: 'keep-all' }}>
                     {r.line}
                   </div>
+                  {r.take === 'arm' && g.armRaiseL != null && g.armRaiseR != null && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: SUB, marginTop: 3 }}>
+                      왼팔 {Math.round(g.armRaiseL)}° · 오른팔 {Math.round(g.armRaiseR)}°
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

@@ -16,6 +16,8 @@ import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { toView } from '../lib/angleView';
 import { loadAssets } from '../lib/appAssets';
+import { allSetKeys, setKey, nearestShot } from '../lib/angleShots';
+import ArmFigure from './ArmFigure';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
@@ -141,7 +143,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   const who = g.includes('female') || g.includes('여') ? 'female' : 'male';
   useEffect(() => {
     let alive = true;
-    loadAssets([LEVELS_KEY, ...allImageKeys()]).then((m) => { if (alive) setAsset(m || {}); });
+    loadAssets([LEVELS_KEY, ...allImageKeys(), ...allSetKeys()]).then((m) => { if (alive) setAsset(m || {}); });
     return () => { alive = false; };
   }, []);
   const cuts = readCuts(asset?.[LEVELS_KEY]?.meta);
@@ -174,7 +176,17 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   // 목은 옆에서, 어깨는 앞에서 봐야 하는데 한 장으로는 둘을 같이 담을 수 없다.
   const shotItem = LEVEL_ITEMS.find((x) => x.key === open) || null;
   const shotLv = shotItem ? levelOf(shotItem, valOf(shotItem.key), cuts) : null;
-  const shot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
+  // 목·허리 — 각도별 그림 모음이 있으면 손님 값과 가장 가까운 그림을 쓴다(단계 그림은 셋뿐이라
+  // 150도든 165도든 같은 그림이 나왔다). 모음이 비어 있으면 단계 그림으로 물러난다.
+  const near = shotItem && shotItem.short !== 'arm'
+    ? nearestShot(asset?.[setKey(shotItem.short, who)]?.meta, valOf(shotItem.key)) : null;
+  const levelShot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
+  const shot = near ? { url: near.url, level: shotLv, exact: true, angle: near.angle } : levelShot;
+  // 옆으로 팔 들기 — 자세히 볼 때는 코드로 그린 사람이 왼팔·오른팔을 따로 든다.
+  // (단계 그림은 한 장에 팔 자세가 하나뿐이라 좌우 차이를 보여 줄 수 없다)
+  const armRow = lastOf('arm_raise'), armPrev = prevOf('arm_raise');
+  const sideOf = (row, k) => (row ? num(row[k]) ?? num(row.arm_raise) : null);
+  const armFig = open === 'arm_raise' && armRow;
 
   return (
     <div style={{ background: '#fff', borderRadius: 20, padding: '18px 18px 20px', boxShadow: SHADOW, border: '1px solid #F1EEE8' }}>
@@ -196,7 +208,11 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
           오른쪽 항목을 누르면 그것만 강조되고, 자세한 내용도 그 자리에서 펼쳐진다. */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
         <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
-          {shot
+          {armFig
+            ? <ArmFigure left={sideOf(armRow, 'arm_raise_l')} right={sideOf(armRow, 'arm_raise_r')}
+                prevLeft={sideOf(armPrev, 'arm_raise_l')} prevRight={sideOf(armPrev, 'arm_raise_r')}
+                female={who === 'female'} accent={t.accentDeep} />
+            : shot
             ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} />
             : <Figure neck={tilt(lastOf('neck_bend'))} trunk={valOf('trunk_flex')} arm={valOf('arm_raise')}
                 ghostNeck={tilt(prevOf('neck_bend'))} t={t} sel={open} />}
@@ -274,12 +290,13 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
             </span>
           </>
         )}
-        {!shot && (open === 'trunk_flex' || open === 'arm_raise') && (
+        {!shot && !armFig && (open === 'trunk_flex' || open === 'arm_raise') && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 10, height: 3, borderRadius: 2, background: PURPLE }} />움직인 범위
           </span>
         )}
-        {shot && <span>{shotItem.view}으로 본 모습이에요</span>}
+        {armFig && <span>흐린 팔은 지난번이에요 · 왼팔·오른팔을 따로 쟀어요</span>}
+        {!armFig && shot && <span>{shotItem.view}으로 본 모습이에요</span>}
       </div>
     </div>
   );

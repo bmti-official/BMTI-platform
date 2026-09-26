@@ -33,6 +33,9 @@ function fakeWeeks(n) {
       neck_bend: Math.round((16 + i * 1.4 + (i % 2 ? 1.1 : -0.6)) * 10) / 10,
       trunk_flex: Math.round((72 - i * 2.2 + (i % 3 ? 1.5 : -1.2)) * 10) / 10,
       arm_raise: Math.round((148 - i * 1.8) * 10) / 10,
+      // 좌우 — 한쪽이 덜 올라가는 모습을 미리보기에서 볼 수 있게 오른팔을 낮춰 둔다
+      arm_raise_l: Math.round((148 - i * 1.8) * 10) / 10,
+      arm_raise_r: Math.round((128 - i * 2.4) * 10) / 10,
       quality: 82,
     });
   }

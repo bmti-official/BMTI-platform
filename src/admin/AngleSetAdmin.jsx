@@ -1,0 +1,252 @@
+// 각도별 그림 모음 — 그림을 올리면 코드가 각도를 재서 적어 둔다.
+//
+// AI 그림은 목표 각도를 정확히 지키지 못한다. 그래서 목표를 믿지 않고 올라온 그림을
+// 직접 잰다. 손님 화면에서는 손님 값과 가장 가까운 그림이 나온다.
+// 잰 값이 이상하면(뼈대가 엉뚱한 데 잡히면) 숫자를 손으로 고치면 된다.
+import { useEffect, useRef, useState } from 'react';
+import { INK, SUB, BG, box, btn } from './theme';
+import { uploadOne } from './upload';
+import { loadAssets, saveAsset } from '../lib/appAssets';
+import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, usableShots } from '../lib/angleShots';
+import { imgKey } from '../lib/angleLevels';
+import { measureImage } from '../features/angle/measureImage';
+
+const GOLD = '#C9975A', GOLD_INK = '#8A6A3A', RED = '#B23B36', GREEN = '#2E7D50';
+const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+// 그 항목을 재는 데 쓰는 관절만 이어 그린다 — 무엇을 보고 쟀는지 눈으로 확인하게
+const BONES = {
+  neck: [[7, 11], [8, 12], [11, 23], [12, 24]],
+  trunk: [[11, 23], [12, 24], [23, 25], [24, 26], [11, 12], [23, 24]],
+};
+
+function Bones({ pts, kind }) {
+  if (!Array.isArray(pts) || pts.length < 25) return null;
+  const pairs = BONES[kind] || BONES.neck;
+  return (
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+      {pairs.map(([a, b]) => (pts[a] && pts[b] ? (
+        <g key={`${a}-${b}`}>
+          <line x1={pts[a].x * 100} y1={pts[a].y * 100} x2={pts[b].x * 100} y2={pts[b].y * 100}
+            stroke="#fff" strokeWidth="4" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+          <line x1={pts[a].x * 100} y1={pts[a].y * 100} x2={pts[b].x * 100} y2={pts[b].y * 100}
+            stroke="#7C6BD0" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+        </g>
+      ) : null))}
+    </svg>
+  );
+}
+
+export default function AngleSetAdmin() {
+  const [sets, setSets] = useState(null);           // { 키: { shots: [...] } }
+  const [item, setItem] = useState(SET_ITEMS[0]);
+  const [who, setWho] = useState('female');
+  const [busy, setBusy] = useState('');             // 지금 하는 일 — 화면에 띄운다
+  const [note, setNote] = useState('');
+  const [over, setOver] = useState(false);
+  const [probe, setProbe] = useState(70);           // 손님 값 흉내 — 어떤 그림이 나오는지
+  const fileRef = useRef(null);
+  const setsRef = useRef(null);
+  useEffect(() => { setsRef.current = sets; });
+
+  useEffect(() => {
+    let alive = true;
+    loadAssets(allSetKeys()).then((m) => {
+      if (!alive) return;
+      const out = {};
+      allSetKeys().forEach((k) => { out[k] = { shots: (m[k]?.meta?.shots) || [] }; });
+      setSets(out);
+    });
+    return () => { alive = false; };
+  }, []);
+
+  if (!sets) return <div style={{ ...box, fontSize: 13, color: SUB, marginBottom: 16 }}>불러오는 중…</div>;
+
+  const key = setKey(item.short, who);
+  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (Number(a.angle) || 999) - (Number(b.angle) || 999));
+  const cov = coverage(item, sets[key]);
+  const pick = nearestShot(sets[key], probe);
+
+  // 고칠 때마다 바로 담는다 — '저장'을 잊고 나가는 일이 없게
+  const commit = async (k, nextShots) => {
+    setSets((p) => ({ ...p, [k]: { shots: nextShots } }));
+    const r = await saveAsset(k, null, { shots: nextShots });
+    if (!r.ok) setNote(`저장 실패: ${r.why}`);
+  };
+  const latest = (k) => setsRef.current?.[k]?.shots || [];
+
+  const addFiles = async (files) => {
+    const list = [...files].filter((f) => /^image\//.test(f.type));
+    if (!list.length) return;
+    setNote('');
+    const k = key;
+    for (let i = 0; i < list.length; i += 1) {
+      setBusy(`${i + 1}/${list.length} 올리는 중…`);
+      const up = await uploadOne(list[i]);
+      if (up.err) { setNote(up.err); continue; }
+      setBusy(`${i + 1}/${list.length} 각도 재는 중…`);
+      const m = await measureImage(up.url, item.short);
+      const shot = { id: newId(), url: up.url, angle: m.angle ?? null, auto: m.angle != null, sure: m.sure ?? 0, pts: m.pts || null };
+      if (m.err) setNote(m.err);
+      await commit(k, [...latest(k), shot]);
+    }
+    setBusy('');
+  };
+
+  // 예전에 올린 단계 그림 3장을 가져와 잰다 — 버리지 않고 알맞은 자리에 끼운다
+  const importLevels = async () => {
+    const k = key;
+    const lv = await loadAssets([1, 2, 3].map((n) => imgKey(item.short, who, n)));
+    const urls = [1, 2, 3].map((n) => lv[imgKey(item.short, who, n)]?.url).filter(Boolean)
+      .filter((u) => !latest(k).some((s) => s.url === u));
+    if (!urls.length) { setNote('가져올 단계 그림이 없어요(이미 가져왔거나 비어 있어요).'); return; }
+    for (let i = 0; i < urls.length; i += 1) {
+      setBusy(`단계 그림 ${i + 1}/${urls.length} 재는 중…`);
+      const m = await measureImage(urls[i], item.short);
+      await commit(k, [...latest(k), { id: newId(), url: urls[i], angle: m.angle ?? null, auto: m.angle != null, sure: m.sure ?? 0, pts: m.pts || null }]);
+    }
+    setBusy('');
+  };
+
+  const remeasure = async (id) => {
+    const k = key;
+    const s = latest(k).find((x) => x.id === id);
+    if (!s) return;
+    setBusy('다시 재는 중…');
+    const m = await measureImage(s.url, item.short);
+    setBusy('');
+    if (m.err) { setNote(m.err); return; }
+    await commit(k, latest(k).map((x) => (x.id === id ? { ...x, angle: m.angle, auto: true, sure: m.sure, pts: m.pts } : x)));
+  };
+  const setAngle = (id, v) => {
+    const n = v === '' ? null : Number(v);
+    commit(key, latest(key).map((x) => (x.id === id ? { ...x, angle: Number.isFinite(n) ? n : null, auto: false } : x)));
+  };
+  const drop = (id) => {
+    if (!window.confirm('이 그림을 모음에서 뺄까요? (저장소 파일은 남습니다)')) return;
+    commit(key, latest(key).filter((x) => x.id !== id));
+  };
+
+  const tabBtn = (on) => ({
+    padding: '7px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+    fontSize: 12.5, fontWeight: 800, background: on ? GOLD : 'transparent', color: on ? '#fff' : SUB,
+  });
+  const pill = { display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, boxShadow: 'inset 0 0 0 1px #EDE9E2' };
+
+  return (
+    <div style={{ ...box, marginBottom: 16 }}>
+      <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>각도별 그림 모음</div>
+      <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8, marginBottom: 14 }}>
+        그림을 여러 장 <b>한꺼번에 끌어다 놓으면</b> 올리고 → <b>각도를 재서</b> → 담기까지 알아서 합니다.
+        <br />손님 화면에서는 손님 값과 <b>가장 가까운 그림</b>이 나옵니다. 목표 각도를 정확히 맞추지 않아도 됩니다 —
+        <b> 고르게 퍼져 있는 게</b> 더 중요합니다.
+        <br />보라색 선은 코드가 <b>무엇을 보고 쟀는지</b>입니다. 선이 엉뚱한 데 붙었으면 숫자를 직접 고쳐 주세요.
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={pill}>
+          {SET_ITEMS.map((x) => (
+            <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.short === x.short)}>{x.label}</button>
+          ))}
+        </div>
+        <div style={pill}>
+          {[['female', '여성'], ['male', '남성']].map(([k, lb]) => (
+            <button key={k} type="button" onClick={() => setWho(k)} style={tabBtn(who === k)}>{lb}</button>
+          ))}
+        </div>
+        <span style={{ alignSelf: 'center', fontSize: 12, fontWeight: 800, color: GOLD }}>
+          {item.label} · {item.view} · {usableShots(sets[key]).length}장
+        </span>
+      </div>
+
+      {/* 목표 각도마다 채워졌는지 — 빈 자리가 어디인지 한눈에 */}
+      <div style={{ ...box, background: BG, marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>
+          목표 각도 <span style={{ fontWeight: 700, color: SUB }}>— 초록은 가까운 그림이 있음, 회색은 빈 자리</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {cov.map((c) => (
+            <span key={c.target} style={{ fontSize: 12, fontWeight: 900, borderRadius: 999, padding: '4px 10px',
+              background: c.hit ? '#EDF7F0' : '#F1EEE8', color: c.hit ? GREEN : '#B4ADA2' }}>
+              {c.hit ? '✓ ' : ''}{c.target}°
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* 올리는 자리 */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => { e.preventDefault(); setOver(false); if (!busy) addFiles(e.dataTransfer.files || []); }}
+        onClick={() => { if (!busy) fileRef.current?.click(); }}
+        style={{ borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: busy ? 'default' : 'pointer', marginBottom: 12,
+          background: over ? '#FFF6E6' : '#fff', boxShadow: `inset 0 0 0 2px ${over ? GOLD : '#EDE9E2'}`, borderStyle: 'dashed' }}>
+        <div style={{ fontSize: 13.5, fontWeight: 900, color: busy ? GOLD_INK : INK }}>
+          {busy || `${item.label} ${who === 'female' ? '여성' : '남성'} 그림을 여기에 끌어다 놓으세요`}
+        </div>
+        {!busy && <div style={{ fontSize: 11.5, color: SUB, fontWeight: 600, marginTop: 4 }}>여러 장을 한꺼번에 놓아도 됩니다 · 눌러서 고르기</div>}
+        <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+          onChange={(e) => { addFiles(e.target.files || []); e.target.value = ''; }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
+        <button type="button" onClick={importLevels} disabled={!!busy} style={btn(false)}>
+          예전 단계 그림 3장 가져와 재기
+        </button>
+        {note && <span style={{ fontSize: 12, fontWeight: 700, color: RED }}>{note}</span>}
+      </div>
+
+      {/* 모은 그림 — 각도 순으로 */}
+      {shots.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))', gap: 12, marginBottom: 16 }}>
+          {shots.map((s) => {
+            const low = s.auto && (s.sure ?? 0) < 0.5;
+            const isPick = pick && pick.id === s.id;
+            return (
+              <div key={s.id} style={{ background: BG, borderRadius: 12, padding: 7,
+                boxShadow: isPick ? `inset 0 0 0 2px ${GOLD}` : 'none' }}>
+                <div style={{ position: 'relative', background: '#fff', borderRadius: 8, overflow: 'hidden', aspectRatio: '1 / 2' }}>
+                  <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
+                  <Bones pts={s.pts} kind={item.short} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                  <input type="number" value={s.angle ?? ''} placeholder="?"
+                    onChange={(e) => setAngle(s.id, e.target.value)}
+                    style={{ width: 56, fontFamily: 'inherit', fontSize: 14, fontWeight: 900, padding: '4px 6px',
+                      borderRadius: 8, border: `1px solid ${s.angle == null ? RED : '#EDE9E2'}` }} />
+                  <span style={{ fontSize: 12, fontWeight: 800, color: INK }}>°</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 800,
+                    color: s.angle == null ? RED : s.auto ? (low ? RED : GREEN) : GOLD_INK }}>
+                    {s.angle == null ? '못 잼' : s.auto ? (low ? '흐림' : '자동') : '손으로'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+                  <button type="button" onClick={() => remeasure(s.id)} disabled={!!busy}
+                    style={{ flex: 1, border: 'none', background: '#fff', borderRadius: 7, padding: '4px 0', cursor: 'pointer',
+                      fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: SUB }}>다시 재기</button>
+                  <button type="button" onClick={() => drop(s.id)}
+                    style={{ border: 'none', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer',
+                      fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: RED }}>빼기</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 손님 값을 흉내 내 어떤 그림이 나오는지 */}
+      {usableShots(sets[key]).length > 0 && (
+        <div style={{ ...box, background: BG }}>
+          <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 6 }}>
+            손님 값이 <span style={{ color: GOLD }}>{probe}°</span>면
+            → <span style={{ color: GOLD }}>{pick ? `${pick.angle}° 그림` : '—'}</span>이 나옵니다
+            <span style={{ fontWeight: 700, color: SUB }}> (노란 테두리)</span>
+          </div>
+          <input type="range" min={item.short === 'neck' ? 40 : 10} max={item.short === 'neck' ? 95 : 115} value={probe}
+            onChange={(e) => setProbe(Number(e.target.value))} style={{ width: '100%', accentColor: '#C9A227' }} />
+        </div>
+      )}
+    </div>
+  );
+}

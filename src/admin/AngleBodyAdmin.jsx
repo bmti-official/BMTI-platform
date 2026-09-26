@@ -6,11 +6,13 @@
 import { useEffect, useState } from 'react';
 import { INK, SUB, BG, box as box2, btn } from './theme';
 import ImageInput from './ImageInput';
+import AngleSetAdmin from './AngleSetAdmin';
 import { loadAssets, saveAsset } from '../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, DEFAULT_CUTS, readCuts, imgKey, allImageKeys } from '../lib/angleLevels';
 
 export default function AngleBodyAdmin() {
-  return <AngleLevelAdmin />;
+  // 목·허리는 각도별로 여러 장(가장 가까운 그림), 팔 들기는 단계 그림 3장을 쓴다
+  return <><AngleSetAdmin /><AngleLevelAdmin /></>;
 }
 
 // ── 단계별 그림 ────────────────────────────────────────────
