@@ -21,7 +21,7 @@ import { recentChecks, sundayOf } from '../../lib/angleRecord';
 import { loadAssets } from '../../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../../lib/angleLevels';
 import { resultLine, prevVal, viewVal } from './resultLine';
-import { allSetKeys, setKey, nearestShot } from '../../lib/angleShots';
+import { allSetKeys, setKey, nearestShot, nearestPair } from '../../lib/angleShots';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -702,16 +702,24 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     const cuts = readCuts(shots?.[LEVELS_KEY]?.meta);
     const who = /female|여/.test(String(gender || '').toLowerCase()) ? 'female' : 'male';
     const RAW = { neck: g.neckBend, trunk: g.trunkFlex, arm: g.armRaise };
+    const shotFor = (take, now, lv) => {
+      const meta = shots?.[setKey(take, who)]?.meta;
+      if (take === 'arm') {
+        const p = nearestPair(meta, g.armRaiseL ?? g.armRaise, g.armRaiseR ?? g.armRaise);
+        return p && { url: p.shot.url, level: lv, flip: p.flip };
+      }
+      const n = nearestShot(meta, now);
+      return n && { url: n.url, level: lv };
+    };
     const rows = TILE.filter((x) => want.includes(x.take)).map((x) => {
       const item = LEVEL_ITEMS.find((it) => it.short === x.take);
       const now = viewVal(x.take, RAW[x.take]);
       const lv = now == null ? null : levelOf(item, now, cuts);
       return {
         ...x, item, now, lv,
-        // 목·허리는 각도별 그림 모음에서 가장 가까운 것, 팔은 단계 그림(한눈에 보는 자리)
-        shot: (x.take !== 'arm' && nearestShot(shots?.[setKey(x.take, who)]?.meta, now))
-          ? { url: nearestShot(shots[setKey(x.take, who)].meta, now).url, level: lv }
-          : pickImage(shots, item, who, lv),
+        // 각도별 그림 모음에서 가장 가까운 것(팔은 왼팔·오른팔 짝으로, 필요하면 뒤집어서).
+        // 모음이 비어 있으면 단계 그림으로 물러난다.
+        shot: shotFor(x.take, now, lv) || pickImage(shots, item, who, lv),
         line: resultLine(x.take, now, prevVal(pastRows, x.take, thisWeek)),
       };
     });
@@ -732,7 +740,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {r.shot
                     ? <img src={r.shot.url} alt={`${r.label} ${LEVEL_NAME[r.shot.level]}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', transform: r.shot.flip ? 'scaleX(-1)' : 'none' }} />
                     : <span style={{ fontSize: 22 }}>📐</span>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -748,7 +756,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                   </div>
                   {r.take === 'arm' && g.armRaiseL != null && g.armRaiseR != null && (
                     <div style={{ fontSize: 12, fontWeight: 700, color: SUB, marginTop: 3 }}>
-                      왼팔 {Math.round(g.armRaiseL)}° · 오른팔 {Math.round(g.armRaiseR)}°
+                      오른팔 {Math.round(g.armRaiseR)}° · 왼팔 {Math.round(g.armRaiseL)}°
                     </div>
                   )}
                 </div>

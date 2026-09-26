@@ -35,7 +35,7 @@ const loadImg = (url) => new Promise((ok, bad) => {
 const r1 = (v) => Math.round(v * 10) / 10;
 
 /** 그림을 재서 { angle, pts, aspect, sure } 또는 { err }를 돌려준다.
- *  kind: 'neck' → 목의 정렬(CVA), 'trunk' → 허리 굽힘, 'arm' → 옆으로 팔 들기(큰 쪽)
+ *  kind: 'neck' → 목의 정렬(CVA), 'trunk' → 허리 굽힘, 'arm' → 옆으로 팔 들기(큰 쪽, l·r에 양쪽)
  *  sure: 관절이 또렷하게 잡혔는지(0~1). 낮으면 관리자가 숫자를 확인해야 한다. */
 export async function measureImage(url, kind) {
   let im;
@@ -54,7 +54,7 @@ export async function measureImage(url, kind) {
   const aspect = (im.naturalWidth || 1) / (im.naturalHeight || 1);
   const before = getFrameAspect();
   setFrameAspect(aspect);
-  let angle, sure;
+  let angle, sure, l = null, r = null, warn = null;
   const best = (a, b) => Math.max(vis(pts[a]), vis(pts[b]));
   if (kind === 'neck') {
     angle = r1(90 - neckBend(pts));
@@ -63,12 +63,16 @@ export async function measureImage(url, kind) {
     angle = r1(trunkFlex(pts));
     sure = Math.min(best(L.shoulderL, L.shoulderR), best(L.hipL, L.hipR));
   } else {
-    const { l, r } = armRaiseSides(pts);
-    angle = r1(Math.max(l, r));
-    sure = Math.min(best(L.wristL, L.wristR), best(L.shoulderL, L.shoulderR));
+    const sides = armRaiseSides(pts);
+    l = r1(sides.l); r = r1(sides.r);
+    angle = Math.max(l, r);
+    // 팔은 양쪽을 따로 보므로 두 손목·두 어깨가 모두 또렷해야 한다
+    sure = Math.min(vis(pts[L.wristL]), vis(pts[L.wristR]), vis(pts[L.shoulderL]), vis(pts[L.shoulderR]));
+    // 앞모습이면 그 사람의 왼어깨가 화면 오른쪽에 있다. 반대면 뒷모습이거나 좌우를 헷갈린 것
+    if (pts[L.shoulderL].x < pts[L.shoulderR].x) warn = '왼팔·오른팔이 뒤바뀌어 잡혔을 수 있어요. 숫자를 확인해 주세요.';
   }
   setFrameAspect(before);
   // 그림 위에 뼈대를 그려 보여 주려고 자리만 남긴다
   const light = pts.map((q) => ({ x: r1(q.x * 1000) / 1000, y: r1(q.y * 1000) / 1000 }));
-  return { angle, pts: light, aspect, sure: r1(sure) };
+  return { angle, l, r, warn, pts: light, aspect, sure: r1(sure) };
 }

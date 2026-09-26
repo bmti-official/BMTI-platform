@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { INK, SUB, BG, box, btn } from './theme';
 import { uploadOne } from './upload';
 import { loadAssets, saveAsset } from '../lib/appAssets';
-import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, usableShots } from '../lib/angleShots';
+import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usableShots } from '../lib/angleShots';
 import { imgKey } from '../lib/angleLevels';
 import { measureImage } from '../features/angle/measureImage';
 
@@ -18,7 +18,14 @@ const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slic
 const BONES = {
   neck: [[7, 11], [8, 12], [11, 23], [12, 24]],
   trunk: [[11, 23], [12, 24], [23, 25], [24, 26], [11, 12], [23, 24]],
+  arm: [[11, 13], [13, 15], [12, 14], [14, 16], [11, 12], [11, 23], [12, 24]],
 };
+
+// 한 장을 재서 모음에 담을 모양으로 — 팔은 왼팔·오른팔도 적는다
+const toShot = (url, m) => ({
+  id: newId(), url, angle: m.angle ?? null, auto: m.angle != null, sure: m.sure ?? 0, pts: m.pts || null,
+  ...(m.l != null ? { l: m.l, r: m.r } : {}),
+});
 
 function Bones({ pts, kind }) {
   if (!Array.isArray(pts) || pts.length < 25) return null;
@@ -46,6 +53,8 @@ export default function AngleSetAdmin() {
   const [note, setNote] = useState('');
   const [over, setOver] = useState(false);
   const [probe, setProbe] = useState(70);           // 손님 값 흉내 — 어떤 그림이 나오는지
+  const [probeR, setProbeR] = useState(150);        // 팔 — 오른팔
+  const [probeL, setProbeL] = useState(120);        // 팔 — 왼팔
   const fileRef = useRef(null);
   const setsRef = useRef(null);
   useEffect(() => { setsRef.current = sets; });
@@ -64,9 +73,12 @@ export default function AngleSetAdmin() {
   if (!sets) return <div style={{ ...box, fontSize: 13, color: SUB, marginBottom: 16 }}>불러오는 중…</div>;
 
   const key = setKey(item.short, who);
-  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (Number(a.angle) || 999) - (Number(b.angle) || 999));
+  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (Number(a.angle) || 999) - (Number(b.angle) || 999)
+    || (Math.min(Number(a.l), Number(a.r)) || 0) - (Math.min(Number(b.l), Number(b.r)) || 0));
   const cov = coverage(item, sets[key]);
-  const pick = nearestShot(sets[key], probe);
+  const isArm = item.short === 'arm';
+  const pair = isArm ? nearestPair(sets[key], probeL, probeR) : null;
+  const pick = isArm ? pair?.shot : nearestShot(sets[key], probe);
 
   // 고칠 때마다 바로 담는다 — '저장'을 잊고 나가는 일이 없게
   const commit = async (k, nextShots) => {
@@ -87,9 +99,8 @@ export default function AngleSetAdmin() {
       if (up.err) { setNote(up.err); continue; }
       setBusy(`${i + 1}/${list.length} 각도 재는 중…`);
       const m = await measureImage(up.url, item.short);
-      const shot = { id: newId(), url: up.url, angle: m.angle ?? null, auto: m.angle != null, sure: m.sure ?? 0, pts: m.pts || null };
-      if (m.err) setNote(m.err);
-      await commit(k, [...latest(k), shot]);
+      if (m.err || m.warn) setNote(m.err || m.warn);
+      await commit(k, [...latest(k), toShot(up.url, m)]);
     }
     setBusy('');
   };
@@ -104,7 +115,7 @@ export default function AngleSetAdmin() {
     for (let i = 0; i < urls.length; i += 1) {
       setBusy(`단계 그림 ${i + 1}/${urls.length} 재는 중…`);
       const m = await measureImage(urls[i], item.short);
-      await commit(k, [...latest(k), { id: newId(), url: urls[i], angle: m.angle ?? null, auto: m.angle != null, sure: m.sure ?? 0, pts: m.pts || null }]);
+      await commit(k, [...latest(k), toShot(urls[i], m)]);
     }
     setBusy('');
   };
@@ -117,11 +128,23 @@ export default function AngleSetAdmin() {
     const m = await measureImage(s.url, item.short);
     setBusy('');
     if (m.err) { setNote(m.err); return; }
-    await commit(k, latest(k).map((x) => (x.id === id ? { ...x, angle: m.angle, auto: true, sure: m.sure, pts: m.pts } : x)));
+    if (m.warn) setNote(m.warn);
+    const sides = m.l != null ? { l: m.l, r: m.r } : {};
+    await commit(k, latest(k).map((x) => (x.id === id ? { ...x, ...sides, angle: m.angle, auto: true, sure: m.sure, pts: m.pts } : x)));
   };
   const setAngle = (id, v) => {
     const n = v === '' ? null : Number(v);
     commit(key, latest(key).map((x) => (x.id === id ? { ...x, angle: Number.isFinite(n) ? n : null, auto: false } : x)));
+  };
+  // 팔 — 한쪽을 고치면 큰 쪽이 angle이 된다
+  const setSide = (id, side, v) => {
+    const n = v === '' ? null : Number(v);
+    commit(key, latest(key).map((x) => {
+      if (x.id !== id) return x;
+      const nx = { ...x, [side]: Number.isFinite(n) ? n : null, auto: false };
+      const both = [nx.l, nx.r].filter((q) => Number.isFinite(Number(q))).map(Number);
+      return { ...nx, angle: both.length ? Math.max(...both) : null };
+    }));
   };
   const drop = (id) => {
     if (!window.confirm('이 그림을 모음에서 뺄까요? (저장소 파일은 남습니다)')) return;
@@ -142,6 +165,8 @@ export default function AngleSetAdmin() {
         <br />손님 화면에서는 손님 값과 <b>가장 가까운 그림</b>이 나옵니다. 목표 각도를 정확히 맞추지 않아도 됩니다 —
         <b> 고르게 퍼져 있는 게</b> 더 중요합니다.
         <br />보라색 선은 코드가 <b>무엇을 보고 쟀는지</b>입니다. 선이 엉뚱한 데 붙었으면 숫자를 직접 고쳐 주세요.
+        <br /><b>옆으로 팔 들기</b>는 왼팔·오른팔을 따로 잽니다. 오른팔이 높은 그림만 올려도 됩니다 —
+        왼팔이 높은 손님에게는 그림을 <b>좌우로 뒤집어</b> 보여 줍니다.
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -169,7 +194,7 @@ export default function AngleSetAdmin() {
           {cov.map((c) => (
             <span key={c.target} style={{ fontSize: 12, fontWeight: 900, borderRadius: 999, padding: '4px 10px',
               background: c.hit ? '#EDF7F0' : '#F1EEE8', color: c.hit ? GREEN : '#B4ADA2' }}>
-              {c.hit ? '✓ ' : ''}{c.target}°
+              {c.hit ? '✓ ' : ''}{typeof c.target === 'number' ? `${c.target}°` : c.target}
             </span>
           ))}
         </div>
@@ -210,12 +235,31 @@ export default function AngleSetAdmin() {
                   <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
                   <Bones pts={s.pts} kind={item.short} />
                 </div>
+                {isArm && (
+                  // 앞모습이라 그 사람의 오른팔이 화면 왼쪽에 있다 — 칸도 그 순서로
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                    {[['r', '오른팔'], ['l', '왼팔']].map(([side, lb]) => (
+                      <label key={side} style={{ flex: 1, fontSize: 10, fontWeight: 800, color: SUB }}>
+                        {lb}
+                        <input type="number" value={s[side] ?? ''} placeholder="?"
+                          onChange={(e) => setSide(s.id, side, e.target.value)}
+                          style={{ width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: 13, fontWeight: 900,
+                            padding: '3px 5px', borderRadius: 8, border: `1px solid ${s[side] == null ? RED : '#EDE9E2'}` }} />
+                      </label>
+                    ))}
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                  {!isArm && <>
                   <input type="number" value={s.angle ?? ''} placeholder="?"
                     onChange={(e) => setAngle(s.id, e.target.value)}
                     style={{ width: 56, fontFamily: 'inherit', fontSize: 14, fontWeight: 900, padding: '4px 6px',
                       borderRadius: 8, border: `1px solid ${s.angle == null ? RED : '#EDE9E2'}` }} />
                   <span style={{ fontSize: 12, fontWeight: 800, color: INK }}>°</span>
+                  </>}
+                  {isArm && isPick && pair.flip && (
+                    <span style={{ fontSize: 10, fontWeight: 800, color: GOLD_INK }}>뒤집어 씀</span>
+                  )}
                   <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 800,
                     color: s.angle == null ? RED : s.auto ? (low ? RED : GREEN) : GOLD_INK }}>
                     {s.angle == null ? '못 잼' : s.auto ? (low ? '흐림' : '자동') : '손으로'}
@@ -236,15 +280,37 @@ export default function AngleSetAdmin() {
       )}
 
       {/* 손님 값을 흉내 내 어떤 그림이 나오는지 */}
-      {usableShots(sets[key]).length > 0 && (
+      {usableShots(sets[key]).length > 0 && !isArm && (
         <div style={{ ...box, background: BG }}>
           <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 6 }}>
             손님 값이 <span style={{ color: GOLD }}>{probe}°</span>면
             → <span style={{ color: GOLD }}>{pick ? `${pick.angle}° 그림` : '—'}</span>이 나옵니다
             <span style={{ fontWeight: 700, color: SUB }}> (노란 테두리)</span>
           </div>
-          <input type="range" min={item.short === 'neck' ? 40 : 10} max={item.short === 'neck' ? 95 : 115} value={probe}
+          <input type="range" min={item.short === 'neck' ? 40 : 10} max={item.short === 'neck' ? 95 : 145} value={probe}
             onChange={(e) => setProbe(Number(e.target.value))} style={{ width: '100%', accentColor: '#C9A227' }} />
+        </div>
+      )}
+      {isArm && usableShots(sets[key]).length > 0 && (
+        <div style={{ ...box, background: BG, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 240px' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 6 }}>
+              손님이 오른팔 <span style={{ color: GOLD }}>{probeR}°</span> · 왼팔 <span style={{ color: GOLD }}>{probeL}°</span>면
+              → <span style={{ color: GOLD }}>{pick ? `오 ${pick.r}° · 왼 ${pick.l}° 그림` : '—'}</span>
+              {pair?.flip && <span style={{ color: GOLD }}>을 뒤집어</span>} 보여 줍니다
+            </div>
+            {[['오른팔', probeR, setProbeR], ['왼팔', probeL, setProbeL]].map(([lb, v, set]) => (
+              <label key={lb} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11.5, fontWeight: 800, color: SUB }}>
+                <span style={{ width: 36 }}>{lb}</span>
+                <input type="range" min={40} max={185} value={v} onChange={(e) => set(Number(e.target.value))}
+                  style={{ flex: 1, accentColor: '#C9A227' }} />
+              </label>
+            ))}
+          </div>
+          {pick && (
+            <img src={pick.url} alt="" style={{ height: 150, borderRadius: 8, background: '#fff',
+              transform: pair.flip ? 'scaleX(-1)' : 'none' }} />
+          )}
         </div>
       )}
     </div>

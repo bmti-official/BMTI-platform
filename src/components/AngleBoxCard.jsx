@@ -16,7 +16,7 @@ import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { toView } from '../lib/angleView';
 import { loadAssets } from '../lib/appAssets';
-import { allSetKeys, setKey, nearestShot } from '../lib/angleShots';
+import { allSetKeys, setKey, nearestShot, nearestPair } from '../lib/angleShots';
 import ArmFigure from './ArmFigure';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
 
@@ -182,11 +182,14 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
     ? nearestShot(asset?.[setKey(shotItem.short, who)]?.meta, valOf(shotItem.key)) : null;
   const levelShot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
   const shot = near ? { url: near.url, level: shotLv, exact: true, angle: near.angle } : levelShot;
-  // 옆으로 팔 들기 — 자세히 볼 때는 코드로 그린 사람이 왼팔·오른팔을 따로 든다.
-  // (단계 그림은 한 장에 팔 자세가 하나뿐이라 좌우 차이를 보여 줄 수 없다)
+  // 옆으로 팔 들기 — 왼팔·오른팔 높이 짝으로 모은 그림에서 가장 가까운 것을 고른다
+  // (필요하면 좌우로 뒤집어서). 모음이 비어 있을 때만 코드로 그린 사람이 대신 든다.
   const armRow = lastOf('arm_raise'), armPrev = prevOf('arm_raise');
   const sideOf = (row, k) => (row ? num(row[k]) ?? num(row.arm_raise) : null);
-  const armFig = open === 'arm_raise' && armRow;
+  const armL = sideOf(armRow, 'arm_raise_l'), armR = sideOf(armRow, 'arm_raise_r');
+  const armOn = open === 'arm_raise' && armRow;
+  const armPair = armOn ? nearestPair(asset?.[setKey('arm', who)]?.meta, armL, armR) : null;
+  const armFig = armOn && !armPair;
 
   return (
     <div style={{ background: '#fff', borderRadius: 20, padding: '18px 18px 20px', boxShadow: SHADOW, border: '1px solid #F1EEE8' }}>
@@ -208,7 +211,9 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
           오른쪽 항목을 누르면 그것만 강조되고, 자세한 내용도 그 자리에서 펼쳐진다. */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
         <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
-          {armFig
+          {armPair
+            ? <ArmShot pair={armPair} left={armL} right={armR} level={shotLv} t={t} />
+            : armFig
             ? <ArmFigure left={sideOf(armRow, 'arm_raise_l')} right={sideOf(armRow, 'arm_raise_r')}
                 prevLeft={sideOf(armPrev, 'arm_raise_l')} prevRight={sideOf(armPrev, 'arm_raise_r')}
                 female={who === 'female'} accent={t.accentDeep} />
@@ -290,13 +295,14 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
             </span>
           </>
         )}
-        {!shot && !armFig && (open === 'trunk_flex' || open === 'arm_raise') && (
+        {!shot && !armOn && (open === 'trunk_flex' || open === 'arm_raise') && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 10, height: 3, borderRadius: 2, background: PURPLE }} />움직인 범위
           </span>
         )}
         {armFig && <span>흐린 팔은 지난번이에요 · 왼팔·오른팔을 따로 쟀어요</span>}
-        {!armFig && shot && <span>{shotItem.view}으로 본 모습이에요</span>}
+        {armPair && <span>앞모습 · 왼팔·오른팔을 따로 쟀어요</span>}
+        {!armOn && shot && <span>{shotItem.view}으로 본 모습이에요</span>}
       </div>
     </div>
   );
@@ -326,6 +332,31 @@ function LevelShot({ shot, item, value, t }) {
           비슷한 단계 그림
         </span>
       )}
+    </div>
+  );
+}
+
+// 팔 그림 — 짝 그림 한 장(필요하면 뒤집어서). 앞모습이라 오른팔 값은 왼쪽 아래, 왼팔 값은 오른쪽 아래.
+function ArmShot({ pair, left, right, level, t }) {
+  const name = LEVEL_NAME[level];
+  const tint = level === 1 ? '#5E9463' : level === 2 ? '#9A7A16' : '#B23B36';
+  const tag = (side, lb, v) => (
+    <span style={{ position: 'absolute', [side]: 4, bottom: 6, fontSize: 10, fontWeight: 900, color: t.accentDeep,
+      background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '2px 7px', lineHeight: 1.3, textAlign: 'center' }}>
+      {lb}<br /><span style={{ fontSize: 13 }}>{v == null ? '—' : `${Math.round(v)}°`}</span>
+    </span>
+  );
+  return (
+    <div style={{ position: 'relative' }}>
+      <img src={pair.shot.url} alt="옆으로 팔 들기"
+        style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block',
+          transform: pair.flip ? 'scaleX(-1)' : 'none' }} />
+      {name && (
+        <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
+          background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>{name}</span>
+      )}
+      {tag('left', '오른팔', right)}
+      {tag('right', '왼팔', left)}
     </div>
   );
 }
