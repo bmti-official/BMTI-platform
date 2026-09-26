@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, sideOkNeck, frontOk, kneeStraight, seenWell,
+  sideShapeOk, frontShapeOk,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
 import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
@@ -28,7 +29,8 @@ const TILE = [
   { take: 'trunk', label: '허리 굽힘', val: (g) => g.trunkFlex },
   { take: 'arm', label: '어깨 들림', val: (g) => g.armRaise },
 ];
-const ARM_GAP = 18;    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
+const ARM_GAP = 18;
+const SHAPE_RETRY = 2;  // 사람 모양이 아니면 몇 번까지 다시 잴지    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
 const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로여야 한다
 
 // 재는 동안 무엇을 할지를 **화면에 토막으로** 드러낸다.
@@ -91,6 +93,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const runRef = useRef(null);                   // 지금 판의 모아 둔 값
   const gotRef = useRef({});                     // 단계마다 얻은 값
   const tryRef = useRef(0);                      // 몇 번 어긋났는지
+  const shapeTryRef = useRef(0);                 // 사람 모양이 아니어서 다시 잰 횟수 (판마다)
   const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
   const startRef = useRef(null);                 // 저절로 시작하는 손잡이
   const stepRef = useRef(0);                     // 반복문이 읽을 최신 단계
@@ -188,6 +191,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       // 옆모습 실루엣 — 목이 가장 곧았던 그 순간의 관절 좌표를 붙잡아 둔다.
       if (run.best == null || nb < run.best) { run.best = nb; run.pose = shapeOf(pts); }
     } else if (take === 'trunk') {
+      // 목을 안 재는 판이면 굽히기 전 첫 자세를 붙잡아 둔다 — 모양 확인에 쓴다
+      if (!run.pose) run.pose = shapeOf(pts);
       if (kneeStraight(pts)) run.trunk.push({ t, v: trunkFlex(pts) });
       else run.kneeBad += 1;
     } else if (take === 'arm') {
@@ -321,6 +326,21 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     if (st.id === 'side') { next.seenSide = run.seen; next.pose = run.pose || null; }
     else { next.seenFront = run.seen; next.poseFront = run.pose || null; }
 
+    // 사람 모양인지 코드가 확인한다. 손님에게 뼈대를 보여 주며 묻지 않는다.
+    // 두 번까지 다시 재고, 그래도 안 되면 '흐리게 잡힘'으로 표시해 담는다 —
+    // 그 판은 추세에서 빠진다. 못 재고 끝나는 것보다는 낫다.
+    const shape = st.id === 'side' ? sideShapeOk(run.pose, { sitting: !!st.sitting }) : frontShapeOk(run.pose);
+    if (!shape.ok) {
+      if (shapeTryRef.current < SHAPE_RETRY) {
+        shapeTryRef.current += 1;
+        again('잘 안 잡혔어요. 한 번만 더 할게요.');
+        return;
+      }
+      next.blurry = true;
+      next.blurryWhy = [...(next.blurryWhy || []), shape.why];
+    }
+    shapeTryRef.current = 0;
+
     gotRef.current = next;
     setVals(next);
     tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
@@ -335,11 +355,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }
 
     const seen = [next.seenSide, next.seenFront].filter((v) => v != null);
-    const quality = qualityOf({
+    const q0 = qualityOf({
       seen: seen.length ? Math.min(...seen) : 0,
       kneeOk: (next.kneeBad ?? 0) < 20,
       retries: retry,
     });
+    // 흐리게 잡힌 판은 품질을 추세 기준(55) 밑으로 내려, 꺾은선·지난주 비교에서 빠지게 한다
+    const quality = next.blurry ? Math.min(q0, 40) : q0;
     setLastQuality(quality);
     say('done', { force: true });
     setStep(STEPS.length);
@@ -353,7 +375,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     clearInterval(tickRef.current);
     runRef.current = null;
     gotRef.current = {}; setVals({});
-    tryRef.current = 0; setRetry(0); okSinceRef.current = 0;
+    tryRef.current = 0; setRetry(0); okSinceRef.current = 0; shapeTryRef.current = 0;
     badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
     setCount(0); setReady(0); setPhase(null); setGot(0); setLastQuality(0);
     setStep(0);
@@ -503,21 +525,6 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
               </div>
             ))}
           </div>
-          {/* 이 판이 제대로 잡혔는지 여기서 본다. 다 끝나고서야 알면 되돌리기가 아깝다. */}
-          {g[done.id === 'side' ? 'pose' : 'poseFront'] && (
-            <div style={{ background: '#FAF7F0', borderRadius: 13, padding: '12px 10px', marginBottom: 16, textAlign: 'center' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 900, color: INK, marginBottom: 8 }}>이 자세로 쟀어요. 맞나요?</div>
-              <div style={{ width: 120, margin: '0 auto' }}>
-                <Stick pose={g[done.id === 'side' ? 'pose' : 'poseFront']} kind={done.id} />
-              </div>
-              <button type="button" onClick={() => setStep(Math.floor(step))}
-                style={{ marginTop: 6, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
-                  fontSize: 12, fontWeight: 800, color: GOLD_INK, textDecoration: 'underline' }}>
-                이 판만 다시 재기
-              </button>
-            </div>
-          )}
-
           <div style={{ fontSize: 13, color: INK, fontWeight: 700, lineHeight: 1.85, marginBottom: 8 }}>
             이제 <b>{nxt.title}</b>
           </div>

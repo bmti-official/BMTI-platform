@@ -192,3 +192,60 @@ export function qualityOf({ seen = 0, poseOk = true, kneeOk = true, retries = 0 
   q -= Math.min(20, retries * 5);
   return Math.max(0, Math.min(100, q));
 }
+
+// ── 사람 모양인가 ────────────────────────────────────────────
+// 미디어파이프는 사람이 아닌 걸 사람으로 잡기도 하고, 팔다리를 엉뚱한 데 붙이기도 한다.
+// 예전엔 뼈대를 보여 주고 손님에게 '맞나요?'를 물었는데, 뼈대를 보고 판단하라는 건 무리다.
+// 사람 몸이면 당연한 규칙 몇 가지를 코드가 대신 확인한다.
+//
+// pose는 저장해 둔 {x, y} 33개. 화면은 아래로 갈수록 y가 크다.
+// 돌려주는 값: { ok, why } — why는 무엇이 어긋났는지(관리자·기록용)
+
+const pt = (pose, i) => pose?.[i];
+const midOf = (a, b) => (a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : a || b || null);
+const dist = (a, b) => (a && b ? Math.hypot(a.x - b.x, a.y - b.y) : null);
+
+/** 옆모습. sitting이면 골반을 따지지 않는다(앉으면 책상에 가린다).
+ *  허리를 굽히는 판이 섞여 있으면 어깨가 골반보다 낮아질 수 있으므로,
+ *  pose는 '가장 곧게 선 순간'을 넘겨받는다. */
+export function sideShapeOk(pose, { sitting = false } = {}) {
+  if (!Array.isArray(pose) || pose.length < 25) return { ok: false, why: 'no-pose' };
+  const ear = midOf(pt(pose, L.earL), pt(pose, L.earR));
+  const sh = midOf(pt(pose, L.shoulderL), pt(pose, L.shoulderR));
+  const hip = midOf(pt(pose, L.hipL), pt(pose, L.hipR));
+  if (!ear || !sh) return { ok: false, why: 'no-joint' };
+  // 귀는 어깨보다 위에
+  if (!(ear.y < sh.y)) return { ok: false, why: 'ear-below-shoulder' };
+  if (sitting) {
+    // 귀~어깨가 말도 안 되게 짧거나 길지 않은지 — 거의 0이면 점 두 개가 겹친 것
+    const d = dist(ear, sh);
+    return d > 0.03 ? { ok: true } : { ok: false, why: 'head-too-small' };
+  }
+  if (!hip) return { ok: false, why: 'no-hip' };
+  // 어깨는 골반보다 위에
+  if (!(sh.y < hip.y)) return { ok: false, why: 'shoulder-below-hip' };
+  // 비율 — 귀~어깨가 어깨~골반보다 길면 사람 몸이 아니다(보통 0.3~0.6배)
+  const r = dist(ear, sh) / (dist(sh, hip) || 1);
+  if (r > 0.95 || r < 0.12) return { ok: false, why: 'odd-proportion' };
+  return { ok: true };
+}
+
+/** 앞모습. 팔을 가장 높이 올린 순간의 pose를 넘겨받는다. */
+export function frontShapeOk(pose) {
+  if (!Array.isArray(pose) || pose.length < 25) return { ok: false, why: 'no-pose' };
+  const sl = pt(pose, L.shoulderL), sr = pt(pose, L.shoulderR);
+  const hl = pt(pose, L.hipL), hr = pt(pose, L.hipR);
+  if (!sl || !sr || !hl || !hr) return { ok: false, why: 'no-joint' };
+  const width = Math.abs(sl.x - sr.x);
+  const torso = dist(midOf(sl, sr), midOf(hl, hr)) || 1;
+  // 두 어깨 높이가 비슷해야 한다 — 어깨 너비의 40%보다 더 차이 나면 엉킨 것
+  if (Math.abs(sl.y - sr.y) > width * 0.4) return { ok: false, why: 'shoulders-uneven' };
+  // 어깨가 골반보다 위에
+  if (!(midOf(sl, sr).y < midOf(hl, hr).y)) return { ok: false, why: 'shoulder-below-hip' };
+  // 팔이 몸에 붙어 있어야 한다 — 손목이 어깨에서 몸통 길이의 1.6배 넘게 떨어져 있으면 엉뚱한 데 붙은 것
+  for (const [s, w] of [[sl, pt(pose, L.wristL)], [sr, pt(pose, L.wristR)]]) {
+    const d = dist(s, w);
+    if (d != null && d > torso * 1.6) return { ok: false, why: 'arm-detached' };
+  }
+  return { ok: true };
+}
