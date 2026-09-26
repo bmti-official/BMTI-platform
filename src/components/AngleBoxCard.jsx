@@ -18,6 +18,7 @@ import { toView } from '../lib/angleView';
 import { loadAssets } from '../lib/appAssets';
 import { allSetKeys, setKey, nearestShot, nearestPair } from '../lib/angleShots';
 import ArmFigure from './ArmFigure';
+import NeckShot from './NeckShot';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
@@ -181,7 +182,9 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   const near = shotItem && shotItem.short !== 'arm'
     ? nearestShot(asset?.[setKey(shotItem.short, who)]?.meta, valOf(shotItem.key)) : null;
   const levelShot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
-  const shot = near ? { url: near.url, level: shotLv, exact: true, angle: near.angle } : levelShot;
+  const shot = near ? { url: near.url, level: shotLv, exact: true, angle: near.angle, pts: near.pts } : levelShot;
+  // 목 — 그림 위에 이번·지난번 값대로 선을 긋는다
+  const neckLine = open === 'neck_bend' && shot?.pts ? { prev: num(prevOf('neck_bend')?.neck_bend) } : null;
   // 옆으로 팔 들기 — 왼팔·오른팔 높이 짝으로 모은 그림에서 가장 가까운 것을 고른다
   // (필요하면 좌우로 뒤집어서). 모음이 비어 있을 때만 코드로 그린 사람이 대신 든다.
   const armRow = lastOf('arm_raise'), armPrev = prevOf('arm_raise');
@@ -218,7 +221,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
                 prevLeft={sideOf(armPrev, 'arm_raise_l')} prevRight={sideOf(armPrev, 'arm_raise_r')}
                 female={who === 'female'} accent={t.accentDeep} />
             : shot
-            ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} />
+            ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} neckLine={neckLine} />
             : <Figure neck={tilt(lastOf('neck_bend'))} trunk={valOf('trunk_flex')} arm={valOf('arm_raise')}
                 ghostNeck={tilt(prevOf('neck_bend'))} t={t} sel={open} />}
         </div>
@@ -285,7 +288,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
 
       <div style={{ display: 'flex', gap: 11, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap' }}>
         {open === null && <span>항목을 누르면 그림에서 그것만 짚어 드려요</span>}
-        {!shot && open === 'neck_bend' && (
+        {(!shot || neckLine) && open === 'neck_bend' && (
           <>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accentDeep }} />지금
@@ -309,18 +312,20 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
 }
 
 // 단계 그림 — 잰 값에 맞는 사진 한 장. 선을 긋지 않아도 모습 자체가 말해 준다.
-function LevelShot({ shot, item, value, t }) {
+function LevelShot({ shot, item, value, t, neckLine = null }) {
   const name = LEVEL_NAME[shot.level];
   const tint = shot.level === 1 ? '#5E9463' : shot.level === 2 ? '#9A7A16' : '#B23B36';
   return (
     <div style={{ position: 'relative' }}>
-      <img src={shot.url} alt={`${item.label} ${name}`}
-        style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block' }} />
+      {neckLine
+        ? <NeckShot url={shot.url} pts={shot.pts} value={value} prev={neckLine.prev} accent={t.accentDeep} alt={`${item.label} ${name}`} />
+        : <img src={shot.url} alt={`${item.label} ${name}`}
+            style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block' }} />}
       <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
         background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>
         {name}
       </span>
-      {value != null && (
+      {value != null && !neckLine && (
         <span style={{ position: 'absolute', right: 6, bottom: 6, fontSize: 14, fontWeight: 900, color: t.accentDeep,
           background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>
           {value}°

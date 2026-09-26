@@ -22,6 +22,7 @@ import { loadAssets } from '../../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../../lib/angleLevels';
 import { resultLine, prevVal, viewVal } from './resultLine';
 import { allSetKeys, setKey, nearestShot, nearestPair } from '../../lib/angleShots';
+import NeckShot from '../../components/NeckShot';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -709,7 +710,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         return p && { url: p.shot.url, level: lv, flip: p.flip };
       }
       const n = nearestShot(meta, now);
-      return n && { url: n.url, level: lv };
+      return n && { url: n.url, level: lv, pts: n.pts };
     };
     const rows = TILE.filter((x) => want.includes(x.take)).map((x) => {
       const item = LEVEL_ITEMS.find((it) => it.short === x.take);
@@ -738,7 +739,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                 borderRadius: 16, padding: '10px 12px' }}>
                 <div style={{ flex: '0 0 62px', height: 124, borderRadius: 10, background: '#fff', overflow: 'hidden',
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {r.shot
+                  {r.shot && r.take === 'neck' && r.shot.pts
+                    ? <NeckShot url={r.shot.url} pts={r.shot.pts} value={r.now} shape={1 / 2} alt={r.label} />
+                    : r.shot
                     ? <img src={r.shot.url} alt={`${r.label} ${LEVEL_NAME[r.shot.level]}`}
                         style={{ width: '100%', height: '100%', objectFit: 'contain', transform: r.shot.flip ? 'scaleX(-1)' : 'none' }} />
                     : <span style={{ fontSize: 22 }}>📐</span>}

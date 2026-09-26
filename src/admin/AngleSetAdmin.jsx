@@ -10,6 +10,7 @@ import { loadAssets, saveAsset } from '../lib/appAssets';
 import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usableShots } from '../lib/angleShots';
 import { imgKey } from '../lib/angleLevels';
 import { measureImage } from '../features/angle/measureImage';
+import NeckShot from '../components/NeckShot';
 import { openVideo, sampleVideo, chooseFrames, frameFile, measureAt, STEP } from '../features/angle/videoFrames';
 
 const GOLD = '#C9975A', GOLD_INK = '#8A6A3A', RED = '#B23B36', GREEN = '#2E7D50';
@@ -383,6 +384,15 @@ export default function AngleSetAdmin() {
           </div>
           <input type="range" min={item.short === 'neck' ? 40 : 10} max={item.short === 'neck' ? 95 : 145} value={probe}
             onChange={(e) => setProbe(Number(e.target.value))} style={{ width: '100%', accentColor: '#C9A227' }} />
+          {/* 목은 손님 화면처럼 그림 위에 선을 그어 본다 — 선이 목에 제대로 붙는지 확인 */}
+          {item.short === 'neck' && pick?.pts && (
+            <div style={{ width: 170, marginTop: 10, background: '#fff', borderRadius: 10, overflow: 'hidden' }}>
+              <NeckShot url={pick.url} pts={pick.pts} value={probe} prev={probe - 6} />
+            </div>
+          )}
+          {item.short === 'neck' && pick?.pts && (
+            <div style={{ fontSize: 11, color: SUB, fontWeight: 700, marginTop: 4 }}>진한 선은 손님 값, 흐린 선은 지난번(예시로 6도 낮게)</div>
+          )}
         </div>
       )}
       {isArm && usableShots(sets[key]).length > 0 && (
