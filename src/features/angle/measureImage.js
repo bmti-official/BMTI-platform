@@ -40,10 +40,15 @@ const r1 = (v) => Math.round(v * 10) / 10;
 export async function measureImage(url, kind) {
   let im;
   try { im = await loadImg(url); } catch (e) { return { err: e.message }; }
+  return measureSource(im, im.naturalWidth, im.naturalHeight, kind);
+}
+
+/** 그림·캔버스(영상 한 장면) 어느 것이든 잰다. w·h는 원래 크기 — 각도에 화면 비율이 들어간다. */
+export async function measureSource(src, w, h, kind) {
   let res;
   try {
     const lm = await getLandmarker();
-    res = lm.detect(im);
+    res = lm.detect(src);
   } catch (e) {
     return { err: '사람 인식을 불러오지 못했어요: ' + String(e?.message || e) };
   }
@@ -51,7 +56,7 @@ export async function measureImage(url, kind) {
   if (!pts) return { err: '그림에서 사람을 찾지 못했어요. 숫자를 직접 적어 주세요.' };
 
   // 각도는 화면 비율을 알아야 바르게 나온다. 재는 동안만 그림 비율로 바꿨다가 돌려놓는다.
-  const aspect = (im.naturalWidth || 1) / (im.naturalHeight || 1);
+  const aspect = (w || 1) / (h || 1);
   const before = getFrameAspect();
   setFrameAspect(aspect);
   let angle, sure, l = null, r = null, warn = null;
