@@ -291,14 +291,16 @@ export default function AngleSetAdmin() {
       const ok = await fetch(x.url, { method: 'HEAD' }).then((r) => r.ok).catch(() => true);
       if (!ok) lost.push(x);
     }
-    let back = 0;
+    // 다 자른 뒤 한 번에 담는다 — 한 장씩 담으면 앞에서 담은 것이 뒤에서 덮일 수 있다
+    const fixed = {};
     for (let i = 0; i < lost.length; i += 1) {
       setBusy(`지워진 장면 되살리는 중… ${i + 1}/${lost.length}`);
       const fup = await uploadOne(await frameFile(o.video, lost[i].from.t));
       if (fup.err) { setNote(fup.err); continue; }
-      back += 1;
-      await commit(k, latest(k).map((y) => (y.id === lost[i].id ? { ...y, url: fup.url } : y)));
+      fixed[lost[i].id] = fup.url;
     }
+    const back = Object.keys(fixed).length;
+    if (back) await commit(k, latest(k).map((y) => (fixed[y.id] ? { ...y, url: fixed[y.id] } : y)), [...latestVideos(k).filter((x) => x.vid !== vid), info]);
     setBusy('');
     if (lost.length) {
       setBroken((p) => { const n = { ...p }; lost.forEach((x) => { delete n[x.id]; }); return n; });
