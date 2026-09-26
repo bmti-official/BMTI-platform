@@ -33,6 +33,7 @@ const usable = (r) => r && (r.quality == null || r.quality >= GOOD);
 const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const r1 = (v) => Math.round(v * 10) / 10;
 const BOX_H = 380;   // 그림·항목 줄의 높이 — 고정해 두어야 펼칠 때 상자가 출렁이지 않는다
+const FRAME = 1 / 2; // 그림 틀 비율 — 세 항목 모두 같은 틀에 전신이 꽉 차게
 const md = (w) => `${Number(String(w).slice(5, 7))}월 ${Number(String(w).slice(8, 10))}일`;
 
 // 사람 그림은 '수직에서 얼마나 기울었나'로 그린다. 화면에 쓰는 값은 CVA(수평 기준)라
@@ -337,9 +338,9 @@ function LevelShot({ shot, item, value, t, neckLine = null, trunkLine = null }) 
   return (
     <div style={{ position: 'relative' }}>
       {neckLine
-        ? <NeckShot url={shot.url} pts={shot.pts} value={value} prev={neckLine.prev} accent={t.accentDeep} alt={`${item.label} ${name}`} />
+        ? <NeckShot url={shot.url} pts={shot.pts} value={value} prev={neckLine.prev} accent={t.accentDeep} frame={FRAME} alt={`${item.label} ${name}`} />
         : trunkLine
-        ? <TrunkShot url={shot.url} pts={shot.pts} value={value} prev={trunkLine.prev} accent={t.accentDeep} alt={`${item.label} ${name}`} />
+        ? <TrunkShot url={shot.url} pts={shot.pts} value={value} prev={trunkLine.prev} accent={t.accentDeep} frame={FRAME} alt={`${item.label} ${name}`} />
         : <img src={shot.url} alt={`${item.label} ${name}`}
             style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block' }} />}
       <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
@@ -364,7 +365,7 @@ function ArmShot({ pair, left, right, prevLeft, prevRight, level, t }) {
   return (
     <div style={{ position: 'relative' }}>
       <ArmLines url={pair.shot.url} pts={pair.shot.pts} flip={pair.flip} left={left} right={right}
-        prevLeft={prevLeft} prevRight={prevRight} accent={t.accentDeep} alt="옆으로 팔 들기" />
+        prevLeft={prevLeft} prevRight={prevRight} accent={t.accentDeep} frame={FRAME} alt="옆으로 팔 들기" />
       {name && (
         <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
           background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>{name}</span>

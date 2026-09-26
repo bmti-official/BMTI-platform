@@ -4,6 +4,7 @@
 // 정확한 값은 그림 위에 그은 선이 보여 준다(목의 정렬 NeckShot과 같은 생각).
 // 관절 자리(pts)는 그림을 올릴 때 코드가 잰 것이다. 없으면 그림만 보여 준다.
 import { useImgSize } from '../lib/useImgSize';
+import { bodyBox } from '../lib/bodyBox';
 
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 const rad = (d) => (d * Math.PI) / 180;
@@ -31,7 +32,7 @@ function Label({ at, text, color, fs }) {
 
 /** 허리 굽힘 — 골반에서 수직선(서 있을 때)과, 손님 값만큼 숙인 몸통 선.
  *  small: 끝 화면의 작은 칸 — 선과 글씨를 굵게 */
-export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', small = false, alt = '' }) {
+export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', small = false, frame = null, alt = '' }) {
   const size = useImgSize(url);
   const ok = size && Array.isArray(pts) && pts.length > 24 && Number.isFinite(Number(value));
   if (!ok) return plain(url, alt, false);
@@ -50,14 +51,18 @@ export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', sm
   const tip = (d, l = len) => ({ x: hip.x + face * Math.sin(rad(d)) * l, y: hip.y - Math.cos(rad(d)) * l });
   const v = Number(value);
   const p = prev != null && Number.isFinite(Number(prev)) ? Number(prev) : null;
-  const sw = H * (small ? 0.02 : 0.011);
-  const fs = H * (small ? 0.075 : 0.045);
+  // frame: 전신을 그 비율의 틀에 맞춘다(각도 상자 — 세 항목이 같은 크기로 보이게)
+  const bb = frame ? bodyBox(pts, W, H, frame) : { x: 0, y: 0, w: W, h: H };
+  const sw = bb.h * (small ? 0.02 : 0.011);
+  const fs = bb.h * (small ? 0.075 : 0.045);
   const r = len * 0.32;
   const a0 = tip(0, r), a1 = tip(v, r);
   // 숫자는 등 뒤 — 숙인 몸과 반대쪽이라 그림을 가리지 않는다
-  const lab = { x: Math.max(fs * 1.2, Math.min(W - fs * 1.2, hip.x - face * len * 0.32)), y: hip.y - len * 0.55 };
+  const lab = { x: Math.max(bb.x + fs * 1.2, Math.min(bb.x + bb.w - fs * 1.2, hip.x - face * len * 0.32)), y: hip.y - len * 0.55 };
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt} style={{ width: '100%', display: 'block' }}>
+    <svg viewBox={`${bb.x} ${bb.y} ${bb.w} ${bb.h}`} role="img" aria-label={alt}
+      style={{ width: '100%', aspectRatio: `${bb.w} / ${bb.h}`, display: 'block' }}>
+      {frame && <rect x={bb.x} y={bb.y} width={bb.w} height={bb.h} fill="#fff" />}
       <image href={url} x="0" y="0" width={W} height={H} />
       <line x1={hip.x} y1={hip.y} x2={hip.x} y2={hip.y - len} stroke="#9B9489" strokeWidth={sw * 0.7}
         strokeDasharray={`${sw * 1.8} ${sw * 1.4}`} strokeLinecap="round" />
@@ -75,7 +80,7 @@ export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', sm
  *  flip: 그림을 좌우로 뒤집어 쓴다(왼팔이 더 높은 손님에게 오른팔이 높은 그림을 쓸 때).
  *  tags: 아래 두 귀퉁이에 '오른팔 128°'·'왼팔 156°'를 붙인다 */
 export function ArmShot({ url, pts, left, right, prevLeft = null, prevRight = null, flip = false,
-  accent = '#7C6BD0', small = false, tags = true, alt = '' }) {
+  accent = '#7C6BD0', small = false, tags = true, frame = null, alt = '' }) {
   const size = useImgSize(url);
   const has = (v) => v != null && Number.isFinite(Number(v));
   const ok = size && Array.isArray(pts) && pts.length > 16 && (has(left) || has(right));
@@ -87,18 +92,21 @@ export function ArmShot({ url, pts, left, right, prevLeft = null, prevRight = nu
     .sort((a, b) => a.s.x - b.s.x);
   const armLen = (x) => Math.hypot(x.e.x - x.s.x, x.e.y - x.s.y) + Math.hypot(x.w.x - x.e.x, x.w.y - x.e.y);
   const len = Math.max(40, (armLen(sides[0]) + armLen(sides[1])) / 2);
-  const sw = H * (small ? 0.02 : 0.011);
+  const bb = frame ? bodyBox(pts, W, H, frame, flip) : { x: 0, y: 0, w: W, h: H };
+  const sw = bb.h * (small ? 0.02 : 0.011);
   const arms = [
     { at: sides[0].s, out: -1, v: right, p: prevRight },
     { at: sides[1].s, out: 1, v: left, p: prevLeft },
   ];
   // 팔을 내린 자리(0도)에서 바깥쪽으로 돌아 올라간다
   const tip = (arm, d) => ({ x: arm.at.x + arm.out * Math.sin(rad(d)) * len, y: arm.at.y + Math.cos(rad(d)) * len });
-  const fs = H * (small ? 0.07 : 0.04);
+  const fs = bb.h * (small ? 0.07 : 0.04);
   const shY = (sides[0].s.y + sides[1].s.y) / 2;
   return (
     <div style={{ position: 'relative' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt} style={{ width: '100%', display: 'block' }}>
+      <svg viewBox={`${bb.x} ${bb.y} ${bb.w} ${bb.h}`} role="img" aria-label={alt}
+        style={{ width: '100%', aspectRatio: `${bb.w} / ${bb.h}`, display: 'block' }}>
+        {frame && <rect x={bb.x} y={bb.y} width={bb.w} height={bb.h} fill="#fff" />}
         <image href={url} x="0" y="0" width={W} height={H}
           transform={flip ? `translate(${W} 0) scale(-1 1)` : undefined} />
         {/* 어깨 높이(90도) */}
@@ -113,7 +121,7 @@ export function ArmShot({ url, pts, left, right, prevLeft = null, prevRight = nu
           <Label key={`l${i}`} color={accent} fs={fs} text={`${Math.round(Number(a.v))}°`}
             at={(() => {
               const t = tip(a, Number(a.v));
-              return { x: Math.max(fs * 1.3, Math.min(W - fs * 1.3, t.x + a.out * fs * 0.6)), y: Math.max(fs, Math.min(H - fs, t.y)) };
+              return { x: Math.max(bb.x + fs * 1.3, Math.min(bb.x + bb.w - fs * 1.3, t.x + a.out * fs * 0.6)), y: Math.max(bb.y + fs, Math.min(bb.y + bb.h - fs, t.y)) };
             })()} />
         ))}
       </svg>

@@ -8,11 +8,13 @@
 // 전신 그림에서 목은 아주 작다. 목 둘레만 잘라(SVG viewBox) 그림과 선을 함께 키운다.
 // 관절 자리(pts)는 그림을 올릴 때 코드가 잰 것이다. 없으면 그림을 통째로 보여 준다.
 import { useImgSize } from '../lib/useImgSize';
+import { bodyBox } from '../lib/bodyBox';
 
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
-/** shape: 잘라 낼 칸의 가로/세로 (각도 상자 3/4, 끝 화면 작은 칸 1/2) */
-export default function NeckShot({ url, pts, value, prev = null, accent = '#7C6BD0', shape = 3 / 4, alt = '' }) {
+/** shape: 잘라 낼 칸의 가로/세로 (끝 화면 작은 칸 1/2)
+ *  frame: 주면 목만 키우지 않고 전신을 그 비율의 틀에 맞춘다(각도 상자 — 세 항목이 같은 크기로 보이게) */
+export default function NeckShot({ url, pts, value, prev = null, accent = '#7C6BD0', shape = 3 / 4, frame = null, alt = '' }) {
   const size = useImgSize(url);                  // 그림 원래 크기 — 불러온 뒤에 안다
 
   const ok = size && Array.isArray(pts) && pts.length > 12 && Number.isFinite(Number(value));
@@ -29,10 +31,11 @@ export default function NeckShot({ url, pts, value, prev = null, accent = '#7C6B
   const neck = Math.max(20, Math.hypot(ear.x - sh.x, ear.y - sh.y));
 
   // 목 둘레만 잘라 낸다 — 머리 꼭대기부터 가슴 조금 아래까지
-  const ch = Math.min(H, neck * 4.6);
-  const cw = Math.min(W, ch * shape);
-  const cx = Math.max(0, Math.min(W - cw, (ear.x + sh.x) / 2 - cw / 2 + face * cw * 0.08));
-  const cy = Math.max(0, Math.min(H - ch, ear.y - ch * 0.45));
+  const bb = frame ? bodyBox(pts, W, H, frame) : null;
+  const ch = bb ? bb.h : Math.min(H, neck * 4.6);
+  const cw = bb ? bb.w : Math.min(W, ch * shape);
+  const cx = bb ? bb.x : Math.max(0, Math.min(W - cw, (ear.x + sh.x) / 2 - cw / 2 + face * cw * 0.08));
+  const cy = bb ? bb.y : Math.max(0, Math.min(H - ch, ear.y - ch * 0.45));
 
   const len = neck * 1.1;                          // 귀 근처에서 멈춘다 — 얼굴을 가로지르지 않게
   const tip = (deg, l = len) => ({
@@ -43,8 +46,9 @@ export default function NeckShot({ url, pts, value, prev = null, accent = '#7C6B
   const p = Number.isFinite(Number(prev)) && prev !== null ? Number(prev) : null;
   const r = len * 0.34;
   const a0 = tip(0, r), a1 = tip(v, r);
-  const sw = ch * 0.014;
-  const fs = ch * 0.085;
+  // 전신 틀이면 목이 작게 보이므로 선·글씨를 틀 높이에 맞춰 줄인다
+  const sw = ch * (bb ? 0.01 : 0.014);
+  const fs = ch * (bb ? 0.05 : 0.085);
   // 숫자는 어깨선 바로 위, 몸 앞쪽 — 얼굴·턱에 겹치지 않게
   const lab = {
     x: Math.max(cx + fs * 1.1, Math.min(cx + cw - fs * 1.1, sh.x + face * len * 1.05)),
@@ -55,6 +59,8 @@ export default function NeckShot({ url, pts, value, prev = null, accent = '#7C6B
   return (
     <svg viewBox={`${cx} ${cy} ${cw} ${ch}`} role="img" aria-label={alt}
       style={{ width: '100%', aspectRatio: `${cw} / ${ch}`, display: 'block' }}>
+      {/* 틀이 그림보다 넓으면 빈 곳을 흰색으로 — 그림 가장자리가 보이지 않게 */}
+      {bb && <rect x={cx} y={cy} width={cw} height={ch} fill="#fff" />}
       <image href={url} x="0" y="0" width={W} height={H} />
       {/* 어깨 높이 */}
       <line x1={base.x1} y1={sh.y} x2={base.x2} y2={sh.y} stroke="#fff" strokeWidth={sw * 1.8} strokeLinecap="round" opacity="0.85" />

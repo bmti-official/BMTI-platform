@@ -31,6 +31,10 @@ const toShot = (url, m, from = null) => ({
 });
 const miniBtn = { border: 'none', background: '#fff', borderRadius: 7, padding: '3px 8px', cursor: 'pointer',
   fontFamily: 'inherit', fontSize: 11, fontWeight: 900, color: '#8A6A3A' };
+// 파일이 저장소에 정말 있는지 — 브라우저·중간 저장본을 거치지 않고 묻는다.
+// 저장소 파일은 '1년 저장' 설정으로 올라가서, 전에 본 그림은 지워진 뒤에도 브라우저가 '있다'고 답한다.
+const fileExists = (url) => fetch(`${url}${url.includes('?') ? '&' : '?'}check=${Date.now()}`, { method: 'HEAD', cache: 'no-store' })
+  .then((r) => r.ok).catch(() => null);
 const vidKey = (f) => `${f.name}·${f.size}`;
 
 function Bones({ pts, kind }) {
@@ -93,8 +97,7 @@ export default function AngleSetAdmin() {
     if (!checkUrls) return undefined;
     let alive = true;
     const list = checkUrls.split('|').map((x) => x.split(' '));
-    Promise.all(list.map(([id, url]) => fetch(url, { method: 'HEAD' })
-      .then((r) => [id, !r.ok]).catch(() => [id, false])))
+    Promise.all(list.map(([id, url]) => fileExists(url).then((ok) => [id, ok === false])))
       .then((res) => { if (alive) setBroken(Object.fromEntries(res.filter(([, bad]) => bad))); });
     return () => { alive = false; };
   }, [checkUrls]);
@@ -288,8 +291,7 @@ export default function AngleSetAdmin() {
     // 파일이 지워진 장면을 되살린다 — 기록된 초에서 다시 잘라 올리고 주소만 바꾼다(각도·고친 값은 그대로)
     const lost = [];
     for (const x of latest(k).filter((y) => y.from?.vid === vid)) {
-      const ok = await fetch(x.url, { method: 'HEAD' }).then((r) => r.ok).catch(() => true);
-      if (!ok) lost.push(x);
+      if ((await fileExists(x.url)) === false) lost.push(x);
     }
     // 다 자른 뒤 한 번에 담는다 — 한 장씩 담으면 앞에서 담은 것이 뒤에서 덮일 수 있다
     const fixed = {};
@@ -304,8 +306,13 @@ export default function AngleSetAdmin() {
     setBusy('');
     if (lost.length) {
       setBroken((p) => { const n = { ...p }; lost.forEach((x) => { delete n[x.id]; }); return n; });
-      setNote(`지워졌던 장면 ${back}장을 되살렸어요. 각도와 손으로 고친 값은 그대로예요.`);
-    } else setAdding(vid);
+      const msg = `지워졌던 장면 ${back}장을 되살렸어요. 각도와 손으로 고친 값은 그대로예요.`;
+      setNote(msg);
+      window.alert(msg);
+    } else {
+      window.alert('영상을 연결했어요. 이 영상의 장면 그림은 모두 저장소에 있어서 되살릴 것이 없어요.');
+      setAdding(vid);
+    }
   };
   // 장면 더하기 창에 띄울 영상 주소 — 이번에 연 것이면 그 주소, 아니면 저장소
   const srcOf = (vid) => openSrc[vid] || shownInfo(vid)?.url || null;
