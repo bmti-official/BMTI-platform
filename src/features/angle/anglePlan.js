@@ -28,7 +28,8 @@ export function buildSteps(want = ['neck', 'trunk', 'arm']) {
         : (has('trunk')
           ? '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 다음, 천천히 허리를 앞으로 굽혔다 돌아옵니다.\n무릎은 편 채로요.'
           : '몸 왼쪽이나 오른쪽이 화면을 보게 섭니다.\n가만히 선 채로 계세요.'),
-      phases: sidePhases,
+      // 앉아서 잴 땐 '가만히 서 계세요' 대신 '앉은 그대로 계세요'로 시작한다
+      phases: sitting ? sidePhases.map((p) => ({ ...p, voice: 'sit', text: '가만히 계세요' })) : sidePhases,
     });
   }
   if (has('arm')) {

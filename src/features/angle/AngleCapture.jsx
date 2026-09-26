@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, sideOkNeck, frontOk, kneeStraight, seenWell,
-  sideShapeOk, frontShapeOk, setFrameAspect,
+  sideShapeOk, frontShapeOk, setFrameAspect, vis,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
 import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
@@ -34,7 +34,8 @@ const TILE = [
 ];
 const ARM_GAP = 18;
 const SHAPE_RETRY = 2;
-const TURN_MS = 1500;   // 쉼터에서 정면으로 이만큼 서 있으면 다음 판을 연다  // 사람 모양이 아니면 몇 번까지 다시 잴지    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
+const TURN_MS = 1500;
+const CLOTH_MS = 2000;  // 어깨만 이만큼 계속 흐리면 옷 이야기를 한다   // 쉼터에서 정면으로 이만큼 서 있으면 다음 판을 연다  // 사람 모양이 아니면 몇 번까지 다시 잴지    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
 const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로여야 한다
 
 // 재는 동안 무엇을 할지를 **화면에 토막으로** 드러낸다.
@@ -78,7 +79,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const [rollSign, setRollSign] = useState(() => {
     try { return localStorage.getItem('bmti_roll_sign') === '-1' ? -1 : 1; } catch { return 1; }
   });
-  const [levelDiag, setLevelDiag] = useState(null);   // 관리자 확인용 — 보정 전·후 목 각도
+  const [levelDiag, setLevelDiag] = useState(null);
+  const [clothHint, setClothHint] = useState(false);   // 옷이 어깨를 가리는 것 같을 때 한 줄   // 관리자 확인용 — 보정 전·후 목 각도
   // 지난주 자세 — 재는 화면에 흐리게 깔아 같은 자리·같은 거리에 서기 쉽게
   const [ghost, setGhost] = useState(null);
   const [pastRows, setPastRows] = useState([]);   // 지난 판들 — 끝 화면에서 '지난번과 견줘' 말할 때 쓴다
@@ -116,6 +118,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const stepsRef = useRef(null);                 // 반복문이 읽을 판 목록
   const turnSinceRef = useRef(0);                // 쉼터에서 정면으로 돌아선 지 얼마나 됐나
   const tiltRef = useRef(null);                  // 반복문이 읽을 최신 기울기
+  const clothSinceRef = useRef(0);               // 어깨만 흐리게 잡힌 지 얼마나 됐나
+  const clothSaidRef = useRef(false);            // 옷 이야기는 한 번만
   const rollSignRef = useRef(1);
   const adminRef = useRef(false);
   const checkRef = useRef(null);                 // 반복문이 읽을 최신 검사
@@ -151,13 +155,14 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     if (tl && (Math.abs(tl.roll) > ROLL_WARN || tl.pitch > PITCH_WARN)) {
       // 조금 기운 건 계산으로 되돌린다. 이만큼 기울면 되돌려도 믿을 수 없다.
       why = '휴대폰을 똑바로 세워 주세요';
-      cue = 'frame';
+      cue = 'level';
     } else if (!dist.inFrame) {
       // 무엇이 빠졌는지 짚어 준다. '머리부터 골반까지'만 보면 이미 다 나와 있다고 여긴다.
-      why = (!dist.hipIn && dist.needHips)
+      const hipOut = !dist.hipIn && dist.needHips;
+      why = hipOut
         ? '골반이 화면 밖이에요. 카메라를 낮추거나 한 걸음 뒤로 가 주세요'
         : '머리와 어깨가 화면에 들어오게 해 주세요';
-      cue = 'frame';
+      cue = hipOut ? 'hipout' : 'frame';
     }
     else if (!dist.ok) {
       const near = dist.h <= dist.lo * 1.4;
@@ -174,6 +179,24 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     });
     // 무엇이 어긋났는지 바뀔 때만 한 번 말한다. 같은 말이 이어지면 듣기 싫어진다.
     if (why) say(cue);
+
+    // F. 옷 — 카메라는 옷을 알아보지 못한다. 대신 '귀와 골반은 또렷한데 어깨만 계속
+    // 흐리게 잡히면' 두꺼운 옷이 어깨선을 가리고 있을 가능성이 크다고 본다.
+    // 추측이라 재기를 막지 않는다. 알려 주기만 하고, 한 번 말하면 이번엔 다시 안 한다.
+    if (!clothSaidRef.current) {
+      const best = (a, b) => Math.max(vis(pts[a]), vis(pts[b]));
+      const ear = best(L.earL, L.earR), shv = best(L.shoulderL, L.shoulderR), hipv = best(L.hipL, L.hipR);
+      const clearAround = sitting ? ear > 0.7 : (ear > 0.7 && hipv > 0.7);
+      const tnow = performance.now();
+      if (clearAround && shv < 0.5) {
+        if (!clothSinceRef.current) clothSinceRef.current = tnow;
+        else if (tnow - clothSinceRef.current > CLOTH_MS) {
+          clothSaidRef.current = true;
+          setClothHint(true);
+          say('cloth', { force: true });
+        }
+      } else clothSinceRef.current = 0;
+    }
 
     // 자세가 그대로 이어지면 저절로 시작한다 — 버튼을 누르러 오가면 자세가 흐트러진다
     if (!runRef.current) {
@@ -400,6 +423,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       if (shapeTryRef.current < SHAPE_RETRY) {
         shapeTryRef.current += 1;
         again('잘 안 잡혔어요. 한 번만 더 할게요.');
+        say('retry', { force: true });
         return;
       }
       next.blurry = true;
@@ -783,6 +807,17 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             </>
           );
         })()}
+
+        {clothHint && !running && (
+          <div style={{ position: 'absolute', left: 12, right: 12, bottom: 52, background: 'rgba(253,246,220,0.96)',
+            borderRadius: 12, padding: '9px 12px', fontSize: 12, fontWeight: 800, color: '#8A6A3A', lineHeight: 1.6,
+            textAlign: 'center', wordBreak: 'keep-all' }}>
+            옷이 어깨를 가리는 것 같아요. 겉옷을 벗으면 더 정확해져요
+            <button type="button" onClick={() => setClothHint(false)}
+              style={{ marginLeft: 8, border: 'none', background: 'transparent', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 12, fontWeight: 900, color: '#B4ADA2' }}>✕</button>
+          </div>
+        )}
 
         {/* 휴대폰 기울기는 손님이 맞추지 않는다 — 조금 기운 건 계산으로 되돌린다.
             관리자에겐 보정이 맞는 방향인지 확인할 숫자를 띄운다. */}

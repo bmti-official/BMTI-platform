@@ -100,9 +100,16 @@ export const ANGLE_LINES = [
   { n: 6, key: 'hold', text: '좋아요. 그대로 계세요' },
   { n: 7, key: 'go1', text: '시작합니다. 가만히 서 계세요' },
   { n: 8, key: 'mid1', text: '이제 천천히 허리를 굽혀 주세요' },
-  { n: 9, key: 'next', text: '옆모습 다 쟀어요. 정면으로 서 주세요' },
+  // 9번은 문장이 바뀌었다 — 이제 돌아서기만 하면 알아서 시작한다. 다시 녹음해야 한다.
+  { n: 9, key: 'next', text: '옆모습 다 쟀어요. 이제 화면 쪽으로 돌아서 주세요. 돌아서면 알아서 시작해요' },
   { n: 10, key: 'go2', text: '시작합니다. 두 팔을 천천히 올려 주세요' },
   { n: 11, key: 'mid2', text: '끝까지 올린 채로 잠깐 멈춰 주세요' },
   { n: 12, key: 'done', text: '다 쟀어요. 수고하셨어요' },
+  // ── 1단계 개편에서 더한 것 ──
+  { n: 13, key: 'hipout', text: '골반이 화면 밖이에요. 카메라를 낮추거나 한 걸음 뒤로 가 주세요' },
+  { n: 14, key: 'level', text: '휴대폰을 똑바로 세워 주세요' },
+  { n: 15, key: 'cloth', text: '옷이 어깨를 가리는 것 같아요. 겉옷을 벗으면 더 정확해져요' },
+  { n: 16, key: 'retry', text: '잘 안 잡혔어요. 한 번만 더 할게요' },
+  { n: 17, key: 'sit', text: '시작합니다. 앉은 그대로 계세요' },
 ];
 export const ANGLE_N = Object.fromEntries(ANGLE_LINES.map((l) => [l.key, l.n]));
