@@ -44,7 +44,11 @@ const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로�
 //   · 잘 되고 있나 궁금해 몸을 움직여 엉뚱한 자세가 찍혔다
 // 토막마다 **그 토막에 필요한 값만** 모은다. 서 있는 동안의 목 각도와
 // 굽히는 동안의 허리 각도가 섞이지 않는다.
-const READY_SEC = 3;   // '셋, 둘, 하나' — 준비할 틈을 준다
+const READY_SEC = 3;   // '셋, 둘, 하나' — 재는 토막마다 앞에서 센다
+// 재는 토막 앞에서 트는 말 — 무엇을 재는지 이름을 붙여 센다
+const COUNT_VOICE = { neck: 'countNeck', trunk: 'countTrunk', arm: 'countArm' };
+// 다시 잴 때 — 무엇을 다시 재는지 말한다
+const AGAIN_VOICE = { neck: 'againNeck', trunk: 'againTrunk', arm: 'againArm', side: 'againSide', front: 'againArm' };
 
 // 관절 점 33개에서 자리만 꺼낸다. **사진이 아니라 좌표다** — 얼굴도 방도 남지 않는다.
 // 소수점 셋째 자리까지면 화면에 그리기에 충분하고, 한 판이 1KB를 넘지 않는다.
@@ -64,6 +68,16 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const [stuck, setStuck] = useState(false);    // 오래 막혔나 — 빠져나갈 길을 연다
   const badSinceRef = useRef(0);
   const stuckRef = useRef(false);            // 지금 무엇을 고쳐야 하는지
+  // 6초 넘게 안 맞으면 빠져나갈 길('이대로 시작')을 연다
+  const markStuck = () => {
+    const tnow = performance.now();
+    if (!badSinceRef.current) badSinceRef.current = tnow;
+    else if (tnow - badSinceRef.current > STUCK_MS && !stuckRef.current) {
+      stuckRef.current = true; setStuck(true);
+    }
+  };
+  const markStuckRef = useRef(null);
+  useEffect(() => { markStuckRef.current = markStuck; });
   const [count, setCount] = useState(0);         // 남은 초
   const [ready, setReady] = useState(0);         // 준비 카운트(셋·둘·하나)
   const [phase, setPhase] = useState(null);      // 지금 몇 번째 토막인가
@@ -202,11 +216,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     if (!runRef.current) {
       if (why) {
         okSinceRef.current = 0;
-        // 여섯 해를 세도 안 맞으면 빠져나갈 길을 연다
-        if (!badSinceRef.current) badSinceRef.current = performance.now();
-        else if (performance.now() - badSinceRef.current > STUCK_MS && !stuckRef.current) {
-          stuckRef.current = true; setStuck(true);
-        }
+        markStuck();
         return;
       }
       badSinceRef.current = 0;
@@ -223,7 +233,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }
 
     const run = runRef.current;
-    if (run && run.ready > 0) {
+    if (run && run.readyUntil) {
       // 카운트 중에 자세가 어긋나면 표시만 해 둔다. 되돌리는 건 타이머 쪽에서 한다.
       if (why && !run.forced) { run.badFrom = run.badFrom || performance.now(); }
       else run.badFrom = 0;
@@ -278,6 +288,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       let res;
       try { res = pose.detectForVideo(v, performance.now()); } catch { res = null; }
       const pts = res?.landmarks?.[0];
+      // 판정·각도 계산 전에 화면 비율부터 알려 준다 — 이게 없으면 기기마다 값이 달라진다.
+      // 쉼터의 '정면으로 돌아섰나' 판정도 이 값을 쓰므로 맨 앞에 둔다.
+      setFrameAspect((v.videoWidth || 3) / (v.videoHeight || 4));
       if (c) {
         const g = c.getContext('2d');
         c.width = v.videoWidth || 720; c.height = v.videoHeight || 960;
@@ -311,8 +324,6 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       }
       // 휴대폰이 좌우로 조금 돌아가 있으면 그만큼 좌표를 되돌려 잰다.
       // 너무 많이 돌아갔으면 되돌리지 않고 검사에서 세워 달라고 한다.
-      // 각도를 재기 전에 화면 비율을 알려 준다 — 이게 없으면 기기마다 값이 달라진다
-      setFrameAspect((v.videoWidth || 3) / (v.videoHeight || 4));
       const tl = tiltRef.current;
       let use = pts;
       if (pts && tl && Math.abs(tl.roll) <= ROLL_WARN) {
@@ -322,7 +333,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           setLevelDiag({ roll: tl.roll, pitch: tl.pitch, raw: neckBend(pts), fix: neckBend(use) });
         }
       }
-      if (use) checkRef.current?.(use); else setMsg('몸이 다 보이게 서 주세요');
+      if (use) checkRef.current?.(use);
+      else {
+        // 사람을 아예 못 찾을 때(어두운 방, 너무 멀리) — 이때가 가장 막막하다.
+        // 검사까지 가지 않으니 여기서도 막힘 시간을 재야 '이대로 시작'이 열린다.
+        setMsg('몸이 다 보이게 서 주세요');
+        if (!runRef.current) markStuckRef.current?.();
+      }
       rafRef.current = requestAnimationFrame(loop);
     };
     (async () => {
@@ -366,7 +383,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     };
   }, [live]);
 
-  const again = (why = '잘 잡히지 않았어요. 한 번 더 해 볼까요?') => {
+  // voice — 무엇을 다시 재는지 말한다('허리 굽힘을 한 번 더 잴게요'). 없으면 조용히.
+  const again = (why = '잘 잡히지 않았어요. 한 번 더 해 볼까요?', voiceKey = null) => {
     // 몇 번째 어긋남인지는 ref로 센다 — 여기서 바로 보고 판단해야 한다.
     tryRef.current += 1;
     const n = tryRef.current;
@@ -376,6 +394,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     setCount(0); setReady(0); setPhase(null); setGot(0);
     setMsg(n >= MAX_RETRY ? '' : why);
     clearSaid();
+    if (voiceKey && n < MAX_RETRY) say(voiceKey, { force: true });
     if (n >= MAX_RETRY) setStep(-1);               // 세 번 어긋나면 가이드부터 다시
   };
 
@@ -393,13 +412,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     if (takes.includes('neck')) {
       // 가만히 선 자세는 '가장 곧았던' 값을 쓴다. 굽히는 동안의 값이 섞이면 안 된다.
       const neck = run.neck.length ? Math.round(Math.min(...run.neck.map((x) => x.v)) * 10) / 10 : 0;
-      if (!neck) { again('목 각도가 안 잡혔어요. 처음 4초는 가만히 계셔야 해요.'); return; }
+      if (!neck) { again('목 세움이 안 잡혔어요. 한 번 더 잴게요 — 가만히 계셔야 해요.', AGAIN_VOICE.neck); return; }
       next.neckBend = neck;
     }
     if (takes.includes('trunk')) {
       const trunk = peakOf(run.trunk);
       if (!trunk) {
-        again('허리 굽힘이 안 잡혔어요. 굽힐 때 골반이 화면에 남아 있어야 해요 — 한 걸음 뒤로 가서 다시 해 볼까요?');
+        again('허리 굽힘이 안 잡혔어요. 한 번 더 잴게요 — 굽힐 때 골반이 화면에 남아 있어야 해요.', AGAIN_VOICE.trunk);
         return;
       }
       next.trunkFlex = trunk;
@@ -407,7 +426,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }
     if (takes.includes('arm')) {
       const arm = peakOf(run.arm);
-      if (!arm) { again('어깨 들림이 안 잡혔어요. 두 팔이 화면에 다 들어와야 해요.'); return; }
+      if (!arm) { again('어깨 들림이 안 잡혔어요. 한 번 더 잴게요 — 두 팔이 화면에 다 들어와야 해요.', AGAIN_VOICE.arm); return; }
       next.armRaise = arm;
       next.armRaiseL = peakOf(run.armL) || null;
       next.armRaiseR = peakOf(run.armR) || null;
@@ -422,8 +441,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     if (!shape.ok) {
       if (shapeTryRef.current < SHAPE_RETRY) {
         shapeTryRef.current += 1;
-        again('잘 안 잡혔어요. 한 번만 더 할게요.');
-        say('retry', { force: true });
+        // 판 전체가 엉켰으니 판 이름으로 말한다 — 옆모습 / 앞모습
+        again(`${st.id === 'side' ? '옆모습' : '앞모습'}이 잘 안 잡혔어요. 한 번 더 잴게요.`,
+          AGAIN_VOICE[st.id === 'side' ? 'side' : 'front']);
         return;
       }
       next.blurry = true;
@@ -476,61 +496,86 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const start = (forced = false) => {
     if (runRef.current) return;
     const s0 = STEPS[step];
-    const total = stepSec(s0);
+    const phases = s0.phases;
     runRef.current = {
       neck: [], trunk: [], arm: [], armL: [], armR: [],
       seen: 0, kneeBad: 0, best: null, pose: null,
-      take: null, got: 0, bad: 0, ready: READY_SEC, shaken: false, badFrom: 0,
+      take: null, got: 0, bad: 0, ready: 0, shaken: false, badFrom: 0,
       // '이대로 시작'으로 들어왔으면 되감지 않는다. 안 그러면 영영 시작되지 않는다.
       forced,
+      pi: -1, phaseAt: 0, readyUntil: 0,   // 몇 번째 토막인지, 언제 시작했는지, 카운트가 언제 끝나는지
     };
     setShook(0);
-    setReady(READY_SEC);
     setPhase(null);
-    setCount(total);
     setGot(0);
 
-    let tenth = 0;                                  // 0.1초 단위로 센다 — 링이 부드럽게 돈다
+    // 시간은 **실제로 흐른 시간**으로 잰다. 0.1초 틱을 세는 식이면, 사람 인식이 무거운
+    // 느린 휴대폰에서 틱이 밀려 4초짜리 측정이 10초로 늘어지고, '셋, 둘, 하나' 음성과
+    // 화면 숫자도 어긋난다.
+    const now = () => performance.now();
+    const left = (run) => {
+      const inPhase = run.readyUntil ? 0 : (now() - run.phaseAt) / 1000;
+      let n = Math.max(0, phases[run.pi].sec - inPhase);
+      for (let i = run.pi + 1; i < phases.length; i += 1) n += phases[i].sec;
+      return Math.ceil(n);
+    };
+
+    // 토막에 들어선다. **재는 토막이면 그 앞에서 따로 셋·둘·하나를 센다.**
+    // 한 판 안에 목·허리처럼 두 가지를 이어서 재는데, 예전엔 판 앞에서만 한 번 세서
+    // 두 번째 측정이 시작되는 줄 손님이 몰랐다.
+    const enter = (run, i) => {
+      const ph = phases[i];
+      run.pi = i; run.take = null;
+      setPhase(i);
+      if (ph.take) {
+        run.readyUntil = now() + READY_SEC * 1000;
+        run.ready = READY_SEC;
+        setReady(READY_SEC);
+        say(COUNT_VOICE[ph.take], { force: true });   // '허리 굽힘을 잽니다. 셋, 둘, 하나'
+      } else {
+        run.readyUntil = 0; run.ready = 0;
+        run.phaseAt = now();
+        setReady(0);
+        say(ph.voice, { force: true });
+      }
+      setCount(left(run));
+    };
+    enter(runRef.current, 0);
+
     const tick = setInterval(() => {
-      tenth += 1;
       const run = runRef.current;
       if (!run) { clearInterval(tick); return; }
+      const ph = phases[run.pi];
 
-      // 준비 카운트 — 이 동안은 아무것도 안 센다.
+      // 셋·둘·하나 — 이 동안은 아무것도 안 센다.
       // 자세가 흐트러지면 **처음부터 다시 센다.** 카운트 중에 몸을 움직여 놓고
       // 그대로 재기 시작하면, 그 엉뚱한 자세가 그대로 기록된다.
-      if (run.ready > 0) {
+      if (run.readyUntil) {
         if (run.shaken) {
           run.shaken = false;
-          run.ready = READY_SEC;
-          setReady(READY_SEC);
+          run.readyUntil = now() + READY_SEC * 1000;
           setShook((n) => n + 1);
-          tenth = 0;
-          return;
+          say(COUNT_VOICE[ph.take], { force: true });
         }
-        if (tenth % 10 === 0) {
-          run.ready -= 1;
-          setReady(run.ready);
-          if (run.ready === 0) tenth = 0;
+        const r = Math.ceil((run.readyUntil - now()) / 1000);
+        run.ready = Math.max(0, r);
+        setReady(run.ready);
+        if (r <= 0) {
+          run.readyUntil = 0; run.ready = 0;
+          run.phaseAt = now();
+          run.take = ph.take;          // 이제부터 값을 모은다
+          say(ph.voice, { force: true });
         }
         return;
       }
 
-      const el = tenth / 10;
-      // 지금이 몇 번째 토막인가
-      let acc = 0, at = null;
-      for (let i = 0; i < s0.phases.length; i += 1) {
-        acc += s0.phases[i].sec;
-        if (el < acc) { at = i; break; }
+      if (now() - run.phaseAt >= ph.sec * 1000) {
+        if (run.pi + 1 < phases.length) { enter(run, run.pi + 1); return; }
+        clearInterval(tick);
+        finishStep();
+        return;
       }
-      if (at === null) { clearInterval(tick); finishStep(); return; }
-      if (run.phase !== at) {
-        run.phase = at;
-        run.take = s0.phases[at].take;
-        setPhase(at);
-        say(s0.phases[at].voice, { force: true });   // 토막이 바뀔 때만 말한다
-      }
-      setCount(Math.max(0, Math.ceil(total - el)));
+      setCount(left(run));
       setGot(run.got);
     }, 100);
     tickRef.current = tick;
@@ -858,7 +903,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           ) : (
             <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
               color: msg ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
-              {msg || (ready > 0 ? '곧 시작해요' : '좋아요, 그대로 계세요')}
+              {msg || (ready > 0 && ph?.take ? `${TILE.find((x) => x.take === ph.take)?.label}을 잽니다`
+                : running && ph?.text ? ph.text : '좋아요, 그대로 계세요')}
             </span>
           )}
         </div>
@@ -895,6 +941,32 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
 
       <div style={{ padding: '14px 4px 0' }}>
         <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{s.title}</div>
+        {/* 이 판에서 잴 것 — 한 판 안에 두 가지를 이어서 재면, 두 번째가 시작되는 줄 모른다.
+            끝난 것 ✓, 지금 재는 것 ●, 남은 것 ○로 보여 준다. */}
+        {(() => {
+          const takes = s.phases.map((x, i) => ({ take: x.take, i })).filter((x) => x.take);
+          if (takes.length < 2) return null;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: SUB }}>이번에 {takes.length}가지를 재요</span>
+              {takes.map((x, k) => {
+                const lb = TILE.find((t) => t.take === x.take)?.label;
+                const state = phase == null || !running ? 'wait' : phase > x.i ? 'done' : phase === x.i ? 'now' : 'wait';
+                return (
+                  <span key={x.take} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {k > 0 && <span style={{ color: '#D6CFC1', fontWeight: 900 }}>→</span>}
+                    <span style={{ fontSize: 12, fontWeight: 900, borderRadius: 999, padding: '4px 10px',
+                      background: state === 'now' ? '#FDF6DC' : state === 'done' ? '#EDF7F0' : '#F4F1EB',
+                      color: state === 'now' ? GOLD_INK : state === 'done' ? '#2E7D50' : SUB,
+                      boxShadow: state === 'now' ? 'inset 0 0 0 1.5px #D9A24B' : 'none' }}>
+                      {state === 'done' ? '✓ ' : state === 'now' ? '● ' : ''}{lb}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })()}
         <div style={{ fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.8, whiteSpace: 'pre-line', marginBottom: 14 }}>
           {s.how}
         </div>

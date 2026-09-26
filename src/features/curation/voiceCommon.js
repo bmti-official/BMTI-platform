@@ -103,13 +103,23 @@ export const ANGLE_LINES = [
   // 9번은 문장이 바뀌었다 — 이제 돌아서기만 하면 알아서 시작한다. 다시 녹음해야 한다.
   { n: 9, key: 'next', text: '옆모습 다 쟀어요. 이제 화면 쪽으로 돌아서 주세요. 돌아서면 알아서 시작해요' },
   { n: 10, key: 'go2', text: '시작합니다. 두 팔을 천천히 올려 주세요' },
-  { n: 11, key: 'mid2', text: '끝까지 올린 채로 잠깐 멈춰 주세요' },
+  { n: 11, key: 'mid2', text: '(안 씀) 끝까지 올린 채로 잠깐 멈춰 주세요' },
   { n: 12, key: 'done', text: '다 쟀어요. 수고하셨어요' },
   // ── 1단계 개편에서 더한 것 ──
   { n: 13, key: 'hipout', text: '골반이 화면 밖이에요. 카메라를 낮추거나 한 걸음 뒤로 가 주세요' },
   { n: 14, key: 'level', text: '휴대폰을 똑바로 세워 주세요' },
   { n: 15, key: 'cloth', text: '옷이 어깨를 가리는 것 같아요. 겉옷을 벗으면 더 정확해져요' },
-  { n: 16, key: 'retry', text: '잘 안 잡혔어요. 한 번만 더 할게요' },
+  // 16번은 21~24(무엇을 다시 재는지 말하는 것)로 바뀌어 더 쓰지 않는다. 녹음 안 해도 된다.
+  { n: 16, key: 'retry', text: '(안 씀) 잘 안 잡혔어요. 한 번만 더 할게요' },
   { n: 17, key: 'sit', text: '시작합니다. 앉은 그대로 계세요' },
+  // ── 재는 토막마다 앞에서 세는 말 — 무엇을 재는지 이름을 붙인다 ──
+  { n: 18, key: 'countNeck', text: '목 세움을 잽니다. 셋, 둘, 하나' },
+  { n: 19, key: 'countTrunk', text: '허리 굽힘을 잽니다. 셋, 둘, 하나' },
+  { n: 20, key: 'countArm', text: '어깨 들림을 잽니다. 셋, 둘, 하나' },
+  // ── 다시 잴 때 — 무엇을 다시 재는지 ──
+  { n: 21, key: 'againNeck', text: '목 세움을 한 번 더 잴게요' },
+  { n: 22, key: 'againTrunk', text: '허리 굽힘을 한 번 더 잴게요' },
+  { n: 23, key: 'againArm', text: '어깨 들림을 한 번 더 잴게요' },
+  { n: 24, key: 'againSide', text: '옆모습을 한 번 더 잴게요' },
 ];
 export const ANGLE_N = Object.fromEntries(ANGLE_LINES.map((l) => [l.key, l.n]));

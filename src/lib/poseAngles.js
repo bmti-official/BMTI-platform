@@ -27,6 +27,9 @@ const deg = (rad) => (rad * 180) / Math.PI;
 // 관절 좌표는 가로를 0~1, 세로를 0~1로 **따로** 줄인 값이다. 가로세로 비율을 곱하지 않고
 // 각도를 재면, 세로로 긴 휴대폰(3:4)에선 기울기가 부풀고 가로로 긴 노트북(16:9)에선 줄어든다.
 // 같은 사람이 기기만 바꿔도 값이 달라진다. 각도를 재기 전에 가로를 비율만큼 늘려 맞춘다.
+// 각도만이 아니라 **자세 판정 검사**(몸 크기, 옆·정면으로 섰나, 사람 모양인가)도 같다.
+// 가로로 긴 화면에서 정면 판정이 어깨를 실제보다 좁게 봐, 똑바로 선 사람을
+// 못 알아보고 상체를 앞으로 빼야만 통과시켰다. x 차이는 모두 이 비율을 곱한다.
 let ASPECT = 1;   // 가로 ÷ 세로
 export const setFrameAspect = (a) => { ASPECT = Number.isFinite(a) && a > 0 ? a : 1; };
 export const getFrameAspect = () => ASPECT;
@@ -60,7 +63,7 @@ export function angleAt(a, center, b) {
 export const torsoLen = (pts) => {
   const a = mid(pts[L.shoulderL], pts[L.shoulderR]);
   const b = mid(pts[L.hipL], pts[L.hipR]);
-  return Math.hypot(a.x - b.x, a.y - b.y);
+  return Math.hypot((a.x - b.x) * ASPECT, a.y - b.y);
 };
 
 export const vis = (p) => p?.v ?? p?.visibility ?? 0;
@@ -77,13 +80,13 @@ export const vis = (p) => p?.v ?? p?.visibility ?? 0;
 export const headLen = (pts) => {
   const ear = vis(pts[L.earR]) >= vis(pts[L.earL]) ? pts[L.earR] : pts[L.earL];
   const sh = mid(pts[L.shoulderL], pts[L.shoulderR]);
-  return Math.hypot(ear.x - sh.x, ear.y - sh.y);
+  return Math.hypot((ear.x - sh.x) * ASPECT, ear.y - sh.y);
 };
 
 /** 앉아서 목만 잴 때 — 좌우 어깨가 겹쳐 보이는지만 본다. 골반은 안 본다. */
 export function sideOkNeck(pts) {
   const t = headLen(pts) || 1;
-  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
+  const shoulder = (Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) * ASPECT) / t;
   return { ok: shoulder < 1.0, shoulder };
 }
 
@@ -112,8 +115,8 @@ export function distanceOk(pts, { needHead = true, needHips = true } = {}) {
  *  가까이 서면 어깨 간격이 그냥 커지므로, 몸 크기로 나눠서 본다. */
 export function sideOk(pts) {
   const t = torsoLen(pts) || 1;
-  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
-  const hip = Math.abs(pts[L.hipL].x - pts[L.hipR].x) / t;
+  const shoulder = (Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) * ASPECT) / t;
+  const hip = (Math.abs(pts[L.hipL].x - pts[L.hipR].x) * ASPECT) / t;
   // 0.38은 빡빡했다. 옆으로 잘 서 있어도 먼 쪽 어깨를 모델이 벌려 놓는 일이 잦다.
   return { ok: shoulder < 0.52 && hip < 0.52, shoulder, hip };
 }
@@ -121,7 +124,7 @@ export function sideOk(pts) {
 /** 정면으로 제대로 섰나. 좌우 어깨가 벌어져 보여야 앞모습이다. */
 export function frontOk(pts) {
   const t = torsoLen(pts) || 1;
-  const shoulder = Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) / t;
+  const shoulder = (Math.abs(pts[L.shoulderL].x - pts[L.shoulderR].x) * ASPECT) / t;
   return { ok: shoulder > 0.55, shoulder };
 }
 
@@ -211,7 +214,7 @@ export function qualityOf({ seen = 0, poseOk = true, kneeOk = true, retries = 0 
 
 const pt = (pose, i) => pose?.[i];
 const midOf = (a, b) => (a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : a || b || null);
-const dist = (a, b) => (a && b ? Math.hypot(a.x - b.x, a.y - b.y) : null);
+const dist = (a, b) => (a && b ? Math.hypot((a.x - b.x) * ASPECT, a.y - b.y) : null);
 
 /** 옆모습. sitting이면 골반을 따지지 않는다(앉으면 책상에 가린다).
  *  허리를 굽히는 판이 섞여 있으면 어깨가 골반보다 낮아질 수 있으므로,
@@ -244,7 +247,7 @@ export function frontShapeOk(pose) {
   const sl = pt(pose, L.shoulderL), sr = pt(pose, L.shoulderR);
   const hl = pt(pose, L.hipL), hr = pt(pose, L.hipR);
   if (!sl || !sr || !hl || !hr) return { ok: false, why: 'no-joint' };
-  const width = Math.abs(sl.x - sr.x);
+  const width = Math.abs(sl.x - sr.x) * ASPECT;
   const torso = dist(midOf(sl, sr), midOf(hl, hr)) || 1;
   // 두 어깨 높이가 비슷해야 한다 — 어깨 너비의 40%보다 더 차이 나면 엉킨 것
   if (Math.abs(sl.y - sr.y) > width * 0.4) return { ok: false, why: 'shoulders-uneven' };
