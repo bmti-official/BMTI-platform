@@ -11,7 +11,11 @@ import { BUCKET } from './upload';
 //   routines        바로플리 표지
 //   voice_assets    공통 음성 (숫자·쉼·마무리·배경음악…)
 //   voice_hello     캐릭터 인사 열여섯 편
-const TABLES = ['curation_items', 'quick_cards', 'routines', 'voice_assets', 'voice_hello'];
+//   app_assets      각도별 그림 모음·팔 영상·각도 재는 화면 참고 그림 (★ 빠져 있어 이 파일들이 통째로 지워진 적이 있다)
+const TABLES = ['curation_items', 'quick_cards', 'routines', 'voice_assets', 'voice_hello', 'app_assets'];
+// 올린 지 얼마 안 된 파일은 안 쓰는 것처럼 보여도 지우지 않는다 — 표가 빠졌거나
+// 막 올리고 아직 담기 전인 파일을 날리지 않게 하는 두 번째 울타리
+const KEEP_DAYS = 7;
 
 const mb = (n) => `${(Number(n || 0) / 1024 / 1024).toFixed(2)}MB`;
 const fileName = (p) => p.split('/').pop();
@@ -76,7 +80,9 @@ export default function StorageClean() {
       rows.forEach((r) => { urlsIn(r).forEach((u) => { const p = pathOf(u); if (p) keep.add(p); }); });
       setUsed(keep.size);
       setRowCount(rows.length);
-      setOrphans(files.filter((f) => !keep.has(f.path)).sort((a, b) => b.size - a.size));
+      const fresh = Date.now() - KEEP_DAYS * 864e5;
+      setOrphans(files.filter((f) => !keep.has(f.path) && !(f.at && new Date(f.at).getTime() > fresh))
+        .sort((a, b) => b.size - a.size));
     } catch (e) {
       setErr(String(e?.message || e));
     }
@@ -110,6 +116,7 @@ export default function StorageClean() {
         <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>파일 정리</div>
         <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8, marginBottom: 14 }}>
           사진을 바꾸거나 카드를 지워도 <b>올린 원본은 저장소에 그대로 남습니다.</b> 20MB짜리 영상이 쌓이면 용량 요금이 붙어요.
+          <br /><b>올린 지 {KEEP_DAYS}일이 안 된 파일은 지우지 않습니다.</b>
           <br />어느 글에서도 쓰지 않는 파일만 골라 보여 드립니다. <b>쓰이고 있는 파일은 절대 건드리지 않습니다.</b>
           <br />복제한 카드가 같은 파일을 함께 쓰는 경우도 &lsquo;쓰는 중&rsquo;으로 셉니다.
           <br />훑는 곳: 큐레이션 · 바로카드 · 바로플리 표지 · <b>공통 음성</b> · <b>캐릭터 인사</b>.

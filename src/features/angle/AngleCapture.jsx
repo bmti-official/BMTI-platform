@@ -942,18 +942,34 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           );
         })()}
 
-        {/* 동작 영상 — 무엇을 하라는지 보면서 따라 하게, 재는 동안 계속 반복한다.
-            앞모습은 처음부터(팔 들기뿐), 옆모습은 허리 굽힘 토막부터. */}
+        {/* 참고 그림 — 재기 전엔 이 판의 자세 그림(안내 음성과 함께 '이렇게 서 주세요'),
+            재는 동안엔 동작 영상(허리 굽힘·팔 들기)을 계속 반복한다.
+            손님은 2m 떨어져 보므로 작으면 안 보인다 — 화면 폭의 40%쯤 */}
         {(() => {
+          const card = { position: 'absolute', left: 10, top: 54, width: '40%', background: '#fff', borderRadius: 12,
+            overflow: 'hidden', boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.3)',
+            pointerEvents: 'none', zIndex: 2 };
+          if (!running) {
+            const url = stancePic(s);
+            if (!url) return null;
+            return (
+              <div style={card}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: INK, textAlign: 'center', padding: '5px 4px 0' }}>
+                  {sitting ? '이렇게 앉아 주세요' : '이렇게 서 주세요'}
+                </div>
+                {isClip(url)
+                  ? <video src={url} autoPlay loop muted playsInline style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }} />
+                  : <img src={url} alt={s.title} style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }} />}
+              </div>
+            );
+          }
           const move = s.id === 'front' ? 'arm' : (ph && ph.take === 'trunk' ? 'trunk' : null);
           const url = move && ref(move);
           if (!url) return null;
           return (
             <video key={url} src={url} autoPlay loop muted playsInline aria-label="따라 할 동작"
-              // 영상 비율 그대로(가로 영상이면 팔이 잘리지 않게) — 세로 영상은 폭을 좁게, 가로 영상은 넓게
-              style={{ position: 'absolute', left: 10, top: 10, width: '36%', maxHeight: '42%', objectFit: 'contain',
-                borderRadius: 12, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.3)',
-                pointerEvents: 'none', zIndex: 2 }} />
+              // 영상 비율 그대로(가로 영상이면 팔이 잘리지 않게)
+              style={{ ...card, maxHeight: '42%', objectFit: 'contain' }} />
           );
         })()}
         {clothHint && !running && (

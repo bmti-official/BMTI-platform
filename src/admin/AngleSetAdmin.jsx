@@ -69,6 +69,9 @@ export default function AngleSetAdmin() {
   const addRef = useRef(null);                      // 장면 더하기 창의 영상
   const linkRef = useRef(null);                     // 영상 다시 연결 — 파일 고르기
   const [linking, setLinking] = useState(null);     // 다시 연결할 영상(vid)
+  // 파일이 지워진 그림(id) — 파일 정리가 app_assets를 빠뜨려 통째로 지운 적이 있다.
+  // 표에 각도·몇 초 장면인지는 남아 있으니, 원본 영상만 다시 연결하면 되살릴 수 있다.
+  const [broken, setBroken] = useState({});
   const setsRef = useRef(null);
   useEffect(() => { setsRef.current = sets; });
 
@@ -82,6 +85,19 @@ export default function AngleSetAdmin() {
     });
     return () => { alive = false; };
   }, []);
+
+  // 지금 탭의 그림 파일이 살아 있는지 — 주소마다 머리만 받아 본다
+  const checkKey = sets ? setKey(item.short, who) : null;
+  const checkUrls = sets ? (sets[checkKey]?.shots || []).map((x) => `${x.id} ${x.url}`).join('|') : '';
+  useEffect(() => {
+    if (!checkUrls) return undefined;
+    let alive = true;
+    const list = checkUrls.split('|').map((x) => x.split(' '));
+    Promise.all(list.map(([id, url]) => fetch(url, { method: 'HEAD' })
+      .then((r) => [id, !r.ok]).catch(() => [id, false])))
+      .then((res) => { if (alive) setBroken(Object.fromEntries(res.filter(([, bad]) => bad))); });
+    return () => { alive = false; };
+  }, [checkUrls]);
 
   if (!sets) return <div style={{ ...box, fontSize: 13, color: SUB, marginBottom: 16 }}>불러오는 중…</div>;
 
@@ -269,7 +285,25 @@ export default function AngleSetAdmin() {
     if (up.err) setNote(`${up.err} (이 영상은 이번에만 편집할 수 있어요)`);
     const info = { vid, name: videoInfo(k, vid)?.name || file.name, url: up.url || null };
     await commit(k, latest(k), [...latestVideos(k).filter((x) => x.vid !== vid), info]);
-    setAdding(vid);
+    // 파일이 지워진 장면을 되살린다 — 기록된 초에서 다시 잘라 올리고 주소만 바꾼다(각도·고친 값은 그대로)
+    const lost = [];
+    for (const x of latest(k).filter((y) => y.from?.vid === vid)) {
+      const ok = await fetch(x.url, { method: 'HEAD' }).then((r) => r.ok).catch(() => true);
+      if (!ok) lost.push(x);
+    }
+    let back = 0;
+    for (let i = 0; i < lost.length; i += 1) {
+      setBusy(`지워진 장면 되살리는 중… ${i + 1}/${lost.length}`);
+      const fup = await uploadOne(await frameFile(o.video, lost[i].from.t));
+      if (fup.err) { setNote(fup.err); continue; }
+      back += 1;
+      await commit(k, latest(k).map((y) => (y.id === lost[i].id ? { ...y, url: fup.url } : y)));
+    }
+    setBusy('');
+    if (lost.length) {
+      setBroken((p) => { const n = { ...p }; lost.forEach((x) => { delete n[x.id]; }); return n; });
+      setNote(`지워졌던 장면 ${back}장을 되살렸어요. 각도와 손으로 고친 값은 그대로예요.`);
+    } else setAdding(vid);
   };
   // 장면 더하기 창에 띄울 영상 주소 — 이번에 연 것이면 그 주소, 아니면 저장소
   const srcOf = (vid) => openSrc[vid] || shownInfo(vid)?.url || null;
@@ -321,6 +355,12 @@ export default function AngleSetAdmin() {
         <div style={{ position: 'relative', background: '#fff', borderRadius: 8, overflow: 'hidden', aspectRatio: '1 / 2' }}>
           <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
           <Bones pts={s.pts} kind={kind} />
+          {broken[s.id] && (
+            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(251,234,233,0.92)', color: RED, fontSize: 12, fontWeight: 900, textAlign: 'center', padding: 6 }}>
+              파일 없음
+            </span>
+          )}
         </div>
         {isArm && (
           // 앞모습이라 그 사람의 오른팔이 화면 왼쪽에 있다 — 칸도 그 순서로
@@ -488,6 +528,14 @@ export default function AngleSetAdmin() {
 
       <input ref={linkRef} type="file" accept="video/*" style={{ display: 'none' }}
         onChange={(e) => { linkVideo(linking, e.target.files?.[0]); e.target.value = ''; }} />
+      {Object.keys(broken).length > 0 && (
+        <div style={{ background: '#FBEAE9', borderRadius: 12, padding: '11px 13px', marginBottom: 14, fontSize: 12.5,
+          fontWeight: 700, color: INK, lineHeight: 1.75 }}>
+          <b style={{ color: RED }}>그림 파일이 지워진 {Object.keys(broken).length}장</b>이 있어요. 각도와 고친 값은 남아 있습니다.
+          <br />영상 묶음의 <b>영상 다시 연결</b>을 눌러 <b>그 원본 영상</b>을 고르면 같은 장면을 다시 잘라 되살립니다.
+          그림으로 올린 것은 빼고 다시 올려 주세요.
+        </div>
+      )}
       {/* 모은 그림 — 영상별로 묶는다. 영상마다 장면을 더하거나 모두 뺄 수 있다 */}
       {groups.map((g) => (
           <div key={g.vid || 'img'} style={{ marginBottom: 18 }}>
@@ -503,7 +551,7 @@ export default function AngleSetAdmin() {
                       {adding === g.vid ? '장면 더하기 닫기' : '＋ 장면 더하기'}
                     </button>
                   )}
-                  {!canOpen(g.vid) && (
+                  {g.vid && (
                     <button type="button" disabled={!!busy} onClick={() => { setLinking(g.vid); linkRef.current?.click(); }}
                       title="예전에 뽑은 장면의 원본 영상을 골라 주면, 장면을 더하거나 옮길 수 있어요"
                       style={{ ...miniBtn, padding: '5px 11px', fontSize: 12, boxShadow: 'inset 0 0 0 1px #EDE9E2' }}>
