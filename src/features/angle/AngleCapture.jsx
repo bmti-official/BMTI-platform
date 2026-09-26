@@ -33,7 +33,8 @@ const TILE = [
   { take: 'arm', label: '어깨 들림', val: (g) => g.armRaise },
 ];
 const ARM_GAP = 18;
-const SHAPE_RETRY = 2;  // 사람 모양이 아니면 몇 번까지 다시 잴지    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
+const SHAPE_RETRY = 2;
+const TURN_MS = 1500;   // 쉼터에서 정면으로 이만큼 서 있으면 다음 판을 연다  // 사람 모양이 아니면 몇 번까지 다시 잴지    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
 const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로여야 한다
 
 // 재는 동안 무엇을 할지를 **화면에 토막으로** 드러낸다.
@@ -105,6 +106,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
   const startRef = useRef(null);                 // 저절로 시작하는 손잡이
   const stepRef = useRef(0);                     // 반복문이 읽을 최신 단계
+  const streamRef = useRef(null);                // 켜 둔 카메라 — 영상 칸이 바뀌면 다시 붙인다
+  const stepsRef = useRef(null);                 // 반복문이 읽을 판 목록
+  const turnSinceRef = useRef(0);                // 쉼터에서 정면으로 돌아선 지 얼마나 됐나
   const checkRef = useRef(null);                 // 반복문이 읽을 최신 검사
   const [voice, setVoice] = useState(true);
   const [hasClips, setHasClips] = useState(false);
@@ -225,6 +229,12 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     let alive = true;
     let stream;
     const loop = () => {
+      // 화면이 바뀌면 영상 칸도 새로 생긴다. 카메라를 한 번만 붙여 두면 새 칸은 까맣게 남는다.
+      const vv = videoRef.current;
+      if (vv && streamRef.current && vv.srcObject !== streamRef.current) {
+        vv.srcObject = streamRef.current;
+        vv.play().catch(() => {});
+      }
       const v = videoRef.current, pose = poseRef.current, c = canvasRef.current;
       if (!alive) return;
       if (!v || !pose || v.readyState < 2) { rafRef.current = requestAnimationFrame(loop); return; }
@@ -241,7 +251,27 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       }
       // 쉼터에선 보기만 한다. 검사와 판정은 최신 것을 ref로 읽는다 —
       // 효과가 다시 돌지 않으므로 여기 닫힌 값은 처음 것에 머문다.
-      if (!Number.isInteger(stepRef.current)) { rafRef.current = requestAnimationFrame(loop); return; }
+      if (!Number.isInteger(stepRef.current)) {
+        // 쉼터 — 손님이 휴대폰까지 와서 '준비됐어요'를 누르지 않아도 되게.
+        // 두 어깨가 벌어져 보이면(정면) 1.5초 기다렸다가 알아서 다음 판을 연다.
+        // 돌아서는 중간에 잠깐 정면처럼 보이는 걸 넘기려고 기다린다.
+        const nextIdx = Math.ceil(stepRef.current);
+        const nxt = stepsRef.current?.[nextIdx];
+        if (pts && nxt?.id === 'front') {
+          const f = frontOk(pts);
+          const seen = seenWell(pts, [L.shoulderL, L.shoulderR, L.hipL, L.hipR]);
+          const tnow = performance.now();
+          if (f.ok && seen >= 0.5) {
+            if (!turnSinceRef.current) turnSinceRef.current = tnow;
+            else if (tnow - turnSinceRef.current > TURN_MS) {
+              turnSinceRef.current = 0;
+              setStep(nextIdx);
+            }
+          } else turnSinceRef.current = 0;
+        }
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
       if (pts) checkRef.current?.(pts); else setMsg('몸이 다 보이게 서 주세요');
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -266,6 +296,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         });
         if (!alive) { stream.getTracks().forEach((t) => t.stop()); return; }
         const v = videoRef.current;
+        streamRef.current = stream;
         if (v) { v.srcObject = stream; await v.play().catch(() => {}); }
         loop();
       } catch (e) {
@@ -453,7 +484,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }, 100);
     tickRef.current = tick;
   };
-  useEffect(() => { stepRef.current = step; });
+  useEffect(() => { stepRef.current = step; stepsRef.current = STEPS; });
   useEffect(() => { checkRef.current = check; });
   useEffect(() => { startRef.current = start; });
   // 지난주 자세는 옆모습 판에서만, 그리고 재기 전에만 깔아 준다.
@@ -540,6 +571,19 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             {nxt.how}
             {nxt.id === 'front' && '\n팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. 억지로 올리지 말고 올라가는 만큼만요 — 양쪽을 따로 담습니다.'}
           </div>
+          {nxt.id === 'front' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#FAF7F0', borderRadius: 14,
+              padding: 10, marginBottom: 14 }}>
+              <div style={{ flex: '0 0 72px', height: 96, borderRadius: 10, overflow: 'hidden', background: '#111' }}>
+                <video ref={videoRef} playsInline muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: INK, lineHeight: 1.6, wordBreak: 'keep-all' }}>
+                화면 쪽으로 돌아서면<br /><b style={{ color: GOLD_INK }}>알아서 시작해요</b>
+              </div>
+            </div>
+          )}
+          {/* 예비 — 알아서 넘어가지 않을 때 */}
           <button type="button" onClick={() => setStep(Math.ceil(step))} style={bigBtn(true)}>준비됐어요 →</button>
         </div>
       </Shell>
