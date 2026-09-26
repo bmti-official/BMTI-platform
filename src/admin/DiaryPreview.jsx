@@ -199,7 +199,7 @@ export default function DiaryPreview() {
       )}
 
       {screen === 'capture' && (
-        <AngleCapture admin want={want} onClose={() => setScreen('angle')} onDone={() => {}} />
+        <AngleCapture admin want={want} gender={female ? 'female' : 'male'} onClose={() => setScreen('angle')} onDone={() => {}} />
       )}
 
       {screen && screen !== 'capture' && screen !== 'report' && (

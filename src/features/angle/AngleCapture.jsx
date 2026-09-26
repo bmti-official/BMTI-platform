@@ -16,7 +16,10 @@ import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '.
 import { toCVA } from '../../lib/angleView';
 import { buildSteps, stepSec } from './anglePlan';
 import { useLevel } from './useLevel';
-import { recentChecks } from '../../lib/angleRecord';
+import { recentChecks, sundayOf } from '../../lib/angleRecord';
+import { loadAssets } from '../../lib/appAssets';
+import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../../lib/angleLevels';
+import { resultLine, prevVal, viewVal } from './resultLine';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -50,7 +53,7 @@ const shapeOf = (pts) => (pts || []).map((q) => ({
 
 // admin — 관리자 미리보기에서만 켠다. 막혔을 때 어떤 검사에 걸렸는지 숫자로 보여 준다.
 // 손님에게 숫자 네 줄은 도움이 안 된다 — 손님에겐 '이대로 시작'만 남긴다.
-export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk', 'arm'], admin = false }) {
+export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk', 'arm'], admin = false, gender = null }) {
   const STEPS = useMemo(() => buildSteps(want), [want]);
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
   const [msg, setMsg] = useState('');
@@ -71,15 +74,20 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const { tilt, ask: askLevel, TILT_OK } = useLevel();
   // 지난주 자세 — 재는 화면에 흐리게 깔아 같은 자리·같은 거리에 서기 쉽게
   const [ghost, setGhost] = useState(null);
+  const [pastRows, setPastRows] = useState([]);   // 지난 판들 — 끝 화면에서 '지난번과 견줘' 말할 때 쓴다
+  const [shots, setShots] = useState(null);       // 단계 그림과 경계값
   useEffect(() => {
     let alive = true;
-    recentChecks(3).then((rows) => {
+    recentChecks(8).then((rows) => {
       if (!alive) return;
+      setPastRows(rows || []);
       const hit = (rows || []).find((r) => Array.isArray(r.pose) && r.pose.length >= 25);
       if (hit) setGhost({ pose: hit.pose, week: String(hit.week) });
     });
+    loadAssets([LEVELS_KEY, ...allImageKeys()]).then((m) => { if (alive) setShots(m || {}); });
     return () => { alive = false; };
   }, []);
+  const [more, setMore] = useState(false);        // 끝 화면 '자세히 보기'
 
   const ghostRef = useRef(null);
   const [vals, setVals] = useState({});                // 담은 값 — 화면에 보여 줄 몫(ref는 그릴 때 못 읽는다)
@@ -542,64 +550,95 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     const g = vals;
     const gap = g.armRaiseL != null && g.armRaiseR != null
       ? Math.round(Math.abs(g.armRaiseL - g.armRaiseR) * 10) / 10 : null;
-    // 우세손 쪽이 5도쯤 더 올라가는 건 정상이다(일반 인구 자료).
-    // 10도로 잡았더니 멀쩡한 사람에게도 경고가 떴다 — 18도로 올린다.
+    // 자주 쓰는 쪽이 5도쯤 더 올라가는 건 흔하다. 18도를 넘을 때만 한 줄 덧붙인다.
     const low = gap != null && gap >= ARM_GAP ? (g.armRaiseL < g.armRaiseR ? '왼쪽' : '오른쪽') : null;
     const q = lastQuality;
+    const thisWeek = sundayOf();
+    const cuts = readCuts(shots?.[LEVELS_KEY]?.meta);
+    const who = /female|여/.test(String(gender || '').toLowerCase()) ? 'female' : 'male';
+    const RAW = { neck: g.neckBend, trunk: g.trunkFlex, arm: g.armRaise };
+    const rows = TILE.filter((x) => want.includes(x.take)).map((x) => {
+      const item = LEVEL_ITEMS.find((it) => it.short === x.take);
+      const now = viewVal(x.take, RAW[x.take]);
+      const lv = now == null ? null : levelOf(item, now, cuts);
+      return {
+        ...x, item, now, lv,
+        shot: pickImage(shots, item, who, lv),
+        line: resultLine(x.take, now, prevVal(pastRows, x.take, thisWeek)),
+      };
+    });
+    const tint = (lv) => (lv === 1 ? '#5E9463' : lv === 2 ? '#9A7A16' : '#B23B36');
+
     return (
       <Shell onClose={onClose} title="각도기록" voice={voice} hasClips={hasClips} onVoice={flipVoice}>
         <div style={{ padding: '18px 4px 0' }}>
-          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 12 }}>다 쟀어요</div>
-          <div style={{ display: 'flex', gap: 7, marginBottom: 14 }}>
-            {TILE.filter((x) => want.includes(x.take)).map((x) => (
-              <div key={x.take} style={{ flex: 1, background: YELLOW, borderRadius: 14, padding: '12px 6px', textAlign: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: GOLD_INK }}>{x.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: INK, fontVariantNumeric: 'tabular-nums' }}>
-                  {x.val(g) ? `${x.val(g)}°` : '—'}
+          <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 14 }}>다 쟀어요</div>
+
+          {/* 항목마다 그림 한 장 + 한 문장. 숫자는 '자세히'로 미룬다 —
+              숫자를 늘어놓으면 무엇이 좋은지 손님이 스스로 판단해야 한다. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+            {rows.map((r) => (
+              <div key={r.take} style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#FAF7F0',
+                borderRadius: 16, padding: '10px 12px' }}>
+                <div style={{ flex: '0 0 62px', height: 124, borderRadius: 10, background: '#fff', overflow: 'hidden',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {r.shot
+                    ? <img src={r.shot.url} alt={`${r.label} ${LEVEL_NAME[r.shot.level]}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : <span style={{ fontSize: 22 }}>📐</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: INK }}>{r.label}</span>
+                    {r.lv && (
+                      <span style={{ fontSize: 11, fontWeight: 900, color: tint(r.lv), background: '#fff',
+                        borderRadius: 999, padding: '2px 9px' }}>{LEVEL_NAME[r.lv]}</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: INK, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                    {r.line}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* 잰 자세를 눈으로 확인 — 숫자만 보면 엉뚱하게 잡힌 판을 알아챌 수 없다 */}
-          {(g.pose || g.poseFront) && (
-            <div style={{ background: '#FAF7F0', borderRadius: 13, padding: '12px 10px', marginBottom: 14 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 900, color: INK, marginBottom: 8, textAlign: 'center' }}>
-                이 자세로 쟀어요. 맞나요?
-              </div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                {[['옆모습', g.pose, 'side'], ['앞모습', g.poseFront, 'front']].map(([lb, pose, kind]) => (pose ? (
-                  <div key={kind} style={{ flex: '0 0 40%', maxWidth: 130, textAlign: 'center' }}>
-                    <Stick pose={pose} kind={kind} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: SUB }}>{lb}</span>
-                  </div>
-                ) : null))}
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: SUB, lineHeight: 1.7, marginTop: 8, textAlign: 'center', wordBreak: 'keep-all' }}>
-                사람 모양이 아니거나 팔다리가 엉켜 있으면 잘못 잡힌 거예요. 다시 재 주세요.
-              </div>
+          {g.blurry && (
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: GOLD_INK, background: '#FDF6DC', borderRadius: 12,
+              padding: '11px 13px', marginBottom: 12, lineHeight: 1.7, wordBreak: 'keep-all' }}>
+              이번엔 흐리게 잡혀서 흐름 그래프에는 넣지 않았어요. 다음 주엔 밝은 곳에서 재 볼까요?
+            </div>
+          )}
+          {low && (
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, background: '#FAF7F0', borderRadius: 12,
+              padding: '11px 13px', marginBottom: 12, lineHeight: 1.7, wordBreak: 'keep-all' }}>
+              <b>{low} 팔</b>이 {gap}도 덜 올라갔어요. 양쪽 값은 따로 담아 둡니다.
             </div>
           )}
 
-          {/* 잘 잡혔는지 — 손님이 알 수 있어야 다시 잴지 정한다 */}
-          <div style={{ background: q >= 70 ? '#EDF7F0' : q >= 45 ? '#FDF6DC' : '#FBEAE9', borderRadius: 13,
-            padding: '12px 14px', marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 900, color: q >= 70 ? '#2E7D50' : q >= 45 ? GOLD_INK : '#B23B36', marginBottom: 3 }}>
-              {q >= 70 ? '잘 잡혔어요' : q >= 45 ? '조금 흔들렸어요' : '많이 흔들렸어요'}
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: SUB, lineHeight: 1.7, wordBreak: 'keep-all' }}>
-              {q >= 70 ? '이 판은 추세에 그대로 들어갑니다.'
-                : q >= 45 ? '값은 담았지만 다음엔 더 밝은 곳에서, 몸이 다 보이게 서 보세요.'
-                  : '이 판은 추세에서 빠집니다. 한 번 더 재는 쪽을 권해요.'}
-            </div>
-          </div>
-
-          {low && (
-            <div style={{ background: '#FAF7F0', borderRadius: 13, padding: '12px 14px', marginBottom: 14 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.75, wordBreak: 'keep-all' }}>
-                <b>{low} 팔</b>이 {gap}도 덜 올라갔어요 (왼 {g.armRaiseL}° · 오른 {g.armRaiseR}°).
-                자주 쓰는 쪽이 5도쯤 더 올라가는 건 흔한 일이라, {ARM_GAP}도를 넘을 때만 알려 드려요.
-                추세는 잘 올라가는 쪽으로 보고, 양쪽 값은 따로 담아 둡니다.
+          <button type="button" onClick={() => setMore((v) => !v)}
+            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 12.5, fontWeight: 800, color: SUB, padding: '4px 0 12px' }}>
+            {more ? '자세히 접기 ▴' : '자세히 보기 ▾'}
+          </button>
+          {more && (
+            <div style={{ background: '#fff', borderRadius: 13, boxShadow: 'inset 0 0 0 1px #EDE9E2',
+              padding: '12px 14px', marginBottom: 14, fontSize: 12.5, fontWeight: 700, color: INK, lineHeight: 1.9 }}>
+              {rows.map((r) => (
+                <div key={r.take} style={{ display: 'flex' }}>
+                  <span style={{ flex: 1, color: SUB }}>{r.label}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{r.now == null ? '—' : `${r.now}°`}</span>
+                </div>
+              ))}
+              {g.armRaiseL != null && g.armRaiseR != null && (
+                <div style={{ display: 'flex' }}>
+                  <span style={{ flex: 1, color: SUB }}>왼팔 · 오른팔</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{g.armRaiseL}° · {g.armRaiseR}°</span>
+                </div>
+              )}
+              <div style={{ display: 'flex' }}>
+                <span style={{ flex: 1, color: SUB }}>잡힌 정도</span>
+                <span>{q >= 70 ? '잘 잡힘' : q >= 45 ? '조금 흔들림' : '흐리게 잡힘'}</span>
               </div>
             </div>
           )}
@@ -821,36 +860,6 @@ function Ring({ left, total }) {
   );
 }
 
-
-// 잰 자세를 뼈대로 그려 준다 — 숫자만 보면 엉뚱하게 잡힌 판을 알아챌 수 없다.
-// 어깨~골반 길이로 크기를 맞춰, 멀리 서서 잰 판과 가까이서 잰 판이 같은 크기로 보인다.
-const STICK = {
-  side: [[7, 11], [11, 23], [23, 25], [25, 27]],
-  front: [[11, 12], [11, 23], [12, 24], [23, 24], [11, 13], [13, 15], [12, 14], [14, 16]],
-};
-function Stick({ pose, kind }) {
-  const W = 110, H = 150;
-  const at = (i) => pose?.[i];
-  const sh = at(11), hip = at(23);
-  if (!sh || !hip) return null;
-  const torso = Math.hypot(sh.x - hip.x, sh.y - hip.y) || 0.25;
-  const k = (H * 0.30) / torso;
-  const cx = W / 2, cy = H * 0.30;
-  const P = (i) => { const q = at(i); return q ? [cx + (q.x - sh.x) * k, cy + (q.y - sh.y) * k] : null; };
-  const lines = STICK[kind] || STICK.side;
-  const head = P(0) || P(7);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', maxWidth: W }}>
-      {lines.map(([a, b], i) => {
-        const p = P(a), q = P(b);
-        if (!p || !q) return null;
-        return <line key={i} x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]}
-          stroke="#7C6BD0" strokeWidth="5" strokeLinecap="round" />;
-      })}
-      {head && <circle cx={head[0]} cy={head[1]} r="10" fill="#7C6BD0" />}
-    </svg>
-  );
-}
 
 const bigBtn = (on) => ({
   width: '100%', padding: 15, borderRadius: 14, border: 'none', cursor: on ? 'pointer' : 'default',
