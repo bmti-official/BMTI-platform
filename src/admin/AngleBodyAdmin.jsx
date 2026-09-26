@@ -45,7 +45,8 @@ function RefAdmin() {
       <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>각도 재는 화면 참고 그림</div>
       <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8, marginBottom: 14 }}>
         손님이 각도를 잴 때 보는 그림입니다. <b>바른 자세만</b> 보여 주세요. 넣으면 바로 저장됩니다.
-        <br />영상 두 편은 잴 때 카메라 화면 <b>왼쪽 위에 작게, 소리 없이 계속 반복</b>됩니다 —
+        <br />휴대폰 두는 법은 첫 화면에 <b>4:3</b>으로 반복됩니다. 거리(약 2m)는 영상 아래 글씨로 붙으니 영상에는 글씨를 넣지 않아도 됩니다.
+        <br />동작 영상 두 편은 잴 때 카메라 화면 <b>왼쪽 위에 작게, 소리 없이 계속 반복</b>됩니다 —
         올렸다 내리는(갔다 돌아오는) 4~5초 영상이 자연스럽습니다.
       </div>
       <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, boxShadow: 'inset 0 0 0 1px #EDE9E2', marginBottom: 14 }}>

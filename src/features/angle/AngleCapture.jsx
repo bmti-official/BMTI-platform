@@ -24,6 +24,7 @@ import { resultLine, prevVal, viewVal } from './resultLine';
 import { allSetKeys, setKey, nearestShot, nearestPair, armMeta } from '../../lib/angleShots';
 import NeckShot from '../../components/NeckShot';
 import { allRefKeys, refUrl } from '../../lib/angleRefs';
+import { isClip } from '../curation/media';
 import { TrunkShot, ArmShot } from '../../components/BodyShots';
 
 const INK = '#1C1A17', SUB = '#8A8378';
@@ -615,10 +616,19 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             옆모습 한 번, 앞모습 한 번 찍습니다. 매주 같은 자리에서 재면
             지난주와 얼마나 달라졌는지 볼 수 있어요.
           </div>
+          {/* 휴대폰 두는 법 — 영상(4:3)이면 소리 없이 반복한다. 거리는 그림에 쓰지 않고 여기 글씨로 둔다
+              (AI 그림은 한글을 깨뜨리고, 숫자를 바꿀 때 그림을 다시 만들어야 한다) */}
           {ref('phone') && (
-            <img src={ref('phone')} alt="휴대폰을 세워 두고 몇 걸음 물러선 모습"
-              style={{ width: '100%', maxHeight: 220, objectFit: 'contain', borderRadius: 14, background: '#FAF7F0',
-                display: 'block', marginBottom: 14 }} />
+            <div style={{ marginBottom: 14 }}>
+              {isClip(ref('phone'))
+                ? <video src={ref('phone')} autoPlay loop muted playsInline aria-label="휴대폰을 세워 두고 물러서는 모습"
+                    style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'contain', borderRadius: 14, background: '#FAF7F0', display: 'block' }} />
+                : <img src={ref('phone')} alt="휴대폰을 세워 두고 물러선 모습"
+                    style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'contain', borderRadius: 14, background: '#FAF7F0', display: 'block' }} />}
+              <div style={{ fontSize: 12.5, color: INK, fontWeight: 600, lineHeight: 1.75, marginTop: 8, wordBreak: 'keep-all' }}>
+                휴대폰에서 <b>약 2m(큰 걸음 세 번)</b> 떨어져 서 주세요. 두 팔을 옆으로 벌려도 화면에 다 들어오는 거리예요.
+              </div>
+            </div>
           )}
           {retry >= MAX_RETRY && (
             <div style={{ background: '#FBEAE9', color: '#B23B36', borderRadius: 12, padding: '11px 13px',
@@ -637,7 +647,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           </div>
           <ul style={{ margin: '0 0 18px', paddingLeft: 18, fontSize: 13, color: INK, fontWeight: 600, lineHeight: 2 }}>
             <li><b>머리부터 골반까지</b>만 보이면 돼요. 다리는 안 나와도 괜찮아요</li>
-            <li>휴대폰을 세워서 <b>가슴 높이</b>에 두세요</li>
+            <li>휴대폰을 세워서 <b>가슴 높이</b>에 두고, <b>약 2m</b> 떨어져 서세요</li>
             <li>뒤가 <b>단순하고 밝은 벽</b>이면 가장 잘 잡혀요. 뒤에 사람이 없게 해 주세요</li>
             <li>옆모습은 <b>정확히 90도</b> 돌아서세요. 비스듬하면 각도가 작게 나옵니다</li>
           </ul>
@@ -903,7 +913,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           return (
             <video key={url} src={url} autoPlay loop muted playsInline aria-label="따라 할 동작"
               // 영상 비율 그대로(가로 영상이면 팔이 잘리지 않게) — 세로 영상은 폭을 좁게, 가로 영상은 넓게
-              style={{ position: 'absolute', left: 10, top: 10, width: '30%', maxHeight: '42%', objectFit: 'contain',
+              style={{ position: 'absolute', left: 10, top: 10, width: '36%', maxHeight: '42%', objectFit: 'contain',
                 borderRadius: 12, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.3)',
                 pointerEvents: 'none', zIndex: 2 }} />
           );
