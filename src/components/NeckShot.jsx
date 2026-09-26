@@ -7,20 +7,13 @@
 //   흐린 선   … 지난번 값
 // 전신 그림에서 목은 아주 작다. 목 둘레만 잘라(SVG viewBox) 그림과 선을 함께 키운다.
 // 관절 자리(pts)는 그림을 올릴 때 코드가 잰 것이다. 없으면 그림을 통째로 보여 준다.
-import { useEffect, useState } from 'react';
+import { useImgSize } from '../lib/useImgSize';
 
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
 /** shape: 잘라 낼 칸의 가로/세로 (각도 상자 3/4, 끝 화면 작은 칸 1/2) */
 export default function NeckShot({ url, pts, value, prev = null, accent = '#7C6BD0', shape = 3 / 4, alt = '' }) {
-  const [size, setSize] = useState(null);       // 그림 원래 크기 — 불러온 뒤에 안다
-  useEffect(() => {
-    let alive = true;
-    const im = new Image();
-    im.onload = () => { if (alive) setSize({ w: im.naturalWidth, h: im.naturalHeight }); };
-    im.src = url;
-    return () => { alive = false; };
-  }, [url]);
+  const size = useImgSize(url);                  // 그림 원래 크기 — 불러온 뒤에 안다
 
   const ok = size && Array.isArray(pts) && pts.length > 12 && Number.isFinite(Number(value));
   if (!ok) {

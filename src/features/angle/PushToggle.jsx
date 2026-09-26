@@ -1,5 +1,6 @@
-// 주간 알림 켜기 — 각도기록 화면 아래에 둔다.
-// 알림은 '이번 주 아직 안 쟀을 때'만 가므로, 이 화면이 가장 맞는 자리다.
+// 주간 알림 켜기 — 다이어리 입력창의 각도기록 상자, 주 칸 아래에 작게 둔다.
+// 알림은 '이번 주 아직 안 쟀을 때'만 가므로, 주 칸 바로 아래가 가장 맞는 자리다.
+// 이미 켠 사람에게는 스위치를 접어 둔다('🔔 주간 알림 켜짐 ▾'을 누르면 펼쳐진다).
 import { useEffect, useState } from 'react';
 import { canPush, needsHomeScreen, turnOn, turnOff, isOn } from '../../lib/webPush';
 
@@ -9,6 +10,7 @@ export default function PushToggle() {
   const [on, setOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [why, setWhy] = useState('');
+  const [open, setOpen] = useState(false);     // 켠 사람 — 펼쳤나
 
   useEffect(() => {
     let alive = true;
@@ -26,26 +28,41 @@ export default function PushToggle() {
     if (r.ok) setOn(!on); else setWhy(r.why || '');
   };
 
+  // 켜 둔 사람 — 한 줄로 접어 둔다
+  if (on && !open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)}
+        style={{ marginTop: 9, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer',
+          fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: SUB }}>
+        🔔 주간 알림 켜짐 ▾
+      </button>
+    );
+  }
+
   return (
-    <div style={{ marginTop: 14, background: '#fff', borderRadius: 14, padding: '13px 14px',
-      boxShadow: `inset 0 0 0 1px ${LINE}`, fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 900, color: INK }}>주간 알림</div>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginTop: 2, lineHeight: 1.6 }}>
-            {home ? '아이폰은 홈 화면에 추가해야 알림을 받을 수 있어요.'
-              : '그 주에 아직 안 쟀을 때만 한 번 알려 드려요.'}
-          </div>
+    <div style={{ marginTop: 10, background: 'rgba(255,255,255,0.7)', borderRadius: 11, padding: '8px 10px',
+      boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 11, lineHeight: 1.5 }}>
+          <b style={{ fontWeight: 900, color: INK }}>🔔 주간 알림</b>
+          <span style={{ fontWeight: 700, color: SUB, marginLeft: 5 }}>
+            {home ? '아이폰은 홈 화면에 추가해야 받을 수 있어요.' : '그 주에 아직 안 쟀을 때만 한 번 알려 드려요.'}
+          </span>
         </div>
-        <button type="button" onClick={flip} disabled={busy || home}
-          style={{ flexShrink: 0, width: 50, height: 28, borderRadius: 999, border: 'none',
+        <button type="button" onClick={flip} disabled={busy || home} aria-label="주간 알림 켜고 끄기"
+          style={{ flexShrink: 0, width: 38, height: 22, borderRadius: 999, border: 'none',
             cursor: busy || home ? 'default' : 'pointer', position: 'relative',
             background: on ? '#C9975A' : '#E6E1D8', opacity: home ? 0.5 : 1, transition: 'background .2s' }}>
-          <span style={{ position: 'absolute', top: 3, left: on ? 25 : 3, width: 22, height: 22, borderRadius: '50%',
+          <span style={{ position: 'absolute', top: 3, left: on ? 19 : 3, width: 16, height: 16, borderRadius: '50%',
             background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
         </button>
+        {on && (
+          <button type="button" onClick={() => setOpen(false)} aria-label="접기"
+            style={{ flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer', padding: '0 2px',
+              fontFamily: 'inherit', fontSize: 11, fontWeight: 900, color: SUB }}>▴</button>
+        )}
       </div>
-      {why && <div style={{ fontSize: 11.5, color: '#B23B36', fontWeight: 700, marginTop: 8 }}>{why}</div>}
+      {why && <div style={{ fontSize: 11, color: '#B23B36', fontWeight: 700, marginTop: 6 }}>{why}</div>}
     </div>
   );
 }

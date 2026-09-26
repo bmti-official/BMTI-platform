@@ -19,10 +19,11 @@ import { buildSteps, stepSec } from './anglePlan';
 import { useLevel, unroll, ROLL_WARN, PITCH_WARN } from './useLevel';
 import { recentChecks, sundayOf } from '../../lib/angleRecord';
 import { loadAssets } from '../../lib/appAssets';
-import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../../lib/angleLevels';
+import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf } from '../../lib/angleLevels';
 import { resultLine, prevVal, viewVal } from './resultLine';
-import { allSetKeys, setKey, nearestShot, nearestPair } from '../../lib/angleShots';
+import { allSetKeys, setKey, nearestShot, nearestPair, armMeta } from '../../lib/angleShots';
 import NeckShot from '../../components/NeckShot';
+import { TrunkShot, ArmShot } from '../../components/BodyShots';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -101,7 +102,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   // 지난주 자세 — 재는 화면에 흐리게 깔아 같은 자리·같은 거리에 서기 쉽게
   const [ghost, setGhost] = useState(null);
   const [pastRows, setPastRows] = useState([]);   // 지난 판들 — 끝 화면에서 '지난번과 견줘' 말할 때 쓴다
-  const [shots, setShots] = useState(null);       // 단계 그림과 경계값
+  const [shots, setShots] = useState(null);       // 각도별 그림 모음과 단계 경계값
   useEffect(() => {
     let alive = true;
     recentChecks(8).then((rows) => {
@@ -110,7 +111,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       const hit = (rows || []).find((r) => Array.isArray(r.pose) && r.pose.length >= 25);
       if (hit) setGhost({ pose: hit.pose, week: String(hit.week) });
     });
-    loadAssets([LEVELS_KEY, ...allImageKeys(), ...allSetKeys()]).then((m) => { if (alive) setShots(m || {}); });
+    loadAssets([LEVELS_KEY, ...allSetKeys()]).then((m) => { if (alive) setShots(m || {}); });
     return () => { alive = false; };
   }, []);
   const [more, setMore] = useState(false);        // 끝 화면 '자세히 보기'
@@ -706,8 +707,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     const shotFor = (take, now, lv) => {
       const meta = shots?.[setKey(take, who)]?.meta;
       if (take === 'arm') {
-        const p = nearestPair(meta, g.armRaiseL ?? g.armRaise, g.armRaiseR ?? g.armRaise);
-        return p && { url: p.shot.url, level: lv, flip: p.flip };
+        const p = nearestPair(armMeta(shots, who), g.armRaiseL ?? g.armRaise, g.armRaiseR ?? g.armRaise);
+        return p && { url: p.shot.url, level: lv, flip: p.flip, pts: p.shot.pts };
       }
       const n = nearestShot(meta, now);
       return n && { url: n.url, level: lv, pts: n.pts };
@@ -718,9 +719,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       const lv = now == null ? null : levelOf(item, now, cuts);
       return {
         ...x, item, now, lv,
-        // 각도별 그림 모음에서 가장 가까운 것(팔은 왼팔·오른팔 짝으로, 필요하면 뒤집어서).
-        // 모음이 비어 있으면 단계 그림으로 물러난다.
-        shot: shotFor(x.take, now, lv) || pickImage(shots, item, who, lv),
+        // 각도별 그림 모음에서 가장 가까운 것(팔은 세 칸 전체에서, 필요하면 뒤집어서).
+        // 그림 위에 손님 값대로 선을 긋는다. 모음이 비어 있으면 📐만 보인다.
+        shot: shotFor(x.take, now, lv),
         line: resultLine(x.take, now, prevVal(pastRows, x.take, thisWeek)),
       };
     });
@@ -741,6 +742,11 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {r.shot && r.take === 'neck' && r.shot.pts
                     ? <NeckShot url={r.shot.url} pts={r.shot.pts} value={r.now} shape={1 / 2} alt={r.label} />
+                    : r.shot && r.take === 'trunk'
+                    ? <TrunkShot url={r.shot.url} pts={r.shot.pts} value={r.now} small alt={r.label} />
+                    : r.shot && r.take === 'arm'
+                    ? <ArmShot url={r.shot.url} pts={r.shot.pts} flip={r.shot.flip} left={g.armRaiseL ?? g.armRaise}
+                        right={g.armRaiseR ?? g.armRaise} small tags={false} alt={r.label} />
                     : r.shot
                     ? <img src={r.shot.url} alt={`${r.label} ${LEVEL_NAME[r.shot.level]}`}
                         style={{ width: '100%', height: '100%', objectFit: 'contain', transform: r.shot.flip ? 'scaleX(-1)' : 'none' }} />

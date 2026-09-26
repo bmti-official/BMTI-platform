@@ -4,13 +4,13 @@
 // 직접 잰다. 손님 화면에서는 손님 값과 가장 가까운 그림이 나온다.
 // 잰 값이 이상하면(뼈대가 엉뚱한 데 잡히면) 숫자를 손으로 고치면 된다.
 import { useEffect, useRef, useState } from 'react';
-import { INK, SUB, BG, box, btn } from './theme';
+import { INK, SUB, BG, box } from './theme';
 import { uploadOne } from './upload';
 import { loadAssets, saveAsset } from '../lib/appAssets';
-import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usableShots } from '../lib/angleShots';
-import { imgKey } from '../lib/angleLevels';
+import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usableShots, kindOf, armMeta } from '../lib/angleShots';
 import { measureImage } from '../features/angle/measureImage';
 import NeckShot from '../components/NeckShot';
+import { TrunkShot, ArmShot } from '../components/BodyShots';
 import { openVideo, sampleVideo, spreadFrames, frameFile, measureAt, STEP } from '../features/angle/videoFrames';
 
 const GOLD = '#C9975A', GOLD_INK = '#8A6A3A', RED = '#B23B36', GREEN = '#2E7D50';
@@ -59,8 +59,8 @@ export default function AngleSetAdmin() {
   const [note, setNote] = useState('');
   const [over, setOver] = useState(false);
   const [probe, setProbe] = useState(70);           // 손님 값 흉내 — 어떤 그림이 나오는지
-  const [probeR, setProbeR] = useState(150);        // 팔 — 오른팔
-  const [probeL, setProbeL] = useState(120);        // 팔 — 왼팔
+  const [probeR, setProbeR] = useState(120);        // 팔 — 오른팔
+  const [probeL, setProbeL] = useState(60);         // 팔 — 왼팔
   const fileRef = useRef(null);
   // 이번에 연 영상 — 뽑은 장면을 앞뒤로 옮길 때 다시 쓴다. 새로 고치면 사라진다.
   const videosRef = useRef(new Map());
@@ -82,11 +82,14 @@ export default function AngleSetAdmin() {
   if (!sets) return <div style={{ ...box, fontSize: 13, color: SUB, marginBottom: 16 }}>불러오는 중…</div>;
 
   const key = setKey(item.short, who);
-  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (Number(a.angle) || 999) - (Number(b.angle) || 999)
-    || (Math.min(Number(a.l), Number(a.r)) || 0) - (Math.min(Number(b.l), Number(b.r)) || 0));
+  const kind = kindOf(item);
+  const isArm = kind === 'arm';
+  // 한쪽 고정 칸은 움직이는 팔 값 순으로
+  const sortVal = (x) => Number(item.moving ? x[item.moving] : x.angle);
+  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (sortVal(a) || 999) - (sortVal(b) || 999));
   const cov = coverage(item, sets[key]);
-  const isArm = item.short === 'arm';
-  const pair = isArm ? nearestPair(sets[key], probeL, probeR) : null;
+  // 팔 — 손님 화면처럼 세 칸 전체에서 고른다
+  const pair = isArm ? nearestPair(armMeta(sets, who), probeL, probeR) : null;
   const pick = isArm ? pair?.shot : nearestShot(sets[key], probe);
 
   // 고칠 때마다 바로 담는다 — '저장'을 잊고 나가는 일이 없게
@@ -110,7 +113,7 @@ export default function AngleSetAdmin() {
       const up = await uploadOne(list[i]);
       if (up.err) { setNote(up.err); continue; }
       setBusy(`${i + 1}/${list.length} 각도 재는 중…`);
-      const m = await measureImage(up.url, item.short);
+      const m = await measureImage(up.url, kind);
       if (m.err || m.warn) setNote(m.err || m.warn);
       await commit(k, [...latest(k), toShot(up.url, m)]);
     }
@@ -137,17 +140,17 @@ export default function AngleSetAdmin() {
     let longOne = false;
     for (let i = 0; i < opened.length; i += 1) {
       const { f, v } = opened[i];
-      const { samples, cut } = await sampleVideo(v, it.short, (p) =>
+      const { samples, cut } = await sampleVideo(v, kindOf(it), (p) =>
         setBusy(`영상 ${i + 1}/${opened.length} 장면 재는 중… ${Math.round(p * 100)}%`));
       if (cut) longOne = true;
-      const { picks } = spreadFrames(it.short, samples, it.frames);
+      const { picks } = spreadFrames(kindOf(it), samples, it.frames);
       const name = opened.length > 1 ? `영상 ${i + 1}` : '영상';
       if (!picks.length) {
         report.push(`${name}: 움직임을 못 찾았어요(사람을 잡은 장면 ${samples.length}개).`);
         continue;
       }
       const span = (fn) => `${Math.round(Math.min(...picks.map(fn)))}°~${Math.round(Math.max(...picks.map(fn)))}°`;
-      report.push(`${name}: ${picks.length}장 · ${it.short === 'arm'
+      report.push(`${name}: ${picks.length}장 · ${kindOf(it) === 'arm'
         ? `오른팔 ${span((x) => x.r)}, 왼팔 ${span((x) => x.l)}` : span((x) => x.angle)}`);
       picks.forEach((x) => found.push({ ...x, vi: i, vid: vidKey(f) }));
     }
@@ -183,7 +186,7 @@ export default function AngleSetAdmin() {
     if (!v) return;
     const t = Math.max(0, Math.round((s.from.t + dir * STEP) * 100) / 100);
     setBusy('장면 옮기는 중…');
-    const m = await measureAt(v, t, item.short);
+    const m = await measureAt(v, t, kind);
     const up = await uploadOne(await frameFile(v, t));
     setBusy('');
     if (up.err) { setNote(up.err); return; }
@@ -192,27 +195,12 @@ export default function AngleSetAdmin() {
     await commit(k, latest(k).map((x) => (x.id === id ? { ...nx, id } : x)));
   };
 
-  // 예전에 올린 단계 그림 3장을 가져와 잰다 — 버리지 않고 알맞은 자리에 끼운다
-  const importLevels = async () => {
-    const k = key;
-    const lv = await loadAssets([1, 2, 3].map((n) => imgKey(item.short, who, n)));
-    const urls = [1, 2, 3].map((n) => lv[imgKey(item.short, who, n)]?.url).filter(Boolean)
-      .filter((u) => !latest(k).some((s) => s.url === u));
-    if (!urls.length) { setNote('가져올 단계 그림이 없어요(이미 가져왔거나 비어 있어요).'); return; }
-    for (let i = 0; i < urls.length; i += 1) {
-      setBusy(`단계 그림 ${i + 1}/${urls.length} 재는 중…`);
-      const m = await measureImage(urls[i], item.short);
-      await commit(k, [...latest(k), toShot(urls[i], m)]);
-    }
-    setBusy('');
-  };
-
   const remeasure = async (id) => {
     const k = key;
     const s = latest(k).find((x) => x.id === id);
     if (!s) return;
     setBusy('다시 재는 중…');
-    const m = await measureImage(s.url, item.short);
+    const m = await measureImage(s.url, kind);
     setBusy('');
     if (m.err) { setNote(m.err); return; }
     if (m.warn) setNote(m.warn);
@@ -255,30 +243,39 @@ export default function AngleSetAdmin() {
         <br /><b>영상</b>을 놓으면 움직임의 <b>처음과 끝</b>을 찾아, 그 사이를 고르게 나눠
         <b> 목은 4장, 허리·팔은 8장</b>을 뽑아 담습니다(영상 한 편마다).
         팔 영상은 여러 편을 한꺼번에 놓아 주세요. 뽑힌 장면이 흐리면 ◀ ▶로 앞뒤 장면으로 바꿀 수 있습니다(영상을 연 채로 있는 동안만).
-        <br /><b>옆으로 팔 들기</b>는 왼팔·오른팔을 따로 잽니다. 오른팔이 높은 그림만 올려도 됩니다 —
-        왼팔이 높은 손님에게는 그림을 <b>좌우로 뒤집어</b> 보여 줍니다.
+        <br /><b>옆으로 팔 들기</b>는 세 칸입니다. <b>양팔 같이</b>는 두 팔을 함께 0°(차렷)부터 180°까지,
+        <b> 왼팔 고정</b>은 왼팔은 그대로 두고 오른팔만, <b>오른팔 고정</b>은 오른팔은 그대로 두고 왼팔만 올린 그림입니다.
+        손님 두 팔 값과 가장 가까운 그림을 세 칸 전체에서 고릅니다.
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={pill}>
-          {SET_ITEMS.map((x) => (
-            <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.short === x.short)}>{x.label}</button>
+          {SET_ITEMS.filter((x, i, all) => all.findIndex((y) => y.label === x.label) === i).map((x) => (
+            <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.label === x.label)}>{x.label}</button>
           ))}
         </div>
+        {/* 팔은 세 칸 — 양팔 같이 · 왼팔 고정 · 오른팔 고정 */}
+        {item.sub && (
+          <div style={pill}>
+            {SET_ITEMS.filter((x) => x.label === item.label).map((x) => (
+              <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.short === x.short)}>{x.sub}</button>
+            ))}
+          </div>
+        )}
         <div style={pill}>
           {[['female', '여성'], ['male', '남성']].map(([k, lb]) => (
             <button key={k} type="button" onClick={() => setWho(k)} style={tabBtn(who === k)}>{lb}</button>
           ))}
         </div>
         <span style={{ alignSelf: 'center', fontSize: 12, fontWeight: 800, color: GOLD }}>
-          {item.label} · {item.view} · {usableShots(sets[key]).length}장
+          {item.label}{item.sub ? ` · ${item.sub}` : ''} · {item.view} · {usableShots(sets[key]).length}장
         </span>
       </div>
 
       {/* 목표 각도마다 채워졌는지 — 빈 자리가 어디인지 한눈에 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>
-          목표 각도 <span style={{ fontWeight: 700, color: SUB }}>— 초록은 가까운 그림이 있음, 회색은 빈 자리</span>
+          목표 각도{item.moving ? ` (${item.moving === 'r' ? '오른팔' : '왼팔'})` : ''} <span style={{ fontWeight: 700, color: SUB }}>— 초록은 가까운 그림이 있음, 회색은 빈 자리</span>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {cov.map((c) => (
@@ -299,18 +296,13 @@ export default function AngleSetAdmin() {
         style={{ borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: busy ? 'default' : 'pointer', marginBottom: 12,
           background: over ? '#FFF6E6' : '#fff', boxShadow: `inset 0 0 0 2px ${over ? GOLD : '#EDE9E2'}`, borderStyle: 'dashed' }}>
         <div style={{ fontSize: 13.5, fontWeight: 900, color: busy ? GOLD_INK : INK }}>
-          {busy || `${item.label} ${who === 'female' ? '여성' : '남성'} 그림이나 영상을 여기에 끌어다 놓으세요`}
+          {busy || `${item.label}${item.sub ? `(${item.sub})` : ''} ${who === 'female' ? '여성' : '남성'} 그림이나 영상을 여기에 끌어다 놓으세요`}
         </div>
         {!busy && <div style={{ fontSize: 11.5, color: SUB, fontWeight: 600, marginTop: 4 }}>여러 장을 한꺼번에 놓아도 됩니다 · 눌러서 고르기</div>}
         <input ref={fileRef} type="file" accept="image/*,video/*" multiple style={{ display: 'none' }}
           onChange={(e) => { addFiles(e.target.files || []); e.target.value = ''; }} />
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
-        <button type="button" onClick={importLevels} disabled={!!busy} style={btn(false)}>
-          예전 단계 그림 3장 가져와 재기
-        </button>
-        {note && <span style={{ fontSize: 12, fontWeight: 700, color: RED }}>{note}</span>}
-      </div>
+      {note && <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 14 }}>{note}</div>}
 
       {/* 모은 그림 — 각도 순으로 */}
       {shots.length > 0 && (
@@ -323,7 +315,7 @@ export default function AngleSetAdmin() {
                 boxShadow: isPick ? `inset 0 0 0 2px ${GOLD}` : 'none' }}>
                 <div style={{ position: 'relative', background: '#fff', borderRadius: 8, overflow: 'hidden', aspectRatio: '1 / 2' }}>
                   <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
-                  <Bones pts={s.pts} kind={item.short} />
+                  <Bones pts={s.pts} kind={kind} />
                 </div>
                 {isArm && (
                   // 앞모습이라 그 사람의 오른팔이 화면 왼쪽에 있다 — 칸도 그 순서로
@@ -388,7 +380,7 @@ export default function AngleSetAdmin() {
             → <span style={{ color: GOLD }}>{pick ? `${pick.angle}° 그림` : '—'}</span>이 나옵니다
             <span style={{ fontWeight: 700, color: SUB }}> (노란 테두리)</span>
           </div>
-          <input type="range" min={item.short === 'neck' ? 40 : 10} max={item.short === 'neck' ? 95 : 145} value={probe}
+          <input type="range" min={item.short === 'neck' ? 40 : 0} max={item.short === 'neck' ? 95 : 150} value={probe}
             onChange={(e) => setProbe(Number(e.target.value))} style={{ width: '100%', accentColor: '#C9A227' }} />
           {/* 목은 손님 화면처럼 그림 위에 선을 그어 본다 — 선이 목에 제대로 붙는지 확인 */}
           {item.short === 'neck' && pick?.pts && (
@@ -396,30 +388,37 @@ export default function AngleSetAdmin() {
               <NeckShot url={pick.url} pts={pick.pts} value={probe} prev={probe - 6} />
             </div>
           )}
-          {item.short === 'neck' && pick?.pts && (
-            <div style={{ fontSize: 11, color: SUB, fontWeight: 700, marginTop: 4 }}>진한 선은 손님 값, 흐린 선은 지난번(예시로 6도 낮게)</div>
+          {item.short === 'trunk' && pick?.pts && (
+            <div style={{ width: 170, marginTop: 10, background: '#fff', borderRadius: 10, overflow: 'hidden' }}>
+              <TrunkShot url={pick.url} pts={pick.pts} value={probe} prev={probe - 10} />
+            </div>
+          )}
+          {pick?.pts && (
+            <div style={{ fontSize: 11, color: SUB, fontWeight: 700, marginTop: 4 }}>진한 선은 손님 값, 흐린 선은 지난번(예시)</div>
           )}
         </div>
       )}
-      {isArm && usableShots(sets[key]).length > 0 && (
+      {isArm && usableShots(armMeta(sets, who)).length > 0 && (
         <div style={{ ...box, background: BG, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 240px' }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 6 }}>
               손님이 오른팔 <span style={{ color: GOLD }}>{probeR}°</span> · 왼팔 <span style={{ color: GOLD }}>{probeL}°</span>면
               → <span style={{ color: GOLD }}>{pick ? `오 ${pick.r}° · 왼 ${pick.l}° 그림` : '—'}</span>
               {pair?.flip && <span style={{ color: GOLD }}>을 뒤집어</span>} 보여 줍니다
+              <span style={{ fontWeight: 700, color: SUB }}> (세 칸 전체에서 고름 · 선은 손님 값)</span>
             </div>
             {[['오른팔', probeR, setProbeR], ['왼팔', probeL, setProbeL]].map(([lb, v, set]) => (
               <label key={lb} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11.5, fontWeight: 800, color: SUB }}>
                 <span style={{ width: 36 }}>{lb}</span>
-                <input type="range" min={40} max={185} value={v} onChange={(e) => set(Number(e.target.value))}
+                <input type="range" min={0} max={180} value={v} onChange={(e) => set(Number(e.target.value))}
                   style={{ flex: 1, accentColor: '#C9A227' }} />
               </label>
             ))}
           </div>
           {pick && (
-            <img src={pick.url} alt="" style={{ height: 150, borderRadius: 8, background: '#fff',
-              transform: pair.flip ? 'scaleX(-1)' : 'none' }} />
+            <div style={{ width: 130, background: '#fff', borderRadius: 8, overflow: 'hidden' }}>
+              <ArmShot url={pick.url} pts={pick.pts} left={probeL} right={probeR} flip={pair.flip} />
+            </div>
           )}
         </div>
       )}

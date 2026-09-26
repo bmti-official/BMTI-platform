@@ -15,6 +15,9 @@ import { getGuestMallang, getSleepSetting, setSleepSetting, canChangeSleepSettin
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
 import { todayFinishes } from "../lib/cardFinish";
 import { recentChecks } from "../lib/angleRecord";
+import PushToggle from "../features/angle/PushToggle";
+import { loadAssets } from "../lib/appAssets";
+import { allSetKeys, setKey, nearestShot, nearestPair, armMeta } from "../lib/angleShots";
 
 // 하루 기록에서 고를 수 있는 불편한 부위 최대 개수 (BodySelector3D의 MAX_PARTS와 맞춘다)
 const MAX_SORE_PARTS = 3;
@@ -997,7 +1000,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
               {/* 각도기록 — 최근 네 주를 칸으로. 쟀는지 안 쟀는지가 한눈에 보인다.
                   카메라는 전체 화면으로 따로 뜬다. 여기서 켜면 쓰던 흐름이 끊긴다. */}
               {onAngle && angleWeeks && (
-                <AngleWeekStrip weeks={angleWeeks} onAngle={onAngle} t={t} />
+                <AngleWeekStrip weeks={angleWeeks} onAngle={onAngle} t={t} gender={gender} />
               )}
 
               {/* ━━━ 순서 변경·숨기기 가능한 5개 블럭 ━━━ */}
@@ -1153,7 +1156,7 @@ function Chip({ label, on, onClick, disabled }) {
 //
 // 칸마다 그 주가 며칠부터 며칠까지인지를 적는다. 요일만 적으면 어느 주 이야기인지
 // 안 보이고, '이번 주'라고만 적으면 지난 세 칸이 무슨 주였는지 모른다.
-function AngleWeekStrip({ weeks, onAngle, t }) {
+function AngleWeekStrip({ weeks, onAngle, t, gender }) {
   const now = weeks[weeks.length - 1];
   const done = weeks.filter((w) => w.on).length;
   const [pick, setPick] = useState(false);
@@ -1197,7 +1200,9 @@ function AngleWeekStrip({ weeks, onAngle, t }) {
           );
         })}
       </div>
-      {pick && <AnglePartPick onClose={() => setPick(false)} onGo={(want) => { setPick(false); onAngle(want); }} t={t} />}
+      {/* 주간 알림 — 주 칸 바로 아래에 작게. 켠 사람에게는 한 줄로 접힌다 */}
+      <PushToggle />
+      {pick && <AnglePartPick onClose={() => setPick(false)} onGo={(want) => { setPick(false); onAngle(want); }} t={t} gender={gender} />}
     </div>
   );
 }
@@ -1207,13 +1212,31 @@ function AngleWeekStrip({ weeks, onAngle, t }) {
 // 셋을 다 재려면 서서 옷을 갖춰 입고 자리를 잡아야 한다. 매주 그걸 다 하긴 어렵다.
 // **목만 고르면 앉아서 잴 수 있다** — 귀와 어깨만 있으면 되기 때문이다.
 // 허리·어깨는 골반을 기준으로 재므로 서 있어야 하고, 그 사정을 창에 적어 둔다.
+// 카드마다 그 동작이 한눈에 보이는 그림 한 장 — 각도별 그림 모음에서 정해 둔 각도에 가장 가까운 것.
+// 목은 많이 내민 모습(CVA 55°), 허리는 깊이 숙인 모습(135°), 팔은 두 팔 높이가 다른 모습.
 const ANGLE_PARTS = [
-  { key: "neck", label: "목의 정렬", how: "앉아서도 돼요", note: "고개가 얼마나 앞으로 나왔는지" },
-  { key: "trunk", label: "허리 굽힘", how: "서서", note: "허리가 얼마나 숙여지는지" },
-  { key: "arm", label: "옆으로 팔 들기", how: "서서", note: "팔이 얼마나 올라가는지" },
+  { key: "neck", label: "목의 정렬", how: "앉아서도 돼요", note: "고개가 얼마나 앞으로 나왔는지", show: 55 },
+  { key: "trunk", label: "허리 굽힘", how: "서서", note: "허리가 얼마나 숙여지는지", show: 135 },
+  { key: "arm", label: "옆으로 팔 들기", how: "서서", note: "팔이 얼마나 올라가는지", show: { r: 120, l: 90 } },
 ];
-function AnglePartPick({ onClose, onGo, t }) {
+function AnglePartPick({ onClose, onGo, t, gender }) {
   const [on, setOn] = useState(["neck", "trunk", "arm"]);
+  const [sets, setSets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    loadAssets(allSetKeys()).then((m) => { if (alive) setSets(m || {}); });
+    return () => { alive = false; };
+  }, []);
+  const who = /female|여/.test(String(gender || "").toLowerCase()) ? "female" : "male";
+  const picOf = (a) => {
+    if (!sets) return null;
+    if (a.key === "arm") {
+      const p = nearestPair(armMeta(sets, who), a.show.l, a.show.r);
+      return p && { url: p.shot.url, flip: p.flip };
+    }
+    const n = nearestShot(sets[setKey(a.key, who)]?.meta, a.show);
+    return n && { url: n.url, flip: false };
+  };
   // 차례는 늘 목→허리→어깨로 두고, 켜고 끄기만 한다
   const flip = (k) => setOn((p) => ANGLE_PARTS.map((a) => a.key)
     .filter((x) => (x === k ? !p.includes(k) : p.includes(x))));
@@ -1228,24 +1251,31 @@ function AnglePartPick({ onClose, onGo, t }) {
         <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, lineHeight: 1.7, marginBottom: 16, wordBreak: "keep-all" }}>
           고른 것만 잽니다. 매주 같은 것만 재도 흐름은 그대로 이어져요.
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+        {/* 그림 카드를 옆으로 넘기며 고른다 — 이름만으로는 어떤 동작인지 떠올리기 어렵다 */}
+        <div style={{ display: "flex", gap: 9, overflowX: "auto", margin: "0 -18px 14px", padding: "2px 18px 4px",
+          scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
           {ANGLE_PARTS.map((a) => {
             const yes = on.includes(a.key);
+            const pic = picOf(a);
             return (
-              <button key={a.key} type="button" onClick={() => flip(a.key)}
-                style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left",
-                  border: "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 14, padding: "13px 14px",
+              <button key={a.key} type="button" onClick={() => flip(a.key)} aria-pressed={yes}
+                style={{ flex: "0 0 124px", scrollSnapAlign: "start", display: "flex", flexDirection: "column", textAlign: "left",
+                  border: "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 16, padding: 7,
                   background: yes ? C.yellow : "#fff", boxShadow: yes ? `inset 0 0 0 2px ${t.accent}` : `inset 0 0 0 1px ${C.line}` }}>
-                <span style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, display: "flex", alignItems: "center",
-                  justifyContent: "center", fontSize: 13, fontWeight: 900,
-                  background: yes ? t.accent : "#F1EEE8", color: yes ? "#fff" : "#C6C0B5" }}>{yes ? "✓" : ""}</span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 14, fontWeight: 900, color: C.ink }}>
-                    {a.label}
-                    <span style={{ fontSize: 11, fontWeight: 800, color: GOLD, marginLeft: 6 }}>{a.how}</span>
-                  </span>
-                  <span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: C.sub, marginTop: 2 }}>{a.note}</span>
+                <span style={{ position: "relative", display: "block", height: 150, borderRadius: 11, overflow: "hidden",
+                  background: "#FAF7F0" }}>
+                  {pic
+                    ? <img src={pic.url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block",
+                        transform: pic.flip ? "scaleX(-1)" : "none", opacity: yes ? 1 : 0.55 }} />
+                    : <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>📐</span>}
+                  <span style={{ position: "absolute", left: 6, top: 6, width: 22, height: 22, borderRadius: 7, display: "flex",
+                    alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900,
+                    background: yes ? t.accent : "rgba(255,255,255,0.92)", color: yes ? "#fff" : "#C6C0B5",
+                    boxShadow: yes ? "none" : `inset 0 0 0 1px ${C.line}` }}>{yes ? "✓" : ""}</span>
                 </span>
+                <span style={{ display: "block", fontSize: 13, fontWeight: 900, color: C.ink, marginTop: 7, whiteSpace: "nowrap" }}>{a.label}</span>
+                <span style={{ display: "block", fontSize: 10.5, fontWeight: 800, color: GOLD, marginTop: 1 }}>{a.how}</span>
+                <span style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: C.sub, marginTop: 2, lineHeight: 1.4, wordBreak: "keep-all" }}>{a.note}</span>
               </button>
             );
           })}

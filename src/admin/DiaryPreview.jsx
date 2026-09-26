@@ -13,15 +13,13 @@ import AngleBodyAdmin from './AngleBodyAdmin';
 import { getDiaryHistory } from '../lib/diaryHistory';
 import { setDiaryDryRun, todayISO } from '../lib/diaryHistory';
 import { toView } from '../lib/angleView';
-import AngleView from '../features/angle/AngleView';
 import AngleCapture from '../features/angle/AngleCapture';
-import PushToggle from '../features/angle/PushToggle';
 import { DiaryIcon } from '../components/DiaryIcons';
 import { TAG_CATEGORIES, strainScore, strainWord } from '../lib/diaryTags';
 
 const GOLD_INK = '#8A6A3A';
 
-// 각도기록 화면을 보려면 주간 기록이 있어야 한다. 그럴듯한 몇 주를 지어 낸다.
+// 이번달 기록의 각도기록 상자를 보려면 주간 기록이 있어야 한다. 그럴듯한 몇 주를 지어 낸다.
 function fakeWeeks(n) {
   const out = [];
   for (let i = 0; i < n; i += 1) {
@@ -45,7 +43,7 @@ function fakeWeeks(n) {
 export default function DiaryPreview() {
   const [picked, setPicked] = useState(['진통제', '업무과다', '카페인']);
   const [female, setFemale] = useState(true);
-  const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'angle' | 'capture' | 'draft'
+  const [screen, setScreen] = useState('');   // '' | 'tag' | 'report' | 'capture' | 'draft'
   const [weeks, setWeeks] = useState(3);      // 몇 주치가 쌓인 셈 칠지
   const [tone, setTone] = useState('z');      // 미리보기 말투
   const [writing, setWriting] = useState(null);   // 쓰는 중 — { mood, date, entry }
@@ -123,7 +121,6 @@ export default function DiaryPreview() {
             style={btn(true)}>📱 다이어리 화면</button>
           <button onClick={() => { setReportTab('records'); setScreen('report'); }} style={btn(false)}>📅 이번달 기록</button>
           <button onClick={() => { setReportTab('discovery'); setScreen('report'); }} style={btn(false)}>📊 이번달 발견</button>
-          <button onClick={() => setScreen('angle')} style={btn(false)}>📐 각도기록 화면</button>
           <button onClick={() => setScreen('capture')} style={btn(false)}>📷 각도 재는 화면</button>
           <button onClick={() => setScreen('draft')} style={btn(false)}>🧪 발견 박스 원안</button>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
@@ -202,15 +199,14 @@ export default function DiaryPreview() {
       )}
 
       {screen === 'capture' && (
-        <AngleCapture admin want={want} gender={female ? 'female' : 'male'} onClose={() => setScreen('angle')} onDone={() => {}} />
+        <AngleCapture admin want={want} gender={female ? 'female' : 'male'} onClose={() => setScreen('')} onDone={() => {}} />
       )}
 
       {screen && screen !== 'capture' && screen !== 'report' && (
-        <PreviewModal navActive={screen === 'angle' ? 'angle' : screen === 'draft' ? 'discover' : screen === 'report' ? 'discover' : 'today'}
-          title={screen === 'tag' ? '다이어리 — 10월 모습' : screen === 'draft' ? '이번달 발견 — 원안' : '각도기록'}
+        <PreviewModal navActive={screen === 'draft' ? 'discover' : 'today'}
+          title={screen === 'tag' ? '다이어리 — 10월 모습' : '이번달 발견 — 원안'}
           onClose={() => { setScreen(''); setWriting(null); setJustSaved(null); }}>
           {() => (screen === 'tag' ? realDiary
-            : screen === 'angle' ? <AngleView rows={checks} onMeasure={() => setScreen('capture')} push={<PushToggle />} />
               // 원안 샘플도 화면용 값(목은 CVA)으로 넘겨야 판정 방향이 맞는다
               : screen === 'draft' ? <OctFindingSamples rows={toView(checks)} entries={getDiaryHistory()} />
                 : null)}

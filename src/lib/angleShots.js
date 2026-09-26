@@ -15,13 +15,28 @@ export const SET_ITEMS = [
   // 무릎을 편 채 손이 바닥에 닿으면 상체가 수평을 넘어가 130도 가까이 나온다
   // (올려 준 '가벼움' 그림을 재 보니 137도). 30~100으로는 유연한 사람을 못 담는다.
   { short: 'trunk', label: '허리 굽힘', view: '옆모습', unit: '도', targets: [30, 45, 60, 75, 90, 105, 120, 135], frames: 8 },
-  // 팔은 왼팔·오른팔 높이가 다를 수 있어 '짝'으로 모은다. [오른팔, 왼팔]이고 오른팔이 같거나 높은
-  // 것만 만든다 — 반대쪽은 그림을 좌우로 뒤집어 쓴다. 그림에는 l(왼팔)·r(오른팔)도 적는다.
-  { short: 'arm', label: '옆으로 팔 들기', view: '앞모습', unit: '도', step: 30, frames: 8,
-    pairs: [[90, 90], [120, 90], [120, 120], [150, 90], [150, 120], [150, 150], [180, 90], [180, 120], [180, 150], [180, 180]] },
+  // 팔은 세 칸으로 모은다. 팔을 아예 못 드는 사람도 있으니 0도(차렷)부터.
+  //   양팔 같이   … 두 팔이 같은 높이로 0→180도
+  //   왼팔 고정   … 왼팔은 그대로 두고 오른팔만 여섯 높이로 — 좌우가 다른 손님용
+  //   오른팔 고정 … 오른팔은 그대로 두고 왼팔만 여섯 높이로
+  // 그림마다 l(왼팔)·r(오른팔)을 재 두고, 손님의 두 값과 가장 가까운 그림을 세 칸 전체에서 고른다.
+  // moving … 이 칸에서 움직이는 팔(목표 칩을 그 팔 값으로 본다)
+  { short: 'arm', kind: 'arm', label: '옆으로 팔 들기', sub: '양팔 같이', view: '앞모습', unit: '도',
+    targets: [0, 30, 60, 90, 120, 150, 180], frames: 8 },
+  { short: 'arm_lfix', kind: 'arm', label: '옆으로 팔 들기', sub: '왼팔 고정', view: '앞모습', unit: '도', moving: 'r',
+    targets: [30, 60, 90, 120, 150, 180], frames: 6 },
+  { short: 'arm_rfix', kind: 'arm', label: '옆으로 팔 들기', sub: '오른팔 고정', view: '앞모습', unit: '도', moving: 'l',
+    targets: [30, 60, 90, 120, 150, 180], frames: 6 },
 ];
 export const setKey = (short, gender) => `angle_set_${short}_${gender}`;
 export const allSetKeys = () => SET_ITEMS.flatMap((it) => ['female', 'male'].map((g) => setKey(it.short, g)));
+/** 재는 방식 — 팔 세 칸은 모두 'arm' */
+export const kindOf = (item) => item.kind || item.short;
+const ARM_SHORTS = SET_ITEMS.filter((x) => x.kind === 'arm').map((x) => x.short);
+/** 팔 세 칸의 그림을 하나로 모은다 — nearestPair에 넘긴다 */
+export const armMeta = (assets, gender) => ({
+  shots: ARM_SHORTS.flatMap((sh) => (assets?.[setKey(sh, gender)]?.meta?.shots) || []),
+});
 
 /** 쓸 수 있는 그림들(각도가 적힌 것)만 */
 export const usableShots = (meta) => ((meta?.shots) || [])
@@ -58,18 +73,12 @@ export function nearestPair(meta, left, right) {
 /** 목표 각도마다 가까운 그림이 있는지 — 관리자에서 '빈 자리'를 알려 준다.
  *  간격의 절반 안쪽에 그림이 있으면 채워진 것으로 본다. */
 export function coverage(item, meta) {
-  if (item.pairs) {
-    const list = pairShots(meta);
-    const near = (a, b, R, L) => Math.abs(a - R) <= item.step / 2 && Math.abs(b - L) <= item.step / 2;
-    return item.pairs.map(([R, L]) => ({
-      target: `오 ${R}° · 왼 ${L}°`, pair: [R, L],
-      hit: list.some((s) => near(Number(s.r), Number(s.l), R, L) || near(Number(s.l), Number(s.r), R, L)),
-    }));
-  }
+  // 팔 한쪽 고정 칸은 움직이는 팔 값으로 본다
+  const valOf = (x) => Number(item.moving ? x[item.moving] : x.angle);
   const list = usableShots(meta);
   const step = item.targets[1] - item.targets[0];
   return item.targets.map((t) => ({
     target: t,
-    hit: list.some((s) => Math.abs(Number(s.angle) - t) <= step / 2),
+    hit: list.some((s) => Math.abs(valOf(s) - t) <= step / 2),
   }));
 }

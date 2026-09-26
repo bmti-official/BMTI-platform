@@ -16,10 +16,11 @@ import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { toView } from '../lib/angleView';
 import { loadAssets } from '../lib/appAssets';
-import { allSetKeys, setKey, nearestShot, nearestPair } from '../lib/angleShots';
+import { allSetKeys, setKey, nearestShot, nearestPair, armMeta } from '../lib/angleShots';
 import ArmFigure from './ArmFigure';
 import NeckShot from './NeckShot';
-import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
+import { TrunkShot, ArmShot as ArmLines } from './BodyShots';
+import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf } from '../lib/angleLevels';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
@@ -144,7 +145,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   const who = g.includes('female') || g.includes('여') ? 'female' : 'male';
   useEffect(() => {
     let alive = true;
-    loadAssets([LEVELS_KEY, ...allImageKeys(), ...allSetKeys()]).then((m) => { if (alive) setAsset(m || {}); });
+    loadAssets([LEVELS_KEY, ...allSetKeys()]).then((m) => { if (alive) setAsset(m || {}); });
     return () => { alive = false; };
   }, []);
   const cuts = readCuts(asset?.[LEVELS_KEY]?.meta);
@@ -181,17 +182,18 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   // 150도든 165도든 같은 그림이 나왔다). 모음이 비어 있으면 단계 그림으로 물러난다.
   const near = shotItem && shotItem.short !== 'arm'
     ? nearestShot(asset?.[setKey(shotItem.short, who)]?.meta, valOf(shotItem.key)) : null;
-  const levelShot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
-  const shot = near ? { url: near.url, level: shotLv, exact: true, angle: near.angle, pts: near.pts } : levelShot;
+  // 그림은 가까운 각도의 것을 쓰고, 정확한 값은 그림 위에 그은 선과 숫자가 보여 준다
+  const shot = near ? { url: near.url, level: shotLv, angle: near.angle, pts: near.pts } : null;
   // 목 — 그림 위에 이번·지난번 값대로 선을 긋는다
   const neckLine = open === 'neck_bend' && shot?.pts ? { prev: num(prevOf('neck_bend')?.neck_bend) } : null;
+  const trunkLine = open === 'trunk_flex' && shot?.pts ? { prev: num(prevOf('trunk_flex')?.trunk_flex) } : null;
   // 옆으로 팔 들기 — 왼팔·오른팔 높이 짝으로 모은 그림에서 가장 가까운 것을 고른다
   // (필요하면 좌우로 뒤집어서). 모음이 비어 있을 때만 코드로 그린 사람이 대신 든다.
   const armRow = lastOf('arm_raise'), armPrev = prevOf('arm_raise');
   const sideOf = (row, k) => (row ? num(row[k]) ?? num(row.arm_raise) : null);
   const armL = sideOf(armRow, 'arm_raise_l'), armR = sideOf(armRow, 'arm_raise_r');
   const armOn = open === 'arm_raise' && armRow;
-  const armPair = armOn ? nearestPair(asset?.[setKey('arm', who)]?.meta, armL, armR) : null;
+  const armPair = armOn ? nearestPair(armMeta(asset, who), armL, armR) : null;
   const armFig = armOn && !armPair;
 
   return (
@@ -215,13 +217,14 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
         <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
           {armPair
-            ? <ArmShot pair={armPair} left={armL} right={armR} level={shotLv} t={t} />
+            ? <ArmShot pair={armPair} left={armL} right={armR}
+                prevLeft={sideOf(armPrev, 'arm_raise_l')} prevRight={sideOf(armPrev, 'arm_raise_r')} level={shotLv} t={t} />
             : armFig
             ? <ArmFigure left={sideOf(armRow, 'arm_raise_l')} right={sideOf(armRow, 'arm_raise_r')}
                 prevLeft={sideOf(armPrev, 'arm_raise_l')} prevRight={sideOf(armPrev, 'arm_raise_r')}
                 female={who === 'female'} accent={t.accentDeep} />
             : shot
-            ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} neckLine={neckLine} />
+            ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} neckLine={neckLine} trunkLine={trunkLine} />
             : <Figure neck={tilt(lastOf('neck_bend'))} trunk={valOf('trunk_flex')} arm={valOf('arm_raise')}
                 ghostNeck={tilt(prevOf('neck_bend'))} t={t} sel={open} />}
         </div>
@@ -288,7 +291,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
 
       <div style={{ display: 'flex', gap: 11, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap' }}>
         {open === null && <span>항목을 누르면 그림에서 그것만 짚어 드려요</span>}
-        {(!shot || neckLine) && open === 'neck_bend' && (
+        {((open === 'neck_bend' && (!shot || neckLine)) || trunkLine || armPair) && (
           <>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span style={{ width: 10, height: 3, borderRadius: 2, background: t.accentDeep }} />지금
@@ -311,57 +314,45 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   );
 }
 
-// 단계 그림 — 잰 값에 맞는 사진 한 장. 선을 긋지 않아도 모습 자체가 말해 준다.
-function LevelShot({ shot, item, value, t, neckLine = null }) {
+// 각도별 그림 모음에서 가장 가까운 한 장 + 손님 값대로 그은 선.
+function LevelShot({ shot, item, value, t, neckLine = null, trunkLine = null }) {
   const name = LEVEL_NAME[shot.level];
   const tint = shot.level === 1 ? '#5E9463' : shot.level === 2 ? '#9A7A16' : '#B23B36';
   return (
     <div style={{ position: 'relative' }}>
       {neckLine
         ? <NeckShot url={shot.url} pts={shot.pts} value={value} prev={neckLine.prev} accent={t.accentDeep} alt={`${item.label} ${name}`} />
+        : trunkLine
+        ? <TrunkShot url={shot.url} pts={shot.pts} value={value} prev={trunkLine.prev} accent={t.accentDeep} alt={`${item.label} ${name}`} />
         : <img src={shot.url} alt={`${item.label} ${name}`}
             style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block' }} />}
       <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
         background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>
         {name}
       </span>
-      {value != null && !neckLine && (
+      {value != null && !neckLine && !trunkLine && (
         <span style={{ position: 'absolute', right: 6, bottom: 6, fontSize: 14, fontWeight: 900, color: t.accentDeep,
           background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>
           {value}°
-        </span>
-      )}
-      {!shot.exact && (
-        <span style={{ position: 'absolute', left: 6, bottom: 6, fontSize: 9.5, fontWeight: 800, color: '#9B9489',
-          background: 'rgba(255,255,255,0.9)', borderRadius: 999, padding: '2px 7px' }}>
-          비슷한 단계 그림
         </span>
       )}
     </div>
   );
 }
 
-// 팔 그림 — 짝 그림 한 장(필요하면 뒤집어서). 앞모습이라 오른팔 값은 왼쪽 아래, 왼팔 값은 오른쪽 아래.
-function ArmShot({ pair, left, right, level, t }) {
+// 팔 그림 — 가장 가까운 그림 한 장(필요하면 뒤집어서) + 두 팔을 손님 값대로 그은 선.
+// 앞모습이라 오른팔 값은 왼쪽 아래, 왼팔 값은 오른쪽 아래.
+function ArmShot({ pair, left, right, prevLeft, prevRight, level, t }) {
   const name = LEVEL_NAME[level];
   const tint = level === 1 ? '#5E9463' : level === 2 ? '#9A7A16' : '#B23B36';
-  const tag = (side, lb, v) => (
-    <span style={{ position: 'absolute', [side]: 4, bottom: 6, fontSize: 10, fontWeight: 900, color: t.accentDeep,
-      background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '2px 7px', lineHeight: 1.3, textAlign: 'center' }}>
-      {lb}<br /><span style={{ fontSize: 13 }}>{v == null ? '—' : `${Math.round(v)}°`}</span>
-    </span>
-  );
   return (
     <div style={{ position: 'relative' }}>
-      <img src={pair.shot.url} alt="옆으로 팔 들기"
-        style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block',
-          transform: pair.flip ? 'scaleX(-1)' : 'none' }} />
+      <ArmLines url={pair.shot.url} pts={pair.shot.pts} flip={pair.flip} left={left} right={right}
+        prevLeft={prevLeft} prevRight={prevRight} accent={t.accentDeep} alt="옆으로 팔 들기" />
       {name && (
         <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,
           background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '3px 9px' }}>{name}</span>
       )}
-      {tag('left', '오른팔', right)}
-      {tag('right', '왼팔', left)}
     </div>
   );
 }
