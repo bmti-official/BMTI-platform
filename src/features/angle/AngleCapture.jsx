@@ -38,10 +38,15 @@ const TILE = [
   { take: 'trunk', label: '허리 굽힘', val: (g) => g.trunkFlex },
   { take: 'arm', label: '옆으로 팔 들기', val: (g) => g.armRaise },
 ];
-const ARM_GAP = 18;
-const SHAPE_RETRY = 2;
-const TURN_MS = 1500;
-const CLOTH_MS = 2000;  // 어깨만 이만큼 계속 흐리면 옷 이야기를 한다   // 쉼터에서 정면으로 이만큼 서 있으면 다음 판을 연다  // 사람 모양이 아니면 몇 번까지 다시 잴지    // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
+const ARM_GAP = 18;      // 좌우 팔 차이를 알릴 기준(도). 5도 안팎은 정상이라 넉넉히 둔다
+const SHAPE_RETRY = 2;   // 사람 모양이 아니면 몇 번까지 다시 잴지
+const TURN_MS = 1500;    // 쉼터에서 정면으로 이만큼 서 있으면 다음 판을 연다
+const CLOTH_MS = 2000;   // 어깨만 이만큼 계속 흐리면 옷 이야기를 한다
+// 자리 잡기 — 화면이 막 켜졌을 땐 손님이 아직 휴대폰을 세우고 물러나는 중이다.
+// 그때 '골반이 화면 밖이에요'를 말하면 당연한 걸 탓하는 셈이다. 할 일을 먼저 말하고,
+// 사람이 이만큼 잡히거나(PLACE_SEEN_MS) 이만큼 지나면(PLACE_MAX_MS) 그때부터 고칠 점을 말한다.
+const PLACE_SEEN_MS = 2000;
+const PLACE_MAX_MS = 8000;
 const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로여야 한다
 
 // 재는 동안 무엇을 할지를 **화면에 토막으로** 드러낸다.
@@ -69,6 +74,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const STEPS = useMemo(() => buildSteps(want), [want]);
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
   const [msg, setMsg] = useState('');
+  const [placing, setPlacing] = useState(true);  // 자리 잡는 중 — 고칠 점 대신 '자리를 잡아 주세요'
+  const placeRef = useRef({ at: 0, seenSince: 0, done: false });
   const [diag, setDiag] = useState(null);       // 무엇이 걸렸는지 — 안 될 때 볼 숫자
   const [showDiag, setShowDiag] = useState(false);
   const [stuck, setStuck] = useState(false);    // 오래 막혔나 — 빠져나갈 길을 연다
@@ -83,6 +90,20 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }
   };
   const markStuckRef = useRef(null);
+  // 아직 자리 잡는 중인가 — 사람이 잡히기 시작한 때(seen)를 넘겨 주면 그것도 센다
+  const stillPlacing = (seen) => {
+    const pl = placeRef.current;
+    if (pl.done) return false;
+    const t = performance.now();
+    if (!pl.at) pl.at = t;
+    if (seen) { if (!pl.seenSince) pl.seenSince = t; } else pl.seenSince = 0;
+    if ((pl.seenSince && t - pl.seenSince >= PLACE_SEEN_MS) || t - pl.at >= PLACE_MAX_MS) {
+      pl.done = true;
+      setPlacing(false);
+      return false;
+    }
+    return true;
+  };
   useEffect(() => { markStuckRef.current = markStuck; });
   const [count, setCount] = useState(0);         // 남은 초
   const [ready, setReady] = useState(0);         // 준비 카운트(셋·둘·하나)
@@ -139,6 +160,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
   const startRef = useRef(null);                 // 저절로 시작하는 손잡이
   const stepRef = useRef(0);                     // 반복문이 읽을 최신 단계
+  const stillPlacingRef = useRef(null);          // 반복문이 부를 최신 '자리 잡는 중인가'
   const streamRef = useRef(null);                // 켜 둔 카메라 — 영상 칸이 바뀌면 다시 붙인다
   const stepsRef = useRef(null);                 // 반복문이 읽을 판 목록
   const turnSinceRef = useRef(0);                // 쉼터에서 정면으로 돌아선 지 얼마나 됐나
@@ -198,12 +220,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       cue = side ? 'turn' : 'face';
     } else if (seen < 0.5) { why = '밝은 곳에서 몸이 다 보이게 서 주세요'; cue = 'frame'; }
     setMsg(why);
+    const placingNow = stillPlacing(true);
     setDiag({
       h: dist.h, headIn: dist.headIn, hipIn: dist.hipIn,
       face: side ? face.shoulder : face.shoulder, seen, side,
     });
     // 무엇이 어긋났는지 바뀔 때만 한 번 말한다. 같은 말이 이어지면 듣기 싫어진다.
-    if (why) say(cue);
+    if (why && !placingNow) say(cue);
 
     // F. 옷 — 카메라는 옷을 알아보지 못한다. 대신 '귀와 골반은 또렷한데 어깨만 계속
     // 흐리게 잡히면' 두꺼운 옷이 어깨선을 가리고 있을 가능성이 크다고 본다.
@@ -349,6 +372,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         // 사람을 아예 못 찾을 때(어두운 방, 너무 멀리) — 이때가 가장 막막하다.
         // 검사까지 가지 않으니 여기서도 막힘 시간을 재야 '이대로 시작'이 열린다.
         setMsg('몸이 다 보이게 서 주세요');
+        stillPlacingRef.current?.(false);
         if (!runRef.current) markStuckRef.current?.();
       }
       rafRef.current = requestAnimationFrame(loop);
@@ -499,6 +523,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     tryRef.current = 0; setRetry(0); okSinceRef.current = 0; shapeTryRef.current = 0;
     badSinceRef.current = 0; stuckRef.current = false; setStuck(false);
     setCount(0); setReady(0); setPhase(null); setGot(0); setLastQuality(0);
+    setPlacing(true);
     setStep(0);
   };
 
@@ -595,7 +620,18 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     stepRef.current = step; stepsRef.current = STEPS;
     tiltRef.current = tilt; rollSignRef.current = rollSign; adminRef.current = admin;
   });
-  useEffect(() => { checkRef.current = check; });
+  useEffect(() => { checkRef.current = check; stillPlacingRef.current = stillPlacing; });
+  // 판이 열릴 때 — 첫 판이면 할 일을 먼저 말하고 자리 잡기를 새로 센다.
+  // 둘째 판(앞모습)은 쉼터에서 이미 돌아서 섰으므로 바로 검사한다.
+  useEffect(() => {
+    if (!Number.isInteger(step) || step < 0 || step >= STEPS.length) return;
+    // 시계는 첫 장면을 볼 때 켠다(at: 0) — 사람 인식을 불러오는 몇 초를 기다림에 넣지 않게
+    placeRef.current = { at: 0, seenSince: 0, done: step > 0 };
+    if (step === 0) {
+      const st = STEPS[0];
+      say(st.id === 'front' ? 'placeFront' : st.sitting ? 'placeSit' : 'placeSide', { force: true });
+    }
+  }, [step, STEPS]);
   useEffect(() => { startRef.current = start; });
   // 지난주 자세는 옆모습 판에서만, 그리고 재기 전에만 깔아 준다.
   // (앞모습은 자리가 다르고, 재는 동안엔 지금 자세만 보여야 한다)
@@ -659,7 +695,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             color: GOLD_INK, fontWeight: 700, lineHeight: 1.75, marginBottom: 18 }}>
             사진과 영상은 <b>이 기기 밖으로 나가지 않습니다.</b><br />남는 건 각도 숫자뿐이에요.
           </div>
-          <button type="button" onClick={() => { askLevel(); tryRef.current = 0; setRetry(0); setStep(0); }} style={bigBtn(true)}>시작하기 →</button>
+          <button type="button" onClick={() => { askLevel(); tryRef.current = 0; setRetry(0); setPlacing(true); setStep(0); }} style={bigBtn(true)}>시작하기 →</button>
         </div>
       </Shell>
     );
@@ -852,6 +888,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const s = STEPS[step];
   const poseOk = !msg;
   const running = count > 0 || ready > 0;
+  // 첫 판을 막 열었을 때만 — 틀린 걸 빨갛게 짚지 않고 할 일을 보여 준다
+  const placingShown = placing && step === 0 && !running;
   const off = running || !!err;
   const ph = phase != null ? s.phases[phase] : null;
   const total = stepSec(s);
@@ -966,9 +1004,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
               <span style={{ display: 'block', fontSize: 11, fontWeight: 700, opacity: 0.8, marginTop: 2 }}>{ph.sub}</span>
             </span>
           ) : (
-            <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
-              color: msg ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
-              {msg || (ready > 0 && ph?.take ? `${josa(TILE.find((x) => x.take === ph.take)?.label, '을')} 잽니다`
+            <span style={{ display: 'inline-block', background: msg && !placingShown ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
+              color: msg && !placingShown ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
+              {msg && placingShown ? '자리를 잡아 주세요' : msg || (ready > 0 && ph?.take ? `${josa(TILE.find((x) => x.take === ph.take)?.label, '을')} 잽니다`
                 : running && ph?.text ? ph.text : '좋아요, 그대로 계세요')}
             </span>
           )}

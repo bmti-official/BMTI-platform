@@ -121,5 +121,9 @@ export const ANGLE_LINES = [
   { n: 22, key: 'againTrunk', text: '허리 굽힘을 한 번 더 잴게요' },
   { n: 23, key: 'againArm', text: '옆으로 팔 들기를 한 번 더 잴게요' },
   { n: 24, key: 'againSide', text: '옆모습을 한 번 더 잴게요' },
+  // ── 판이 막 열렸을 때 — 틀린 걸 짚기 전에 할 일부터 ──
+  { n: 25, key: 'placeSide', text: '휴대폰을 세워 두고, 큰 걸음으로 세 걸음 물러나 옆으로 서 주세요' },
+  { n: 26, key: 'placeSit', text: '휴대폰을 세워 두고, 옆을 보고 앉아 주세요. 귀와 어깨만 보이면 돼요' },
+  { n: 27, key: 'placeFront', text: '휴대폰을 세워 두고, 큰 걸음으로 세 걸음 물러나 화면을 보고 서 주세요' },
 ];
 export const ANGLE_N = Object.fromEntries(ANGLE_LINES.map((l) => [l.key, l.n]));
