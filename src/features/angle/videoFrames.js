@@ -1,8 +1,8 @@
 // 영상에서 각도별 장면 뽑기 — 천천히 움직이는 영상 하나에 중간 각도가 다 지나간다.
 //
 // 그림을 따로 뽑으면 장마다 얼굴·체형·조명이 조금씩 달라진다. 영상에서 잘라 내면
-// 사람은 그대로이고 각도만 바뀐다. 0.1초마다 장면을 재 두고, 목표 각도마다
-// 가장 가깝고 덜 흔들린 장면을 고른다. 영상 파일은 올리지 않고 브라우저 안에서만 연다.
+// 사람은 그대로이고 각도만 바뀐다. 0.1초마다 장면을 재 두고, 움직임의 처음부터 끝까지를
+// 고르게 나눠 장면을 뽑는다. 영상 파일은 올리지 않고 브라우저 안에서만 연다.
 import { measureSource } from './measureImage';
 
 export const STEP = 0.1;          // 몇 초마다 잴까
@@ -88,38 +88,43 @@ export async function sampleVideo(v, kind, onStep) {
   return { samples: out, cut: (v.duration || 0) > MAX_SEC };
 }
 
-/** 목표마다 장면 하나. samples에는 vi(몇 번째 영상)가 붙어 있다.
- *  돌려주는 것: [{ target, sample }] — 목표 근처에 장면이 없으면 빠진다. */
-export function chooseFrames(item, samples) {
-  const ok = samples.filter((s) => s.angle != null && (s.sure ?? 0) >= MIN_SURE);
+// 움직임의 정도 — 팔은 두 팔을 더한 값(한 팔만 움직여도, 두 팔이 함께 움직여도 따라간다)
+const progressOf = (kind, s) => (kind === 'arm'
+  ? (s.l != null && s.r != null ? s.l + s.r : null)
+  : s.angle);
+
+/** 영상 하나에서 n장면. 움직임이 시작한 각도와 끝난 각도를 찾고, 그 사이를
+ *  같은 각도 간격으로 나눠 가장 가깝고 덜 흔들린 장면을 고른다. 목표 각도와는 상관없다.
+ *  (시간으로 나누면 천천히 움직인 구간에 몰린다 — 그래서 각도로 나눈다)
+ *  돌려주는 것: { picks: [장면...], lo, hi } — 움직임이 거의 없으면 picks가 비어 있다. */
+export function spreadFrames(kind, samples, n) {
+  const ok = samples.filter((s) => (s.sure ?? 0) >= MIN_SURE && progressOf(kind, s) != null);
+  if (ok.length < 2) return { picks: [], lo: null, hi: null };
+  // 처음·마지막 — 튀는 한두 장면에 끌려가지 않게 양 끝 2%는 버린다
+  const vals = ok.map((s) => progressOf(kind, s)).sort((a, b) => a - b);
+  const q = (f) => vals[Math.round(f * (vals.length - 1))];
+  const lo = q(0.02), hi = q(0.98);
+  if (hi - lo < 3) return { picks: [], lo, hi };
   const used = new Set();
-  const out = [];
-  const take = (target, scoreOf) => {
+  const picks = [];
+  const gap = (hi - lo) / (n - 1);
+  for (let i = 0; i < n; i += 1) {
+    const want = lo + gap * i;
     let best = null;
     ok.forEach((s) => {
-      const id = `${s.vi}:${s.t}`;
-      if (used.has(id)) return;
-      const d = scoreOf(s);
-      if (d == null) return;
-      const score = d + (s.motion || 0) * SHAKE;
-      if (!best || score < best.score) best = { s, score, id };
+      if (used.has(s.t)) return;
+      const score = Math.abs(progressOf(kind, s) - want) + (s.motion || 0) * SHAKE;
+      if (!best || score < best.score) best = { s, score };
     });
-    if (best) { used.add(best.id); out.push({ target, sample: best.s }); }
-  };
-
-  if (item.pairs) {
-    const half = item.step / 2;
-    item.pairs.forEach(([R, L]) => take(`오 ${R}° · 왼 ${L}°`, (s) => {
-      if (s.l == null || s.r == null) return null;
-      // 그대로든 뒤집어서든 두 팔 모두 반 칸 안이면 쓴다
-      const fits = [[s.r, s.l], [s.l, s.r]].filter(([a, b]) => Math.abs(a - R) <= half && Math.abs(b - L) <= half);
-      return fits.length ? Math.min(...fits.map(([a, b]) => Math.hypot(a - R, b - L))) : null;
-    }));
-  } else {
-    const half = (item.targets[1] - item.targets[0]) / 2;
-    item.targets.forEach((t) => take(`${t}°`, (s) => (Math.abs(s.angle - t) <= half ? Math.abs(s.angle - t) : null)));
+    if (!best) break;
+    // 동작이 휙 지나가 그 사이 장면이 없으면, 이미 뽑은 것과 거의 같은 자세가 잡힌다 — 건너뛴다
+    const p = progressOf(kind, best.s);
+    if (picks.some((x) => Math.abs(progressOf(kind, x) - p) < gap / 4)) continue;
+    used.add(best.s.t);
+    picks.push(best.s);
   }
-  return out;
+  picks.sort((a, b) => progressOf(kind, a) - progressOf(kind, b));
+  return { picks, lo, hi };
 }
 
 /** t초 장면을 jpg 파일로 */

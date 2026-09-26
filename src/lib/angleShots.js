@@ -11,13 +11,13 @@
 export const SET_ITEMS = [
   // 목은 몇 도 차이라 그림을 촘촘히 바꿔도 달라 보이지 않는다. 4장만 두고, 그림 위에
   // 손님 값대로 선을 그어 보여 준다(NeckShot).
-  { short: 'neck', label: '목의 정렬', view: '옆모습', unit: 'CVA', targets: [55, 65, 75, 85] },
+  { short: 'neck', label: '목의 정렬', view: '옆모습', unit: 'CVA', targets: [55, 65, 75, 85], frames: 4 },
   // 무릎을 편 채 손이 바닥에 닿으면 상체가 수평을 넘어가 130도 가까이 나온다
   // (올려 준 '가벼움' 그림을 재 보니 137도). 30~100으로는 유연한 사람을 못 담는다.
-  { short: 'trunk', label: '허리 굽힘', view: '옆모습', unit: '도', targets: [30, 45, 60, 75, 90, 105, 120, 135] },
+  { short: 'trunk', label: '허리 굽힘', view: '옆모습', unit: '도', targets: [30, 45, 60, 75, 90, 105, 120, 135], frames: 8 },
   // 팔은 왼팔·오른팔 높이가 다를 수 있어 '짝'으로 모은다. [오른팔, 왼팔]이고 오른팔이 같거나 높은
   // 것만 만든다 — 반대쪽은 그림을 좌우로 뒤집어 쓴다. 그림에는 l(왼팔)·r(오른팔)도 적는다.
-  { short: 'arm', label: '옆으로 팔 들기', view: '앞모습', unit: '도', step: 30,
+  { short: 'arm', label: '옆으로 팔 들기', view: '앞모습', unit: '도', step: 30, frames: 8,
     pairs: [[90, 90], [120, 90], [120, 120], [150, 90], [150, 120], [150, 150], [180, 90], [180, 120], [180, 150], [180, 180]] },
 ];
 export const setKey = (short, gender) => `angle_set_${short}_${gender}`;

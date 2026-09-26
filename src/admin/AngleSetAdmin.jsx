@@ -11,7 +11,7 @@ import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usab
 import { imgKey } from '../lib/angleLevels';
 import { measureImage } from '../features/angle/measureImage';
 import NeckShot from '../components/NeckShot';
-import { openVideo, sampleVideo, chooseFrames, frameFile, measureAt, STEP } from '../features/angle/videoFrames';
+import { openVideo, sampleVideo, spreadFrames, frameFile, measureAt, STEP } from '../features/angle/videoFrames';
 
 const GOLD = '#C9975A', GOLD_INK = '#8A6A3A', RED = '#B23B36', GREEN = '#2E7D50';
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -131,31 +131,40 @@ export default function AngleSetAdmin() {
     }
     if (!opened.length) return;
     setVids([...videosRef.current.keys()]);
-    let samples = [];
+    // 영상마다 움직임의 처음과 끝을 찾아, 그 사이를 고르게 나눠 뽑는다(목 4장, 허리·팔 8장)
+    const found = [];
+    const report = [];
     let longOne = false;
     for (let i = 0; i < opened.length; i += 1) {
       const { f, v } = opened[i];
-      const { samples: got, cut } = await sampleVideo(v, it.short, (p) =>
+      const { samples, cut } = await sampleVideo(v, it.short, (p) =>
         setBusy(`영상 ${i + 1}/${opened.length} 장면 재는 중… ${Math.round(p * 100)}%`));
       if (cut) longOne = true;
-      samples = samples.concat(got.map((x) => ({ ...x, vi: i, vid: vidKey(f) })));
+      const { picks } = spreadFrames(it.short, samples, it.frames);
+      const name = opened.length > 1 ? `영상 ${i + 1}` : '영상';
+      if (!picks.length) {
+        report.push(`${name}: 움직임을 못 찾았어요(사람을 잡은 장면 ${samples.length}개).`);
+        continue;
+      }
+      const span = (fn) => `${Math.round(Math.min(...picks.map(fn)))}°~${Math.round(Math.max(...picks.map(fn)))}°`;
+      report.push(`${name}: ${picks.length}장 · ${it.short === 'arm'
+        ? `오른팔 ${span((x) => x.r)}, 왼팔 ${span((x) => x.l)}` : span((x) => x.angle)}`);
+      picks.forEach((x) => found.push({ ...x, vi: i, vid: vidKey(f) }));
     }
-    const picks = chooseFrames(it, samples);
-    const want = it.pairs ? it.pairs.length : it.targets.length;
-    if (!picks.length) {
+    if (!found.length) {
       setBusy('');
-      setNote(`영상에서 쓸 만한 장면을 못 찾았어요 (사람을 잡은 장면 ${samples.length}개). 사람이 또렷하게 보이는지, 목표 각도까지 움직이는지 봐 주세요.`);
+      setNote(`${report.join(' ')} 사람이 또렷하게 보이는지, 처음과 끝 자세가 다른지 봐 주세요.`);
       return;
     }
     let keep = latest(k);
     if (keep.length && window.confirm(
-      `영상에서 ${picks.length}장을 뽑았어요 (목표 ${want}자리 중).\n\n`
+      `영상에서 ${found.length}장을 뽑았어요.\n\n`
       + `지금 모음에 있는 ${keep.length}장을 빼고 영상 장면으로 바꿀까요?\n`
       + '(취소를 누르면 지금 그림은 두고 옆에 더합니다)')) keep = [];
     const added = [];
-    for (let i = 0; i < picks.length; i += 1) {
-      const { sample } = picks[i];
-      setBusy(`장면 ${i + 1}/${picks.length} 담는 중…`);
+    for (let i = 0; i < found.length; i += 1) {
+      const sample = found[i];
+      setBusy(`장면 ${i + 1}/${found.length} 담는 중…`);
       const file = await frameFile(opened[sample.vi].v, sample.t);
       const up = await uploadOne(file);
       if (up.err) { setNote(up.err); continue; }
@@ -163,11 +172,7 @@ export default function AngleSetAdmin() {
     }
     await commit(k, [...keep, ...added]);
     setBusy('');
-    const missed = coverage(it, { shots: [...keep, ...added] }).filter((c) => !c.hit).map((c) => (typeof c.target === 'number' ? `${c.target}°` : c.target));
-    setNote([
-      missed.length ? `아직 빈 자리: ${missed.join(', ')} — 영상이 그 각도까지 움직이지 않았어요.` : '',
-      longOne ? '30초가 넘는 영상은 앞 30초만 봤어요.' : '',
-    ].filter(Boolean).join(' '));
+    setNote([report.join(' / '), longOne ? '30초가 넘는 영상은 앞 30초만 봤어요.' : ''].filter(Boolean).join(' '));
   };
 
   // 영상에서 뽑은 장면을 앞뒤로 옮긴다 — 흐리거나 표정이 어색할 때
@@ -247,7 +252,8 @@ export default function AngleSetAdmin() {
         <br />손님 화면에서는 손님 값과 <b>가장 가까운 그림</b>이 나옵니다. 목표 각도를 정확히 맞추지 않아도 됩니다 —
         <b> 고르게 퍼져 있는 게</b> 더 중요합니다.
         <br />보라색 선은 코드가 <b>무엇을 보고 쟀는지</b>입니다. 선이 엉뚱한 데 붙었으면 숫자를 직접 고쳐 주세요.
-        <br /><b>영상</b>을 놓으면 0.1초마다 각도를 재서 <b>목표 각도마다 한 장면씩</b> 뽑아 담습니다.
+        <br /><b>영상</b>을 놓으면 움직임의 <b>처음과 끝</b>을 찾아, 그 사이를 고르게 나눠
+        <b> 목은 4장, 허리·팔은 8장</b>을 뽑아 담습니다(영상 한 편마다).
         팔 영상은 여러 편을 한꺼번에 놓아 주세요. 뽑힌 장면이 흐리면 ◀ ▶로 앞뒤 장면으로 바꿀 수 있습니다(영상을 연 채로 있는 동안만).
         <br /><b>옆으로 팔 들기</b>는 왼팔·오른팔을 따로 잽니다. 오른팔이 높은 그림만 올려도 됩니다 —
         왼팔이 높은 손님에게는 그림을 <b>좌우로 뒤집어</b> 보여 줍니다.
