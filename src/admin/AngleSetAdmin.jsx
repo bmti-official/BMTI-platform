@@ -7,11 +7,11 @@ import { useEffect, useRef, useState } from 'react';
 import { INK, SUB, BG, box } from './theme';
 import { uploadOne } from './upload';
 import { loadAssets, saveAsset } from '../lib/appAssets';
-import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usableShots, kindOf, armMeta } from '../lib/angleShots';
+import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usableShots, kindOf } from '../lib/angleShots';
 import { measureImage } from '../features/angle/measureImage';
 import NeckShot from '../components/NeckShot';
 import { TrunkShot, ArmShot } from '../components/BodyShots';
-import { openVideo, sampleVideo, spreadFrames, frameFile, measureAt, STEP } from '../features/angle/videoFrames';
+import { openVideo, sampleVideo, spreadFrames, chooseGrid, frameFile, measureAt, STEP, MAX_SEC } from '../features/angle/videoFrames';
 
 const GOLD = '#C9975A', GOLD_INK = '#8A6A3A', RED = '#B23B36', GREEN = '#2E7D50';
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -85,11 +85,14 @@ export default function AngleSetAdmin() {
   const kind = kindOf(item);
   const isArm = kind === 'arm';
   // 한쪽 고정 칸은 움직이는 팔 값 순으로
-  const sortVal = (x) => Number(item.moving ? x[item.moving] : x.angle);
-  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (sortVal(a) || 999) - (sortVal(b) || 999));
+  // 팔은 왼팔 → 오른팔 순(7×7 표와 같은 차례)
+  const byNum = (v) => (Number.isFinite(Number(v)) ? Number(v) : 999);
+  const shots = (sets[key]?.shots || []).slice().sort((a, b) => (isArm
+    ? byNum(a.l) - byNum(b.l) || byNum(a.r) - byNum(b.r)
+    : byNum(a.angle) - byNum(b.angle)));
   const cov = coverage(item, sets[key]);
   // 팔 — 손님 화면처럼 세 칸 전체에서 고른다
-  const pair = isArm ? nearestPair(armMeta(sets, who), probeL, probeR) : null;
+  const pair = isArm ? nearestPair(sets[key], probeL, probeR) : null;
   const pick = isArm ? pair?.shot : nearestShot(sets[key], probe);
 
   // 고칠 때마다 바로 담는다 — '저장'을 잊고 나가는 일이 없게
@@ -134,15 +137,18 @@ export default function AngleSetAdmin() {
     }
     if (!opened.length) return;
     setVids([...videosRef.current.keys()]);
-    // 영상마다 움직임의 처음과 끝을 찾아, 그 사이를 고르게 나눠 뽑는다(목 4장, 허리·팔 8장)
+    // 목·허리 — 영상마다 움직임의 처음과 끝을 찾아, 그 사이를 고르게 나눠 뽑는다(목 4장, 허리 8장)
+    // 팔 — 모든 영상의 장면을 모아 7×7 칸마다 두 팔이 가장 가까운 장면을 하나씩 고른다
     const found = [];
     const report = [];
+    const pool = [];
     let longOne = false;
     for (let i = 0; i < opened.length; i += 1) {
       const { f, v } = opened[i];
       const { samples, cut } = await sampleVideo(v, kindOf(it), (p) =>
         setBusy(`영상 ${i + 1}/${opened.length} 장면 재는 중… ${Math.round(p * 100)}%`));
       if (cut) longOne = true;
+      if (it.grid) { samples.forEach((x) => pool.push({ ...x, vi: i, vid: vidKey(f) })); continue; }
       const { picks } = spreadFrames(kindOf(it), samples, it.frames);
       const name = opened.length > 1 ? `영상 ${i + 1}` : '영상';
       if (!picks.length) {
@@ -150,13 +156,17 @@ export default function AngleSetAdmin() {
         continue;
       }
       const span = (fn) => `${Math.round(Math.min(...picks.map(fn)))}°~${Math.round(Math.max(...picks.map(fn)))}°`;
-      report.push(`${name}: ${picks.length}장 · ${kindOf(it) === 'arm'
-        ? `오른팔 ${span((x) => x.r)}, 왼팔 ${span((x) => x.l)}` : span((x) => x.angle)}`);
+      report.push(`${name}: ${picks.length}장 · ${span((x) => x.angle)}`);
       picks.forEach((x) => found.push({ ...x, vi: i, vid: vidKey(f) }));
+    }
+    if (it.grid) {
+      const cells = chooseGrid(pool, it.grid);
+      cells.forEach((c) => found.push(c.sample));
+      report.push(`${it.grid.length * it.grid.length}칸 중 ${cells.length}칸을 채웠어요(사람을 잡은 장면 ${pool.length}개).`);
     }
     if (!found.length) {
       setBusy('');
-      setNote(`${report.join(' ')} 사람이 또렷하게 보이는지, 처음과 끝 자세가 다른지 봐 주세요.`);
+      setNote(`${report.join(' ')} 사람이 또렷하게 보이는지, ${it.grid ? '두 팔이 잘 보이는지' : '처음과 끝 자세가 다른지'} 봐 주세요.`);
       return;
     }
     let keep = latest(k);
@@ -175,7 +185,7 @@ export default function AngleSetAdmin() {
     }
     await commit(k, [...keep, ...added]);
     setBusy('');
-    setNote([report.join(' / '), longOne ? '30초가 넘는 영상은 앞 30초만 봤어요.' : ''].filter(Boolean).join(' '));
+    setNote([report.join(' / '), longOne ? `${MAX_SEC / 60}분이 넘는 영상은 앞 ${MAX_SEC / 60}분만 봤어요.` : ''].filter(Boolean).join(' '));
   };
 
   // 영상에서 뽑은 장면을 앞뒤로 옮긴다 — 흐리거나 표정이 어색할 때
@@ -241,50 +251,73 @@ export default function AngleSetAdmin() {
         <b> 고르게 퍼져 있는 게</b> 더 중요합니다.
         <br />보라색 선은 코드가 <b>무엇을 보고 쟀는지</b>입니다. 선이 엉뚱한 데 붙었으면 숫자를 직접 고쳐 주세요.
         <br /><b>영상</b>을 놓으면 움직임의 <b>처음과 끝</b>을 찾아, 그 사이를 고르게 나눠
-        <b> 목은 4장, 허리·팔은 8장</b>을 뽑아 담습니다(영상 한 편마다).
-        팔 영상은 여러 편을 한꺼번에 놓아 주세요. 뽑힌 장면이 흐리면 ◀ ▶로 앞뒤 장면으로 바꿀 수 있습니다(영상을 연 채로 있는 동안만).
-        <br /><b>옆으로 팔 들기</b>는 세 칸입니다. <b>양팔 같이</b>는 두 팔을 함께 0°(차렷)부터 180°까지,
-        <b> 왼팔 고정</b>은 왼팔은 그대로 두고 오른팔만, <b>오른팔 고정</b>은 오른팔은 그대로 두고 왼팔만 올린 그림입니다.
-        손님 두 팔 값과 가장 가까운 그림을 세 칸 전체에서 고릅니다.
+        <b> 목은 4장, 허리는 8장</b>을 뽑아 담습니다(영상 한 편마다).
+        팔 영상은 <b>7×7 표의 칸마다</b> 두 팔이 가장 가까운 장면을 찾아 담습니다 — 여러 편이면 한꺼번에 놓아 주세요. 뽑힌 장면이 흐리면 ◀ ▶로 앞뒤 장면으로 바꿀 수 있습니다(영상을 연 채로 있는 동안만).
+        <br /><b>옆으로 팔 들기</b>는 왼팔·오른팔을 따로 재서 <b>7×7 표</b>(0°~180°, 30° 간격)에 채웁니다.
+        손님 두 팔 값과 가장 가까운 그림이 나옵니다.
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={pill}>
-          {SET_ITEMS.filter((x, i, all) => all.findIndex((y) => y.label === x.label) === i).map((x) => (
-            <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.label === x.label)}>{x.label}</button>
+          {SET_ITEMS.map((x) => (
+            <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.short === x.short)}>{x.label}</button>
           ))}
         </div>
-        {/* 팔은 세 칸 — 양팔 같이 · 왼팔 고정 · 오른팔 고정 */}
-        {item.sub && (
-          <div style={pill}>
-            {SET_ITEMS.filter((x) => x.label === item.label).map((x) => (
-              <button key={x.short} type="button" onClick={() => setItem(x)} style={tabBtn(item.short === x.short)}>{x.sub}</button>
-            ))}
-          </div>
-        )}
         <div style={pill}>
           {[['female', '여성'], ['male', '남성']].map(([k, lb]) => (
             <button key={k} type="button" onClick={() => setWho(k)} style={tabBtn(who === k)}>{lb}</button>
           ))}
         </div>
         <span style={{ alignSelf: 'center', fontSize: 12, fontWeight: 800, color: GOLD }}>
-          {item.label}{item.sub ? ` · ${item.sub}` : ''} · {item.view} · {usableShots(sets[key]).length}장
+          {item.label} · {item.view} · {usableShots(sets[key]).length}장
         </span>
       </div>
 
       {/* 목표 각도마다 채워졌는지 — 빈 자리가 어디인지 한눈에 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
         <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 8 }}>
-          목표 각도{item.moving ? ` (${item.moving === 'r' ? '오른팔' : '왼팔'})` : ''} <span style={{ fontWeight: 700, color: SUB }}>— 초록은 가까운 그림이 있음, 회색은 빈 자리</span>
+          {item.grid ? `두 팔 조합 ${cov.filter((c) => c.hit).length}/${cov.length}칸` : '목표 각도'}
+          <span style={{ fontWeight: 700, color: SUB }}> — 초록은 가까운 그림이 있음, 회색은 빈 자리</span>
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {cov.map((c) => (
-            <span key={c.target} style={{ fontSize: 12, fontWeight: 900, borderRadius: 999, padding: '4px 10px',
-              background: c.hit ? '#EDF7F0' : '#F1EEE8', color: c.hit ? GREEN : '#B4ADA2' }}>
-              {c.hit ? '✓ ' : ''}{typeof c.target === 'number' ? `${c.target}°` : c.target}
-            </span>
-          ))}
-        </div>
+        {item.grid ? (
+          // 가로 = 오른팔, 세로 = 왼팔
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'separate', borderSpacing: 3, fontSize: 11, fontWeight: 800 }}>
+              <thead>
+                <tr>
+                  <th style={{ color: SUB, fontWeight: 800, textAlign: 'left', paddingRight: 4 }}>왼 \ 오</th>
+                  {item.grid.map((R) => <th key={R} style={{ color: SUB, fontWeight: 800, width: 38 }}>{R}°</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {item.grid.map((L) => (
+                  <tr key={L}>
+                    <th style={{ color: SUB, fontWeight: 800, textAlign: 'left', paddingRight: 4 }}>{L}°</th>
+                    {item.grid.map((R) => {
+                      const hit = cov.find((c) => c.L === L && c.R === R)?.hit;
+                      return (
+                        <td key={R} title={`왼팔 ${L}° · 오른팔 ${R}°`}
+                          style={{ height: 22, borderRadius: 6, textAlign: 'center',
+                            background: hit ? '#EDF7F0' : '#F1EEE8', color: hit ? GREEN : '#C9C2B6' }}>
+                          {hit ? '✓' : '·'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {cov.map((c) => (
+              <span key={c.target} style={{ fontSize: 12, fontWeight: 900, borderRadius: 999, padding: '4px 10px',
+                background: c.hit ? '#EDF7F0' : '#F1EEE8', color: c.hit ? GREEN : '#B4ADA2' }}>
+                {c.hit ? '✓ ' : ''}{c.target}°
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 올리는 자리 */}
@@ -296,7 +329,7 @@ export default function AngleSetAdmin() {
         style={{ borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: busy ? 'default' : 'pointer', marginBottom: 12,
           background: over ? '#FFF6E6' : '#fff', boxShadow: `inset 0 0 0 2px ${over ? GOLD : '#EDE9E2'}`, borderStyle: 'dashed' }}>
         <div style={{ fontSize: 13.5, fontWeight: 900, color: busy ? GOLD_INK : INK }}>
-          {busy || `${item.label}${item.sub ? `(${item.sub})` : ''} ${who === 'female' ? '여성' : '남성'} 그림이나 영상을 여기에 끌어다 놓으세요`}
+          {busy || `${item.label} ${who === 'female' ? '여성' : '남성'} 그림이나 영상을 여기에 끌어다 놓으세요`}
         </div>
         {!busy && <div style={{ fontSize: 11.5, color: SUB, fontWeight: 600, marginTop: 4 }}>여러 장을 한꺼번에 놓아도 됩니다 · 눌러서 고르기</div>}
         <input ref={fileRef} type="file" accept="image/*,video/*" multiple style={{ display: 'none' }}
@@ -398,14 +431,14 @@ export default function AngleSetAdmin() {
           )}
         </div>
       )}
-      {isArm && usableShots(armMeta(sets, who)).length > 0 && (
+      {isArm && usableShots(sets[key]).length > 0 && (
         <div style={{ ...box, background: BG, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 240px' }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: INK, marginBottom: 6 }}>
               손님이 오른팔 <span style={{ color: GOLD }}>{probeR}°</span> · 왼팔 <span style={{ color: GOLD }}>{probeL}°</span>면
               → <span style={{ color: GOLD }}>{pick ? `오 ${pick.r}° · 왼 ${pick.l}° 그림` : '—'}</span>
               {pair?.flip && <span style={{ color: GOLD }}>을 뒤집어</span>} 보여 줍니다
-              <span style={{ fontWeight: 700, color: SUB }}> (세 칸 전체에서 고름 · 선은 손님 값)</span>
+              <span style={{ fontWeight: 700, color: SUB }}> (선은 손님 값)</span>
             </div>
             {[['오른팔', probeR, setProbeR], ['왼팔', probeL, setProbeL]].map(([lb, v, set]) => (
               <label key={lb} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11.5, fontWeight: 800, color: SUB }}>

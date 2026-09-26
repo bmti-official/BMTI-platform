@@ -6,7 +6,8 @@
 import { measureSource } from './measureImage';
 
 export const STEP = 0.1;          // 몇 초마다 잴까
-const MAX_SEC = 30;               // 이보다 길면 앞부분만 본다(재는 데 너무 오래 걸린다)
+export const MAX_SEC = 240;       // 이보다 길면 앞부분만 본다(팔 49자세를 한 편에 담으면 길다)
+const LONG = 60;                  // 이보다 긴 영상은 0.2초마다 잰다(재는 시간을 반으로)
 const MIN_SURE = 0.6;             // 관절이 이만큼은 또렷해야 쓴다
 const SHAKE = 300;                // 흔들림 벌점 — 한 번에 화면의 1%쯤 움직이면 3도 멀어진 것으로 친다
 
@@ -72,12 +73,13 @@ const moved = (a, b) => {
   return sum / 25;
 };
 
-/** 영상 전체를 STEP초마다 잰다. onStep(한 비율 0~1) */
+/** 영상 전체를 STEP초(긴 영상은 두 배)마다 잰다. onStep(한 비율 0~1) */
 export async function sampleVideo(v, kind, onStep) {
   const end = Math.min(v.duration || 0, MAX_SEC);
   const out = [];
   let prev = null;
-  for (let t = 0; t <= end; t += STEP) {
+  const step = end > LONG ? STEP * 2 : STEP;
+  for (let t = 0; t <= end; t += step) {
     const m = await measureAt(v, t, kind);
     if (!m.err) {
       out.push({ ...m, motion: moved(prev, m) });
@@ -125,6 +127,25 @@ export function spreadFrames(kind, samples, n) {
   }
   picks.sort((a, b) => progressOf(kind, a) - progressOf(kind, b));
   return { picks, lo, hi };
+}
+
+/** 팔 — 7×7 칸마다 장면 하나. 장면은 두 팔이 가장 가까운 칸 하나에만 들어간다
+ *  (그 사이 자세가 없을 때 같은 자세가 옆 칸까지 채우지 않게). 칸 안에서는 가장 가깝고 덜 흔들린 것.
+ *  두 팔 중 하나라도 칸에서 tol도 넘게 떨어지면 버린다.
+ *  samples에는 vi(몇 번째 영상)가 붙어 있다. 돌려주는 것: [{ L, R, sample }] — 없는 칸은 빠진다. */
+export function chooseGrid(samples, grid, tol = 20) {
+  const near = (v) => grid.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
+  const best = new Map();
+  samples.forEach((s) => {
+    if ((s.sure ?? 0) < MIN_SURE || s.l == null || s.r == null) return;
+    const L = near(s.l), R = near(s.r);
+    if (Math.abs(s.l - L) > tol || Math.abs(s.r - R) > tol) return;
+    const score = Math.hypot(s.l - L, s.r - R) + (s.motion || 0) * SHAKE;
+    const k = `${L}:${R}`;
+    if (!best.has(k) || score < best.get(k).score) best.set(k, { L, R, sample: s, score });
+  });
+  return grid.flatMap((L) => grid.map((R) => best.get(`${L}:${R}`)).filter(Boolean))
+    .map(({ L, R, sample }) => ({ L, R, sample }));
 }
 
 /** t초 장면을 jpg 파일로 */
