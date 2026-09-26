@@ -195,12 +195,11 @@ export default function AngleSetAdmin() {
       setNote(`${report.join(' ')} 사람이 또렷하게 보이는지, ${it.grid ? '두 팔이 잘 보이는지' : '처음과 끝 자세가 다른지'} 봐 주세요.`);
       return;
     }
-    let keep = latest(k);
-    let keepVideos = latestVideos(k);
-    if (keep.length && window.confirm(
-      `영상에서 ${found.length}장을 뽑았어요.\n\n`
-      + `지금 모음에 있는 ${keep.length}장을 빼고 영상 장면으로 바꿀까요?\n`
-      + '(취소를 누르면 지금 그림은 두고 옆에 더합니다)')) { keep = []; keepVideos = []; }
+    // 영상마다 따로 묶는다 — 다른 영상의 장면은 건드리지 않는다.
+    // 같은 영상을 다시 올렸을 때만 그 영상의 장면을 새로 뽑은 것으로 바꾼다.
+    const again = new Set(infos.map((x) => x.vid));
+    const keep = latest(k).filter((x) => !again.has(x.from?.vid));
+    const keepVideos = latestVideos(k);
     const added = [];
     for (let i = 0; i < found.length; i += 1) {
       const sample = found[i];
