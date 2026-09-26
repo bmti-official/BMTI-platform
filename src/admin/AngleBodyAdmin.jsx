@@ -70,7 +70,7 @@ function AngleLevelAdmin() {
       <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>각도 단계별 그림</div>
       <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8, marginBottom: 14 }}>
         항목마다 <b>각도가 심해지는 세 단계</b>를 올립니다. 손님이 그 항목을 누르면 자기 값에 맞는 그림이 뜹니다.
-        <br /><b>보는 방향이 항목마다 다릅니다</b> — 목 세움·허리 굽힘은 <b>옆모습</b>, 어깨 들림은 <b>앞모습</b>입니다.
+        <br /><b>보는 방향이 항목마다 다릅니다</b> — 목의 정렬·허리 굽힘은 <b>옆모습</b>, 옆으로 팔 들기는 <b>앞모습</b>입니다.
         <br />세 항목 모두 <b>숫자가 클수록 좋은 값</b>이라, 1단계(가벼움)가 큰 쪽입니다.
         <br />세 장을 다 못 채워도 됩니다. 비어 있으면 가까운 단계 그림으로 물러나고, 그럴 땐 &lsquo;비슷한 단계 그림&rsquo;이라고 적어 둡니다.
       </div>

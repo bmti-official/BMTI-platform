@@ -1208,9 +1208,9 @@ function AngleWeekStrip({ weeks, onAngle, t }) {
 // **목만 고르면 앉아서 잴 수 있다** — 귀와 어깨만 있으면 되기 때문이다.
 // 허리·어깨는 골반을 기준으로 재므로 서 있어야 하고, 그 사정을 창에 적어 둔다.
 const ANGLE_PARTS = [
-  { key: "neck", label: "목 세움", how: "앉아서도 돼요", note: "고개가 얼마나 앞으로 나왔는지" },
+  { key: "neck", label: "목의 정렬", how: "앉아서도 돼요", note: "고개가 얼마나 앞으로 나왔는지" },
   { key: "trunk", label: "허리 굽힘", how: "서서", note: "허리가 얼마나 숙여지는지" },
-  { key: "arm", label: "어깨 들림", how: "서서", note: "팔이 얼마나 올라가는지" },
+  { key: "arm", label: "옆으로 팔 들기", how: "서서", note: "팔이 얼마나 올라가는지" },
 ];
 function AnglePartPick({ onClose, onGo, t }) {
   const [on, setOn] = useState(["neck", "trunk", "arm"]);

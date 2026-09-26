@@ -4,7 +4,7 @@
 // 재는 것은 셋이다.
 //   neckBend   목 숙임      측면 · 가만히 섰을 때 (귀가 어깨보다 얼마나 앞에 나갔나)
 //   trunkFlex  몸통 굽힘    측면 · 앞으로 굽혔을 때 몸통이 눕는 정도 (가동 범위)
-//   armRaise   어깨 들림    정면 · 팔을 옆으로 들어 올린 정도 (가동 범위)
+//   armRaise   옆으로 팔 들기    정면 · 팔을 옆으로 들어 올린 정도 (가동 범위)
 //
 // 절대값을 그대로 보여 주지 않는다. '거북목 18도'는 의학 측정으로 읽힌다.
 // 지난주 대비 얼마나 달라졌는지만 말한다.
@@ -164,7 +164,7 @@ export function trunkFlex(pts) {
   return tiltFromVertical(mid(pts[L.shoulderL], pts[L.shoulderR]), mid(pts[L.hipL], pts[L.hipR]));
 }
 
-/** 어깨 들림 — 팔이 몸통에서 얼마나 벌어졌나. 정면에서 팔을 옆으로 올릴 때.
+/** 옆으로 팔 들기 — 팔이 몸통에서 얼마나 벌어졌나. 정면에서 팔을 옆으로 올릴 때.
  *  한쪽만 안 올라가는 일이 흔해서 좌우를 따로 돌려준다. */
 export function armRaiseSides(pts) {
   const hip = mid(pts[L.hipL], pts[L.hipR]);

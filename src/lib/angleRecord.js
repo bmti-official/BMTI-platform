@@ -42,9 +42,9 @@ export async function saveCheck(vals) {
 // 화면에 쓰는 세 항목
 export const ITEMS = [
   // 화면에 나가는 목 값은 CVA다(클수록 곧다). 그래서 말도 뒤집는다.
-  { key: 'neck_bend', label: '목 세움', unit: '도', less: '더 숙였어요', more: '더 곧게 섰어요' },
+  { key: 'neck_bend', label: '목의 정렬', unit: '도', less: '더 숙였어요', more: '더 곧게 섰어요' },
   { key: 'trunk_flex', label: '허리 굽힘', unit: '도', less: '덜 굽혔어요', more: '더 굽혔어요' },
-  { key: 'arm_raise', label: '어깨 들림', unit: '도', less: '덜 올렸어요', more: '더 올렸어요' },
+  { key: 'arm_raise', label: '옆으로 팔 들기', unit: '도', less: '덜 올렸어요', more: '더 올렸어요' },
 ];
 
 // 품질이 낮은 판은 견주지 않는다. 흔들림을 변화로 읽으면 안 된다.

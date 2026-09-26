@@ -3,6 +3,7 @@
 // 원안 그대로 만들었다. 손보지 않았다.
 //   각도기록  이번 달 움직임 · 가장 많이 달라진 곳 · 꾸준함
 //   부담 점수  부담이 몰린 주 · 부담과 움직임
+import { josa } from '../lib/josa';
 import { monthMove, biggestMove, steadiness, heaviestWeek, loadAndMove } from '../lib/octFindingsDraft';
 import { getTypeAccent } from '../lib/typeAccent';
 import { riskBand, riskFill } from '../lib/riskBands';
@@ -215,11 +216,11 @@ export function LoadAndMoveCard({ rows, entries }) {
   const dir = Math.abs(d.gap) < 0.5 ? null : d.gap < 0;
   return (
     <Card icon="⭐" title="부담과 움직임"
-      sub={`부담이 많았던 주와 ${d.item.label}을 나란히 놓았어요. 어느 쪽이 원인인지는 이 기록만으로 알 수 없어요.`}>
+      sub={`부담이 많았던 주와 ${josa(d.item.label, '을')} 나란히 놓았어요. 어느 쪽이 원인인지는 이 기록만으로 알 수 없어요.`}>
       <div style={{ fontSize: 14.5, fontWeight: 800, color: C.ink, lineHeight: 1.7, margin: '2px 0 14px', wordBreak: 'keep-all' }}>
         {dir === null
-          ? <>부담이 많았던 주와 적었던 주의 {d.item.label}이 거의 같았어요.</>
-          : <>부담 태그가 많았던 주에는 {d.item.label}이 {Math.abs(d.gap)}도 {dir ? '줄어드는' : '늘어나는'} 편이었어요.</>}
+          ? <>부담이 많았던 주와 적었던 주의 {josa(d.item.label, '이')} 거의 같았어요.</>
+          : <>부담 태그가 많았던 주에는 {josa(d.item.label, '이')} {Math.abs(d.gap)}도 {dir ? '줄어드는' : '늘어나는'} 편이었어요.</>}
       </div>
       {/* 꺾은선 둘 — 막대로 두면 색 설명을 읽어야 무엇인지 안다.
           선이면 '같이 오르내리는지'가 한눈에 들어오고, 이름을 선 끝에 바로 붙일 수 있다. */}

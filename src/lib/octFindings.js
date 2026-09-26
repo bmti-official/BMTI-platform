@@ -11,14 +11,14 @@ import { KEY_TO_PART_LABEL } from './diaryEntryLabels';
 // 항목마다 어느 쪽이 좋은지.
 //   목 숙임  … 가만히 섰을 때의 자세다. 덜 숙일수록 좋다.
 //   허리 굽힘 … '천천히 굽혔다 돌아오기'의 최댓값, 곧 **가동 범위**다. 더 굽힐수록 좋다.
-//   어깨 들림 … 팔을 옆으로 올린 최댓값. 더 올릴수록 좋다.
+//   옆으로 팔 들기 … 팔을 옆으로 올린 최댓값. 더 올릴수록 좋다.
 // 허리를 '덜 굽힐수록 좋다'로 두면 몸이 굳은 날을 잘한 날로 세게 된다.
 // plain — 그 각도가 무슨 뜻인지 손님 말로. 재는 방식을 그대로 옮겨 적는다.
 export const ANGLE_ITEMS = [
   {
     // 화면에 나가는 값은 CVA(수평선 기준)다 — angleView.js에서 바꿔 준다.
     // 셋 다 '클수록 좋다'로 모아야 목만 거꾸로 읽히지 않는다.
-    key: 'neck_bend', label: '목 세움', kind: 'posture', better: 'high',
+    key: 'neck_bend', label: '목의 정렬', kind: 'posture', better: 'high',
     best: '가장 곧게 선', gain: '더 곧게 섰습니다',
     plain: '가만히 섰을 때 귀와 어깨를 이은 선이 바닥과 이루는 각이에요. 90도에 가까울수록 고개가 몸 위에 곧게 얹힌 거고, 작을수록 앞으로 나온 거예요.',
   },
@@ -28,7 +28,7 @@ export const ANGLE_ITEMS = [
     plain: '선 자세에서 허리를 앞으로 숙일 때, 가장 깊이 숙인 순간의 각도예요. 90도면 상체가 바닥과 나란해진 거예요. 클수록 잘 숙여지는 겁니다.',
   },
   {
-    key: 'arm_raise', label: '어깨 들림', kind: 'range', better: 'high',
+    key: 'arm_raise', label: '옆으로 팔 들기', kind: 'range', better: 'high',
     best: '가장 높이 올린', gain: '더 올렸습니다',
     plain: '팔을 옆으로 들어 올릴 때, 가장 높이 올라간 순간의 각도예요. 90도면 어깨 높이, 180도면 귀 옆까지 올라간 겁니다.',
   },

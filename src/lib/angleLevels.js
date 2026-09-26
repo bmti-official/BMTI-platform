@@ -8,7 +8,7 @@ export const LEVEL_ITEMS = [
   {
     // CVA — 클수록 곧다. 경계는 **우리 것**이다. 임상의 50/30은 아래 점이 C7일 때의
     // 숫자인데 미디어파이프엔 C7이 없어 어깨점을 쓰므로 15~25도쯤 크게 나온다.
-    key: 'neck_bend', short: 'neck', label: '목 세움', view: '옆모습', better: 'high',
+    key: 'neck_bend', short: 'neck', label: '목의 정렬', view: '옆모습', better: 'high',
     cuts: [65, 75],
     // 단계마다 그림이 어떤 모습이어야 하는지 — 관리자에서 그대로 안내한다
     shots: ['귀가 어깨 위에 곧게', '고개가 조금 앞으로', '고개가 많이 앞으로(거북목)'],
@@ -19,7 +19,7 @@ export const LEVEL_ITEMS = [
     shots: ['상체가 바닥과 거의 나란히', '허리를 반쯤 숙인 자세', '조금밖에 안 숙여진 자세'],
   },
   {
-    key: 'arm_raise', short: 'arm', label: '어깨 들림', view: '앞모습', better: 'high',
+    key: 'arm_raise', short: 'arm', label: '옆으로 팔 들기', view: '앞모습', better: 'high',
     cuts: [120, 160],
     shots: ['팔이 귀 옆까지', '팔이 비스듬히 위로', '팔이 어깨 높이도 안 되게'],
   },

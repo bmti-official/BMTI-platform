@@ -5,6 +5,7 @@
 //     한 판만 있어도 그 판으로 말한다.
 //   · **인과로 말하지 않는다.** 각도가 나아져서 덜 아팠다고는 못 쓴다. 나란히만 둔다.
 //   · **지금 바로 보이는 것을 앞에 둔다.** 큰 숫자 하나, 그다음에 줄들.
+import { josa } from '../lib/josa';
 import { useEffect, useState } from 'react';
 import { recentChecks } from '../lib/angleRecord';
 import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
@@ -81,7 +82,7 @@ export function FirstNowCard({ rows }) {
     <Card icon="📏" title="처음과 지금"
       sub={`${f.from}에 처음 재고 ${f.to}에 다시 쟀어요. 그 사이 ${f.weeks}판이 쌓였습니다.`}>
       {head
-        ? <Big value={Math.abs(head.diff)} unit="°" note={`${head.label}을 처음보다 ${head.gain}`} />
+        ? <Big value={Math.abs(head.diff)} unit="°" note={`${josa(head.label, '을')} 처음보다 ${head.gain}`} />
         : <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, margin: '2px 0 12px', lineHeight: 1.6 }}>
             처음과 거의 같은 자리예요. 흔들리지 않았다는 뜻이기도 합니다.
           </div>}
@@ -114,7 +115,7 @@ export function OneThingCard({ rows }) {
   }
   return (
     <Card icon="✨" title="오늘 해 볼 한 가지"
-      sub={`${o.label}이 이번 달 최고 기록에서 가장 멀어요. 하나만 고른다면 여기입니다.`}>
+      sub={`${josa(o.label, '이')} 이번 달 최고 기록에서 가장 멀어요. 하나만 고른다면 여기입니다.`}>
       <Big value={o.gap} unit="°" note={`내 최고 기록 ${o.best}° · 지난번 ${o.now}°`} />
       <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, lineHeight: 1.7, background: '#FAF7F0',
         borderRadius: 12, padding: '12px 14px', wordBreak: 'keep-all' }}>
@@ -188,7 +189,7 @@ export function SideBySideCard({ rows, entries }) {
   const span = Math.max(1, d.maxA - d.minA);
   return (
     <Card icon="🔗" title="나란히 놓아 본 주"
-      sub={`주마다 ${d.item.label}과 하루 평균 부담을 나란히 뒀어요. 어느 쪽이 먼저인지는 이 기록만으로 알 수 없어요.`}>
+      sub={`주마다 ${josa(d.item.label, '과')} 하루 평균 부담을 나란히 뒀어요. 어느 쪽이 먼저인지는 이 기록만으로 알 수 없어요.`}>
       <div style={{ display: 'flex', gap: 9, marginTop: 4 }}>
         {d.rows.map((x) => (
           <div key={x.week} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>

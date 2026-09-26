@@ -5,7 +5,8 @@
 //
 // 두 번 찍어 값 셋을 얻는다.
 //   측면 … 가만히 서기(목 숙임) → 허리 앞으로 굽히기(몸통 굽힘)
-//   정면 … 팔 옆으로 들어 올리기(어깨 들림)
+//   정면 … 팔 옆으로 들어 올리기(옆으로 팔 들기)
+import { josa } from '../../lib/josa';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, sideOkNeck, frontOk, kneeStraight, seenWell,
@@ -28,9 +29,9 @@ const HOLD_MS = 1500;  // 자세가 이만큼 그대로면 저절로 시작한�
 const STUCK_MS = 6000; // 이만큼 계속 안 맞으면 '이대로 시작' 길을 연다
 // 화면에 세우는 칸 — 고른 부위만 나온다
 const TILE = [
-  { take: 'neck', label: '목 세움', val: (g) => toCVA(g.neckBend) },
+  { take: 'neck', label: '목의 정렬', val: (g) => toCVA(g.neckBend) },
   { take: 'trunk', label: '허리 굽힘', val: (g) => g.trunkFlex },
-  { take: 'arm', label: '어깨 들림', val: (g) => g.armRaise },
+  { take: 'arm', label: '옆으로 팔 들기', val: (g) => g.armRaise },
 ];
 const ARM_GAP = 18;
 const SHAPE_RETRY = 2;
@@ -412,7 +413,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     if (takes.includes('neck')) {
       // 가만히 선 자세는 '가장 곧았던' 값을 쓴다. 굽히는 동안의 값이 섞이면 안 된다.
       const neck = run.neck.length ? Math.round(Math.min(...run.neck.map((x) => x.v)) * 10) / 10 : 0;
-      if (!neck) { again('목 세움이 안 잡혔어요. 한 번 더 잴게요 — 가만히 계셔야 해요.', AGAIN_VOICE.neck); return; }
+      if (!neck) { again('목의 정렬이 안 잡혔어요. 한 번 더 잴게요 — 가만히 계셔야 해요.', AGAIN_VOICE.neck); return; }
       next.neckBend = neck;
     }
     if (takes.includes('trunk')) {
@@ -426,7 +427,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }
     if (takes.includes('arm')) {
       const arm = peakOf(run.arm);
-      if (!arm) { again('어깨 들림이 안 잡혔어요. 한 번 더 잴게요 — 두 팔이 화면에 다 들어와야 해요.', AGAIN_VOICE.arm); return; }
+      if (!arm) { again('옆으로 팔 들기가 안 잡혔어요. 한 번 더 잴게요 — 두 팔이 화면에 다 들어와야 해요.', AGAIN_VOICE.arm); return; }
       next.armRaise = arm;
       next.armRaiseL = peakOf(run.armL) || null;
       next.armRaiseR = peakOf(run.armR) || null;
@@ -903,7 +904,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           ) : (
             <span style={{ display: 'inline-block', background: msg ? 'rgba(178,59,54,0.92)' : 'rgba(255,255,255,0.94)',
               color: msg ? '#fff' : INK, borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 800 }}>
-              {msg || (ready > 0 && ph?.take ? `${TILE.find((x) => x.take === ph.take)?.label}을 잽니다`
+              {msg || (ready > 0 && ph?.take ? `${josa(TILE.find((x) => x.take === ph.take)?.label, '을')} 잽니다`
                 : running && ph?.text ? ph.text : '좋아요, 그대로 계세요')}
             </span>
           )}

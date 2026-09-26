@@ -7,8 +7,9 @@
 // 그림이 답을 맡는다.
 //   목 숙임  … 가만히 섰을 때의 자세다. 사람 모형을 그 각도만큼 실제로 기울인다.
 //   허리 굽힘 … '굽혔다 돌아오기'의 최댓값, 곧 가동 범위다. 자세가 아니라 부채꼴로 그린다.
-//   어깨 들림 … 팔을 올린 최댓값. 이것도 부채꼴이다.
+//   옆으로 팔 들기 … 팔을 올린 최댓값. 이것도 부채꼴이다.
 // 자세와 가동 범위를 같은 모양으로 그리면 '허리가 70도 굽은 사람'처럼 읽힌다.
+import { josa } from '../lib/josa';
 import { useEffect, useMemo, useState } from 'react';
 import { ITEMS, vsLastWeek, vsLastMonth, canTrend, rowsFor } from '../lib/angleRecord';
 import { ANGLE_ITEMS } from '../lib/octFindings';
@@ -55,7 +56,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t, sel }) {
   const bent = trunk != null
     ? [shX + Math.sin(rad(trunk)) * trunkLen, hipY - Math.cos(rad(trunk)) * trunkLen]
     : null;
-  // 어깨 들림 — 팔이 아래로 늘어진 데서 옆으로 올라간 범위
+  // 옆으로 팔 들기 — 팔이 아래로 늘어진 데서 옆으로 올라간 범위
   const armLen = 46;
   const armEnd = arm != null
     ? [shX + Math.sin(rad(arm)) * armLen, shY + Math.cos(rad(arm)) * armLen]
@@ -78,7 +79,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t, sel }) {
           <line x1={shX} y1={hipY} x2={bent[0]} y2={bent[1]} stroke={GOLD} strokeWidth="3" strokeLinecap="round" opacity="0.45" />
         </>
       )}
-      {/* 어깨 들림 범위 */}
+      {/* 옆으로 팔 들기 범위 */}
       {armEnd && show('arm_raise') && (
         <>
           <path d={arc(shX, shY, armLen * 0.9, 0, Math.min(arm, 175), 'down')}
@@ -186,7 +187,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
 
       {top && (
         <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.6, margin: '6px 0 2px', wordBreak: 'keep-all' }}>
-          처음 잰 날보다 <b style={{ color: t.accentDeep }}>{top.label}</b>이 가장 많이 달라졌어요
+          처음 잰 날보다 <b style={{ color: t.accentDeep }}>{top.label}</b>{josa(top.label, '이').slice(top.label.length)} 가장 많이 달라졌어요
           <span style={{ color: C.sub, fontWeight: 700 }}> ({top.diff > 0 ? '+' : ''}{top.diff}°)</span>
         </div>
       )}
@@ -217,16 +218,19 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
                 style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   background: on ? '#FAF7F0' : '#fff', borderRadius: 13, padding: '9px 10px',
                   boxShadow: on ? `inset 0 0 0 2px ${t.accent}` : `inset 0 0 0 1px ${C.line}`, transition: 'box-shadow .15s' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 900, color: C.ink }}>{item.label}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: 17, fontWeight: 900, color: on ? t.accentDeep : C.ink, fontVariantNumeric: 'tabular-nums' }}>
-                    {v == null ? '' : v}
-                  </span>
-                  {v != null && <span style={{ fontSize: 11, fontWeight: 800, color: on ? t.accentDeep : C.ink }}>°</span>}
-                  <span style={{ fontSize: 11, fontWeight: 900, color: C.sub, width: 11, textAlign: 'right' }}>
+                {/* 이름은 한 줄에 온전히 — 숫자와 나란히 두면 '옆으로 팔 들 / 기'처럼 글자 중간에서 끊긴다 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 900, color: C.ink, whiteSpace: 'nowrap' }}>{item.label}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 900, color: C.sub, width: 11, textAlign: 'right' }}>
                     {on ? '▴' : '▾'}
                   </span>
                 </div>
+                {v != null && (
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 1 }}>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: on ? t.accentDeep : C.ink, fontVariantNumeric: 'tabular-nums' }}>{v}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: on ? t.accentDeep : C.ink }}>°</span>
+                  </div>
+                )}
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, marginTop: 2, wordBreak: 'keep-all', lineHeight: 1.4 }}>
                   {v == null ? '아직 안 쟀어요'
                     : wk === null ? '다음에 재면 견줘 드려요'

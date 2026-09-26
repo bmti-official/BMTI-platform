@@ -113,13 +113,13 @@ export const ANGLE_LINES = [
   { n: 16, key: 'retry', text: '(안 씀) 잘 안 잡혔어요. 한 번만 더 할게요' },
   { n: 17, key: 'sit', text: '시작합니다. 앉은 그대로 계세요' },
   // ── 재는 토막마다 앞에서 세는 말 — 무엇을 재는지 이름을 붙인다 ──
-  { n: 18, key: 'countNeck', text: '목 세움을 잽니다. 셋, 둘, 하나' },
+  { n: 18, key: 'countNeck', text: '목의 정렬을 잽니다. 셋, 둘, 하나' },
   { n: 19, key: 'countTrunk', text: '허리 굽힘을 잽니다. 셋, 둘, 하나' },
-  { n: 20, key: 'countArm', text: '어깨 들림을 잽니다. 셋, 둘, 하나' },
+  { n: 20, key: 'countArm', text: '옆으로 팔 들기를 잽니다. 셋, 둘, 하나' },
   // ── 다시 잴 때 — 무엇을 다시 재는지 ──
-  { n: 21, key: 'againNeck', text: '목 세움을 한 번 더 잴게요' },
+  { n: 21, key: 'againNeck', text: '목의 정렬을 한 번 더 잴게요' },
   { n: 22, key: 'againTrunk', text: '허리 굽힘을 한 번 더 잴게요' },
-  { n: 23, key: 'againArm', text: '어깨 들림을 한 번 더 잴게요' },
+  { n: 23, key: 'againArm', text: '옆으로 팔 들기를 한 번 더 잴게요' },
   { n: 24, key: 'againSide', text: '옆모습을 한 번 더 잴게요' },
 ];
 export const ANGLE_N = Object.fromEntries(ANGLE_LINES.map((l) => [l.key, l.n]));

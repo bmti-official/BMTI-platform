@@ -3,6 +3,7 @@
 // **절대 각도를 보여 주지 않는다.** '목 숙임 18도'는 의학 측정으로 읽힌다.
 // 지난주보다 얼마나 달라졌는지만 말한다.
 // 좋아짐·나빠짐 색도 쓰지 않는다. 주 한 번 잰 값으로 판정하면 과하게 반응한다.
+import { josa } from '../../lib/josa';
 import { toView } from '../../lib/angleView';
 import { useMemo, useState } from 'react';
 import { ITEMS, sundayOf, vsLastWeek, vsLastMonth, canTrend, TREND_FROM } from '../../lib/angleRecord';
@@ -145,7 +146,7 @@ function Together({ rows }) {
   ITEMS.forEach((it) => {
     const wk = vsLastWeek(rows, it.key);
     if (wk === null || wk === 0) return;
-    lines.push(`${it.label}이 지난주보다 ${Math.abs(wk)}도 ${wk < 0 ? it.less : it.more}`);
+    lines.push(`${josa(it.label, '이')} 지난주보다 ${Math.abs(wk)}도 ${wk < 0 ? it.less : it.more}`);
   });
   if (!lines.length) return null;
   return (
