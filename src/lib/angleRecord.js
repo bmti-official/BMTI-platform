@@ -52,12 +52,18 @@ const GOOD = 55;
 const usable = (r) => r && (r.quality == null || r.quality >= GOOD);
 
 /** 지난주와 견준다. 값이 없으면 null. */
+// 빈 칸은 빈 칸으로 본다. Number(null)은 0이라 그냥 두면 '쟀다'로 읽힌다.
+export const hasVal = (r, key) => r && r[key] != null && r[key] !== '' && Number.isFinite(Number(r[key]));
+
+/** 그 항목을 잰 판만 새 것부터. 부위를 골라 재니 판마다 비어 있는 칸이 있다. */
+export const rowsFor = (rows, key) => (rows || []).filter((r) => usable(r) && hasVal(r, key));
+
 export function vsLastWeek(rows, key) {
-  const ok = rows.filter(usable);
+  // '가장 최근 두 판'이 아니라 '그 항목을 잰 가장 최근 두 판'을 견준다.
+  // 허리만 잰 주가 끼어 있으면 목은 그 앞 판끼리 견줘야 한다.
+  const ok = rowsFor(rows, key);
   if (ok.length < 2) return null;
-  const a = Number(ok[0][key]), b = Number(ok[1][key]);
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
-  return Math.round((a - b) * 10) / 10;
+  return Math.round((Number(ok[0][key]) - Number(ok[1][key])) * 10) / 10;
 }
 
 /** 이번 달 평균과 지난달 평균을 견준다. 두 달치가 쌓여야 나온다. */
@@ -68,7 +74,7 @@ export function vsLastMonth(rows, key, now = new Date()) {
   const lastM = month(sundayOf(prev));
   const avg = (m) => {
     const vs = rows.filter((r) => usable(r) && month(r.week) === m)
-      .map((r) => Number(r[key])).filter(Number.isFinite);
+      .filter((r) => hasVal(r, key)).map((r) => Number(r[key]));
     return vs.length ? vs.reduce((n, v) => n + v, 0) / vs.length : null;
   };
   const a = avg(thisM), b = avg(lastM);
@@ -78,4 +84,5 @@ export function vsLastMonth(rows, key, now = new Date()) {
 
 /** 꺾은선을 그릴 만큼 쌓였나 — 네 판부터. */
 export const TREND_FROM = 4;
-export const canTrend = (rows) => rows.filter(usable).length >= TREND_FROM;
+export const canTrend = (rows, key = null) =>
+  (key ? rowsFor(rows, key) : rows.filter(usable)).length >= TREND_FROM;

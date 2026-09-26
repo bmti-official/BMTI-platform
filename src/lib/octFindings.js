@@ -36,7 +36,8 @@ export const ANGLE_ITEMS = [
 
 const GOOD = 55;                                   // 흔들린 판은 견주지 않는다
 const usable = (r) => r && (r.quality == null || r.quality >= GOOD);
-const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+// 빈 칸은 빈 칸으로. Number(null)은 0이라 그냥 두면 '0도로 쟀다'가 된다.
+const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const r1 = (v) => Math.round(v * 10) / 10;
 const dayOf = (w) => `${Number(String(w).slice(5, 7))}월 ${Number(String(w).slice(8, 10))}일`;
 

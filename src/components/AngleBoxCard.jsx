@@ -10,12 +10,12 @@
 //   어깨 들림 … 팔을 올린 최댓값. 이것도 부채꼴이다.
 // 자세와 가동 범위를 같은 모양으로 그리면 '허리가 70도 굽은 사람'처럼 읽힌다.
 import { useEffect, useMemo, useState } from 'react';
-import { ITEMS, vsLastWeek, vsLastMonth, canTrend } from '../lib/angleRecord';
+import { ITEMS, vsLastWeek, vsLastMonth, canTrend, rowsFor } from '../lib/angleRecord';
 import { ANGLE_ITEMS } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 import { toView } from '../lib/angleView';
-import { loadAssets, ANGLE_BODY, DEFAULT_META } from '../lib/appAssets';
-import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, DEFAULT_CUTS, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
+import { loadAssets } from '../lib/appAssets';
+import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../lib/angleLevels';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', line: '#EDE9E2' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
@@ -24,7 +24,8 @@ const PURPLE = '#7C6BD0';   // 사진 위에서 잘 보이는 보라. 흰 테를
 
 const GOOD = 55;
 const usable = (r) => r && (r.quality == null || r.quality >= GOOD);
-const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+// 빈 칸은 빈 칸으로. Number(null)은 0이라 그냥 두면 '0도로 쟀다'가 된다.
+const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const r1 = (v) => Math.round(v * 10) / 10;
 const md = (w) => `${Number(String(w).slice(5, 7))}월 ${Number(String(w).slice(8, 10))}일`;
 
@@ -114,131 +115,7 @@ function Figure({ neck, trunk, arm, ghostNeck, t, sel }) {
 // 한 장짜리 그림이라 관절이 움직이지 않는다. 그래서 **어깨 위쪽만 따로 떼어**
 // 잰 각도만큼 돌린다. 아래는 그대로 두니 목만 앞으로 나온 모습이 된다.
 // 어깨가 그림 어디쯤인지는 관리자에서 맞춰 둔다 — 그림마다 다르다.
-// 사진 위에 얇은 선 하나만 두면 옷·배경에 묻힌다. 흰 테를 밑에 깔고 그 위에 보라를 얹는다.
-function Halo({ d, on, purple }) {
-  return (
-    <>
-      <path d={d} stroke="#fff" strokeWidth={on ? 5 : 3.5} fill="none" strokeLinecap="round"
-        vectorEffect="non-scaling-stroke" opacity="0.95" />
-      <path d={d} stroke={purple} strokeWidth={on ? 2.4 : 1.6} fill="none" strokeLinecap="round"
-        strokeDasharray="2.5 2.5" vectorEffect="non-scaling-stroke" />
-    </>
-  );
-}
-function HaloLine({ x1, y1, x2, y2, on, purple }) {
-  return (
-    <>
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={on ? 6 : 4}
-        strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity="0.95" />
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={purple} strokeWidth={on ? 3 : 2}
-        strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-    </>
-  );
-}
-
-export function PhotoFigure({ src, meta, neck, trunk, arm, ghostNeck, t, sel, guide = false }) {
-  const m = { ...DEFAULT_META, ...(meta || {}) };
-  const turn = (v) => (v == null ? 0 : Math.max(-25, Math.min(45, v - m.baseNeck)));
-  const body = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' };
-  const headClip = `inset(0 0 ${100 - m.shoulderY}% 0)`;
-  const bodyClip = `inset(${m.shoulderY}% 0 0 0)`;
-  const origin = `${m.shoulderX}% ${m.shoulderY}%`;
-  const rad = (d) => (d * Math.PI) / 180;
-  // 하나를 고르면 그것만 진하게, 나머지는 지운다. 셋이 한꺼번에 있으면 뭐가 뭔지 모른다.
-  const show = (k) => sel == null || sel === k;
-  const dim = (k) => (sel === k ? 1 : 0.5);
-
-  // 부채꼴은 그림 위에 겹쳐 그린다. 0~100 좌표를 쓰므로 그림 크기와 상관없다.
-  const arc = (cx, cy, r, deg, from) => {
-    const p = (d) => (from === 'up'
-      ? [cx + Math.sin(rad(d)) * r, cy - Math.cos(rad(d)) * r * 1.6]
-      : [cx + Math.sin(rad(d)) * r, cy + Math.cos(rad(d)) * r * 1.6]);
-    const [x0, y0] = p(0), [x1, y1] = p(Math.min(deg, 170));
-    return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${(r * 1.6).toFixed(1)} 0 ${deg > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
-  };
-
-  return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 2', overflow: 'hidden' }}>
-      {/* 지난주 머리 — 흐리게 뒤에. 목을 고른 때만 보여 준다 */}
-      {(sel == null || sel === 'neck_bend') && ghostNeck != null && Math.abs(turn(ghostNeck) - turn(neck)) >= 0.5 && (
-        <img src={src} alt="" aria-hidden
-          style={{ ...body, clipPath: headClip, WebkitClipPath: headClip, transformOrigin: origin,
-            transform: `rotate(${turn(ghostNeck).toFixed(1)}deg)`, opacity: 0.32, filter: 'grayscale(1)' }} />
-      )}
-      {/* 몸 — 어깨 아래 */}
-      <img src={src} alt="옆모습" style={{ ...body, clipPath: bodyClip, WebkitClipPath: bodyClip }} />
-      {/* 머리 — 잰 각도만큼 앞으로 */}
-      <img src={src} alt="" aria-hidden
-        style={{ ...body, clipPath: headClip, WebkitClipPath: headClip, transformOrigin: origin,
-          transform: `rotate(${turn(neck).toFixed(1)}deg)`, transition: 'transform .4s ease' }} />
-
-      {/* 굽힘·들림 범위 부채꼴 — 보라 선에 흰 테 */}
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-        {trunk != null && show('trunk_flex') && (
-          <>
-            <Halo d={arc(m.shoulderX, m.hipY, 14, trunk, 'up')} on={sel === 'trunk_flex'} purple={PURPLE} />
-            <HaloLine x1={m.shoulderX} y1={m.hipY}
-              x2={m.shoulderX + Math.sin(rad(Math.min(trunk, 90))) * 14}
-              y2={m.hipY - Math.cos(rad(Math.min(trunk, 90))) * 14 * 1.6}
-              on={sel === 'trunk_flex'} purple={PURPLE} />
-          </>
-        )}
-        {arm != null && show('arm_raise') && (
-          <>
-            <Halo d={arc(m.shoulderX, m.shoulderY, 10, arm, 'down')} on={sel === 'arm_raise'} purple={PURPLE} />
-            <HaloLine x1={m.shoulderX} y1={m.shoulderY}
-              x2={m.shoulderX + Math.sin(rad(Math.min(arm, 175))) * 10}
-              y2={m.shoulderY + Math.cos(rad(Math.min(arm, 175))) * 10 * 1.6}
-              on={sel === 'arm_raise'} purple={PURPLE} />
-          </>
-        )}
-        {/* 곧게 선 기준선 — 목을 볼 때만 */}
-        {show('neck_bend') && (
-          <Halo d={`M${m.shoulderX} ${m.shoulderY - 16} L${m.shoulderX} ${m.shoulderY}`}
-            on={sel === 'neck_bend'} purple="#B7B0A3" />
-        )}
-
-        {/* 맞추기 안내선 — 관리자에서만 켠다 */}
-        {guide && (
-          <>
-            <line x1="0" y1={m.shoulderY} x2="100" y2={m.shoulderY} stroke="#E0554F" strokeWidth="1.2"
-              strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
-            <line x1={m.shoulderX} y1="0" x2={m.shoulderX} y2="100" stroke="#E0554F" strokeWidth="1.2"
-              strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
-            <line x1="0" y1={m.hipY} x2="100" y2={m.hipY} stroke="#2F6FE0" strokeWidth="1.2"
-              strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
-          </>
-        )}
-      </svg>
-      {guide && (
-        <>
-          <span style={{ position: 'absolute', left: 3, top: `${m.shoulderY}%`, transform: 'translateY(-115%)',
-            fontSize: 10, fontWeight: 900, color: '#E0554F', textShadow: '0 0 3px #fff, 0 0 3px #fff' }}>어깨선</span>
-          <span style={{ position: 'absolute', left: 3, top: `${m.hipY}%`, transform: 'translateY(-115%)',
-            fontSize: 10, fontWeight: 900, color: '#2F6FE0', textShadow: '0 0 3px #fff, 0 0 3px #fff' }}>골반선</span>
-        </>
-      )}
-      {/* 각도 눈금 — 사진 위라 글씨에 흰 테를 두른다 */}
-      {neck != null && show('neck_bend') && (
-        <span style={{ position: 'absolute', left: `${m.shoulderX + 7}%`, top: `${Math.max(2, m.shoulderY - 19)}%`,
-          fontSize: 12.5, fontWeight: 900, color: t.accentDeep, opacity: dim('neck_bend'),
-          textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{neck}°</span>
-      )}
-      {trunk != null && sel === 'trunk_flex' && (
-        <span style={{ position: 'absolute', left: `${m.shoulderX + 16}%`, top: `${m.hipY - 12}%`,
-          fontSize: 12.5, fontWeight: 900, color: PURPLE,
-          textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{trunk}°</span>
-      )}
-      {arm != null && sel === 'arm_raise' && (
-        <span style={{ position: 'absolute', left: `${m.shoulderX + 13}%`, top: `${m.shoulderY + 10}%`,
-          fontSize: 12.5, fontWeight: 900, color: PURPLE,
-          textShadow: '0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff' }}>{arm}°</span>
-      )}
-    </div>
-  );
-}
-
-export default function AngleBoxCard({ rows: raw = [], gender = null, previewBody = null, guide = false }) {
+export default function AngleBoxCard({ rows: raw = [], gender = null }) {
   const t = getTypeAccent();
   // 목은 담긴 값(수직 기준)과 보여 줄 값(CVA)의 기준선이 다르다.
   // 부르는 쪽마다 바꾸면 빠뜨리거나 두 번 하게 된다 — 여기 한 곳에서만 바꾼다.
@@ -253,33 +130,35 @@ export default function AngleBoxCard({ rows: raw = [], gender = null, previewBod
     const hit = LEVEL_ITEMS.find((x) => has(x.key));
     return hit ? hit.key : 'neck_bend';
   })();
-  const [open, setOpen] = useState(firstItem);
+  // 손님이 직접 고르기 전까지는 기록을 따라간다. 첫 화면에서 한 번 정해 굳혀 두면
+  // 기록이 늦게 불러와질 때 빈 상태에서 '목'으로 굳어 버린다.
+  const [picked, setPicked] = useState(undefined);
+  const open = picked === undefined ? firstItem : picked;
+  const setOpen = setPicked;
   const [asset, setAsset] = useState(null);
   const g = String(gender || '').toLowerCase();
-  const key = g.includes('female') || g.includes('여') ? ANGLE_BODY.female : ANGLE_BODY.male;
+  const who = g.includes('female') || g.includes('여') ? 'female' : 'male';
   useEffect(() => {
     let alive = true;
-    loadAssets([ANGLE_BODY.male, ANGLE_BODY.female, LEVELS_KEY, ...allImageKeys()])
-      .then((m) => { if (alive) setAsset(m || {}); });
+    loadAssets([LEVELS_KEY, ...allImageKeys()]).then((m) => { if (alive) setAsset(m || {}); });
     return () => { alive = false; };
   }, []);
-  // previewBody — 관리자에서 저장 전 값으로 바로 보려고 넘긴다. 손님 화면에선 늘 null.
-  const body = previewBody?.url ? previewBody : (asset?.[key]?.url ? asset[key] : null);
-  const who = key === ANGLE_BODY.female ? 'female' : 'male';
-  const cuts = { ...DEFAULT_CUTS, ...(asset?.[LEVELS_KEY]?.meta || {}) };
+  const cuts = readCuts(asset?.[LEVELS_KEY]?.meta);
   const ok = (rows || []).filter(usable);
   if (!ok.length) return null;
 
   const now = ok[0];
-  const prev = ok[1] || null;
-  const trend = canTrend(ok);
+  // 부위를 골라 재니 판마다 빈 칸이 있다. 항목마다 '그 항목을 잰' 가장 최근 판을 본다.
+  const lastOf = (k) => rowsFor(ok, k)[0] || null;
+  const prevOf = (k) => rowsFor(ok, k)[1] || null;
+  const valOf = (k) => num(lastOf(k)?.[k]);
 
   // 이번 달 가장 좋았던 값과, 처음 잰 판에서 가장 크게 달라진 곳
-  const sorted = ok.slice().sort((a, b) => String(a.week).localeCompare(String(b.week)));
-  const first = sorted[0];
   const moves = ANGLE_ITEMS.map((it) => {
-    const a = num(first[it.key]), b = num(now[it.key]);
-    if (a == null || b == null || first === now) return null;
+    const mine = rowsFor(ok, it.key);
+    if (mine.length < 2) return null;
+    const a = num(mine[mine.length - 1][it.key]), b = num(mine[0][it.key]);
+    if (a == null || b == null) return null;
     const diff = r1(b - a);
     return { ...it, diff, better: it.better === 'low' ? diff < 0 : diff > 0 };
   }).filter(Boolean);
@@ -293,7 +172,7 @@ export default function AngleBoxCard({ rows: raw = [], gender = null, previewBod
   // 고른 항목에 단계 그림이 올라와 있으면 그걸 쓴다. 한 장을 돌려 쓰는 것보다 정확하다 —
   // 목은 옆에서, 어깨는 앞에서 봐야 하는데 한 장으로는 둘을 같이 담을 수 없다.
   const shotItem = LEVEL_ITEMS.find((x) => x.key === open) || null;
-  const shotLv = shotItem ? levelOf(shotItem, num(now[shotItem.key]), cuts) : null;
+  const shotLv = shotItem ? levelOf(shotItem, valOf(shotItem.key), cuts) : null;
   const shot = shotItem ? pickImage(asset, shotItem, who, shotLv) : null;
 
   return (
@@ -317,24 +196,22 @@ export default function AngleBoxCard({ rows: raw = [], gender = null, previewBod
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
         <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
           {shot
-            ? <LevelShot shot={shot} item={shotItem} value={num(now[shotItem.key])} t={t} />
-            : body
-              ? <PhotoFigure src={body.url} meta={body.meta} neck={tilt(now)} trunk={num(now.trunk_flex)}
-                  arm={num(now.arm_raise)} ghostNeck={tilt(prev)} t={t} sel={open} guide={guide} />
-              : <Figure neck={tilt(now)} trunk={num(now.trunk_flex)} arm={num(now.arm_raise)}
-                  ghostNeck={tilt(prev)} t={t} sel={open} />}
+            ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} />
+            : <Figure neck={tilt(lastOf('neck_bend'))} trunk={valOf('trunk_flex')} arm={valOf('arm_raise')}
+                ghostNeck={tilt(prevOf('neck_bend'))} t={t} sel={open} />}
         </div>
 
         {/* 오른쪽 — 누르면 그림에서 강조되고, 아래로 자세한 내용이 펼쳐진다 */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {ITEMS.map((item) => {
             const meta = ANGLE_ITEMS.find((x) => x.key === item.key) || {};
-            const v = num(now[item.key]);
+            const v = valOf(item.key);
             const b = best.find((x) => x.key === item.key);
             const wk = vsLastWeek(ok, item.key);
             const mo = vsLastMonth(ok, item.key);
             const on = open === item.key;
-            const line = ok.filter((r) => Number.isFinite(Number(r[item.key]))).slice(0, 8).reverse();
+            const line = rowsFor(ok, item.key).slice(0, 8).reverse();
+            const trend = canTrend(ok, item.key);
             return (
               <button key={item.key} type="button" onClick={() => setOpen(on ? null : item.key)}
                 style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
@@ -343,15 +220,16 @@ export default function AngleBoxCard({ rows: raw = [], gender = null, previewBod
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
                   <span style={{ fontSize: 11.5, fontWeight: 900, color: C.ink }}>{item.label}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 17, fontWeight: 900, color: on ? t.accentDeep : C.ink, fontVariantNumeric: 'tabular-nums' }}>
-                    {v == null ? '—' : v}
+                    {v == null ? '' : v}
                   </span>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: on ? t.accentDeep : C.ink }}>°</span>
+                  {v != null && <span style={{ fontSize: 11, fontWeight: 800, color: on ? t.accentDeep : C.ink }}>°</span>}
                   <span style={{ fontSize: 11, fontWeight: 900, color: C.sub, width: 11, textAlign: 'right' }}>
                     {on ? '▴' : '▾'}
                   </span>
                 </div>
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, marginTop: 2, wordBreak: 'keep-all', lineHeight: 1.4 }}>
-                  {wk === null ? '지난주 기록이 없어요'
+                  {v == null ? '아직 안 쟀어요'
+                    : wk === null ? '다음에 재면 견줘 드려요'
                     : wk === 0 ? '지난주와 그대로예요'
                       : `지난주보다 ${Math.abs(wk)}도 ${wk < 0 ? item.less : item.more}`}
                 </div>

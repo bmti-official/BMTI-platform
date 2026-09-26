@@ -31,6 +31,23 @@ export const imgKey = (short, gender, lv) => `angle_lv_${short}_${gender}_${lv}`
 
 export const DEFAULT_CUTS = Object.fromEntries(LEVEL_ITEMS.map((i) => [i.short, i.cuts]));
 
+/** 저장된 경계값을 지금 기준으로 읽는다.
+ *  목은 CVA로 바꾸기 전에 '수직에서 기운 정도'(작을수록 곧음)로 저장된 값이 남아 있다.
+ *  그대로 읽으면 누구든 30도를 넘어 전부 '가벼움'이 된다. 두 수가 다 45 밑이면
+ *  옛 값으로 보고 90에서 빼서 옮긴다 — [15, 30] → [60, 75].
+ *  (CVA 경계가 45 밑일 일은 없다. 그건 머리가 어깨보다 한참 앞에 있는 자세다) */
+export function readCuts(meta = {}) {
+  const out = { ...DEFAULT_CUTS };
+  LEVEL_ITEMS.forEach((it) => {
+    const v = meta?.[it.short];
+    if (!Array.isArray(v) || v.length !== 2 || !v.every((x) => Number.isFinite(Number(x)))) return;
+    let [a, b] = v.map(Number);
+    if (it.short === 'neck' && a < 45 && b < 45) [a, b] = [90 - b, 90 - a];
+    out[it.short] = [Math.min(a, b), Math.max(a, b)];
+  });
+  return out;
+}
+
 /** 잰 값이 몇 단계인지. 1 가벼움 · 2 보통 · 3 심함.
  *  허리·어깨는 클수록 좋은 값이라 방향을 뒤집어 본다. */
 export function levelOf(item, v, cuts) {
