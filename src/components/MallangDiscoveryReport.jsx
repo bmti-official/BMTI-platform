@@ -22,7 +22,9 @@ import {
   buildMonthlyReport, MOOD, PARTS, SITUATIONS, LOADS, REASONS, SLEEP,
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
-import { QuickFindings, SlowFindings } from "./OctFindingCards";
+import { QuickFindings } from "./OctFindingCards";
+import StrainTrendCard from "./StrainTrendCard";
+import { DayAfterCard } from "./OctNewCards";
 import { getSleepSetting, sleepWindow, sleepBaseIdx, SLEEP_HOURS, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
@@ -536,15 +538,22 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                   exampleSection={exFind(s.id)} exampleMoments={s.id === "sore_map" ? exFind("sore_moments")?.data : null} exTopMood={exTopMood} pdfMode={savingPDF} />;
                 // '영혼의 단짝'은 '한 줄 일기장'(notes) 바로 앞에 넣는다.
                 if (s.id === "notes") {
-                  // 10월부터는 피라미드 대신 갈래별 막대를 둔다 — 무엇을 얼마나 골랐는지가 더 쓸모 있다
-                  const tagCard = oct
-                    ? <TagBarCard entries={entries} />
-                    : <SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />;
-                  items.push({ locked: !s.unlocked, node: <Fragment key="notes-group">{tagCard}{card}</Fragment> });
+                  // 10월부터는 피라미드 대신 갈래별 막대를 둔다 — 무엇을 얼마나 골랐는지가 더 쓸모 있다.
+                  // 10월 판은 '이번 달 태그'를 따로 한 칸으로 세운다(순서: 바디 스캔 다음).
+                  if (oct) {
+                    items.push({ id: "tags", locked: !s.unlocked, node: <TagBarCard key="tags" entries={entries} /> });
+                    items.push({ id: "notes", locked: !s.unlocked, node: card });
+                    return;
+                  }
+                  items.push({ locked: !s.unlocked, node: <Fragment key="notes-group"><SoulmateCard entries={entries} exampleEntries={EXAMPLE_ENTRIES} />{card}</Fragment> });
                   return;
                 }
-                items.push({ locked: !s.unlocked, node: card });
+                items.push({ id: s.id, locked: !s.unlocked, node: card });
               });
+              // 10월 판 순서 — 각도기록 > 바디 스캔 > 이번 달 태그 > 기분 달력 > 한 줄 일기장.
+              // 그 안에서도 내용이 있는(열린) 칸이 위, 잠긴 칸이 아래다.
+              const RANK = { sore_map: 1, tags: 2, mood_calendar: 3, notes: 4 };
+              if (oct) items.sort((a, b) => (RANK[a.id] || 9) - (RANK[b.id] || 9));
               const sorted = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
               // 바로 보이는 것 — 오늘 열어서 오늘 쓸 수 있는 것들을 맨 앞에 세운다
               if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} gender={gender} /></Fragment> });
@@ -2679,7 +2688,13 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   };
   // 10월 개편 — 여기(발견)에는 **시간이 걸리는 것**만 둔다.
   // 오늘 바로 보이는 것은 '이번달 기록'이 맡는다. 두 탭이 같은 성격이면 나눈 뜻이 없다.
-  if (oct) items.push({ locked: false, node: <Fragment key="slowFind"><SlowFindings entries={entries} /></Fragment> });
+  // 10월 판 순서 — 부담이 몰린 주 > (무리한 날, 그 다음 날) > 기분과 불편함 추이 > 닉네임의 밤 >
+  // 마법의 D-day > 기록을 남긴 정성 > 주로 기록을 남긴 시간대 > 날씨와 겹쳐 본 기록 > 편지.
+  // 그 안에서도 내용이 있는(열린) 칸이 위, 잠긴 칸이 아래다.
+  if (oct) {
+    items.push({ locked: false, node: <StrainTrendCard key="strain" entries={entries} /> });
+    items.push({ locked: false, node: <DayAfterCard key="dayafter" entries={entries} /> });
+  }
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.
@@ -2689,9 +2704,10 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     <MallangNightCard entries={entries} nickname={nickname} pdfMode={pdfMode} />,
     <MallangNightCard entries={EXAMPLE_ENTRIES} nickname={nickname} pdfMode={pdfMode} />, hasAny)}</Fragment> }); // {닉네임}의 밤
   if (!oct) add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
+  if (oct && female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);
   add("logged", ins.logged, <LampClockCard data={ins.logged} nickname={nickname} />, exIns.logged && <LampClockCard data={exIns.logged} nickname={nickname} />);
-  if (female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
+  if (!oct && female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
   items.push({ locked: !hasAny, node: <Fragment key="weather">{maybeLock(
     <WeatherFindingCards entries={entries} onWeatherUpdated={onWeatherUpdated} />,
     <WeatherFindingCards entries={EXAMPLE_ENTRIES} />, hasAny)}</Fragment> });

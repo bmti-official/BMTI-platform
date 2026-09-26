@@ -32,6 +32,7 @@ const usable = (r) => r && (r.quality == null || r.quality >= GOOD);
 // 빈 칸은 빈 칸으로. Number(null)은 0이라 그냥 두면 '0도로 쟀다'가 된다.
 const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const r1 = (v) => Math.round(v * 10) / 10;
+const BOX_H = 380;   // 그림·항목 줄의 높이 — 고정해 두어야 펼칠 때 상자가 출렁이지 않는다
 const md = (w) => `${Number(String(w).slice(5, 7))}월 ${Number(String(w).slice(8, 10))}일`;
 
 // 사람 그림은 '수직에서 얼마나 기울었나'로 그린다. 화면에 쓰는 값은 CVA(수평 기준)라
@@ -214,8 +215,14 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
 
       {/* 그림 — 목은 실제 기울기, 허리·어깨는 범위 부채꼴.
           오른쪽 항목을 누르면 그것만 강조되고, 자세한 내용도 그 자리에서 펼쳐진다. */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
-        <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden' }}>
+      {/* 높이를 고정한다 — 항목을 펼치고 접을 때 상자가 늘었다 줄었다 하면 아래 칸들이 출렁인다.
+          펼친 설명이 길면 그 항목 안에서만 스크롤한다. */}
+      <style>{'@keyframes angleFigIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}'}</style>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 12, margin: '10px 0 4px', height: BOX_H }}>
+        <div style={{ flex: '0 0 44%', maxWidth: 190, background: '#FAF7F0', borderRadius: 16, padding: '8px 4px', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* 고른 항목이 바뀌면 그림이 부드럽게 떠오른다 */}
+          <div key={open || 'all'} style={{ width: '100%', animation: 'angleFigIn .4s cubic-bezier(.2,.8,.3,1)' }}>
           {armPair
             ? <ArmShot pair={armPair} left={armL} right={armR}
                 prevLeft={sideOf(armPrev, 'arm_raise_l')} prevRight={sideOf(armPrev, 'arm_raise_r')} level={shotLv} t={t} />
@@ -227,10 +234,11 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
             ? <LevelShot shot={shot} item={shotItem} value={valOf(shotItem.key)} t={t} neckLine={neckLine} trunkLine={trunkLine} />
             : <Figure neck={tilt(lastOf('neck_bend'))} trunk={valOf('trunk_flex')} arm={valOf('arm_raise')}
                 ghostNeck={tilt(prevOf('neck_bend'))} t={t} sel={open} />}
+          </div>
         </div>
 
         {/* 오른쪽 — 누르면 그림에서 강조되고, 아래로 자세한 내용이 펼쳐진다 */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
           {ITEMS.map((item) => {
             const meta = ANGLE_ITEMS.find((x) => x.key === item.key) || {};
             const v = valOf(item.key);
@@ -242,9 +250,13 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
             const trend = canTrend(ok, item.key);
             return (
               <button key={item.key} type="button" onClick={() => setOpen(on ? null : item.key)}
+                // 펼친 항목이 남은 높이를 다 가져간다(flex-grow를 부드럽게 바꾼다)
                 style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   background: on ? '#FAF7F0' : '#fff', borderRadius: 13, padding: '9px 10px',
-                  boxShadow: on ? `inset 0 0 0 2px ${t.accent}` : `inset 0 0 0 1px ${C.line}`, transition: 'box-shadow .15s' }}>
+                  display: 'flex', flexDirection: 'column', flexGrow: on ? 1 : 0, flexShrink: on ? 1 : 0, flexBasis: 'auto',
+                  minHeight: 0, overflow: 'hidden',
+                  boxShadow: on ? `inset 0 0 0 2px ${t.accent}` : `inset 0 0 0 1px ${C.line}`,
+                  transition: 'box-shadow .15s, flex-grow .4s cubic-bezier(.2,.8,.3,1), background .2s' }}>
                 {/* 이름은 한 줄에 온전히 — 숫자와 나란히 두면 '옆으로 팔 들 / 기'처럼 글자 중간에서 끊긴다 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ fontSize: 11.5, fontWeight: 900, color: C.ink, whiteSpace: 'nowrap' }}>{item.label}</span>
@@ -265,7 +277,10 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
                       : `지난주보다 ${Math.abs(wk)}도 ${wk < 0 ? item.less : item.more}`}
                 </div>
 
-                {on && (
+                {/* 펼침 — 늘 그려 두고 높이만 0↔끝까지 부드럽게 바꾼다(접힐 때도 스르르) */}
+                <div style={{ display: 'grid', gridTemplateRows: on ? '1fr' : '0fr', flex: on ? '1 1 auto' : '0 0 auto', minHeight: 0,
+                  transition: 'grid-template-rows .4s cubic-bezier(.2,.8,.3,1)' }}>
+                  <div style={{ minHeight: 0, overflowY: on ? 'auto' : 'hidden', opacity: on ? 1 : 0, transition: 'opacity .3s' }}>
                   <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}` }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, lineHeight: 1.6, marginBottom: 8, wordBreak: 'keep-all' }}>
                       {meta.plain}
@@ -282,14 +297,15 @@ export default function AngleBoxCard({ rows: raw = [], gender = null }) {
                           : `지난달 평균보다 ${Math.abs(mo)}도 ${mo < 0 ? item.less : item.more}`}
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 11, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 11, marginTop: 10, fontSize: 10.5, fontWeight: 700, color: C.sub, flexWrap: 'wrap', minHeight: 30, alignContent: 'flex-start' }}>
         {open === null && <span>항목을 누르면 그림에서 그것만 짚어 드려요</span>}
         {((open === 'neck_bend' && (!shot || neckLine)) || trunkLine || armPair) && (
           <>
