@@ -23,9 +23,17 @@ export const L = {
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, v: Math.min(a.v ?? 1, b.v ?? 1) });
 const deg = (rad) => (rad * 180) / Math.PI;
 
+// ── 화면 비율 ────────────────────────────────────────────────
+// 관절 좌표는 가로를 0~1, 세로를 0~1로 **따로** 줄인 값이다. 가로세로 비율을 곱하지 않고
+// 각도를 재면, 세로로 긴 휴대폰(3:4)에선 기울기가 부풀고 가로로 긴 노트북(16:9)에선 줄어든다.
+// 같은 사람이 기기만 바꿔도 값이 달라진다. 각도를 재기 전에 가로를 비율만큼 늘려 맞춘다.
+let ASPECT = 1;   // 가로 ÷ 세로
+export const setFrameAspect = (a) => { ASPECT = Number.isFinite(a) && a > 0 ? a : 1; };
+export const getFrameAspect = () => ASPECT;
+
 /** 두 점을 잇는 선이 수직선에서 얼마나 기울었나(도). 0이면 곧게 선 것. */
 export function tiltFromVertical(top, bottom) {
-  const dx = top.x - bottom.x;
+  const dx = (top.x - bottom.x) * ASPECT;
   const dy = bottom.y - top.y;                 // 화면은 아래로 갈수록 y가 커진다
   if (Math.abs(dy) < 1e-6) return 90;
   return Math.abs(deg(Math.atan2(dx, dy)));
@@ -33,8 +41,8 @@ export function tiltFromVertical(top, bottom) {
 
 /** 세 점이 이루는 각(도). 가운데가 꼭짓점. */
 export function angleAt(a, center, b) {
-  const v1 = { x: a.x - center.x, y: a.y - center.y };
-  const v2 = { x: b.x - center.x, y: b.y - center.y };
+  const v1 = { x: (a.x - center.x) * ASPECT, y: a.y - center.y };
+  const v2 = { x: (b.x - center.x) * ASPECT, y: b.y - center.y };
   const dot = v1.x * v2.x + v1.y * v2.y;
   const n1 = Math.hypot(v1.x, v1.y), n2 = Math.hypot(v2.x, v2.y);
   if (n1 < 1e-6 || n2 < 1e-6) return 0;

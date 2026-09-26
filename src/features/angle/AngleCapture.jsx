@@ -9,13 +9,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   neckBend, trunkFlex, armRaiseSides, distanceOk, sideOk, sideOkNeck, frontOk, kneeStraight, seenWell,
-  sideShapeOk, frontShapeOk,
+  sideShapeOk, frontShapeOk, setFrameAspect,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
 import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
 import { toCVA } from '../../lib/angleView';
 import { buildSteps, stepSec } from './anglePlan';
-import { useLevel } from './useLevel';
+import { useLevel, unroll, ROLL_WARN, PITCH_WARN } from './useLevel';
 import { recentChecks, sundayOf } from '../../lib/angleRecord';
 import { loadAssets } from '../../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf, pickImage, allImageKeys } from '../../lib/angleLevels';
@@ -72,7 +72,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
 
   const tickRef = useRef(0);
   const [lastQuality, setLastQuality] = useState(0);   // 잘 잡혔는지 — 끝 화면에서 알려 준다
-  const { tilt, ask: askLevel, TILT_OK } = useLevel();
+  const { tilt, ask: askLevel } = useLevel();
+  // 보정 방향 — 앞 카메라는 좌우가 뒤집혀 있어 코드만으로 방향을 확신할 수 없다.
+  // 실제 휴대폰으로 확인해 정한다. 확인 전엔 관리자가 뒤집어 볼 수 있게 둔다.
+  const [rollSign, setRollSign] = useState(() => {
+    try { return localStorage.getItem('bmti_roll_sign') === '-1' ? -1 : 1; } catch { return 1; }
+  });
+  const [levelDiag, setLevelDiag] = useState(null);   // 관리자 확인용 — 보정 전·후 목 각도
   // 지난주 자세 — 재는 화면에 흐리게 깔아 같은 자리·같은 거리에 서기 쉽게
   const [ghost, setGhost] = useState(null);
   const [pastRows, setPastRows] = useState([]);   // 지난 판들 — 끝 화면에서 '지난번과 견줘' 말할 때 쓴다
@@ -109,6 +115,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const streamRef = useRef(null);                // 켜 둔 카메라 — 영상 칸이 바뀌면 다시 붙인다
   const stepsRef = useRef(null);                 // 반복문이 읽을 판 목록
   const turnSinceRef = useRef(0);                // 쉼터에서 정면으로 돌아선 지 얼마나 됐나
+  const tiltRef = useRef(null);                  // 반복문이 읽을 최신 기울기
+  const rollSignRef = useRef(1);
+  const adminRef = useRef(false);
   const checkRef = useRef(null);                 // 반복문이 읽을 최신 검사
   const [voice, setVoice] = useState(true);
   const [hasClips, setHasClips] = useState(false);
@@ -138,7 +147,12 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
 
     // 고칠 것 하나만 짚는다. 여러 개를 쏟아 내면 무엇부터 할지 모른다.
     let why = '', cue = '';
-    if (!dist.inFrame) {
+    const tl = tiltRef.current;
+    if (tl && (Math.abs(tl.roll) > ROLL_WARN || tl.pitch > PITCH_WARN)) {
+      // 조금 기운 건 계산으로 되돌린다. 이만큼 기울면 되돌려도 믿을 수 없다.
+      why = '휴대폰을 똑바로 세워 주세요';
+      cue = 'frame';
+    } else if (!dist.inFrame) {
       // 무엇이 빠졌는지 짚어 준다. '머리부터 골반까지'만 보면 이미 다 나와 있다고 여긴다.
       why = (!dist.hipIn && dist.needHips)
         ? '골반이 화면 밖이에요. 카메라를 낮추거나 한 걸음 뒤로 가 주세요'
@@ -272,7 +286,20 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         rafRef.current = requestAnimationFrame(loop);
         return;
       }
-      if (pts) checkRef.current?.(pts); else setMsg('몸이 다 보이게 서 주세요');
+      // 휴대폰이 좌우로 조금 돌아가 있으면 그만큼 좌표를 되돌려 잰다.
+      // 너무 많이 돌아갔으면 되돌리지 않고 검사에서 세워 달라고 한다.
+      // 각도를 재기 전에 화면 비율을 알려 준다 — 이게 없으면 기기마다 값이 달라진다
+      setFrameAspect((v.videoWidth || 3) / (v.videoHeight || 4));
+      const tl = tiltRef.current;
+      let use = pts;
+      if (pts && tl && Math.abs(tl.roll) <= ROLL_WARN) {
+        const aspect = (v.videoWidth || 3) / (v.videoHeight || 4);
+        use = unroll(pts, tl.roll, aspect, rollSignRef.current);
+        if (adminRef.current) {
+          setLevelDiag({ roll: tl.roll, pitch: tl.pitch, raw: neckBend(pts), fix: neckBend(use) });
+        }
+      }
+      if (use) checkRef.current?.(use); else setMsg('몸이 다 보이게 서 주세요');
       rafRef.current = requestAnimationFrame(loop);
     };
     (async () => {
@@ -484,7 +511,10 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     }, 100);
     tickRef.current = tick;
   };
-  useEffect(() => { stepRef.current = step; stepsRef.current = STEPS; });
+  useEffect(() => {
+    stepRef.current = step; stepsRef.current = STEPS;
+    tiltRef.current = tilt; rollSignRef.current = rollSign; adminRef.current = admin;
+  });
   useEffect(() => { checkRef.current = check; });
   useEffect(() => { startRef.current = start; });
   // 지난주 자세는 옆모습 판에서만, 그리고 재기 전에만 깔아 준다.
@@ -754,23 +784,15 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           );
         })()}
 
-        {/* 휴대폰 수평 — 기울면 잰 각도가 통째로 그만큼 어긋난다 */}
-        {tilt && !running && (
-          <div style={{ position: 'absolute', right: 12, top: 56, background: tilt.ok ? 'rgba(28,26,23,0.72)' : 'rgba(178,59,54,0.88)',
-            borderRadius: 12, padding: '7px 10px', pointerEvents: 'none', textAlign: 'center' }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: 5 }}>휴대폰 수평</div>
-            <div style={{ position: 'relative', width: 62, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>
-              <span style={{ position: 'absolute', left: '50%', top: -3, width: 1, height: 12, background: 'rgba(255,255,255,0.5)' }} />
-              <span style={{ position: 'absolute', top: -2, width: 10, height: 10, borderRadius: '50%',
-                background: tilt.ok ? '#8FD69B' : '#fff',
-                left: `${Math.max(0, Math.min(52, 26 + Math.max(-26, Math.min(26, tilt.roll * 2))))}px`,
-                transition: 'left .12s' }} />
-            </div>
-            {!tilt.ok && (
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', marginTop: 5 }}>
-                {Math.abs(tilt.roll) > TILT_OK ? '좌우로 기울었어요' : '똑바로 세워 주세요'}
-              </div>
-            )}
+        {/* 휴대폰 기울기는 손님이 맞추지 않는다 — 조금 기운 건 계산으로 되돌린다.
+            관리자에겐 보정이 맞는 방향인지 확인할 숫자를 띄운다. */}
+        {admin && levelDiag && (
+          <div style={{ position: 'absolute', right: 10, top: 52, background: 'rgba(28,26,23,0.8)', color: '#fff',
+            borderRadius: 10, padding: '7px 9px', fontSize: 10.5, fontWeight: 800, lineHeight: 1.6,
+            fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+            좌우 {levelDiag.roll}° · 앞뒤 {levelDiag.pitch}°
+            <br />목 보정 전 {levelDiag.raw.toFixed(1)}°
+            <br />목 보정 후 <span style={{ color: '#8FD69B' }}>{levelDiag.fix.toFixed(1)}°</span>
           </div>
         )}
 
@@ -874,6 +896,28 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                 <span style={{ color: diag.seen >= 0.5 ? '#2E7D50' : '#B23B36' }}> (0.50 넘으면 통과)</span>
               </div>
             )}
+          </div>
+        )}
+        {/* 관리자 전용 — 기울기 보정 방향 확인.
+            가만히 선 채 휴대폰만 10도쯤 기울여 본다. '보정 후'가 그대로면 맞는 방향이고,
+            '보정 전'보다 더 크게 흔들리면 반대 방향이라 뒤집어야 한다. */}
+        {admin && (
+          <div style={{ background: '#F4F1FB', borderRadius: 12, padding: '10px 12px', marginBottom: 12,
+            fontSize: 11.5, fontWeight: 700, color: SUB, lineHeight: 1.7 }}>
+            <b style={{ color: INK }}>기울기 보정 확인 (관리자)</b> — 가만히 선 채 휴대폰만 10도쯤 기울여 보세요.
+            오른쪽 위 <b>보정 후</b> 값이 그대로면 맞습니다. 더 크게 흔들리면 뒤집으세요.
+            <div style={{ marginTop: 6 }}>
+              <button type="button"
+                onClick={() => {
+                  const nx = rollSign === 1 ? -1 : 1;
+                  setRollSign(nx);
+                  try { localStorage.setItem('bmti_roll_sign', String(nx)); } catch { /* 이번만 */ }
+                }}
+                style={{ border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999,
+                  padding: '5px 12px', fontSize: 11.5, fontWeight: 800, color: '#6B5BC8' }}>
+                보정 방향 뒤집기 (지금 {rollSign === 1 ? '+' : '−'})
+              </button>
+            </div>
           </div>
         )}
         {/* 자세가 맞으면 저절로 시작한다. 이 버튼은 기다리기 답답할 때 쓰는 자리다. */}
