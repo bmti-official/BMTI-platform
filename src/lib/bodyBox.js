@@ -14,11 +14,18 @@ export function bodyBox(pts, W, H, ratio = 0.5, flip = false) {
   const shY = (P[11].y + P[12].y) / 2;
   let top = Math.min(...ys, nose.y - Math.abs(shY - nose.y) * 1.1);
   // 여백
-  const padX = (right - left) * 0.08 + W * 0.01;
+  const padX = (right - left) * 0.06 + W * 0.01;
   const padY = (bottom - top) * 0.05 + H * 0.01;
   left -= padX; right += padX; top -= padY; bottom += padY;
-  let w = right - left, h = bottom - top;
   const cx = (left + right) / 2, cy = (top + bottom) / 2;
-  if (w / h < ratio) w = h * ratio; else h = w / ratio;
+  // 크기는 몸 둘레가 아니라 '키'로 정한다 — 허리를 숙이면 둘레가 작아져 그림이 확대돼 보인다.
+  // 키 ≈ 머리(코~어깨의 두 배쯤) + 몸통 + 넓적다리 + 정강이. 자세가 바뀌어도 거의 그대로다.
+  const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  const sh = mid(P[11], P[12]), hip = mid(P[23], P[24]), knee = mid(P[25], P[26]), ank = mid(P[27], P[28]);
+  const stature = d(nose, sh) * 2 + d(sh, hip) + d(hip, knee) + d(knee, ank);
+  // 몸 둘레가 다 들어가야 하므로(팔을 옆으로 벌리면 넓다) 둘 중 큰 쪽
+  const h = Math.max(stature * 1.18, bottom - top, (right - left) / ratio);
+  const w = h * ratio;
   return { x: cx - w / 2, y: cy - h / 2, w, h };
 }

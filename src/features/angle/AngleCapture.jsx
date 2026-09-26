@@ -13,7 +13,7 @@ import {
   sideShapeOk, frontShapeOk, setFrameAspect, vis,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
-import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet } from '../../lib/speak';
+import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet, isSpeaking, speakingLeft } from '../../lib/speak';
 import { toCVA } from '../../lib/angleView';
 import { buildSteps, stepSec } from './anglePlan';
 import { useLevel, unroll, ROLL_WARN, PITCH_WARN } from './useLevel';
@@ -95,6 +95,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     const pl = placeRef.current;
     if (pl.done) return false;
     const t = performance.now();
+    // 자리 안내가 나오는 동안은 시계를 세우지 않는다 — 말이 끝나기 전에 고칠 점이 나오지 않게
+    if (isSpeaking()) { pl.at = t; pl.seenSince = seen ? t : 0; return true; }
     if (!pl.at) pl.at = t;
     if (seen) { if (!pl.seenSince) pl.seenSince = t; } else pl.seenSince = 0;
     if ((pl.seenSince && t - pl.seenSince >= PLACE_SEEN_MS) || t - pl.at >= PLACE_MAX_MS) {
@@ -564,7 +566,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       run.pi = i; run.take = null;
       setPhase(i);
       if (ph.take) {
-        run.readyUntil = now() + READY_SEC * 1000;
+        // 앞의 말이 끝난 뒤에 센다 — '셋, 둘, 하나'는 그 말 다음에 이어 나온다
+        run.readyUntil = now() + speakingLeft() + READY_SEC * 1000;
         run.ready = READY_SEC;
         setReady(READY_SEC);
         say(COUNT_VOICE[ph.take], { force: true });   // '허리 굽힘을 잽니다. 셋, 둘, 하나'
@@ -591,10 +594,11 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           run.shaken = false;
           run.readyUntil = now() + READY_SEC * 1000;
           setShook((n) => n + 1);
-          say(COUNT_VOICE[ph.take], { force: true });
+          say(COUNT_VOICE[ph.take], { force: true, cut: true });   // 처음부터 다시 — 하던 말을 끊는다
         }
         const r = Math.ceil((run.readyUntil - now()) / 1000);
-        run.ready = Math.max(0, r);
+        // 앞의 말을 기다리는 동안엔 '3'에 머문다
+        run.ready = Math.max(0, Math.min(READY_SEC, r));
         setReady(run.ready);
         if (r <= 0) {
           run.readyUntil = 0; run.ready = 0;
