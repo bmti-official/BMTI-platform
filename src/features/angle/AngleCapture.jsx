@@ -46,7 +46,9 @@ const shapeOf = (pts) => (pts || []).map((q) => ({
   y: Math.round((q?.y ?? 0) * 1000) / 1000,
 }));
 
-export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk', 'arm'] }) {
+// admin — 관리자 미리보기에서만 켠다. 막혔을 때 어떤 검사에 걸렸는지 숫자로 보여 준다.
+// 손님에게 숫자 네 줄은 도움이 안 된다 — 손님에겐 '이대로 시작'만 남긴다.
+export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk', 'arm'], admin = false }) {
   const STEPS = useMemo(() => buildSteps(want), [want]);
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
   const [msg, setMsg] = useState('');
@@ -61,11 +63,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const [got, setGot] = useState(0);             // 몇 판 잡았나 — 잘 되고 있다는 신호
   const [shook, setShook] = useState(0);         // 카운트다운이 몇 번 되감겼나
   // 저절로 시작을 끌 수 있게 — 혼자 옷을 고쳐 입거나 자리를 잡는 동안 멋대로 시작되면 곤란하다
-  const [auto, setAuto] = useState(() => {
-    try { return localStorage.getItem('bmti_angle_auto') !== '0'; } catch { return true; }
-  });
-  const autoRef = useRef(auto);
-  useEffect(() => { autoRef.current = auto; }, [auto]);
+
   const tickRef = useRef(0);
   const [lastQuality, setLastQuality] = useState(0);   // 잘 잡혔는지 — 끝 화면에서 알려 준다
   const { tilt, ask: askLevel, TILT_OK } = useLevel();
@@ -80,7 +78,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     });
     return () => { alive = false; };
   }, []);
-  const [ghostOn, setGhostOn] = useState(true);
+
   const ghostRef = useRef(null);
   const [vals, setVals] = useState({});                // 담은 값 — 화면에 보여 줄 몫(ref는 그릴 때 못 읽는다)
   const [retry, setRetry] = useState(0);
@@ -165,7 +163,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         okSinceRef.current = t0;
         clearSaid();
         say('hold');
-      } else if (autoRef.current && t0 - okSinceRef.current > HOLD_MS) {
+      } else if (t0 - okSinceRef.current > HOLD_MS) {
         okSinceRef.current = 0;
         startRef.current?.();
       }
@@ -432,7 +430,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   // (앞모습은 자리가 다르고, 재는 동안엔 지금 자세만 보여야 한다)
   useEffect(() => {
     const st = STEPS[Math.floor(step)];
-    const wantGhost = ghostOn && st?.id === 'side' && count === 0 && ready === 0;
+    const wantGhost = st?.id === 'side' && count === 0 && ready === 0;
     ghostRef.current = wantGhost ? ghost : null;
   });
   useEffect(() => () => clearInterval(tickRef.current), []);
@@ -767,13 +765,13 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                   padding: '7px 14px', fontSize: 12, fontWeight: 800, color: '#8A6A3A', boxShadow: '0 2px 7px rgba(0,0,0,0.1)' }}>
                 이대로 시작 →
               </button>
-              <button type="button" onClick={() => setShowDiag((v) => !v)}
+              {admin && <button type="button" onClick={() => setShowDiag((v) => !v)}
                 style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
                   fontSize: 11.5, fontWeight: 800, color: SUB }}>
-                {showDiag ? '숫자 접기' : '무엇이 걸렸는지 보기'}
-              </button>
+                {showDiag ? '숫자 접기' : '무엇이 걸렸는지 보기 (관리자)'}
+              </button>}
             </div>
-            {showDiag && diag && (
+            {admin && showDiag && diag && (
               <div style={{ fontSize: 11, color: SUB, fontWeight: 700, lineHeight: 1.8, marginTop: 9,
                 fontVariantNumeric: 'tabular-nums' }}>
                 몸 크기 {diag.h.toFixed(2)} <span style={{ color: diag.h > 0.10 && diag.h < 0.80 ? '#2E7D50' : '#B23B36' }}>
@@ -791,26 +789,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         {/* 자세가 맞으면 저절로 시작한다. 이 버튼은 기다리기 답답할 때 쓰는 자리다. */}
         <button type="button" onClick={() => start()} disabled={off} style={bigBtn(!off)}>
           {running ? `재는 중… ${count}초`
-            : poseOk ? (auto ? '곧 시작해요 — 눌러서 바로 시작' : '눌러서 시작하기')
+            : poseOk ? '곧 시작해요 — 눌러서 바로 시작'
               : '자세를 맞춰 주세요'}
         </button>
-        {ghost && sideNow && (
-          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-            marginTop: 11, fontSize: 12, fontWeight: 700, color: SUB, cursor: 'pointer' }}>
-            <input type="checkbox" checked={ghostOn} disabled={running}
-              onChange={(e) => setGhostOn(e.target.checked)} />
-            지난주 자세를 흐리게 겹쳐 보기
-          </label>
-        )}
-        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-          marginTop: 11, fontSize: 12, fontWeight: 700, color: SUB, cursor: 'pointer' }}>
-          <input type="checkbox" checked={auto} disabled={running}
-            onChange={(e) => {
-              setAuto(e.target.checked);
-              try { localStorage.setItem('bmti_angle_auto', e.target.checked ? '1' : '0'); } catch { /* 저장 못 해도 이번만 적용 */ }
-            }} />
-          자세가 맞으면 저절로 시작하기
-        </label>
       </div>
     </Shell>
   );
