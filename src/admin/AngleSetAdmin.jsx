@@ -11,7 +11,7 @@ import { SET_ITEMS, setKey, allSetKeys, coverage, nearestShot, nearestPair, usab
 import { measureImage } from '../features/angle/measureImage';
 import NeckShot from '../components/NeckShot';
 import { TrunkShot, ArmShot } from '../components/BodyShots';
-import { openVideo, sampleVideo, spreadFrames, chooseGrid, frameFile, measureAt, STEP, MAX_SEC } from '../features/angle/videoFrames';
+import { openVideo, sampleVideo, spreadFrames, chooseGrid, frameFile, measureAt, measureNow, nowFile, STEP, MAX_SEC } from '../features/angle/videoFrames';
 
 const GOLD = '#C9975A', GOLD_INK = '#8A6A3A', RED = '#B23B36', GREEN = '#2E7D50';
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -62,9 +62,13 @@ export default function AngleSetAdmin() {
   const [probeR, setProbeR] = useState(120);        // 팔 — 오른팔
   const [probeL, setProbeL] = useState(60);         // 팔 — 왼팔
   const fileRef = useRef(null);
-  // 이번에 연 영상 — 뽑은 장면을 앞뒤로 옮길 때 다시 쓴다. 새로 고치면 사라진다.
+  // 연 영상 — 뽑은 장면을 앞뒤로 옮기거나 장면을 더할 때 다시 쓴다(저장소 영상은 필요할 때 연다)
   const videosRef = useRef(new Map());
-  const [vids, setVids] = useState([]);
+  const [adding, setAdding] = useState(null);       // 장면을 더하는 중인 영상(vid)
+  const [openSrc, setOpenSrc] = useState({});       // 이번에 연 영상의 주소 { vid: blob 주소 } — 화면에서 쓴다
+  const addRef = useRef(null);                      // 장면 더하기 창의 영상
+  const linkRef = useRef(null);                     // 영상 다시 연결 — 파일 고르기
+  const [linking, setLinking] = useState(null);     // 다시 연결할 영상(vid)
   const setsRef = useRef(null);
   useEffect(() => { setsRef.current = sets; });
 
@@ -73,7 +77,7 @@ export default function AngleSetAdmin() {
     loadAssets(allSetKeys()).then((m) => {
       if (!alive) return;
       const out = {};
-      allSetKeys().forEach((k) => { out[k] = { shots: (m[k]?.meta?.shots) || [] }; });
+      allSetKeys().forEach((k) => { out[k] = { shots: (m[k]?.meta?.shots) || [], videos: (m[k]?.meta?.videos) || [] }; });
       setSets(out);
     });
     return () => { alive = false; };
@@ -96,12 +100,28 @@ export default function AngleSetAdmin() {
   const pick = isArm ? pair?.shot : nearestShot(sets[key], probe);
 
   // 고칠 때마다 바로 담는다 — '저장'을 잊고 나가는 일이 없게
-  const commit = async (k, nextShots) => {
-    setSets((p) => ({ ...p, [k]: { shots: nextShots } }));
-    const r = await saveAsset(k, null, { shots: nextShots });
+  // videos: [{ vid, name, url }] — 영상별로 묶어 보여 주고, 나중에 다시 열 때 쓴다
+  const commit = async (k, nextShots, nextVideos = latestVideos(k)) => {
+    setSets((p) => ({ ...p, [k]: { shots: nextShots, videos: nextVideos } }));
+    const r = await saveAsset(k, null, { shots: nextShots, videos: nextVideos });
     if (!r.ok) setNote(`저장 실패: ${r.why}`);
   };
   const latest = (k) => setsRef.current?.[k]?.shots || [];
+  const latestVideos = (k) => setsRef.current?.[k]?.videos || [];
+  const videoInfo = (k, vid) => latestVideos(k).find((x) => x.vid === vid) || null;
+  // 영상 열기 — 이번에 연 것이 있으면 그것, 없으면 저장소에서
+  const getVideo = async (k, vid) => {
+    if (videosRef.current.has(vid)) return videosRef.current.get(vid);
+    const url = videoInfo(k, vid)?.url;
+    if (!url) return null;
+    const o = await openVideo(url);
+    if (o.err) { setNote(o.err); return null; }
+    videosRef.current.set(vid, o.video);
+    return o.video;
+  };
+  // 화면에서 쓰는 것들은 state에서 읽는다(렌더 중에 ref를 읽지 않게)
+  const shownInfo = (vid) => (sets[key]?.videos || []).find((x) => x.vid === vid) || null;
+  const canOpen = (vid) => !!openSrc[vid] || !!shownInfo(vid)?.url;
 
   const addFiles = async (files) => {
     const all = [...files];
@@ -129,14 +149,20 @@ export default function AngleSetAdmin() {
     const k = key, it = item;
     setNote('');
     const opened = [];
+    const infos = [];
     for (const f of files) {
       const o = await openVideo(f);
       if (o.err) { setNote(o.err); continue; }
       videosRef.current.set(vidKey(f), o.video);
+      setOpenSrc((p) => ({ ...p, [vidKey(f)]: o.video.src }));
       opened.push({ f, v: o.video });
+      // 영상도 올려 둔다 — 새로 고친 뒤에도 영상별로 장면을 더하거나 옮길 수 있게
+      setBusy(`영상 ${opened.length} 올리는 중…`);
+      const up = await uploadOne(f, true);
+      infos.push({ vid: vidKey(f), name: f.name, url: up.url || null });
+      if (up.err) setNote(`${up.err} (이 영상은 이번에만 편집할 수 있어요)`);
     }
-    if (!opened.length) return;
-    setVids([...videosRef.current.keys()]);
+    if (!opened.length) { setBusy(''); return; }
     // 목·허리 — 영상마다 움직임의 처음과 끝을 찾아, 그 사이를 고르게 나눠 뽑는다(목 4장, 허리 8장)
     // 팔 — 모든 영상의 장면을 모아 7×7 칸마다 두 팔이 가장 가까운 장면을 하나씩 고른다
     const found = [];
@@ -170,10 +196,11 @@ export default function AngleSetAdmin() {
       return;
     }
     let keep = latest(k);
+    let keepVideos = latestVideos(k);
     if (keep.length && window.confirm(
       `영상에서 ${found.length}장을 뽑았어요.\n\n`
       + `지금 모음에 있는 ${keep.length}장을 빼고 영상 장면으로 바꿀까요?\n`
-      + '(취소를 누르면 지금 그림은 두고 옆에 더합니다)')) keep = [];
+      + '(취소를 누르면 지금 그림은 두고 옆에 더합니다)')) { keep = []; keepVideos = []; }
     const added = [];
     for (let i = 0; i < found.length; i += 1) {
       const sample = found[i];
@@ -183,7 +210,8 @@ export default function AngleSetAdmin() {
       if (up.err) { setNote(up.err); continue; }
       added.push(toShot(up.url, sample, { vid: sample.vid, t: sample.t }));
     }
-    await commit(k, [...keep, ...added]);
+    const nextVideos = [...keepVideos.filter((x) => !infos.some((y) => y.vid === x.vid)), ...infos];
+    await commit(k, [...keep, ...added], nextVideos);
     setBusy('');
     setNote([report.join(' / '), longOne ? `${MAX_SEC / 60}분이 넘는 영상은 앞 ${MAX_SEC / 60}분만 봤어요.` : ''].filter(Boolean).join(' '));
   };
@@ -192,9 +220,11 @@ export default function AngleSetAdmin() {
   const nudge = async (id, dir) => {
     const k = key;
     const s = latest(k).find((x) => x.id === id);
-    const v = s?.from && videosRef.current.get(s.from.vid);
-    if (!v) return;
-    const t = Math.max(0, Math.round((s.from.t + dir * STEP) * 100) / 100);
+    if (!s?.from) return;
+    setBusy('영상 여는 중…');
+    const v = await getVideo(k, s.from.vid);
+    if (!v) { setBusy(''); return; }
+    const t = Math.max(0, Math.round((s.from.t + dir * STEP / 2) * 100) / 100);
     setBusy('장면 옮기는 중…');
     const m = await measureAt(v, t, kind);
     const up = await uploadOne(await frameFile(v, t));
@@ -204,6 +234,46 @@ export default function AngleSetAdmin() {
     const nx = toShot(up.url, m, { vid: s.from.vid, t });
     await commit(k, latest(k).map((x) => (x.id === id ? { ...nx, id } : x)));
   };
+
+  // 장면 더하기 — 재생 막대로 고른 지금 장면을 재서 담는다(자동으로 빠진 각도를 채울 때)
+  const addNow = async (vid) => {
+    const k = key;
+    const el = addRef.current;
+    if (!el || !el.videoWidth) return;
+    el.pause();
+    setBusy('지금 장면 담는 중…');
+    const m = await measureNow(el, kind);
+    const up = await uploadOne(await nowFile(el));
+    setBusy('');
+    if (up.err) { setNote(up.err); return; }
+    setNote(m.err ? `${m.err}` : `${m.t}초 장면을 담았어요${m.l != null ? ` (왼팔 ${m.l}° · 오른팔 ${m.r}°)` : ` (${m.angle}°)`}.`);
+    await commit(k, [...latest(k), toShot(up.url, m, { vid, t: m.t })]);
+  };
+  const dropVideo = async (vid) => {
+    const k = key;
+    const n = latest(k).filter((x) => x.from?.vid === vid).length;
+    if (!window.confirm(`이 영상에서 뽑은 ${n}장을 모두 뺄까요?`)) return;
+    if (adding === vid) setAdding(null);
+    await commit(k, latest(k).filter((x) => x.from?.vid !== vid), latestVideos(k).filter((x) => x.vid !== vid));
+  };
+  // 영상 다시 연결 — 예전에 뽑은 장면의 원본 영상을 올려 둔다(장면은 새로 뽑지 않는다)
+  const linkVideo = async (vid, file) => {
+    const k = key;
+    if (!file) return;
+    const o = await openVideo(file);
+    if (o.err) { setNote(o.err); return; }
+    videosRef.current.set(vid, o.video);
+    setOpenSrc((p) => ({ ...p, [vid]: o.video.src }));
+    setBusy('영상 올리는 중…');
+    const up = await uploadOne(file, true);
+    setBusy('');
+    if (up.err) setNote(`${up.err} (이 영상은 이번에만 편집할 수 있어요)`);
+    const info = { vid, name: videoInfo(k, vid)?.name || file.name, url: up.url || null };
+    await commit(k, latest(k), [...latestVideos(k).filter((x) => x.vid !== vid), info]);
+    setAdding(vid);
+  };
+  // 장면 더하기 창에 띄울 영상 주소 — 이번에 연 것이면 그 주소, 아니면 저장소
+  const srcOf = (vid) => openSrc[vid] || shownInfo(vid)?.url || null;
 
   const remeasure = async (id) => {
     const k = key;
@@ -242,6 +312,85 @@ export default function AngleSetAdmin() {
   });
   const pill = { display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, boxShadow: 'inset 0 0 0 1px #EDE9E2' };
 
+  // 모은 그림 — 영상별로 묶는다
+  const card = (s) => {
+    const low = s.auto && (s.sure ?? 0) < 0.5;
+    const isPick = pick && pick.id === s.id;
+    return (
+      <div key={s.id} style={{ background: BG, borderRadius: 12, padding: 7,
+        boxShadow: isPick ? `inset 0 0 0 2px ${GOLD}` : 'none' }}>
+        <div style={{ position: 'relative', background: '#fff', borderRadius: 8, overflow: 'hidden', aspectRatio: '1 / 2' }}>
+          <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
+          <Bones pts={s.pts} kind={kind} />
+        </div>
+        {isArm && (
+          // 앞모습이라 그 사람의 오른팔이 화면 왼쪽에 있다 — 칸도 그 순서로
+          <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+            {[['r', '오른팔'], ['l', '왼팔']].map(([side, lb]) => (
+              <label key={side} style={{ flex: 1, fontSize: 10, fontWeight: 800, color: SUB }}>
+                {lb}
+                <input type="number" value={s[side] ?? ''} placeholder="?"
+                  onChange={(e) => setSide(s.id, side, e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: 13, fontWeight: 900,
+                    padding: '3px 5px', borderRadius: 8, border: `1px solid ${s[side] == null ? RED : '#EDE9E2'}` }} />
+              </label>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+          {!isArm && <>
+          <input type="number" value={s.angle ?? ''} placeholder="?"
+            onChange={(e) => setAngle(s.id, e.target.value)}
+            style={{ width: 56, fontFamily: 'inherit', fontSize: 14, fontWeight: 900, padding: '4px 6px',
+              borderRadius: 8, border: `1px solid ${s.angle == null ? RED : '#EDE9E2'}` }} />
+          <span style={{ fontSize: 12, fontWeight: 800, color: INK }}>°</span>
+          </>}
+          {isArm && isPick && pair.flip && (
+            <span style={{ fontSize: 10, fontWeight: 800, color: GOLD_INK }}>뒤집어 씀</span>
+          )}
+          <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 800,
+            color: s.angle == null ? RED : s.auto ? (low ? RED : GREEN) : GOLD_INK }}>
+            {s.angle == null ? '못 잼' : s.auto ? (low ? '흐림' : '자동') : '손으로'}
+          </span>
+        </div>
+        {s.from && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5, fontSize: 10, fontWeight: 800, color: SUB }}>
+            {canOpen(s.from.vid) && (
+              <button type="button" onClick={() => nudge(s.id, -1)} disabled={!!busy} style={miniBtn}>◀</button>
+            )}
+            <span style={{ flex: 1, textAlign: 'center' }}>영상 {s.from.t.toFixed(1)}초</span>
+            {canOpen(s.from.vid) && (
+              <button type="button" onClick={() => nudge(s.id, 1)} disabled={!!busy} style={miniBtn}>▶</button>
+            )}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+          <button type="button" onClick={() => remeasure(s.id)} disabled={!!busy}
+            style={{ flex: 1, border: 'none', background: '#fff', borderRadius: 7, padding: '4px 0', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: SUB }}>다시 재기</button>
+          <button type="button" onClick={() => drop(s.id)}
+            style={{ border: 'none', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: RED }}>빼기</button>
+        </div>
+      </div>
+    );
+  };
+  const groups = [];
+  shots.forEach((s) => {
+    const vid = s.from?.vid || null;
+    let g = groups.find((x) => x.vid === vid);
+    if (!g) {
+      g = { vid, name: vid ? (shownInfo(vid)?.name || vid.split('·')[0]) : '그림으로 올린 것', shots: [] };
+      groups.push(g);
+    }
+    g.shots.push(s);
+  });
+  // 장면을 다 뺀 영상도 목록에 남긴다 — 거기서 다시 장면을 더할 수 있게
+  (sets[key]?.videos || []).forEach((v) => {
+    if (!groups.some((g) => g.vid === v.vid)) groups.push({ vid: v.vid, name: v.name, shots: [] });
+  });
+  groups.sort((x, y) => (x.vid ? 0 : 1) - (y.vid ? 0 : 1));
+
   return (
     <div style={{ ...box, marginBottom: 16 }}>
       <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>각도별 그림 모음</div>
@@ -252,7 +401,8 @@ export default function AngleSetAdmin() {
         <br />보라색 선은 코드가 <b>무엇을 보고 쟀는지</b>입니다. 선이 엉뚱한 데 붙었으면 숫자를 직접 고쳐 주세요.
         <br /><b>영상</b>을 놓으면 움직임의 <b>처음과 끝</b>을 찾아, 그 사이를 고르게 나눠
         <b> 목은 4장, 허리는 8장</b>을 뽑아 담습니다(영상 한 편마다).
-        팔 영상은 <b>7×7 표의 칸마다</b> 두 팔이 가장 가까운 장면을 찾아 담습니다 — 여러 편이면 한꺼번에 놓아 주세요. 뽑힌 장면이 흐리면 ◀ ▶로 앞뒤 장면으로 바꿀 수 있습니다(영상을 연 채로 있는 동안만).
+        팔 영상은 <b>7×7 표의 칸마다</b> 두 팔이 가장 가까운 장면을 찾아 담습니다 — 여러 편이면 한꺼번에 놓아 주세요.
+        <br />그림은 <b>영상별로 묶여</b> 보입니다. 빠진 각도는 <b>＋ 장면 더하기</b>로 재생 막대에서 직접 골라 담고, 흐린 장면은 카드의 ◀ ▶로 앞뒤 장면으로 바꿉니다.
         <br /><b>옆으로 팔 들기</b>는 왼팔·오른팔을 따로 재서 <b>7×7 표</b>(0°~180°, 30° 간격)에 채웁니다.
         손님 두 팔 값과 가장 가까운 그림이 나옵니다.
       </div>
@@ -337,73 +487,67 @@ export default function AngleSetAdmin() {
       </div>
       {note && <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 14 }}>{note}</div>}
 
-      {/* 모은 그림 — 각도 순으로 */}
-      {shots.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))', gap: 12, marginBottom: 16 }}>
-          {shots.map((s) => {
-            const low = s.auto && (s.sure ?? 0) < 0.5;
-            const isPick = pick && pick.id === s.id;
-            return (
-              <div key={s.id} style={{ background: BG, borderRadius: 12, padding: 7,
-                boxShadow: isPick ? `inset 0 0 0 2px ${GOLD}` : 'none' }}>
-                <div style={{ position: 'relative', background: '#fff', borderRadius: 8, overflow: 'hidden', aspectRatio: '1 / 2' }}>
-                  <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
-                  <Bones pts={s.pts} kind={kind} />
-                </div>
-                {isArm && (
-                  // 앞모습이라 그 사람의 오른팔이 화면 왼쪽에 있다 — 칸도 그 순서로
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                    {[['r', '오른팔'], ['l', '왼팔']].map(([side, lb]) => (
-                      <label key={side} style={{ flex: 1, fontSize: 10, fontWeight: 800, color: SUB }}>
-                        {lb}
-                        <input type="number" value={s[side] ?? ''} placeholder="?"
-                          onChange={(e) => setSide(s.id, side, e.target.value)}
-                          style={{ width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: 13, fontWeight: 900,
-                            padding: '3px 5px', borderRadius: 8, border: `1px solid ${s[side] == null ? RED : '#EDE9E2'}` }} />
-                      </label>
-                    ))}
-                  </div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
-                  {!isArm && <>
-                  <input type="number" value={s.angle ?? ''} placeholder="?"
-                    onChange={(e) => setAngle(s.id, e.target.value)}
-                    style={{ width: 56, fontFamily: 'inherit', fontSize: 14, fontWeight: 900, padding: '4px 6px',
-                      borderRadius: 8, border: `1px solid ${s.angle == null ? RED : '#EDE9E2'}` }} />
-                  <span style={{ fontSize: 12, fontWeight: 800, color: INK }}>°</span>
-                  </>}
-                  {isArm && isPick && pair.flip && (
-                    <span style={{ fontSize: 10, fontWeight: 800, color: GOLD_INK }}>뒤집어 씀</span>
+      <input ref={linkRef} type="file" accept="video/*" style={{ display: 'none' }}
+        onChange={(e) => { linkVideo(linking, e.target.files?.[0]); e.target.value = ''; }} />
+      {/* 모은 그림 — 영상별로 묶는다. 영상마다 장면을 더하거나 모두 뺄 수 있다 */}
+      {groups.map((g) => (
+          <div key={g.vid || 'img'} style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: INK }}>{g.vid ? '🎬 ' : '🖼 '}{g.name}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: SUB }}>{g.shots.length}장</span>
+              {g.vid && (
+                <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  {canOpen(g.vid) && (
+                    <button type="button" disabled={!!busy} onClick={() => setAdding(adding === g.vid ? null : g.vid)}
+                      style={{ ...miniBtn, padding: '5px 11px', fontSize: 12, background: adding === g.vid ? GOLD : '#fff',
+                        color: adding === g.vid ? '#fff' : GOLD_INK, boxShadow: 'inset 0 0 0 1px #EDE9E2' }}>
+                      {adding === g.vid ? '장면 더하기 닫기' : '＋ 장면 더하기'}
+                    </button>
                   )}
-                  <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 800,
-                    color: s.angle == null ? RED : s.auto ? (low ? RED : GREEN) : GOLD_INK }}>
-                    {s.angle == null ? '못 잼' : s.auto ? (low ? '흐림' : '자동') : '손으로'}
-                  </span>
-                </div>
-                {s.from && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5, fontSize: 10, fontWeight: 800, color: SUB }}>
-                    {vids.includes(s.from.vid) && (
-                      <button type="button" onClick={() => nudge(s.id, -1)} disabled={!!busy} style={miniBtn}>◀</button>
-                    )}
-                    <span style={{ flex: 1, textAlign: 'center' }}>영상 {s.from.t.toFixed(1)}초</span>
-                    {vids.includes(s.from.vid) && (
-                      <button type="button" onClick={() => nudge(s.id, 1)} disabled={!!busy} style={miniBtn}>▶</button>
-                    )}
+                  {!canOpen(g.vid) && (
+                    <button type="button" disabled={!!busy} onClick={() => { setLinking(g.vid); linkRef.current?.click(); }}
+                      title="예전에 뽑은 장면의 원본 영상을 골라 주면, 장면을 더하거나 옮길 수 있어요"
+                      style={{ ...miniBtn, padding: '5px 11px', fontSize: 12, boxShadow: 'inset 0 0 0 1px #EDE9E2' }}>
+                      영상 다시 연결
+                    </button>
+                  )}
+                  <button type="button" disabled={!!busy} onClick={() => dropVideo(g.vid)}
+                    style={{ ...miniBtn, padding: '5px 11px', fontSize: 12, color: RED, boxShadow: 'inset 0 0 0 1px #EDE9E2' }}>
+                    모두 빼기
+                  </button>
+                </span>
+              )}
+            </div>
+            {adding === g.vid && (
+              // 재생 막대로 원하는 순간을 찾고 '지금 장면 담기' — 자동으로 빠진 각도를 채운다
+              <div style={{ ...box, background: BG, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+                <video ref={addRef} src={srcOf(g.vid) || undefined} crossOrigin="anonymous" controls muted playsInline
+                  style={{ height: 260, borderRadius: 10, background: '#000' }} />
+                <div style={{ flex: '1 1 200px', fontSize: 12, color: SUB, fontWeight: 700, lineHeight: 1.8 }}>
+                  재생 막대를 움직여 담을 순간을 고른 뒤 누르세요.<br />
+                  ◀ ▶는 아주 조금(한 장면)씩 옮깁니다.
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    {[[-1, '◀'], [1, '▶']].map(([d, lb]) => (
+                      <button key={d} type="button" style={{ ...miniBtn, padding: '6px 12px', boxShadow: 'inset 0 0 0 1px #EDE9E2' }}
+                        onClick={() => { const el = addRef.current; if (el) { el.pause(); el.currentTime = Math.max(0, el.currentTime + d / 30); } }}>
+                        {lb}
+                      </button>
+                    ))}
+                    <button type="button" disabled={!!busy} onClick={() => addNow(g.vid)}
+                      style={{ ...miniBtn, padding: '6px 14px', fontSize: 12.5, background: GOLD, color: '#fff' }}>
+                      지금 장면 담기
+                    </button>
                   </div>
-                )}
-                <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
-                  <button type="button" onClick={() => remeasure(s.id)} disabled={!!busy}
-                    style={{ flex: 1, border: 'none', background: '#fff', borderRadius: 7, padding: '4px 0', cursor: 'pointer',
-                      fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: SUB }}>다시 재기</button>
-                  <button type="button" onClick={() => drop(s.id)}
-                    style={{ border: 'none', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer',
-                      fontFamily: 'inherit', fontSize: 11, fontWeight: 800, color: RED }}>빼기</button>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+            {g.shots.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))', gap: 12 }}>
+                {g.shots.map(card)}
+              </div>
+            )}
+          </div>
+        ))}
 
       {/* 손님 값을 흉내 내 어떤 그림이 나오는지 */}
       {usableShots(sets[key]).length > 0 && !isArm && (

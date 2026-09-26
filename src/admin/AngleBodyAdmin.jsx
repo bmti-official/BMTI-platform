@@ -5,11 +5,76 @@
 import { useEffect, useState } from 'react';
 import { INK, SUB, BG, box as box2, btn } from './theme';
 import AngleSetAdmin from './AngleSetAdmin';
+import ImageInput from './ImageInput';
+import { REF_ITEMS, refKey, allRefKeys } from '../lib/angleRefs';
 import { loadAssets, saveAsset } from '../lib/appAssets';
 import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, DEFAULT_CUTS, readCuts } from '../lib/angleLevels';
 
 export default function AngleBodyAdmin() {
-  return <><AngleSetAdmin /><LevelCutAdmin /></>;
+  return <><AngleSetAdmin /><RefAdmin /><LevelCutAdmin /></>;
+}
+
+// ── 각도 재는 화면 참고 그림 ─────────────────────────────────
+// 넣는 즉시 저장한다. 비어 있으면 그 자리엔 아무것도 안 나온다.
+function RefAdmin() {
+  const [urls, setUrls] = useState(null);
+  const [who, setWho] = useState('female');
+  const [note, setNote] = useState('');
+  useEffect(() => {
+    let alive = true;
+    loadAssets(allRefKeys()).then((m) => {
+      if (!alive) return;
+      const got = {};
+      allRefKeys().forEach((k) => { got[k] = m[k]?.url || ''; });
+      setUrls(got);
+    });
+    return () => { alive = false; };
+  }, []);
+  if (!urls) return <div style={{ ...box2, fontSize: 13, color: SUB, marginBottom: 16 }}>불러오는 중…</div>;
+
+  const put = async (k, v) => {
+    setUrls((p) => ({ ...p, [k]: v }));
+    const r = await saveAsset(k, v || null, {});
+    setNote(r.ok ? '저장했습니다.' : `저장 실패: ${r.why}`);
+  };
+  const tab = (on) => ({ padding: '7px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+    fontSize: 12.5, fontWeight: 800, background: on ? '#C9975A' : 'transparent', color: on ? '#fff' : SUB });
+
+  return (
+    <div style={{ ...box2, marginBottom: 16 }}>
+      <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>각도 재는 화면 참고 그림</div>
+      <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8, marginBottom: 14 }}>
+        손님이 각도를 잴 때 보는 그림입니다. <b>바른 자세만</b> 보여 주세요. 넣으면 바로 저장됩니다.
+        <br />영상 두 편은 잴 때 카메라 화면 <b>왼쪽 위에 작게, 소리 없이 계속 반복</b>됩니다 —
+        올렸다 내리는(갔다 돌아오는) 4~5초 영상이 자연스럽습니다.
+      </div>
+      <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, boxShadow: 'inset 0 0 0 1px #EDE9E2', marginBottom: 14 }}>
+        {[['female', '여성'], ['male', '남성']].map(([k, lb]) => (
+          <button key={k} type="button" onClick={() => setWho(k)} style={tab(who === k)}>{lb}</button>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14 }}>
+        {REF_ITEMS.map((it) => {
+          const k = refKey(it.name, who);
+          const v = urls[k];
+          return (
+            <div key={it.name} style={{ background: BG, borderRadius: 12, padding: 10 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 900, color: INK }}>
+                {it.label}{it.video ? ' 🎬' : ''}{it.common ? <span style={{ color: SUB, fontWeight: 700 }}> · 성별 공통</span> : null}
+              </div>
+              <div style={{ fontSize: 11, color: SUB, fontWeight: 700, marginBottom: 6 }}>{it.where}</div>
+              {v && (it.video
+                ? <video src={v} autoPlay loop muted playsInline
+                    style={{ width: '100%', height: 170, objectFit: 'contain', background: '#fff', borderRadius: 8, marginBottom: 6, display: 'block' }} />
+                : <img src={v} alt="" style={{ width: '100%', height: 170, objectFit: 'contain', background: '#fff', borderRadius: 8, marginBottom: 6, display: 'block' }} />)}
+              <ImageInput value={v} onChange={(nv) => put(k, nv)} allowVideo={!!it.video} />
+            </div>
+          );
+        })}
+      </div>
+      {note && <div style={{ fontSize: 12, fontWeight: 700, marginTop: 10, color: note.startsWith('저장했') ? '#2E7D50' : '#B23B36' }}>{note}</div>}
+    </div>
+  );
 }
 
 // ── 단계 기준 ────────────────────────────────────────────

@@ -2,19 +2,22 @@
 //
 // 그림을 따로 뽑으면 장마다 얼굴·체형·조명이 조금씩 달라진다. 영상에서 잘라 내면
 // 사람은 그대로이고 각도만 바뀐다. 0.1초마다 장면을 재 두고, 움직임의 처음부터 끝까지를
-// 고르게 나눠 장면을 뽑는다. 영상 파일은 올리지 않고 브라우저 안에서만 연다.
+// 고르게 나눠 장면을 뽑는다. 영상도 저장소에 올려 두어, 나중에 영상별로 장면을 더하거나 옮길 수 있다.
 import { measureSource } from './measureImage';
 
 export const STEP = 0.1;          // 몇 초마다 잴까
 export const MAX_SEC = 240;       // 이보다 길면 앞부분만 본다(팔 49자세를 한 편에 담으면 길다)
 const LONG = 60;                  // 이보다 긴 영상은 0.2초마다 잰다(재는 시간을 반으로)
+const SHORT = 10;                 // 이보다 짧은 영상은 0.05초마다 — 몇 초 만에 지나가는 동작도 놓치지 않게
 const MIN_SURE = 0.6;             // 관절이 이만큼은 또렷해야 쓴다
 const SHAKE = 300;                // 흔들림 벌점 — 한 번에 화면의 1%쯤 움직이면 3도 멀어진 것으로 친다
 
-/** 파일을 열어 { video } 또는 { err } */
-export function openVideo(file) {
+/** 파일(File)이나 주소(저장소에 올려 둔 영상)를 열어 { video } 또는 { err } */
+export function openVideo(src) {
+  const file = typeof src === 'string' ? { name: '저장된 영상' } : src;
   return new Promise((ok) => {
     const v = document.createElement('video');
+    if (typeof src === 'string') v.crossOrigin = 'anonymous';   // 저장소 영상의 장면을 캔버스로 읽으려면 필요하다
     v.muted = true;
     v.playsInline = true;
     v.preload = 'auto';
@@ -35,7 +38,7 @@ export function openVideo(file) {
       else ok({ video: v });
     };
     v.onerror = () => ok({ err: `'${file.name}'은 이 브라우저에서 열 수 없어요. mp4(H.264)로 내보내 주세요. (아이폰 .mov는 안 열릴 수 있어요)` });
-    v.src = URL.createObjectURL(file);
+    v.src = typeof src === 'string' ? src : URL.createObjectURL(src);
   });
 }
 
@@ -78,7 +81,7 @@ export async function sampleVideo(v, kind, onStep) {
   const end = Math.min(v.duration || 0, MAX_SEC);
   const out = [];
   let prev = null;
-  const step = end > LONG ? STEP * 2 : STEP;
+  const step = end > LONG ? STEP * 2 : end < SHORT ? STEP / 2 : STEP;
   for (let t = 0; t <= end; t += step) {
     const m = await measureAt(v, t, kind);
     if (!m.err) {
@@ -146,6 +149,18 @@ export function chooseGrid(samples, grid, tol = 20) {
   });
   return grid.flatMap((L) => grid.map((R) => best.get(`${L}:${R}`)).filter(Boolean))
     .map(({ L, R, sample }) => ({ L, R, sample }));
+}
+
+/** 화면에 떠 있는 영상의 지금 장면을 잰다 — 관리자가 재생 막대로 고른 순간을 담을 때 */
+export async function measureNow(v, kind) {
+  const m = await measureSource(canvasOf(v), v.videoWidth, v.videoHeight, kind);
+  return { ...m, t: Math.round(v.currentTime * 100) / 100 };
+}
+
+/** 지금 장면을 jpg 파일로 */
+export async function nowFile(v) {
+  const blob = await new Promise((ok) => canvasOf(v).toBlob(ok, 'image/jpeg', 0.92));
+  return new File([blob], `frame-${Math.round(v.currentTime * 100)}.jpg`, { type: 'image/jpeg' });
 }
 
 /** t초 장면을 jpg 파일로 */

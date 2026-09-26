@@ -23,6 +23,7 @@ import { LEVEL_ITEMS, LEVEL_NAME, LEVELS_KEY, readCuts, levelOf } from '../../li
 import { resultLine, prevVal, viewVal } from './resultLine';
 import { allSetKeys, setKey, nearestShot, nearestPair, armMeta } from '../../lib/angleShots';
 import NeckShot from '../../components/NeckShot';
+import { allRefKeys, refUrl } from '../../lib/angleRefs';
 import { TrunkShot, ArmShot } from '../../components/BodyShots';
 
 const INK = '#1C1A17', SUB = '#8A8378';
@@ -111,10 +112,15 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       const hit = (rows || []).find((r) => Array.isArray(r.pose) && r.pose.length >= 25);
       if (hit) setGhost({ pose: hit.pose, week: String(hit.week) });
     });
-    loadAssets([LEVELS_KEY, ...allSetKeys()]).then((m) => { if (alive) setShots(m || {}); });
+    // 각도별 그림 모음·단계 경계값·참고 그림(휴대폰 두는 법, 자세 그림, 동작 영상)
+    loadAssets([LEVELS_KEY, ...allSetKeys(), ...allRefKeys()]).then((m) => { if (alive) setShots(m || {}); });
     return () => { alive = false; };
   }, []);
   const [more, setMore] = useState(false);        // 끝 화면 '자세히 보기'
+  const sex = /female|여/.test(String(gender || '').toLowerCase()) ? 'female' : 'male';
+  const ref = (name) => refUrl(shots, name, sex);
+  // 단계마다 보여 줄 자세 그림 — 앉아서 재면 앉은 그림
+  const stancePic = (st) => (st ? ref(st.id === 'front' ? 'front' : st.sitting ? 'sit' : 'side') : null);
 
   const ghostRef = useRef(null);
   const [vals, setVals] = useState({});                // 담은 값 — 화면에 보여 줄 몫(ref는 그릴 때 못 읽는다)
@@ -609,6 +615,11 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             옆모습 한 번, 앞모습 한 번 찍습니다. 매주 같은 자리에서 재면
             지난주와 얼마나 달라졌는지 볼 수 있어요.
           </div>
+          {ref('phone') && (
+            <img src={ref('phone')} alt="휴대폰을 세워 두고 몇 걸음 물러선 모습"
+              style={{ width: '100%', maxHeight: 220, objectFit: 'contain', borderRadius: 14, background: '#FAF7F0',
+                display: 'block', marginBottom: 14 }} />
+          )}
           {retry >= MAX_RETRY && (
             <div style={{ background: '#FBEAE9', color: '#B23B36', borderRadius: 12, padding: '11px 13px',
               fontSize: 12.5, fontWeight: 700, lineHeight: 1.7, marginBottom: 14 }}>
@@ -670,9 +681,12 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           <div style={{ fontSize: 13, color: INK, fontWeight: 700, lineHeight: 1.85, marginBottom: 8 }}>
             이제 <b>{nxt.title}</b>
           </div>
-          <div style={{ fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.85, whiteSpace: 'pre-line', marginBottom: 20 }}>
-            {nxt.how}
-            {nxt.id === 'front' && '\n팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. 억지로 올리지 말고 올라가는 만큼만요 — 양쪽을 따로 담습니다.'}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 20 }}>
+            {stancePic(nxt) && <RefPic url={stancePic(nxt)} alt={nxt.title} />}
+            <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.85, whiteSpace: 'pre-line' }}>
+              {nxt.how}
+              {nxt.id === 'front' && '\n팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. 억지로 올리지 말고 올라가는 만큼만요 — 양쪽을 따로 담습니다.'}
+            </div>
           </div>
           {nxt.id === 'front' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#FAF7F0', borderRadius: 14,
@@ -880,6 +894,20 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           );
         })()}
 
+        {/* 동작 영상 — 무엇을 하라는지 보면서 따라 하게, 재는 동안 계속 반복한다.
+            앞모습은 처음부터(팔 들기뿐), 옆모습은 허리 굽힘 토막부터. */}
+        {(() => {
+          const move = s.id === 'front' ? 'arm' : (ph && ph.take === 'trunk' ? 'trunk' : null);
+          const url = move && ref(move);
+          if (!url) return null;
+          return (
+            <video key={url} src={url} autoPlay loop muted playsInline aria-label="따라 할 동작"
+              // 영상 비율 그대로(가로 영상이면 팔이 잘리지 않게) — 세로 영상은 폭을 좁게, 가로 영상은 넓게
+              style={{ position: 'absolute', left: 10, top: 10, width: '30%', maxHeight: '42%', objectFit: 'contain',
+                borderRadius: 12, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.3)',
+                pointerEvents: 'none', zIndex: 2 }} />
+          );
+        })()}
         {clothHint && !running && (
           <div style={{ position: 'absolute', left: 12, right: 12, bottom: 52, background: 'rgba(253,246,220,0.96)',
             borderRadius: 12, padding: '9px 12px', fontSize: 12, fontWeight: 800, color: '#8A6A3A', lineHeight: 1.6,
@@ -994,8 +1022,11 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             </div>
           );
         })()}
-        <div style={{ fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.8, whiteSpace: 'pre-line', marginBottom: 14 }}>
-          {s.how}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
+          {stancePic(s) && <RefPic url={stancePic(s)} alt={s.title} />}
+          <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+            {s.how}
+          </div>
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
 
@@ -1132,5 +1163,13 @@ function Shell({ children, onClose, title, voice, hasClips, onVoice }) {
       </div>
       {children}
     </div>
+  );
+}
+
+// 참고 자세 그림 — 설명 글 옆에 작게
+function RefPic({ url, alt }) {
+  return (
+    <img src={url} alt={alt}
+      style={{ flex: '0 0 76px', width: 76, height: 132, objectFit: 'contain', borderRadius: 12, background: '#FAF7F0' }} />
   );
 }
