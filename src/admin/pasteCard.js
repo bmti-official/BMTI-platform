@@ -65,10 +65,20 @@ function tokenize(text) {
 export function parseCard(text) {
   const out = {};
   const filled = [];
-  const put = (k, v) => { if (v !== null && v !== undefined && v !== '') { out[k] = v; filled.push(k); } };
+  const put = (k, v) => { if (v !== null && v !== undefined && v !== '') { out[k] = v; if (!filled.includes(k)) filled.push(k); } };
 
+  // '쓰는 곳' 안에 '연관 부위: 큰볼기근…'처럼 검색 분류와 이름이 같은 줄이 오면
+  // 검색 분류가 아니라 쓰는 곳의 한 줄로 잇는다(쓰는 곳 뒤, 다음 머리말 앞까지).
+  let inFocus = false;
   for (const t of tokenize(text)) {
     const tone = t.tone === 'm' ? 'm' : 'z';
+    if (inFocus && t.kind === 'key' && (t.name === '핵심부위' || t.name === '연관부위')) {
+      // 그 뒤에 이어진 줄(타겟 관절·주의 신경 등)도 이 덩어리에 딸려 오므로 줄은 그대로 둔다
+      const line = `${t.name === '핵심부위' ? '핵심 부위' : '연관 부위'}: ${t.value}`;
+      put('focus_body', [out.focus_body, bullets(line)].filter(Boolean).join('\n'));
+      continue;
+    }
+    inFocus = t.kind === 'key' && t.name === '쓰는곳';
 
     if (t.kind === 'header') {
       if (t.name.startsWith('제목')) { put(t.name.endsWith('M') ? 'title_m' : 'title_z', t.value); continue; }
