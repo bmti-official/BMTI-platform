@@ -2,6 +2,7 @@ import { useState, useRef, useLayoutEffect } from "react";
 import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { dailyWord } from "../lib/dailyWord";
+import { angleDayLine } from "../lib/angleDayLine";
 import { CHARACTER_NAMES } from "../lib/bmtiTypes";
 import { DiaryIcon } from "./DiaryIcons";
 import DiaryHelpPopup from "./DiaryHelpPopup";
@@ -45,7 +46,9 @@ const MONTH_MIN_DATE = new Date(MIN_YEAR, MIN_MONTH - 1, 1);
 
 export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown, userInfo = null, setUserProfile, gender = null,
   // 그날 일기장(미리보기 창)의 왼쪽 위 말랑이를 누르면 말랑이 팝업 — 관리자 미리보기에서 먼저 켠다
-  dayMallang = false }) {
+  dayMallang = false,
+  // 그날 잰 각도기록 — 넘겨주면 잰 날의 일기장에 날씨 적듯 한 줄로 적는다(관리자 미리보기에서 먼저)
+  angleChecks = null, onAngleOpen = null }) {
   // 기록 후 캘린더로 돌아왔을 때 같은 보기(월간/주간)로 오도록 보기 상태를 저장해둔다.
   const [view, setView] = useState(() => { try { return localStorage.getItem("bmti_diary_calview") === "week" ? "week" : "month"; } catch { return "month"; } });
   useLayoutEffect(() => { try { localStorage.setItem("bmti_diary_calview", view); } catch {} }, [view]);
@@ -352,6 +355,30 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                   </button>
                 </div>
               )}
+
+              {/* 각도기록 — 잰 날에만. 날씨 적듯 항목과 수치 한 줄, 달라진 게 있으면 한 문장 */}
+              {(() => {
+                const al = angleChecks ? angleDayLine(angleChecks, previewDay.dateStr) : null;
+                if (!al) return null;
+                return (
+                  <div style={{ flexShrink: 0, padding: "0 16px 10px" }}>
+                    <button type="button" onClick={onAngleOpen ? () => { closeDay(); onAngleOpen(); } : undefined}
+                      style={{ width: "100%", textAlign: "left", border: `1px solid ${C.yellowLine}`, background: "#FFFBF0", borderRadius: 10,
+                        padding: "8px 11px", fontFamily: "inherit", cursor: onAngleOpen ? "pointer" : "default" }}>
+                      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "2px 6px", fontSize: 11.5, fontWeight: 800, color: C.ink }}>
+                        <span>📐 이번 주 각도</span>
+                        {al.chips.map((c) => (
+                          <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ color: "#D6CFC1" }}>·</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{c}</span>
+                          </span>
+                        ))}
+                        {onAngleOpen && <span style={{ marginLeft: "auto", color: C.sub, fontSize: 11 }}>›</span>}
+                      </div>
+                      {al.note && <div style={{ marginTop: 3, fontSize: 11.5, fontWeight: 700, color: "#6B6459", lineHeight: 1.5 }}>{al.note}</div>}
+                    </button>
+                  </div>
+                );
+              })()}
 
               {/* 본문 — 줄노트 칸 세 개. 제목 없이 글만 */}
               <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "0 16px 4px", display: "flex", flexDirection: "column", gap: 10 }}>

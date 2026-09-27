@@ -94,6 +94,8 @@ export default function DiaryPreview() {
       onEditDay={(dateStr, entry) => setWriting({ mood: entry?.mood ?? null, date: dateStr, entry: entry || null })}
       initialStressMood={justSaved ? justSaved.mood : null}
       dayMallang
+      angleChecks={checks}
+      onAngleOpen={() => { setReportTab('records'); setScreen('report'); }}
       onStressShown={() => setJustSaved(null)}
     />
   );
