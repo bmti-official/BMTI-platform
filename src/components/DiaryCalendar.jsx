@@ -257,7 +257,9 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 <div style={{ textAlign: "center", paddingTop: 2 }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Mallang v={poppedMood} size={58} /></div>
                   <div style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 18 }}>{moodPickedMessage}</div>
-                  <button onClick={continueToFullForm} style={{ width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
+                  <button onClick={continueToFullForm} style={dayMallang
+                    ? { width: "100%", padding: 15, borderRadius: 15, border: "none", background: "#fff", color: C.ink, fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8, boxShadow: "0 3px 10px rgba(217,185,106,0.45)" }
+                    : { width: "100%", padding: 15, borderRadius: 15, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 8, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
                     네, 조금 더 기록할게요
                   </button>
                   <button onClick={quickSaveMood} style={{ width: "100%", padding: 12, borderRadius: 15, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
@@ -315,15 +317,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                     </button>
                   ) : <Mallang v={previewDay.entry.mood} size={54} />}
                   <div style={{ fontSize: dayMallang ? 9 : 11.5, fontWeight: 800, color: dayMallang ? C.sub : C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: dayMallang ? 1.2 : 1.25 }}>{moodInfo?.label}</div>
-                  {/* 그날의 매일 한마디 바로 가기 — 말랑이 밑에 작게 */}
-                  {dayMallang && (
-                    <button type="button" onClick={() => setDayPop("word")}
-                      style={{ border: "none", background: "#fff", borderRadius: 999, padding: "4px 8px", cursor: "pointer", fontFamily: "inherit",
-                        fontSize: 9.5, fontWeight: 800, color: C.ink, lineHeight: 1.3, wordBreak: "keep-all", textAlign: "center",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                      {partnerName ? `'${partnerName}'의 매일 한마디` : "매일 한마디"} →
-                    </button>
-                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "#FBEFD8", border: `1px solid ${C.yellowLine}`, borderRadius: 10, padding: "7px 8px", fontSize: 13.5, fontWeight: 800, color: C.ink, letterSpacing: "0.02em" }}>
@@ -343,6 +336,17 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                   </div>
                 </div>
               </div>
+
+              {/* 그날의 매일 한마디 — 말랑이 칸과 태그 칸 밑에 따로 한 줄 */}
+              {dayMallang && (
+                <div style={{ flexShrink: 0, padding: "0 16px 12px" }}>
+                  <button type="button" onClick={() => setDayPop("word")}
+                    style={{ width: "100%", border: "none", background: "#fff", borderRadius: 12, padding: "10px 12px", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 13, fontWeight: 800, color: C.ink, boxShadow: "0 3px 10px rgba(217,185,106,0.45)" }}>
+                    {partnerName ? `'${partnerName}'의 매일 한마디` : "매일 한마디"} →
+                  </button>
+                </div>
+              )}
 
               {/* 본문 — 줄노트 칸 세 개. 제목 없이 글만 */}
               <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "0 16px 4px", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -369,14 +373,19 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               </div>
 
               <div style={{ flexShrink: 0, padding: "12px 16px 16px" }}>
+                {/* 10월 판(관리자 미리보기) — 화이트 바탕 + 연한 옐로우 그림자, '그냥 볼게요'는 없앤다(닫기 ✕가 있다) */}
                 <button onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); closeDay(); }}
-                  style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 5, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
+                  style={dayMallang
+                    ? { width: "100%", padding: 14, borderRadius: 14, border: "none", background: "#fff", color: C.ink, fontSize: 14.5, fontWeight: 800, cursor: "pointer", boxShadow: "0 3px 10px rgba(217,185,106,0.45)" }
+                    : { width: "100%", padding: 14, borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 5, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
                   이 기록 수정할래요
                 </button>
-                <button onClick={() => closeDay()}
-                  style={{ width: "100%", padding: 11, borderRadius: 14, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                  괜찮아요, 그냥 볼게요
-                </button>
+                {!dayMallang && (
+                  <button onClick={() => closeDay()}
+                    style={{ width: "100%", padding: 11, borderRadius: 14, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    괜찮아요, 그냥 볼게요
+                  </button>
+                )}
               </div>
             </div>
           </div>

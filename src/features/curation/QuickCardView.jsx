@@ -142,7 +142,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     setPaused(next);
     const v = clipRef.current, a = audioRef.current, c = countRef.current;
     [v, a, c].forEach((el) => { if (!el) return; try { if (next) el.pause(); } catch { /* 무시 */ } });
-    if (!next && v && rest === 0 && !allDone) { try { v.play().catch(() => {}); } catch { /* 무시 */ } }
+    if (next) return;
+    // 이어서 — 멈췄던 설명·멘트를 그 자리부터 다시 튼다. 이걸 빼먹으면 설명이 끝나지 않아
+    // 영상도 영영 '설명을 기다리는' 채로 멈춰 있다.
+    if (a && voiceOn && a.src && !a.ended && a.currentTime > 0) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
+    // 영상은 설명을 듣는 중이 아니고, 멘트가 끝나기를 기다리는 중도 아닐 때만
+    const waiting = introOn || cueOn || !!pendingRef.current;
+    if (v && rest === 0 && !allDone && !waiting) { try { v.play().catch(() => {}); } catch { /* 무시 */ } }
   };
 
   // 따라하는 중에 설정을 바꾸면 처음부터 다시 시작한다 — 먼저 물어본다.
