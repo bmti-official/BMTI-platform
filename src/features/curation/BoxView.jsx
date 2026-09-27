@@ -74,7 +74,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
             ＋ 새 플리 만들기
           </button>
           <PliGrid plis={myPlis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.mine}
-            action={{ label: '✎ 고치기', onClick: (r) => setEditing({ id: r.id, title: r.title_z, cards: r.cards || [] }) }} />
+            action={{ label: '✎ 고치기', onClick: (r) => setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], showNick: !!r.show_nick }) }} />
         </>
       ) : tab === 'pli' ? (
         <PliGrid plis={plis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.pli}

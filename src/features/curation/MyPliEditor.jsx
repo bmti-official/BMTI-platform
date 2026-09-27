@@ -5,6 +5,9 @@
 import { useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import { pickCardTone, routineSummary, mmss } from './format';
+import { cardSetup, REST_LIST } from './cardDefaults';
+import { withRoutineSetup } from './routineSetup';
+import { badNameReason } from '../../lib/nameFilter';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#C9975A', YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -15,7 +18,13 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
   const [title, setTitle] = useState(initial?.title || '');
   const [cards, setCards] = useState(initial?.cards || []);
   const [picking, setPicking] = useState(false);
-  const s = routineSummary(cards);
+  const [openSet, setOpenSet] = useState(null);      // 설정을 펼친 동작(id)
+  // 바로플리에 올릴 때 만든 사람을 어떻게 보일지 — 기본은 유형 캐릭터만
+  const [showNick, setShowNick] = useState(!!initial?.showNick);
+  // 시간은 동작마다 고른 횟수·세트·쉬는 시간으로 센다
+  const s = routineSummary(cards.map(withRoutineSetup));
+  const setOf = (c) => cardSetup(withRoutineSetup(c));
+  const change = (id, key, v) => setCards((p) => p.map((c) => (c.id === id ? { ...c, [key]: Number(v) } : c)));
   const ok = title.trim().length > 0 && cards.length > 0;
 
   const move = (i, d) => setCards((p) => {
@@ -40,7 +49,11 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
         <button type="button" onClick={onCancel} aria-label="닫기"
           style={{ border: 'none', background: 'transparent', fontSize: 20, fontWeight: 800, cursor: 'pointer', color: INK, padding: '0 6px' }}>‹</button>
         <span style={{ flex: 1, fontSize: 15.5, fontWeight: 900 }}>{initial?.id ? '마이플리 고치기' : '마이플리 만들기'}</span>
-        <button type="button" disabled={!ok} onClick={() => onSave({ id: initial?.id, title: title.trim(), cards })}
+        <button type="button" disabled={!ok} onClick={() => {
+          const bad = badNameReason(title);
+          if (bad) { window.alert(`플리 이름에 쓸 수 없는 말(${bad})이 들어 있어요. 다른 이름을 적어 주세요.`); return; }
+          onSave({ id: initial?.id, title: title.trim(), cards, showNick });
+        }}
           style={{ border: 'none', cursor: ok ? 'pointer' : 'default', fontFamily: 'inherit', borderRadius: 999, padding: '8px 16px',
             fontSize: 13, fontWeight: 800, background: ok ? GOLD : '#F1EEE8', color: ok ? '#fff' : '#C6C0B5' }}>
           저장
@@ -70,21 +83,51 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
             color: SUB, fontWeight: 600, marginBottom: 10 }}>아래 &lsquo;동작 더하기&rsquo;로 바로카드를 골라 담아 보세요.</div>
         )}
         <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
-          {cards.map((c, i) => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 6, borderRadius: 12, background: '#FAF7F0' }}>
+          {cards.map((c, i) => {
+            const cs = setOf(c);
+            const on = openSet === c.id;
+            const sel = { fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, padding: '5px 6px', borderRadius: 8, border: `1px solid ${LINE}`, background: '#fff' };
+            return (
+            <div key={c.id} style={{ borderRadius: 12, background: '#FAF7F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 6 }}>
               <span style={{ width: 22, textAlign: 'center', fontSize: 12, fontWeight: 900, color: GOLD_INK }}>{i + 1}</span>
               <div style={{ width: 44, flexShrink: 0 }}>
                 <CurationThumb item={c} radius={7} ratio="4 / 5" showRead={false} clip="" emptyText="" />
               </div>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, lineHeight: 1.4, wordBreak: 'keep-all' }}>
-                {pickCardTone(c, tone).title}
-              </span>
+              <button type="button" onClick={() => setOpenSet(on ? null : c.id)}
+                style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, lineHeight: 1.4, wordBreak: 'keep-all', color: INK }}>
+                  {pickCardTone(c, tone).title}
+                </span>
+                <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: GOLD_INK, marginTop: 2 }}>
+                  {cs.reps}회 · {cs.sets}세트 · 쉬기 {cs.rest}초 {on ? '▴' : '▾'}
+                </span>
+              </button>
               <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="위로" style={{ ...chip, opacity: i === 0 ? 0.35 : 1 }}>↑</button>
               <button type="button" onClick={() => move(i, 1)} disabled={i === cards.length - 1} aria-label="아래로"
                 style={{ ...chip, opacity: i === cards.length - 1 ? 0.35 : 1 }}>↓</button>
               <button type="button" onClick={() => drop(i)} aria-label="빼기" style={{ ...chip, color: '#B23B36' }}>✕</button>
             </div>
-          ))}
+            {/* 동작마다 횟수·세트·쉬는 시간 — 비워 두면 카드 기본값 */}
+            {on && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '0 10px 10px 38px', fontSize: 11.5, fontWeight: 800, color: SUB }}>
+                횟수
+                <select value={cs.reps} onChange={(e) => change(c.id, 'rc_reps', e.target.value)} style={sel}>
+                  {cs.repList.map((n) => <option key={n} value={n}>{n}회</option>)}
+                </select>
+                세트
+                <select value={cs.sets} onChange={(e) => change(c.id, 'rc_sets', e.target.value)} style={sel}>
+                  {cs.setList.map((n) => <option key={n} value={n}>{n}세트</option>)}
+                </select>
+                쉬기
+                <select value={cs.rest} onChange={(e) => change(c.id, 'rc_rest', e.target.value)} style={sel}>
+                  {REST_LIST.map((n) => <option key={n} value={n}>{n}초</option>)}
+                </select>
+              </div>
+            )}
+            </div>
+            );
+          })}
         </div>
 
         <button type="button" onClick={() => setPicking((v) => !v)}
@@ -120,6 +163,17 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
             })}
           </div>
         )}
+        {/* 바로플리에 올릴 때 만든 사람 표시 — 기본은 유형 캐릭터만 */}
+        <div style={{ marginTop: 16, padding: '11px 12px', borderRadius: 12, background: '#FAF7F0' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 7 }}>바로플리에 올릴 때 만든 사람 표시</div>
+          {[[false, '유형 캐릭터만'], [true, '닉네임 + 유형 캐릭터']].map(([v, lb]) => (
+            <label key={lb} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 700, color: INK, padding: '3px 0', cursor: 'pointer' }}>
+              <input type="radio" checked={showNick === v} onChange={() => setShowNick(v)} style={{ accentColor: GOLD }} />
+              {lb}{!v && <span style={{ fontSize: 11, color: SUB }}>(기본)</span>}
+            </label>
+          ))}
+        </div>
+
       </div>
     </div>
   );

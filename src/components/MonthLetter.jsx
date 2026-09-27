@@ -81,14 +81,44 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
   );
 }
 
+// 편지 한 장의 얼굴 — 줄바꿈을 살리고, 괘선은 글줄 높이(30px)에 맞춘다.
+// lifted: 넘어가는 장 — 종이 색 바탕과 넘길 때 생기는 음영을 깐다
+function PageFace({ text, sign, t, lifted = false }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflowY: lifted ? 'hidden' : 'auto', background: PAPER,
+      backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', borderRadius: 6 }}>
+      <p style={{ margin: 0, fontSize: 14.5, lineHeight: '30px', color: INK_L, fontWeight: 600, wordBreak: 'keep-all', textWrap: 'pretty',
+        whiteSpace: 'pre-line',
+        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 29px, ${RULE} 29px, ${RULE} 30px)` }}>
+        {text}
+      </p>
+      {sign && (
+        <div style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: '30px', marginTop: 10 }}>
+          {sign}
+        </div>
+      )}
+      {lifted && (
+        <span aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', animation: 'leafShade .7s ease both',
+          background: 'linear-gradient(90deg, rgba(120,95,40,0.10), rgba(120,95,40,0) 35%, rgba(255,255,255,0.35) 80%, rgba(120,95,40,0.12))' }} />
+      )}
+    </div>
+  );
+}
+
 // 편지지 — 한 장에 한 부분씩, 옆으로 넘긴다(밀거나 ‹ ›). 아래에 점과 'n / 전체'.
 // 괘선은 글줄 높이(30px)에 맞춰 문단에 깐다. 첫 장에 'To.', 마지막 장에 서명.
 function LetterPaper({ letter, nickname, chName, ch, t, onClose }) {
   const [at, setAt] = useState(0);
-  const [dir, setDir] = useState(1);           // 넘기는 쪽 — 1: 다음, -1: 이전
+  // 넘기는 중인 장 — { page, dir }. 다음 장: 지금 장이 왼쪽 가장자리를 축으로 들려 넘어간다.
+  // 이전 장: 앞 장이 왼쪽에서 되넘어와 덮는다. 끝나면 지운다.
+  const [turn, setTurn] = useState(null);
   const touch = useRef(null);
   const n = letter.pages.length;
-  const go = (i) => { if (i < 0 || i >= n || i === at) return; setDir(i > at ? 1 : -1); setAt(i); };
+  const go = (i) => {
+    if (i < 0 || i >= n || i === at || turn) return;
+    setTurn(i > at ? { page: at, dir: 1 } : { page: i, dir: -1, from: at });
+    setAt(i);
+  };
   const onTouchStart = (e) => { touch.current = e.touches[0].clientX; };
   const onTouchEnd = (e) => {
     if (touch.current == null) return;
@@ -123,19 +153,17 @@ function LetterPaper({ letter, nickname, chName, ch, t, onClose }) {
         {at === 0 ? `To. ${nickname || '회원'}님` : ''}
       </div>
 
-      {/* 한 장 — 넘길 때마다 종이가 옆에서 들어온다 */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', perspective: 900 }}>
-        <div key={at} style={{ animation: `${dir > 0 ? 'pageNext' : 'pagePrev'} .45s cubic-bezier(.2,.8,.3,1)`, transformOrigin: dir > 0 ? 'left center' : 'right center' }}>
-          <p style={{ margin: 0, fontSize: 14.5, lineHeight: '30px', color: INK_L, fontWeight: 600, wordBreak: 'keep-all', textWrap: 'pretty',
-            backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 29px, ${RULE} 29px, ${RULE} 30px)` }}>
-            {letter.pages[at]}
-          </p>
-          {at === n - 1 && (
-            <div style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: '30px', marginTop: 10 }}>
-              {letter.sign}
-            </div>
-          )}
-        </div>
+      {/* 한 장 — 넘길 때 종이가 왼쪽을 축으로 들려 넘어간다(책장 넘기듯) */}
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, perspective: 1300 }}>
+        {/* 바닥 — 이전 장으로 갈 땐 앞 장이 다 덮을 때까지 지금 장을 둔다 */}
+        {(() => { const b = turn && turn.dir < 0 ? turn.from : at; return <PageFace text={letter.pages[b]} sign={b === n - 1 ? letter.sign : ''} t={t} />; })()}
+        {turn && (
+          <div onAnimationEnd={() => setTurn(null)}
+            style={{ position: 'absolute', inset: 0, transformOrigin: 'left center', transformStyle: 'preserve-3d', zIndex: 2,
+              animation: `${turn.dir > 0 ? 'leafAway' : 'leafBack'} .7s cubic-bezier(.45,.05,.3,1) forwards` }}>
+            <PageFace text={letter.pages[turn.page]} sign={turn.page === n - 1 ? letter.sign : ''} t={t} lifted />
+          </div>
+        )}
       </div>
 
       {/* 넘기기 — ‹ 점 · n / 전체 › */}
@@ -153,8 +181,9 @@ function LetterPaper({ letter, nickname, chName, ch, t, onClose }) {
           <button type="button" onClick={() => go(at + 1)} aria-label="다음 장" style={arrow(at < n - 1)}>›</button>
         </div>
       )}
-      <style>{`@keyframes pageNext{from{opacity:0;transform:translateX(40px) rotateY(-14deg)}to{opacity:1;transform:none}}
-        @keyframes pagePrev{from{opacity:0;transform:translateX(-40px) rotateY(14deg)}to{opacity:1;transform:none}}`}</style>
+      <style>{`@keyframes leafAway{0%{transform:rotateY(0);box-shadow:0 0 0 rgba(0,0,0,0)}40%{box-shadow:-18px 0 30px rgba(80,60,20,0.18)}100%{transform:rotateY(-160deg);opacity:0.2;box-shadow:0 0 0 rgba(0,0,0,0)}}
+        @keyframes leafBack{0%{transform:rotateY(-160deg);opacity:0.2}60%{box-shadow:-18px 0 30px rgba(80,60,20,0.18)}100%{transform:rotateY(0);opacity:1;box-shadow:0 0 0 rgba(0,0,0,0)}}
+        @keyframes leafShade{0%{opacity:0}45%{opacity:1}100%{opacity:0}}`}</style>
     </div>
   );
 }

@@ -443,7 +443,7 @@ export default function RoutineAdmin() {
               // 마이플리 — 미리보기에선 서버에 쓰지 않고 이 창 안에서만 담는다
               myPlis={myPlis} allCards={allCards.filter((c) => c.published)}
               onSaveMine={(p) => setMyPlis((prev) => {
-                const row = { id: p.id || `mine-${Date.now()}`, title_z: p.title, title_m: p.title, cards: p.cards, mine: true };
+                const row = { id: p.id || `mine-${Date.now()}`, title_z: p.title, title_m: p.title, cards: p.cards, mine: true, show_nick: !!p.showNick };
                 return p.id ? prev.map((x) => (x.id === p.id ? row : x)) : [row, ...prev];
               })} />
           )}

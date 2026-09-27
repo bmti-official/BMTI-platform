@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { badNameReason, badNameMessage } from '../lib/nameFilter';
 import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../data';
 import { supabase } from '../lib/supabaseClient';
 import BodySelector3D from './BodySelector3D';
@@ -145,6 +146,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             alert('내 BMTI 유형 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
             return;
           }
+          // 욕설·성적인 말·정치적인 말·혐오 표현·운영자 사칭은 닉네임으로 쓰지 못한다
+          const bad = badNameReason(userData.nickname);
+          if (bad) { alert(badNameMessage(bad)); return; }
           const { data, error } = await supabase
             .from('users')
             .select('id')

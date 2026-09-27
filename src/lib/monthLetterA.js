@@ -99,6 +99,12 @@ function facts(entries, year, month) {
     first: days[0].date, last: days[days.length - 1].date };
 }
 
+// 줄바꿈 자리 · 이모지 — 이야기가 바뀌는 자리에서 줄을 나누고, 그 줄 앞에 이모지를 단다
+const BR = '\n';
+const SEASON_EMOJI = { 1: '❄️', 2: '⛄', 3: '🌱', 4: '🌸', 5: '🌿', 6: '☀️', 7: '🌧️', 8: '🌻', 9: '🍂', 10: '🍁', 11: '🧣', 12: '🎄' };
+const HOL_EMOJI = { 설: '🧧', 추석: '🌕' };
+const e = (emoji, text) => (text ? `${emoji} ${text}` : '');
+const joinPage = (p) => p.filter(Boolean).join(' ').replace(/ ?\n ?/g, '\n').replace(/\n{2,}/g, '\n').trim();
 const md = (iso) => { const [, mm, dd] = String(iso).split('-'); return `${Number(mm)}월 ${Number(dd)}일`; };
 // 인용 조사 — 받침이 있으면 '이라고'
 // 받침이 있으면 '이었', 없으면 '였' — '8월 30일이었지요', '9월 2일이었어요'
@@ -133,16 +139,16 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
       out.push(M(`${F.hol.name} 연휴는 편히 보내셨지요. 오가는 길이 고단하진 않으셨는지요.`, `${F.hol.name} 연휴가 있던 달이었어요.`));
       if (F.holWrote) out.push(M('연휴에도 잊지 않고 적어 주셨더라고요.', '연휴에도 기록을 남기셨어요.'));
     } else out.push(SEASON[m ? 'm' : 'z'][month]);
-    return out.join(' ');
+    return e(F.hol ? HOL_EMOJI[F.hol.name] : SEASON_EMOJI[month], out.join(' '));
   };
   const quoteLine = () => {
     if (!F.quote) return '';
     const t = F.quote.text;
-    return M(`${md(F.quote.d.date)}에는 '${t}'${quoteJ(t)} 적으셨지요. 짧은 한 줄인데도 그날의 표정이 보이는 것 같아 오래 마음에 남더라고요.`,
+    return '💬 ' + M(`${md(F.quote.d.date)}에는 '${t}'${quoteJ(t)} 적으셨지요. 짧은 한 줄인데도 그날의 표정이 보이는 것 같아 오래 마음에 남더라고요.`,
       `${md(F.quote.d.date)}에 '${t}'${quoteJ(t)} 적으셨어요. 그날의 기록이 선명하게 남아 있어요.`);
   };
   const nextHol = holidayIn(nextYear, next);
-  const nextLine = () => (nextHol
+  const nextLine = () => '🌱 ' + (nextHol
     ? M(`다음 달엔 ${nextHol.name}이 있어요. 오래 앉아 있게 되는 날이 많을 테니, 틈틈이 일어나 몸을 펴 주세요.`,
       `다음 달엔 ${nextHol.name} 연휴가 있어요. 오래 앉아 있을 때 틈틈이 일어나세요.`)
     : NEXT_TIP(next));
@@ -171,41 +177,41 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
   // ── 잠깐 들른 달(1~4일) — 정해 둔 편지 ──
   if (tier === 'visit') {
     const lastMood = F.days[F.days.length - 1].mood;
-    const p1 = [greet(),
-      M(`${nm}님, ${month}월에는 ${F.n}번 적어 주셨어요. 바쁜 한 달 사이에 잠깐이라도 들러 주신 게 참 반가웠어요.`,
+    const p1 = [greet(), BR,
+      '📖', M(`${nm}님, ${month}월에는 ${F.n}번 적어 주셨어요. 바쁜 한 달 사이에 잠깐이라도 들러 주신 게 참 반가웠어요.`,
         `${nm}님, ${month}월에는 ${F.n}번 적으셨어요. 짧게라도 들러 주셔서 반가웠습니다.`),
       M(`처음 적으신 날은 ${md(F.first)}${was(md(F.first))}지요. 그날 문을 열어 주신 덕분에 이렇게 편지를 쓸 수 있게 되었어요.`,
         `처음 적은 날은 ${md(F.first)}${was(md(F.first))}어요.`),
-      M(`기록이 많지 않아도 괜찮아요. 적어 주신 ${F.n}번 덕분에 ${month}월의 ${nm}님을 조금은 알게 되었거든요.`,
+      BR, M(`기록이 많지 않아도 괜찮아요. 적어 주신 ${F.n}번 덕분에 ${month}월의 ${nm}님을 조금은 알게 되었거든요.`,
         `기록이 적어도 괜찮아요. ${F.n}번의 기록으로도 ${month}월의 모습이 조금은 보였어요.`),
-      `마지막으로 적으신 날은 ${MOOD_DAY[lastMood]}이었어요. ${MOOD_EMP[m ? 'm' : 'z'][lastMood]}`,
+      BR, `🌤 마지막으로 적으신 날은 ${MOOD_DAY[lastMood]}이었어요. ${MOOD_EMP[m ? 'm' : 'z'][lastMood]}`,
       M(`적어 주신 날들을 모아 보면 ${moodList}이었어요. 짧은 기록 속에서도 그날그날의 ${nm}님이 보였어요.`,
         `적은 날의 기분은 ${moodList}이었어요. 기록이 적어도 편지는 이렇게 도착합니다. 더 적은 달엔 더 자세한 편지를 드릴게요.`),
-      quoteLine()];
+      BR, quoteLine()];
     const p2 = [
-      M(`${next}월엔 이렇게 시작해 보면 어떨까요? 긴 글이 부담스러우면 말랑이 하나만 골라도 충분해요. 그것만으로도 그날의 ${nm}님이 남으니까요.`,
+      '🌱', M(`${next}월엔 이렇게 시작해 보면 어떨까요? 긴 글이 부담스러우면 말랑이 하나만 골라도 충분해요. 그것만으로도 그날의 ${nm}님이 남으니까요.`,
         `${next}월엔 가볍게 시작해 보세요. 말랑이 하나만 골라도 기록이 됩니다.`),
       M(`일주일에 세 번만 들러 주시면, ${next}월 말엔 ${nm}님의 몸과 마음이 어떤 흐름으로 움직이는지 처음으로 보여 드릴 수 있어요. 어느 요일에 지치는지, 어느 주에 몸이 무거운지 같은 것들이요.`,
         `일주일에 세 번이면 충분해요. ${next}월 말엔 어느 요일에 지치는지, 어느 주에 몸이 무거운지 같은 흐름을 처음으로 보여 드릴 수 있어요.`),
-      M('처음엔 기분만 골라도 좋아요. 조금 익숙해지면 불편한 곳과 잠든 시간까지 적어 보세요. 그러면 몸이 무거운 날들의 공통점이 조금씩 보이기 시작해요.',
+      BR, M('처음엔 기분만 골라도 좋아요. 조금 익숙해지면 불편한 곳과 잠든 시간까지 적어 보세요. 그러면 몸이 무거운 날들의 공통점이 조금씩 보이기 시작해요.',
         '처음엔 기분만 고르고, 익숙해지면 불편한 곳과 잠든 시간까지 적어 보세요. 몸이 무거운 날들의 공통점이 보이기 시작합니다.'),
-      M('주간 알림을 켜 두시면, 그 주에 아직 안 적었을 때만 한 번 살짝 알려 드릴게요.', '주간 알림을 켜 두면 그 주에 안 적었을 때만 한 번 알려 드려요.'),
-      nextLine(),
-      M('저는 늘 여기서 기다리고 있을게요. 생각날 때 편하게 들러 주세요.', `${next}월 기록에서 만나요.`)];
-    return { tier, month, next, sign, pages: [p1, p2].map((p) => p.filter(Boolean).join(' ')) };
+      BR, M('🔔 주간 알림을 켜 두시면, 그 주에 아직 안 적었을 때만 한 번 살짝 알려 드릴게요.', '🔔 주간 알림을 켜 두면 그 주에 안 적었을 때만 한 번 알려 드려요.'),
+      BR, nextLine(),
+      BR, '💜', M('저는 늘 여기서 기다리고 있을게요. 생각날 때 편하게 들러 주세요.', `${next}월 기록에서 만나요.`)];
+    return { tier, month, next, sign, pages: [p1, p2].map(joinPage) };
   }
 
   // ── 1장: 인사 + 성실함 ──
-  const p1 = [greet()];
-  p1.push(M(`${nm}님, ${month}월에는 ${F.n}번 적어 주셨어요.`, `${nm}님, ${month}월에는 ${F.n}번 적으셨어요.`));
+  const p1 = [greet(), BR];
+  p1.push('📖', M(`${nm}님, ${month}월에는 ${F.n}번 적어 주셨어요.`, `${nm}님, ${month}월에는 ${F.n}번 적으셨어요.`));
   p1.push(M(`처음 적으신 날은 ${md(F.first)}, 마지막으로 적으신 날은 ${md(F.last)}${was(md(F.last))}지요.`, `처음은 ${md(F.first)}, 마지막은 ${md(F.last)}${was(md(F.last))}어요.`));
-  p1.push(M(`주마다 보면 ${weekList}이었어요.`, `주마다 보면 ${weekList}이었어요.`));
+  p1.push(BR, M(`주마다 보면 ${weekList}이었어요.`, `주마다 보면 ${weekList}이었어요.`));
   if (tier === 'full') {
     p1.push(M(`그중에서도 ${WEEK_KO[F.bestW]}에는 ${F.perWeek[F.bestW]}번 적으셨더라고요. 가장 꾸준했던 한 주였어요.`,
       `${WEEK_KO[F.bestW]}에 ${F.perWeek[F.bestW]}번으로 가장 꾸준했어요.`));
     if (F.streak >= 3) p1.push(M(`${F.streak}일 연속으로 이어 적은 때도 있었지요. 마음먹는다고 쉽게 되는 일이 아니에요.`, `${F.streak}일 연속으로 적은 때도 있었어요.`));
   }
-  p1.push(pick('p1c', m ? [
+  p1.push(BR, pick('p1c', m ? [
     '하루를 돌아보는 그 몇 분이 모여 한 달이 되었어요. 바쁜 와중에도 스스로를 챙긴 시간이라고 생각하면 참 든든하지요.',
     '기록은 결국 나를 한 번 더 바라봐 주는 일이에요. 그 일을 한 달 동안 해내셨어요.',
     '매일 같은 자리에 들러 하루를 남긴다는 게 생각보다 어려운 일이에요. 그래서 이 숫자가 더 반가웠어요.',
@@ -215,24 +221,24 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
     '짧은 기록이라도 쌓이면 흐름이 됩니다. 그 흐름이 이번 달에 제법 선명해졌어요.',
   ]));
   p1.push(qLine('p1q', ['기록을 이어 온 힘은 어디서 나왔을까요?', '어떤 날에 더 적고 싶어지셨나요?']));
-  p1.push(M(`이번 편지에는 그 ${F.n}번의 기록 속에서 ${nm}님이 지나온 길을 제가 옆에서 본 대로 적어 볼게요. 천천히 넘겨 보세요.`,
+  p1.push(BR, '💌', M(`이번 편지에는 그 ${F.n}번의 기록 속에서 ${nm}님이 지나온 길을 제가 옆에서 본 대로 적어 볼게요. 천천히 넘겨 보세요.`,
     `${F.n}번의 기록으로 ${month}월을 차례로 짚어 볼게요.`));
 
   // ── 2장: 마음의 흐름 + 인용 ──
   const p2 = [];
   if (tier === 'full') {
     const flow = [F.early, F.mid, F.late].filter((x) => x != null);
-    p2.push(M(`${month}월의 마음을 따라가 보면,`, `${month}월의 기분은 이렇게 흘렀어요.`));
+    p2.push('🌤', M(`${month}월의 마음을 따라가 보면,`, `${month}월의 기분은 이렇게 흘렀어요.`));
     p2.push(moodFlow(flow[0], flow[flow.length - 1]));
     if (F.mid != null && F.early != null && F.late != null && F.mid < F.early - 0.4 && F.mid < F.late - 0.4) {
       p2.push(M('중순쯤 한 번 크게 가라앉았다가 다시 올라오셨지요. 그 고비를 스스로 넘기셨어요.', '중순에 한 번 가라앉았다가 다시 올라왔어요.'));
     }
   } else {
-    p2.push(moodFlow(avg(F.days.slice(0, Math.ceil(F.n / 2))), avg(F.days.slice(Math.ceil(F.n / 2)))));
+    p2.push('🌤', moodFlow(avg(F.days.slice(0, Math.ceil(F.n / 2))), avg(F.days.slice(Math.ceil(F.n / 2)))));
   }
   if (earlyMood && lateMood && earlyMood !== lateMood) p2.push(M(`월초엔 ${MOOD_DAY[earlyMood]}이 많았고, 월말엔 ${MOOD_DAY[lateMood]}이 많았어요.`,
     `월초엔 ${MOOD_DAY[earlyMood]}, 월말엔 ${MOOD_DAY[lateMood]}이 많았어요.`));
-  p2.push(M(`가장 자주 고르신 기분은 '${MOOD_DAY[F.topMood]}'이었어요. ${MOOD_EMP.m[F.topMood]}`,
+  p2.push(BR, M(`가장 자주 고르신 기분은 '${MOOD_DAY[F.topMood]}'이었어요. ${MOOD_EMP.m[F.topMood]}`,
     `가장 자주 고른 기분은 '${MOOD_DAY[F.topMood]}'이었어요. ${MOOD_EMP.z[F.topMood]}`));
   if (F.upN && F.downN) p2.push(M(`괜찮거나 좋은 날이 ${F.upN}번, 지치거나 마음이 무거웠던 날이 ${F.downN}번이었어요.`,
     `괜찮거나 좋은 날 ${F.upN}번, 지치거나 무거웠던 날 ${F.downN}번이었어요.`));
@@ -241,9 +247,9 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
   if (F.bestDay && F.bestDay.mood >= 4) p2.push(M(`그중 가장 마음이 밝았던 날은 ${md(F.bestDay.date)}${was(md(F.bestDay.date))}어요.`, `가장 기분이 좋았던 날은 ${md(F.bestDay.date)}${was(md(F.bestDay.date))}어요.`));
   if (tier === 'full' && F.lowWd) p2.push(M(`${WEEKDAY_KO[F.lowWd.w]}요일마다 조금 더 지쳐 보이셨어요. 한 주의 무게가 그날 몰렸던 걸까요.`,
     `${WEEKDAY_KO[F.lowWd.w]}요일에 기분이 가장 낮았어요.`));
-  p2.push(qLine('p2q', ['그 기분들 사이에는 어떤 하루들이 있었을까요?', '기분이 가벼웠던 날엔 무엇이 달랐을까요?']));
-  p2.push(quoteLine());
-  p2.push(pick('p2c', m ? [
+  p2.push(BR, qLine('p2q', ['그 기분들 사이에는 어떤 하루들이 있었을까요?', '기분이 가벼웠던 날엔 무엇이 달랐을까요?']));
+  p2.push(BR, quoteLine());
+  p2.push(BR, pick('p2c', m ? [
     '좋았던 날의 한 줄은 힘든 날 다시 꺼내 볼 수 있는 작은 선물이 되기도 해요. 마음은 날마다 달라도 괜찮아요.',
     '마음은 날마다 달라도 괜찮아요. 그걸 알아채고 적어 둔 것만으로 충분해요.',
     '기분이 오르내리는 건 자연스러운 일이에요. 그 모든 날을 지나온 게 대단한 거예요.',
@@ -256,15 +262,15 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
   // ── 3장: 몸이 보낸 신호 · 부담 · 잠 ──
   const p3 = [];
   if (topPart) {
-    p3.push(M(`몸은 ${josa(topPart.ko, '이')} 가장 자주 신호를 보냈어요. 한 달 동안 ${topPart.c}번이었지요.`,
+    p3.push('🫧', M(`몸은 ${josa(topPart.ko, '이')} 가장 자주 신호를 보냈어요. 한 달 동안 ${topPart.c}번이었지요.`,
       `몸은 ${josa(topPart.ko, '이')} ${topPart.c}번으로 가장 자주 신호를 보냈어요.`));
     if (F.topSit) p3.push(M(`특히 ${SIT_WHEN[F.topSit[0]]} 자주 무거워졌더라고요.`, `주로 ${SIT_WHEN[F.topSit[0]]} 무거웠어요.`));
     if (tier === 'full' && F.parts[1]) p3.push(M(`그다음으로는 ${josa(PART_KO[F.parts[1][0]] || '다른 곳', '이')} ${F.parts[1][1]}번 뻐근했어요.`,
       `다음은 ${PART_KO[F.parts[1][0]] || '다른 곳'} ${F.parts[1][1]}번이었어요.`));
   } else {
-    p3.push(M(`${month}월엔 몸이 불편하다고 적으신 날이 없었어요. 참 다행이에요.`, `${month}월엔 불편한 곳 기록이 없었어요.`));
+    p3.push('🫧', M(`${month}월엔 몸이 불편하다고 적으신 날이 없었어요. 참 다행이에요.`, `${month}월엔 불편한 곳 기록이 없었어요.`));
   }
-  if (F.topTag) p3.push(M(`한 달 동안 가장 자주 겹친 날은 '${F.topTag.day}'로, ${F.topTag.c}번이었어요.`, `가장 잦았던 건 '${F.topTag.day}'로 ${F.topTag.c}번이었어요.`));
+  if (F.topTag) p3.push(BR, M(`한 달 동안 가장 자주 겹친 날은 '${F.topTag.day}'로, ${F.topTag.c}번이었어요.`, `가장 잦았던 건 '${F.topTag.day}'로 ${F.topTag.c}번이었어요.`));
   if (tier === 'full' && F.heavy) {
     const tags = F.heavy.tags;
     p3.push(tags.length
@@ -272,6 +278,7 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
       : M(`${F.heavy.week}에 부담이 가장 몰렸어요. 유난히 바쁜 한 주였지요.`, `${F.heavy.week}에 부담이 가장 몰렸어요.`));
   }
   if (tier === 'full') {
+    p3.push(BR, '🌙');
     if (F.lateN >= 3) p3.push(M(`자정을 넘겨 잠든 밤도 ${F.lateN}번 있었어요. 하루가 길었던 날이 많았나 봐요.`, `자정을 넘겨 잠든 밤이 ${F.lateN}번 있었어요.`));
     if (F.goodSleep >= 3) p3.push(M(`그래도 푹 잔 밤이 ${F.goodSleep}번 있었지요. 그런 밤이 몸을 다시 세워 줘요.`, `푹 잔 밤은 ${F.goodSleep}번이었어요.`));
     else if (F.badSleep >= 3) p3.push(M(`뒤척인 밤이 ${F.badSleep}번 있었어요. 잠이 얕았던 날엔 몸도 더 무거웠을 거예요.`, `뒤척인 밤이 ${F.badSleep}번이었어요.`));
@@ -283,7 +290,7 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
     : saidLate
       ? M('잠드는 시간은 대체로 자정 전이었어요. 크게 흐트러지진 않았지요.', '잠드는 시간은 대체로 자정 전이었어요.')
       : M('대체로 자정 전에 잠드셨어요. 잠드는 시간이 크게 흐트러지지 않았어요.', '대체로 자정 전에 잠들었어요. 잠드는 시간은 고르게 지켜졌어요.'));
-  p3.push(qLine('p3q', ['몸이 무거웠던 날들에는 어떤 공통점이 있었을까요?', '그 신호들은 어떤 날에 모였을까요?']));
+  p3.push(BR, qLine('p3q', ['몸이 무거웠던 날들에는 어떤 공통점이 있었을까요?', '그 신호들은 어떤 날에 모였을까요?']));
   p3.push(pick('p3c', m ? [
     '몸이 보내는 신호는 탓하라는 게 아니라 알아 달라는 말이에요. 적어 두신 것만으로 이미 알아주신 거예요.',
     '무거웠던 날을 적어 둔 덕분에, 다음 달엔 미리 챙길 수 있어요. 기록이 몸을 지키는 방법이 되는 거지요.',
@@ -291,7 +298,7 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
     '신호를 적어 둔 덕분에 다음 달엔 미리 챙길 수 있어요.',
     '몸의 신호는 알아채는 것부터가 시작이에요. 이번 달엔 그걸 해내셨어요.',
   ]));
-  if (topPart && PART_CARE[topPart.key]) p3.push(M(`${josa(topPart.ko, '이')} 무거운 날엔, ${PART_CARE[topPart.key]}.`, `${josa(topPart.ko, '이')} 무거운 날엔 ${PART_CARE[topPart.key]}.`));
+  if (topPart && PART_CARE[topPart.key]) p3.push(BR, '🤲', M(`${josa(topPart.ko, '이')} 무거운 날엔, ${PART_CARE[topPart.key]}.`, `${josa(topPart.ko, '이')} 무거운 날엔 ${PART_CARE[topPart.key]}.`));
 
   // ── 잘한 것 · 약속 ──
   const good = [];
@@ -311,21 +318,23 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
 
   // ── 띄엄띄엄 적은 달 — 3장 끝에 약속과 맺음 ──
   if (tier === 'sparse') {
-    p3.push(nextLine());
-    p3.push(M(`${next}월엔 두 가지만 약속해요. ${promises[0]}, 그리고 ${promises[1]}.`, `${next}월엔 두 가지만 해 보세요. ${promises[0]}, ${promises[1]}.`));
-    p3.push(M(`기록이 조금만 더 쌓이면, 다음 편지엔 ${nm}님만의 흐름을 더 자세히 적어 드릴 수 있어요. ${next}월에도 ${josa(pn, '이')} 곁에서 응원할게요.`,
+    p3.push(BR, nextLine());
+    p3.push(BR, M(`${next}월엔 두 가지만 약속해요. ${promises[0]}, 그리고 ${promises[1]}.`, `${next}월엔 두 가지만 해 보세요. ${promises[0]}, ${promises[1]}.`));
+    p3.push(BR, '💜', M(`기록이 조금만 더 쌓이면, 다음 편지엔 ${nm}님만의 흐름을 더 자세히 적어 드릴 수 있어요. ${next}월에도 ${josa(pn, '이')} 곁에서 응원할게요.`,
       `기록이 조금 더 쌓이면 다음 편지엔 흐름을 더 자세히 알려 드릴게요. ${next}월 기록에서 만나요.`));
-    return { tier, month, next, sign, pages: [p1, p2, p3].map((p) => p.filter(Boolean).join(' ')) };
+    return { tier, month, next, sign, pages: [p1, p2, p3].map(joinPage) };
   }
 
   // ── 4장: 잘해 낸 것 · 다음 달 · 약속 · 맺음 ──
   const p4 = [];
-  p4.push(M(`${month}월에 ${nm}님이 잘해 낸 것을 세 가지만 꼽아 볼게요.`, `${month}월에 잘한 것 세 가지예요.`));
-  p4.push(good.slice(0, 3).map((g, i) => `${['첫째', '둘째', '셋째'][i]}, ${g}.`).join(' '));
+  p4.push('✨', M(`${month}월에 ${nm}님이 잘해 낸 것을 세 가지만 꼽아 볼게요.`, `${month}월에 잘한 것 세 가지예요.`));
+  good.slice(0, 3).forEach((g, i) => p4.push(BR, `${['첫째', '둘째', '셋째'][i]}, ${g}.`));
+  p4.push(BR);
   p4.push(M('작아 보여도 이런 것들이 쌓여 몸의 흐름을 바꿔요. 스스로에게 칭찬 한마디 건네 주셨으면 해요.', '작은 것들이 쌓여 흐름이 바뀝니다.'));
-  p4.push(nextLine());
+  p4.push(BR, nextLine());
   p4.push(M(`그래서 ${next}월엔 이렇게 해 보면 어떨까요.`, `${next}월엔 이렇게 해 보세요.`));
-  p4.push(promises.slice(0, 3).map((x, i) => `${['하나', '둘', '셋'][i]}, ${x}.`).join(' '));
+  promises.slice(0, 3).forEach((x, i) => p4.push(BR, `${['하나', '둘', '셋'][i]}, ${x}.`));
+  p4.push(BR);
   p4.push(qLine('p4q', ['셋 중에 가장 먼저 해 보고 싶은 건 무엇인가요?', `${next}월의 첫 주엔 무엇부터 해 볼까요?`]));
   p4.push(M(`${next}월의 첫 주엔 셋 중 하나만 골라 시작해 보세요.`, `${next}월 첫 주엔 셋 중 하나만 골라 시작해 보세요. 한 주가 지나면 두 번째를 더해 보세요.`));
   p4.push(pick('p4c', m ? [
@@ -335,7 +344,7 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
     '다 하지 않아도 됩니다. 하나씩이면 충분해요.',
     '생각날 때 하나만 해 보세요. 그걸로 충분합니다.',
   ]));
-  p4.push(M(`${month}월 한 달, 정말 수고 많으셨어요. 편지를 다 읽으셨다면 오늘은 어깨를 한 번 크게 돌려 보세요. ${next}월에도 제가 곁에서 응원할게요.`,
+  p4.push(BR, '💜', M(`${month}월 한 달, 정말 수고 많으셨어요. 편지를 다 읽으셨다면 오늘은 어깨를 한 번 크게 돌려 보세요. ${next}월에도 제가 곁에서 응원할게요.`,
     `${month}월 한 달, 수고하셨어요. 오늘은 어깨를 한 번 크게 돌려 보세요. ${next}월 기록에서 만나요.`));
-  return { tier, month, next, sign, pages: [p1, p2, p3, p4].map((p) => p.filter(Boolean).join(' ')) };
+  return { tier, month, next, sign, pages: [p1, p2, p3, p4].map(joinPage) };
 }

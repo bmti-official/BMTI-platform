@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState } from 'react';
+import { badNameReason, badNameMessage } from '../lib/nameFilter';
 import { authMode, startKakaoAuth, currentAuthId } from '../lib/authLink';
 import { supabase } from '../lib/supabaseClient';
 import { isReservedNickname } from '../data';
@@ -185,6 +186,9 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
         alert('내 BMTI 유형 코드와 같은 닉네임은 사용할 수 없습니다. 다른 닉네임을 입력해주세요.');
         return;
       }
+      // 욕설·성적인 말·정치적인 말·혐오 표현·운영자 사칭은 닉네임으로 쓰지 못한다
+      const bad = badNameReason(formData.nickname);
+      if (bad) { alert(badNameMessage(bad)); return; }
       try {
         // 문을 잠근 뒤에는 남의 줄이 보이지 않으므로, 겹치는지만 서버에 물어본다.
         const { data, error } = await supabase.rpc('nickname_taken', { p_nickname: formData.nickname });
