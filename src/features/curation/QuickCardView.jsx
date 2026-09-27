@@ -62,7 +62,10 @@ const SWITCH_REST = 20;
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch }) {
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch,
+  // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 카드를 뒤집어 뒷면에 알아 두기를 보여 주고,
+  // '바로 따라하기'를 누르면 곧장 전체 화면으로 간다(바로플리처럼).
+  flippable = false, fullOnStart = false }) {
   const { title } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -237,8 +240,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 소리가 없으면 읽을 만큼만 세워 두었다가 저절로 동작으로 넘어간다.
   const openText = subLines(HELLO_LINE[myCode] || '');
   const beginOpening = !skipOpening && !heardOpening && !!(helloUrl || openText);
+  const [flipped, setFlipped] = useState(false);
   const start = () => {
     restart();
+    setFlipped(false);
+    if (fullOnStart) setFull(true);
     if (beginOpening) { setHeardOpening(true); setStage('open'); } else setStage('move');
     if (onStart) onStart();
   };
@@ -471,7 +477,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     </div>
   );
 
-  return (
+  const front = (
     <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       <style>{FULLSCREEN_FIX}</style>
       {stage !== 'move' && (
@@ -485,6 +491,14 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             {KIND_LABEL[card.kind] || card.kind}
           </span>
           <h3 style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: 0, wordBreak: 'keep-all' }}>{title}</h3>
+          {flippable && !started && (
+            <button type="button" onClick={() => setFlipped(true)} aria-label="카드 뒤집기"
+              style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
+                borderRadius: 10, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, color: SUB, whiteSpace: 'nowrap',
+                boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+              뒤집기 ↻
+            </button>
+          )}
         </div>
       </div>
       )}
@@ -542,7 +556,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5. 전체 화면에서도 이 비율 그대로 키우기만 한다.
         // 그래야 위에 얹은 글씨가 화면 꼭대기가 아니라 영상 안에 앉는다.
-        <FullWrap on={full}>
+        // 하나씩 보는 화면에서 따라할 땐 전체 화면 영상 아래로 알아 두기가 펼쳐진다.
+        <FullWrap on={full} below={flippable ? <div style={{ padding: '4px 15px 30px' }}><KnowAll card={card} /></div> : null}>
         <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
@@ -752,9 +767,35 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         </div>
         {stage === 'move' && <div style={{ marginTop: 10 }}>{optBox}</div>}
         <AiNote top={10} />
-        <KnowBox card={card} />
+        {/* 하나씩 보는 화면 — 표지일 땐 뒷면에, 따라하는 동안엔 아래에 펼쳐 둔다 */}
+        {flippable ? (started && <KnowAll card={card} />) : <KnowBox card={card} />}
       </div>
     </article>
+  );
+
+  // 뒤집기 — 표지일 때만. 따라하는 동안엔 3D 틀을 걷는다(틀이 있으면 전체 화면이 그 안에 갇힌다).
+  if (!flippable || started) return front;
+  return (
+    <div style={{ perspective: 1400 }}>
+      <div style={{ position: 'relative', transformStyle: 'preserve-3d', transition: 'transform .6s cubic-bezier(.3,.7,.2,1)',
+        transform: flipped ? 'rotateY(180deg)' : 'none' }}>
+        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>{front}</div>
+        <div style={{ position: 'absolute', inset: 0, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden', background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16,
+          overflowY: 'auto', padding: '16px 16px 20px', fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ flex: 1, fontSize: 15, fontWeight: 900 }}>이 동작 알아 두기</span>
+            <button type="button" onClick={() => setFlipped(false)} aria-label="앞면으로"
+              style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
+                borderRadius: 10, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, color: SUB, whiteSpace: 'nowrap',
+                boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+              앞면으로 ↺
+            </button>
+          </div>
+          <KnowAll card={card} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -774,6 +815,38 @@ function Rows({ items, color }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+// 알아 두기를 모두 펼쳐 보인다 — 카드 뒷면, 그리고 따라하는 동안 영상 아래.
+// 차례: ① Z/M 유형 제목 ② 이럴 때 좋습니다 ③ 이럴 땐 하지 마세요 ④ 쓰는 곳
+function KnowAll({ card }) {
+  const good = LINES(card?.good_when);
+  const avoid = LINES(card?.avoid_when);
+  const focus = LINES(card?.focus_body);
+  const head = (txt, color) => (
+    <div style={{ fontSize: 12.5, fontWeight: 900, color, letterSpacing: '-0.01em' }}>{txt}</div>
+  );
+  const box = { padding: '11px 13px', borderRadius: 13, background: '#FAF7F0' };
+  return (
+    <div style={{ display: 'grid', gap: 9, marginTop: 10 }}>
+      {(card?.title_z || card?.title_m) && (
+        <div style={box}>
+          {head('Z/M 유형 제목', INK)}
+          <div style={{ display: 'grid', gap: 5, marginTop: 7 }}>
+            {[['Z 담백', card.title_z], ['M 다정', card.title_m]].filter(([, v]) => v).map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 12.5, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 900, color: PURPLE, background: '#F1EEFB', borderRadius: 6, padding: '1px 6px' }}>{k}</span>
+                <span style={{ fontWeight: 700 }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {good.length > 0 && <div style={box}>{head('👍 이럴 때 좋습니다', '#3F7F5B')}<Rows items={good} color="#3F7F5B" /></div>}
+      {avoid.length > 0 && <div style={box}>{head('⛔ 이럴 땐 하지 마세요', '#B23B36')}<Rows items={avoid} color="#B23B36" /></div>}
+      {focus.length > 0 && <div style={box}>{head('🎯 쓰는 곳', '#8A6A3A')}<Rows items={focus} color="#8A6A3A" /></div>}
+    </div>
   );
 }
 

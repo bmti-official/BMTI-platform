@@ -172,14 +172,24 @@ function AppChrome({ tone, active: from }) {
 
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
-        <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
+        // 다이어리 방에선 제목 줄을 팝업 배경(기분 창 등)보다 위로 올린다 — 안 그러면 말랑이가 안 눌린다
+        <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: at === 'diary' ? 70 : 29, pointerEvents: 'none',
           height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {at === 'diary' ? (
-            <button type="button" onClick={() => setPop('mallang')} aria-label="말랑이 팝업 열기"
-              style={{ width: 30, height: 30, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', pointerEvents: 'auto' }}>
-              {TITLE[at].icon}
-            </button>
+            <span style={{ position: 'relative', flexShrink: 0 }}>
+              <button type="button" onClick={() => setPop('mallang')} aria-label="말랑이 팝업 열기"
+                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', pointerEvents: 'auto' }}>
+                {TITLE[at].icon}
+              </button>
+              {/* 말랑이 바로 밑에 작게 — 매일 한마디 바로 가기 */}
+              <button type="button" onClick={() => setPop('word')}
+                style={{ position: 'absolute', top: 31, left: 2, pointerEvents: 'auto', border: 'none', background: 'transparent',
+                  padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 9.5, fontWeight: 800, color: '#8A8378',
+                  whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                {partner ? `'${partner}'의 매일 한마디` : '매일 한마디'} →
+              </button>
+            </span>
           ) : (
             <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
               {TITLE[at].icon}
@@ -190,20 +200,12 @@ function AppChrome({ tone, active: from }) {
         </div>
       )}
 
-      {/* 다이어리 — 말랑이 밑 '매일 한마디' 바로 가기 */}
-      {at === 'diary' && (
-        <div style={{ position: 'absolute', top: 64, left: 0, right: 0, zIndex: 29, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-          <button type="button" onClick={() => setPop('word')}
-            style={{ pointerEvents: 'auto', border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
-              borderRadius: 999, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, color: '#1C1A17',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.12)' }}>
-            {partner ? `'${partner}'의 매일 한마디` : '매일 한마디'} →
-          </button>
-        </div>
-      )}
       {pop && (
-        <MallangStressPopup key={pop} mood={todayEntry?.mood ?? 4} charImage={ch?.image} word={word} partner={partner}
-          initialOpenWord={pop === 'word'} nextLabel="닫기" onNext={() => setPop(null)} />
+        // 제목 줄(70)보다 위에 뜨게 감싼다
+        <div style={{ position: 'relative', zIndex: 80 }}>
+          <MallangStressPopup key={pop} mood={todayEntry?.mood ?? 4} charImage={ch?.image} word={word} partner={partner}
+            initialOpenWord={pop === 'word'} nextLabel="닫기" onNext={() => setPop(null)} />
+        </div>
       )}
 
       {/* 오른쪽 위 마이페이지 */}

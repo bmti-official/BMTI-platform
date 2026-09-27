@@ -14,7 +14,9 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
   // 여러 장을 한꺼번에 띄우면 영상이 같이 깨어나 움직임이 뚝뚝 끊긴다.
   const [wide, setWide] = useState(false);
   const at = Math.max(0, cards.findIndex((c) => c.id === startId));
-  const shown = wide ? cards : cards.slice(at, at + 1);
+  // 따라하기를 시작하면 그 카드 한 장만 남긴다 — 위아래로 다른 카드가 끼어들지 않게
+  const [solo, setSolo] = useState(null);
+  const shown = solo ? cards.filter((c) => c.id === solo) : wide ? cards : cards.slice(at, at + 1);
 
   // 누른 썸네일 자리에서 그대로 커지게 — 인스타처럼.
   // 누른 칸과 펼쳐진 화면의 자리를 재서 그 차이만큼만 움직인다.
@@ -87,10 +89,11 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
         style={{ height: '100%', overflowY: 'auto', scrollSnapType: 'y mandatory', WebkitOverflowScrolling: 'touch' }}>
         {shown.map((c) => (
           <div key={c.id} style={{ scrollSnapAlign: 'start', minHeight: '100%', padding: '56px 14px 24px', boxSizing: 'border-box' }}>
-            <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode} />
+            <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode}
+              flippable fullOnStart onStart={() => setSolo(c.id)} />
           </div>
         ))}
-        {wide && (
+        {wide && !solo && (
           <div style={{ padding: '18px 14px 40px', textAlign: 'center', fontSize: 12.5, color: SUB, fontWeight: 700 }}>
             마지막이에요. 위로 밀면 다시 볼 수 있어요.
           </div>
