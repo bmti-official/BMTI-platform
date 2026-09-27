@@ -15,20 +15,27 @@ import { readMin } from './browseOrder';
 import { CHARACTERS } from '../../data';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { axisOf } from './typeTint';
+import MyPliEditor from './MyPliEditor';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 
-const TABS = [['pli', '플리'], ['card', '바로카드'], ['read', '읽을거리']];
+// 플리는 둘로 나눈다.
+//   마이플리 … 내가 만들었거나 고친 것. 여기서 고친다.
+//   바로플리 … 공식·다른 이용자가 올린 것을 보관만 한 것. 고치지 않는다 —
+//             고치고 싶으면 '가져와 고치기'로 복사본을 마이플리에 만든다.
+const TABS = [['mine', '마이플리'], ['pli', '바로플리'], ['card', '바로카드'], ['read', '읽을거리']];
 const EMPTY_WORD = {
-  pli: '담아 둔 플리가 없어요.\n마음에 드는 묶음을 만나면 보관해 두세요.',
+  mine: '아직 만든 플리가 없어요.\n좋아하는 바로카드를 골라 나만의 플리를 만들어 보세요.',
+  pli: '담아 둔 바로플리가 없어요.\n마음에 드는 묶음을 만나면 보관해 두세요.',
   card: '담아 둔 동작이 없어요.\n다시 하고 싶은 동작을 보관해 두세요.',
   read: '담아 둔 읽을거리가 없어요.\n두고두고 볼 글을 보관해 두세요.',
 };
 
 export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
-  plis = [], cards = [], reads = [], onOpenRead }) {
-  const [tab, setTab] = useState('pli');
+  plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine }) {
+  const [tab, setTab] = useState('mine');
+  const [editing, setEditing] = useState(null);   // 마이플리 만들기·고치기 창 { id?, title, cards, from? }
   const [openId, setOpenId] = useState(null);
   const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
 
@@ -51,7 +58,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
             {partner || '내 파트너'}
           </div>
           <div style={{ fontSize: 11.5, fontWeight: 800, color: GOLD_INK, marginTop: 6 }}>
-            플리 {plis.length} · 카드 {cards.length} · 읽을거리 {reads.length}
+            마이플리 {myPlis.length} · 바로플리 {plis.length} · 카드 {cards.length} · 읽을거리 {reads.length}
           </div>
         </div>
       </div>
@@ -59,8 +66,24 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
       {/* 갈래 고르개 — 둘러보기와 같은 모양으로 */}
       <PickRow tabs={TABS} value={tab} onPick={setTab} />
 
-      {tab === 'pli' ? (
-        <PliGrid plis={plis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.pli} />
+      {tab === 'mine' ? (
+        <>
+          <button type="button" onClick={() => setEditing({ title: '', cards: [] })}
+            style={{ width: '100%', border: `1.5px dashed ${LINE}`, background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10,
+              cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, color: GOLD_INK }}>
+            ＋ 새 플리 만들기
+          </button>
+          <PliGrid plis={myPlis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.mine}
+            action={{ label: '✎ 고치기', onClick: (r) => setEditing({ id: r.id, title: r.title_z, cards: r.cards || [] }) }} />
+        </>
+      ) : tab === 'pli' ? (
+        <PliGrid plis={plis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.pli}
+          action={{ label: '가져와 고치기', onClick: (r) => {
+            const t = tone === 'm' ? (r.title_m || r.title_z) : (r.title_z || r.title_m);
+            if (window.confirm(`'${t}'을 마이플리로 가져와 고칠까요?\n원래 바로플리는 그대로 두고, 고친 것은 마이플리에 새로 저장돼요.`)) {
+              setEditing({ title: t, cards: [...(r.cards || [])], from: t });
+            }
+          } }} />
       ) : grid.length === 0 ? <Empty text={EMPTY_WORD[tab]} /> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
           {grid.map((item) => {
@@ -91,8 +114,12 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
         <CardFeed cards={cards} startId={openId} tone={tone} bmtiCode={bmtiCode} onClose={() => setOpenId(null)} />
       )}
       {openPli && (
-        <PliFeed plis={plis} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
+        <PliFeed plis={tab === 'mine' ? myPlis : plis} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
           onClose={() => setOpenPli(null)} />
+      )}
+      {editing && (
+        <MyPliEditor initial={editing} allCards={allCards} tone={tone} onCancel={() => setEditing(null)}
+          onSave={(p) => { setEditing(null); setTab('mine'); onSaveMine && onSaveMine(p); }} />
       )}
     </div>
   );

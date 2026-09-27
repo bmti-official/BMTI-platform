@@ -8,7 +8,8 @@ import { routineSummary, mmss, pickRoutineTone } from './format';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 
-export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직 담긴 플리가 없어요.' }) {
+// action: 칸마다 밑에 붙는 작은 버튼 { label, onClick(r) } — 마이플리 '고치기', 바로플리 '가져와 고치기'
+export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직 담긴 플리가 없어요.', action = null }) {
   if (plis.length === 0) {
     return (
       <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '30px 16px', textAlign: 'center',
@@ -23,8 +24,9 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
         const cover = r.cover_url ? r : { ...(cards[0] || {}), thumb_text: r.thumb_text };
         const clip = r.cover_url ? (isClip(r.cover_url) ? r.cover_url : '') : ((cards[0] || {}).video_url || '');
         return (
-          <button key={r.id} type="button" onClick={() => onOpen && onOpen(r)}
-            style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+          <div key={r.id}>
+          <button type="button" onClick={() => onOpen && onOpen(r)}
+            style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
             <div style={{ position: 'relative' }}>
               <CurationThumb item={{ ...cover, thumb_text: r.thumb_text || cover.thumb_text }}
                 radius={12} ratio="4 / 5" showRead={false} clip={clip} emptyText="표지 없음" />
@@ -40,6 +42,14 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginTop: 2 }}>동작 {s.count}개</div>
           </button>
+          {action && (
+            <button type="button" onClick={() => action.onClick(r)}
+              style={{ marginTop: 6, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff', borderRadius: 8,
+                padding: '5px 10px', fontSize: 11, fontWeight: 800, color: GOLD_INK, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+              {action.label}
+            </button>
+          )}
+          </div>
         );
       })}
     </div>

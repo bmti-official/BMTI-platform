@@ -324,6 +324,7 @@ export default function RoutineAdmin() {
   const [preview, setPreview] = useState(null);
   const [screen, setScreen] = useState(false);   // 손님이 보는 바로플리 화면 통째로
   const [box, setBox] = useState(false);         // 손님이 보는 내 보관함 화면
+  const [myPlis, setMyPlis] = useState([]);      // 미리보기용 마이플리 — 창 안에서만 산다
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['title_z', 'title_m']);
   const [busy, setBusy] = useState(false);
@@ -438,7 +439,13 @@ export default function RoutineAdmin() {
         <PreviewModal navActive="box" title="내 보관함 화면 — 담아 둔 것이 이렇게 보입니다" onClose={() => setBox(false)}>
           {(tone) => (
             <BoxView nickname="회원" bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} tone={tone}
-              plis={rows.slice(0, 3)} cards={allCards.slice(0, 9)} reads={[]} />
+              plis={rows.slice(0, 3)} cards={allCards.slice(0, 9)} reads={[]}
+              // 마이플리 — 미리보기에선 서버에 쓰지 않고 이 창 안에서만 담는다
+              myPlis={myPlis} allCards={allCards.filter((c) => c.published)}
+              onSaveMine={(p) => setMyPlis((prev) => {
+                const row = { id: p.id || `mine-${Date.now()}`, title_z: p.title, title_m: p.title, cards: p.cards, mine: true };
+                return p.id ? prev.map((x) => (x.id === p.id ? row : x)) : [row, ...prev];
+              })} />
           )}
         </PreviewModal>
       )}
