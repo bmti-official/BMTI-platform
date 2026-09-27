@@ -4,7 +4,7 @@
 // 정확한 값은 그림 위에 그은 선이 보여 준다(목의 정렬 NeckShot과 같은 생각).
 // 관절 자리(pts)는 그림을 올릴 때 코드가 잰 것이다. 없으면 그림만 보여 준다.
 import { useImgSize } from '../lib/useImgSize';
-import { bodyBox } from '../lib/bodyBox';
+import { bodyBox, wholeBox } from '../lib/bodyBox';
 
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 const rad = (d) => (d * Math.PI) / 180;
@@ -32,7 +32,7 @@ function Label({ at, text, color, fs }) {
 
 /** 허리 굽힘 — 골반에서 수직선(서 있을 때)과, 손님 값만큼 숙인 몸통 선.
  *  small: 끝 화면의 작은 칸 — 선과 글씨를 굵게 */
-export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', small = false, frame = null, alt = '' }) {
+export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', small = false, frame = null, whole = false, alt = '' }) {
   const size = useImgSize(url);
   const ok = size && Array.isArray(pts) && pts.length > 24 && Number.isFinite(Number(value));
   if (!ok) return plain(url, alt, false);
@@ -52,7 +52,8 @@ export function TrunkShot({ url, pts, value, prev = null, accent = '#7C6BD0', sm
   const v = Number(value);
   const p = prev != null && Number.isFinite(Number(prev)) ? Number(prev) : null;
   // frame: 전신을 그 비율의 틀에 맞춘다(각도 상자 — 세 항목이 같은 크기로 보이게)
-  const bb = frame ? bodyBox(pts, W, H, frame) : { x: 0, y: 0, w: W, h: H };
+  // whole: 자르지 않고 원본 장면 전체를 틀에 넣는다(허리 굽힘 — 잘라 맞추면 확대돼 보인다)
+  const bb = frame ? (whole ? wholeBox(W, H, frame) : bodyBox(pts, W, H, frame)) : { x: 0, y: 0, w: W, h: H };
   const sw = bb.h * (small ? 0.02 : 0.011);
   const fs = bb.h * (small ? 0.075 : 0.045);
   const r = len * 0.32;

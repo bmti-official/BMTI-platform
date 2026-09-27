@@ -340,7 +340,7 @@ function LevelShot({ shot, item, value, t, neckLine = null, trunkLine = null }) 
       {neckLine
         ? <NeckShot url={shot.url} pts={shot.pts} value={value} prev={neckLine.prev} accent={t.accentDeep} frame={FRAME} alt={`${item.label} ${name}`} />
         : trunkLine
-        ? <TrunkShot url={shot.url} pts={shot.pts} value={value} prev={trunkLine.prev} accent={t.accentDeep} frame={FRAME} alt={`${item.label} ${name}`} />
+        ? <TrunkShot url={shot.url} pts={shot.pts} value={value} prev={trunkLine.prev} accent={t.accentDeep} frame={FRAME} whole alt={`${item.label} ${name}`} />
         : <img src={shot.url} alt={`${item.label} ${name}`}
             style={{ width: '100%', aspectRatio: '1 / 2', objectFit: 'contain', display: 'block' }} />}
       <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 11, fontWeight: 900, color: tint,

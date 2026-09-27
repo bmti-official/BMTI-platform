@@ -29,3 +29,10 @@ export function bodyBox(pts, W, H, ratio = 0.5, flip = false) {
   const w = h * ratio;
   return { x: cx - w / 2, y: cy - h / 2, w, h };
 }
+
+/** 그림 전체를 자르지 않고 그 비율의 틀에 넣는다 — 남는 곳은 빈 곳(흰색)으로 */
+export function wholeBox(W, H, ratio = 0.5) {
+  if (W / H > ratio) { const h = W / ratio; return { x: 0, y: (H - h) / 2, w: W, h }; }
+  const w = H * ratio;
+  return { x: (W - w) / 2, y: 0, w, h: H };
+}
