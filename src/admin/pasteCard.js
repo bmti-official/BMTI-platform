@@ -103,7 +103,12 @@ export function parseCard(text) {
       if (sec > 0) put('duration_sec', sec);
       continue;
     }
-    if (t.name === '도구') { const v = splitList(t.value).filter((x) => x !== '없음'); if (v.length) put('tools', v); continue; }
+    if (t.name === '도구') {
+      // AI가 '요가 매트'·'매트'라고 써도 목록 이름인 '운동 매트'로 담는다
+      const v = [...new Set(splitList(t.value).filter((x) => x !== '없음').map((x) => (/^(요가\s*)?매트$/.test(x) ? '운동 매트' : x)))];
+      if (v.length) put('tools', v);
+      continue;
+    }
     if (t.name === '핵심부위') { put('core_parts', toPartKeys(t.value).slice(0, 3)); continue; }
     if (t.name === '연관부위') { put('related_parts', toPartKeys(t.value).slice(0, 6)); continue; }
     if (t.name === '부위그룹') { put('body_groups', toGroupIds(t.value)); continue; }
