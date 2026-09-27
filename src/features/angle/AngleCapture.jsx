@@ -568,8 +568,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     // 두 번째 측정이 시작되는 줄 손님이 몰랐다.
     // 토막 시작 안내 — 다시 재는 판이면 처음과 다르게.
     //   가만히 있는 토막(목·앉아서) … 말하지 않는다('한 번 더 잴게요' + '셋, 둘, 하나'로 충분)
-    //   허리 굽히기 … '다시 한 번, 천천히 허리를 굽혔다 펴 주세요'
-    //   팔 들기     … '다시 한 번, 두 팔을 천천히 올렸다 내려 주세요'
+    //   허리 굽히기 … '다시 한 번, 허리를 천천히 끝까지 굽혀 주세요. 끝에서 잠깐 멈춰요'
+    //   팔 들기     … '다시 한 번, 두 팔을 천천히 끝까지 올려 주세요. 끝에서 잠깐 멈춰요'
     const startVoice = (run, ph) => {
       if (!run.again) { say(ph.voice, { force: true }); return; }
       if (ph.take === 'trunk') say('againBend', { force: true });

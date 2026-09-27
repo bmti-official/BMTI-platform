@@ -126,7 +126,8 @@ export const ANGLE_LINES = [
   { n: 26, key: 'placeSit', text: '휴대폰을 세워 두고, 옆을 보고 앉아 주세요. 귀와 어깨만 보이면 돼요' },
   { n: 27, key: 'placeFront', text: '휴대폰을 세워 두고, 큰 걸음으로 세 걸음 물러나 화면을 보고 서 주세요' },
   // ── 다시 잴 때 — 처음과 같은 '이제 ~해 주세요'가 나오면 새 단계처럼 들린다 ──
-  { n: 28, key: 'againBend', text: '다시 한 번, 천천히 허리를 굽혔다 펴 주세요' },
-  { n: 29, key: 'againRaise', text: '다시 한 번, 두 팔을 천천히 올렸다 내려 주세요' },
+  // 재는 건 끝까지 간 자리다. '폈다·내렸다'를 말하면 편 자세·내린 자세를 재는 줄 안다
+  { n: 28, key: 'againBend', text: '다시 한 번, 허리를 천천히 끝까지 굽혀 주세요. 끝에서 잠깐 멈춰요' },
+  { n: 29, key: 'againRaise', text: '다시 한 번, 두 팔을 천천히 끝까지 올려 주세요. 끝에서 잠깐 멈춰요' },
 ];
 export const ANGLE_N = Object.fromEntries(ANGLE_LINES.map((l) => [l.key, l.n]));

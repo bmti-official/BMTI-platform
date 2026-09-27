@@ -181,7 +181,8 @@ function DailyBook({ word, partner, charImage, accent, onBack }) {
           boxShadow: "0 10px 30px rgba(28,26,23,0.22), 0 2px 6px rgba(28,26,23,0.12)" }}>
 
           {/* 왼쪽 면 — 누가 하는 말인지 */}
-          <div style={{ flex: "0 0 38%", background: PAGE, padding: "18px 14px", display: "flex",
+          {/* 폭을 38%로 못 박는다 — 안 그러면 글자 폭만큼 넓어져, 책등(38%)보다 오른쪽에 가운데가 잡힌다 */}
+          <div style={{ flex: "0 0 38%", minWidth: 0, boxSizing: "border-box", background: PAGE, padding: "18px 10px", display: "flex",
             flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 9,
             borderRight: `1px solid ${line}`, minHeight: 210 }}>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: accent.accentSoft, display: "flex",

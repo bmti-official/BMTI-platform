@@ -339,11 +339,16 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
               {/* 그날의 매일 한마디 — 말랑이 칸과 태그 칸 밑에 따로 한 줄 */}
               {dayMallang && (
-                <div style={{ flexShrink: 0, padding: "0 16px 12px" }}>
+                <div style={{ flexShrink: 0, padding: "0 16px 10px", textAlign: "center" }}>
+                  {/* 상자 없이 글씨만 — 연보라 형광펜을 대충 그은 듯 */}
                   <button type="button" onClick={() => setDayPop("word")}
-                    style={{ width: "100%", border: "none", background: "#fff", borderRadius: 12, padding: "10px 12px", cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 13, fontWeight: 800, color: C.ink, boxShadow: "0 3px 10px rgba(217,185,106,0.45)" }}>
-                    {partnerName ? `'${partnerName}'의 매일 한마디` : "매일 한마디"} →
+                    style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: C.ink, padding: "1px 6px", borderRadius: "4px 8px 5px 9px",
+                      backgroundImage: "linear-gradient(100deg, rgba(186,166,246,0) 1%, rgba(186,166,246,0.6) 4%, rgba(186,166,246,0.42) 12%, rgba(186,166,246,0.5) 88%, rgba(186,166,246,0.65) 95%, rgba(186,166,246,0) 99%)",
+                      backgroundSize: "100% 62%", backgroundPosition: "0 78%", backgroundRepeat: "no-repeat",
+                      WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>
+                      {partnerName ? `'${partnerName}'의 매일 한마디` : "매일 한마디"} →
+                    </span>
                   </button>
                 </div>
               )}
@@ -373,10 +378,10 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               </div>
 
               <div style={{ flexShrink: 0, padding: "12px 16px 16px" }}>
-                {/* 10월 판(관리자 미리보기) — 화이트 바탕 + 연한 옐로우 그림자, '그냥 볼게요'는 없앤다(닫기 ✕가 있다) */}
+                {/* 10월 판(관리자 미리보기) — 골드 바탕 + 아주 옅은 검은 그림자, '그냥 볼게요'는 없앤다(닫기 ✕가 있다) */}
                 <button onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); closeDay(); }}
                   style={dayMallang
-                    ? { width: "100%", padding: 14, borderRadius: 14, border: "none", background: "#fff", color: C.ink, fontSize: 14.5, fontWeight: 800, cursor: "pointer", boxShadow: "0 3px 10px rgba(217,185,106,0.45)" }
+                    ? { width: "100%", padding: 14, borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }
                     : { width: "100%", padding: 14, borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 5, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
                   이 기록 수정할래요
                 </button>
