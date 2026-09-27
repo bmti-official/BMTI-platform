@@ -17,7 +17,26 @@ let quiet = false;
 export async function loadAngleVoice() {
   if (bank) return bank;
   bank = await loadVoiceAssets().catch(() => ({}));
+  // 파일마다 길이를 미리 재 둔다 — '○○을 잽니다. 셋, 둘, 하나'의 끝에 화면 숫자를 맞추려면
+  // 틀기 전에 길이를 알아야 한다.
+  Object.entries(bank || {}).forEach(([k, url]) => {
+    if (!k.startsWith('angle|') || !url || lengths[url]) return;
+    try {
+      const a = new Audio(); a.preload = 'metadata';
+      a.addEventListener('loadedmetadata', () => { if (Number.isFinite(a.duration)) lengths[a.src] = a.duration; });
+      a.src = url;
+    } catch { /* 무시 */ }
+  });
   return bank;
+}
+
+/** 그 말의 길이(ms). 모르면 0 */
+export function clipMs(key) {
+  const n = ANGLE_N[key];
+  const url = n && bank ? bank[voiceKey('angle', 'a', n)] : null;
+  if (!url) return 0;
+  const len = lengths[url] || lengths[new URL(url, location.href).href];
+  return len ? Math.round(len * 1000) : 0;
 }
 
 export const hasAngleVoice = () => !!bank && Object.keys(bank).some((k) => k.startsWith('angle|'));

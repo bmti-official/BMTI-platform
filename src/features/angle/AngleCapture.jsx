@@ -13,7 +13,7 @@ import {
   sideShapeOk, frontShapeOk, setFrameAspect, vis,
   peakOf, qualityOf, L,
 } from '../../lib/poseAngles';
-import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet, isSpeaking, speakingLeft } from '../../lib/speak';
+import { say, hush, clearSaid, loadAngleVoice, hasAngleVoice, setQuiet, isSpeaking, speakingLeft, clipMs } from '../../lib/speak';
 import { toCVA } from '../../lib/angleView';
 import { buildSteps, stepSec } from './anglePlan';
 import { useLevel, unroll, ROLL_WARN, PITCH_WARN } from './useLevel';
@@ -158,6 +158,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const runRef = useRef(null);                   // 지금 판의 모아 둔 값
   const gotRef = useRef({});                     // 단계마다 얻은 값
   const tryRef = useRef(0);                      // 몇 번 어긋났는지
+  const againRef = useRef(false);                // 다음 판이 다시 재는 판인가
   const shapeTryRef = useRef(0);                 // 사람 모양이 아니어서 다시 잰 횟수 (판마다)
   const okSinceRef = useRef(0);                  // 자세가 언제부터 맞았는지
   const startRef = useRef(null);                 // 저절로 시작하는 손잡이
@@ -424,6 +425,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const again = (why = '잘 잡히지 않았어요. 한 번 더 해 볼까요?', voiceKey = null) => {
     // 몇 번째 어긋남인지는 ref로 센다 — 여기서 바로 보고 판단해야 한다.
     tryRef.current += 1;
+    againRef.current = true;                          // 다음 판은 '다시 재는 판' — 시작 안내를 바꾼다
     const n = tryRef.current;
     setRetry(n);
     okSinceRef.current = 0;
@@ -542,7 +544,10 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       // '이대로 시작'으로 들어왔으면 되감지 않는다. 안 그러면 영영 시작되지 않는다.
       forced,
       pi: -1, phaseAt: 0, readyUntil: 0,   // 몇 번째 토막인지, 언제 시작했는지, 카운트가 언제 끝나는지
+      // 다시 재는 판인가 — '시작합니다·이제 ~해 주세요'를 처음처럼 되풀이하면 새 단계로 들린다
+      again: againRef.current,
     };
+    againRef.current = false;
     setShook(0);
     setPhase(null);
     setGot(0);
@@ -561,13 +566,24 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     // 토막에 들어선다. **재는 토막이면 그 앞에서 따로 셋·둘·하나를 센다.**
     // 한 판 안에 목·허리처럼 두 가지를 이어서 재는데, 예전엔 판 앞에서만 한 번 세서
     // 두 번째 측정이 시작되는 줄 손님이 몰랐다.
+    // 토막 시작 안내 — 다시 재는 판이면 처음과 다르게.
+    //   가만히 있는 토막(목·앉아서) … 말하지 않는다('한 번 더 잴게요' + '셋, 둘, 하나'로 충분)
+    //   허리 굽히기 … '다시 한 번, 천천히 허리를 굽혔다 펴 주세요'
+    //   팔 들기     … '다시 한 번, 두 팔을 천천히 올렸다 내려 주세요'
+    const startVoice = (run, ph) => {
+      if (!run.again) { say(ph.voice, { force: true }); return; }
+      if (ph.take === 'trunk') say('againBend', { force: true });
+      else if (ph.take === 'arm') say('againRaise', { force: true });
+    };
     const enter = (run, i) => {
       const ph = phases[i];
       run.pi = i; run.take = null;
       setPhase(i);
       if (ph.take) {
         // 앞의 말이 끝난 뒤에 센다 — '셋, 둘, 하나'는 그 말 다음에 이어 나온다
-        run.readyUntil = now() + speakingLeft() + READY_SEC * 1000;
+        // 화면 숫자가 '셋, 둘, 하나'와 같이 끝나게 — 그 말의 길이만큼 센다(앞의 '○○을 잽니다'
+        // 동안엔 3에 머문다). 길이를 모르면 3초.
+        run.readyUntil = now() + speakingLeft() + Math.max(READY_SEC * 1000, clipMs(COUNT_VOICE[ph.take]));
         run.ready = READY_SEC;
         setReady(READY_SEC);
         say(COUNT_VOICE[ph.take], { force: true });   // '허리 굽힘을 잽니다. 셋, 둘, 하나'
@@ -575,7 +591,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         run.readyUntil = 0; run.ready = 0;
         run.phaseAt = now();
         setReady(0);
-        say(ph.voice, { force: true });
+        startVoice(run, ph);
       }
       setCount(left(run));
     };
@@ -592,7 +608,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       if (run.readyUntil) {
         if (run.shaken) {
           run.shaken = false;
-          run.readyUntil = now() + READY_SEC * 1000;
+          run.readyUntil = now() + Math.max(READY_SEC * 1000, clipMs(COUNT_VOICE[ph.take]));
           setShook((n) => n + 1);
           say(COUNT_VOICE[ph.take], { force: true, cut: true });   // 처음부터 다시 — 하던 말을 끊는다
         }
@@ -604,7 +620,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           run.readyUntil = 0; run.ready = 0;
           run.phaseAt = now();
           run.take = ph.take;          // 이제부터 값을 모은다
-          say(ph.voice, { force: true });
+          startVoice(run, ph);
         }
         return;
       }
