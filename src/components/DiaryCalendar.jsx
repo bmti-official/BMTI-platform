@@ -316,7 +316,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
 
               {/* 머리 — 왼쪽 말랑이 칸 · 오른쪽 날짜와 오늘의 태그 */}
               <div style={{ flexShrink: 0, display: "flex", gap: 10, padding: "16px 16px 12px" }}>
-                <div style={{ width: 104, flexShrink: 0, background: "#EFF6EA", border: `1px solid ${C.yellowLine}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 6px", gap: 5 }}>
+                <div style={{ width: 104, flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ flex: 1, background: "#EFF6EA", border: `1px solid ${C.yellowLine}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 6px", gap: 5 }}>
                   {dayMallang ? (
                     <button type="button" onClick={() => setDayPop("mallang")} aria-label="말랑이 팝업 열기"
                       style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "block" }}>
@@ -324,20 +325,24 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                     </button>
                   ) : <Mallang v={previewDay.entry.mood} size={54} />}
                   <div style={{ fontSize: dayMallang ? 9 : 11.5, fontWeight: 800, color: dayMallang ? C.sub : C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: dayMallang ? 1.2 : 1.25 }}>{moodInfo?.label}</div>
-                  {/* 그날의 매일 한마디 — 말랑이 박스 안, 기분 이름 밑. 상자 없이 연보라 형광펜 글씨로 두 줄 */}
-                  {dayMallang && (
-                    <button type="button" onClick={() => setDayPop("word")}
-                      style={{ marginTop: 2, border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit",
-                        textAlign: "center", lineHeight: 1.55 }}>
+                </div>
+                {/* 그날의 매일 한마디 — 말랑이 박스 밖, 바로 밑. 왼쪽에 글줄 높이만 한 누끼 파트너 */}
+                {dayMallang && (
+                  <button type="button" onClick={() => setDayPop("word")}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, border: "none", background: "transparent",
+                      padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+                    {charImage && <img src={charImage} alt="" style={{ height: 30, width: "auto", objectFit: "contain", flexShrink: 0 }} />}
+                    <span style={{ textAlign: "left", lineHeight: 1.55 }}>
                       {[partnerName ? `'${partnerName}'의` : "", "매일 한마디 →"].filter(Boolean).map((ln) => (
                         <span key={ln} style={{ display: "block" }}>
-                          <span style={{ fontSize: 9.5, fontWeight: 800, color: C.ink, padding: "0 4px", borderRadius: "4px 8px 5px 9px",
+                          <span style={{ fontSize: 9.5, fontWeight: 800, color: C.ink, padding: "0 4px", borderRadius: "4px 8px 5px 9px", whiteSpace: "nowrap",
                             backgroundImage: "linear-gradient(100deg, rgba(186,166,246,0) 1%, rgba(186,166,246,0.6) 4%, rgba(186,166,246,0.42) 12%, rgba(186,166,246,0.5) 88%, rgba(186,166,246,0.65) 95%, rgba(186,166,246,0) 99%)",
                             backgroundSize: "100% 62%", backgroundPosition: "0 78%", backgroundRepeat: "no-repeat" }}>{ln}</span>
                         </span>
                       ))}
-                    </button>
-                  )}
+                    </span>
+                  </button>
+                )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "#FBEFD8", border: `1px solid ${C.yellowLine}`, borderRadius: 10, padding: "7px 8px", fontSize: 13.5, fontWeight: 800, color: C.ink, letterSpacing: "0.02em" }}>
