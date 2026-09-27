@@ -1,10 +1,11 @@
 // 내 BMTI 유형의 편지(10월 판) — 그달이 끝나면 도착하는 편지.
 // 목록에는 봉투 카드만 두고, 열면 따로 창(팝업)에 크게 펼친다.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { getTypeAccent } from '../lib/typeAccent';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-import { buildMonthLetter, letterArrival, markLetterSeen } from '../lib/monthLetter';
+import { letterArrival, markLetterSeen } from '../lib/monthLetter';
+import { buildLetterA } from '../lib/monthLetterA';
 import { IconBox } from './DiscoveryIcons';
 import { josa } from '../lib/josa';
 
@@ -20,7 +21,8 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
   const ch = CHARACTERS.find((c) => c.id === axis);
   const chName = CHARACTER_NAMES[axis] ? String(CHARACTER_NAMES[axis]).replace(/\n/g, ' ') : '말랑이';
   const arrive = letterArrival(year, month);
-  const letter = buildMonthLetter(entries, { year, month, nickname, bmtiCode, parts });
+  const letter = buildLetterA(entries, { year, month, nickname, bmtiCode, partnerName: chName });
+  void parts;   // 부위 이름은 이제 용어집(letterTerms)이 맡는다
   const next = month === 12 ? 1 : month + 1;
 
   return (
@@ -79,31 +81,33 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
   );
 }
 
-// 편지의 한 부분 — 작은 소제목 + 문단
-function Section({ label, lines, t }) {
-  return (
-    <div style={{ marginTop: 6 }}>
-      <div style={{ display: 'inline-block', fontSize: 12.5, fontWeight: 900, color: t.accentDeep, background: t.accentSoft,
-        borderRadius: 6, padding: '2px 9px', margin: '4px 0 2px', lineHeight: '24px' }}>{label}</div>
-      {/* 괘선은 글줄 높이(30px)에 맞춰 문단마다 — 줄이 글자를 가로지르지 않고 글자 밑에 깔린다 */}
-      <p style={{ margin: 0, fontSize: 14.5, lineHeight: '30px', color: INK_L, fontWeight: 600, wordBreak: 'keep-all', textWrap: 'pretty',
-        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 29px, ${RULE} 29px, ${RULE} 30px)` }}>
-        {lines.join(' ')}
-      </p>
-    </div>
-  );
-}
-
-// 편지지 한 장 — 줄 편지지 + 마스킹 테이프 + 파트너 우표. 열어보기 창과 도착 팝업이 함께 쓴다.
+// 편지지 — 한 장에 한 부분씩, 옆으로 넘긴다(밀거나 ‹ ›). 아래에 점과 'n / 전체'.
+// 괘선은 글줄 높이(30px)에 맞춰 문단에 깐다. 첫 장에 'To.', 마지막 장에 서명.
 function LetterPaper({ letter, nickname, chName, ch, t, onClose }) {
+  const [at, setAt] = useState(0);
+  const [dir, setDir] = useState(1);           // 넘기는 쪽 — 1: 다음, -1: 이전
+  const touch = useRef(null);
+  const n = letter.pages.length;
+  const go = (i) => { if (i < 0 || i >= n || i === at) return; setDir(i > at ? 1 : -1); setAt(i); };
+  const onTouchStart = (e) => { touch.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touch.current == null) return;
+    const dx = e.changedTouches[0].clientX - touch.current;
+    touch.current = null;
+    if (dx < -40) go(at + 1); else if (dx > 40) go(at - 1);
+  };
+  const arrow = (on) => ({ width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: on ? 'pointer' : 'default',
+    background: on ? '#fff' : 'transparent', color: on ? t.accentDeep : '#D8D1C4', fontSize: 18, fontWeight: 900,
+    boxShadow: on ? '0 2px 8px rgba(0,0,0,0.1)' : 'none', fontFamily: 'inherit' });
   return (
-    <div style={{ position: 'relative', background: PAPER, borderRadius: 16, padding: '34px 22px 26px',
-      boxShadow: '0 18px 50px rgba(0,0,0,0.28)' }}>
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+      style={{ position: 'relative', background: PAPER, borderRadius: 16, padding: '34px 22px 18px',
+        boxShadow: '0 18px 50px rgba(0,0,0,0.28)', display: 'flex', flexDirection: 'column', height: 'min(72vh, 600px)' }}>
       {/* 마스킹 테이프 */}
       <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%) rotate(-2deg)', width: 110, height: 24,
         background: t.accentSoft, opacity: 0.9, borderRadius: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }} />
       {/* 파트너 우표 */}
-      <div style={{ position: 'absolute', top: 18, right: 18, width: 60, height: 68, background: '#fff', padding: 4,
+      <div style={{ position: 'absolute', top: 18, right: 18, width: 60, height: 68, background: '#fff', padding: 4, zIndex: 1,
         boxShadow: '0 2px 6px rgba(0,0,0,0.12)', transform: 'rotate(4deg)', outline: `2px dashed ${t.accentSoft}`, outlineOffset: -3 }}>
         <div style={{ width: '100%', height: '100%', borderRadius: 2, background: `radial-gradient(circle at 50% 40%, #fff, ${t.accentSoft})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -111,18 +115,46 @@ function LetterPaper({ letter, nickname, chName, ch, t, onClose }) {
         </div>
       </div>
       <button type="button" onClick={onClose} aria-label="닫기"
-        style={{ position: 'absolute', top: 10, left: 12, width: 30, height: 30, borderRadius: '50%', border: 'none',
+        style={{ position: 'absolute', top: 10, left: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', zIndex: 1,
           background: 'rgba(255,255,255,0.8)', color: C.sub, fontSize: 15, cursor: 'pointer' }}>✕</button>
 
       <div style={{ fontSize: 12, fontWeight: 800, color: C.sub, marginTop: 8 }}>{letter.month}월을 보내며</div>
-      <div style={{ fontSize: 19, fontWeight: 900, color: C.ink, margin: '2px 0 14px', letterSpacing: '-0.02em' }}>
-        To. {nickname || '회원'}님
+      <div style={{ fontSize: 19, fontWeight: 900, color: C.ink, margin: '2px 0 12px', letterSpacing: '-0.02em', minHeight: 26 }}>
+        {at === 0 ? `To. ${nickname || '회원'}님` : ''}
       </div>
-      <Section t={t} label={`${letter.month}월, 이렇게 지나왔어요`} lines={letter.look} />
-      <Section t={t} label={`${letter.next}월엔 이렇게 보내 봐요`} lines={letter.ahead} />
-      <div style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: '30px', marginTop: 10 }}>
-        — 당신의 BMTI 유형, {chName} 드림
+
+      {/* 한 장 — 넘길 때마다 종이가 옆에서 들어온다 */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', perspective: 900 }}>
+        <div key={at} style={{ animation: `${dir > 0 ? 'pageNext' : 'pagePrev'} .45s cubic-bezier(.2,.8,.3,1)`, transformOrigin: dir > 0 ? 'left center' : 'right center' }}>
+          <p style={{ margin: 0, fontSize: 14.5, lineHeight: '30px', color: INK_L, fontWeight: 600, wordBreak: 'keep-all', textWrap: 'pretty',
+            backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 29px, ${RULE} 29px, ${RULE} 30px)` }}>
+            {letter.pages[at]}
+          </p>
+          {at === n - 1 && (
+            <div style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 800, color: t.accentDeep, lineHeight: '30px', marginTop: 10 }}>
+              {letter.sign}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* 넘기기 — ‹ 점 · n / 전체 › */}
+      {n > 1 && (
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12 }}>
+          <button type="button" onClick={() => go(at - 1)} aria-label="이전 장" style={arrow(at > 0)}>‹</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {letter.pages.map((_, i) => (
+              <button key={i} type="button" onClick={() => go(i)} aria-label={`${i + 1}장`}
+                style={{ width: i === at ? 18 : 7, height: 7, borderRadius: 999, border: 'none', padding: 0, cursor: 'pointer',
+                  background: i === at ? t.accent : '#E3DCCD', transition: 'width .25s' }} />
+            ))}
+            <span style={{ marginLeft: 6, fontSize: 11.5, fontWeight: 800, color: C.sub, fontVariantNumeric: 'tabular-nums' }}>{at + 1} / {n}</span>
+          </div>
+          <button type="button" onClick={() => go(at + 1)} aria-label="다음 장" style={arrow(at < n - 1)}>›</button>
+        </div>
+      )}
+      <style>{`@keyframes pageNext{from{opacity:0;transform:translateX(40px) rotateY(-14deg)}to{opacity:1;transform:none}}
+        @keyframes pagePrev{from{opacity:0;transform:translateX(-40px) rotateY(14deg)}to{opacity:1;transform:none}}`}</style>
     </div>
   );
 }
@@ -152,7 +184,8 @@ export function LetterArrival({ entries, year, month, nickname, bmtiCode, parts,
   const axis = String(bmtiCode || '').split('-')[0];
   const ch = CHARACTERS.find((c) => c.id === axis);
   const chName = CHARACTER_NAMES[axis] ? String(CHARACTER_NAMES[axis]).replace(/\n/g, ' ') : '말랑이';
-  const letter = buildMonthLetter(entries, { year, month, nickname, bmtiCode, parts });
+  const letter = buildLetterA(entries, { year, month, nickname, bmtiCode, partnerName: chName });
+  void parts;   // 부위 이름은 이제 용어집(letterTerms)이 맡는다
   if (!letter) return null;
   const close = () => { markLetterSeen(year, month); onClose?.(); };
   return (

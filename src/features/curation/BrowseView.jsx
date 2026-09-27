@@ -25,7 +25,10 @@ export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCod
   const [q, setQ] = useState('');
   const [openId, setOpenId] = useState(null);      // 펼쳐 본 바로카드
 
-  const all = useMemo(() => mixGrid(cards, reads, bmtiCode, seed), [cards, reads, bmtiCode, seed]);
+  // 비공개(published가 false)는 격자에 넣지 않는다 — 관리자 미리보기에서도 손님이 보는 그대로
+  const pubCards = useMemo(() => cards.filter((c) => c.published !== false), [cards]);
+  const pubReads = useMemo(() => reads.filter((r) => r.published !== false), [reads]);
+  const all = useMemo(() => mixGrid(pubCards, pubReads, bmtiCode, seed), [pubCards, pubReads, bmtiCode, seed]);
   const grid = useMemo(() => {
     const byTab = tab === 'all' ? all : all.filter((x) => (tab === 'read' ? x.kind === 'read' : x.kind === 'card'));
     return q.trim() ? byTab.filter((x) => matches(x.item, q, tone)) : byTab;
@@ -82,7 +85,7 @@ export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCod
       </div>
 
       {openId != null && (
-        <CardFeed cards={cards} startId={openId} tone={tone} bmtiCode={bmtiCode} onClose={() => setOpenId(null)} />
+        <CardFeed cards={pubCards} startId={openId} tone={tone} bmtiCode={bmtiCode} onClose={() => setOpenId(null)} />
       )}
       {openRead && (
         <NewsCard item={openRead} tone={tone} onClose={() => setOpenRead(null)}

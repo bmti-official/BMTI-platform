@@ -12,8 +12,9 @@ import { matches } from './browseOrder';
 
 const INK = '#1C1A17';
 
-const TABS = [['all', '전체'], ['short', '10분 이내'], ['mid', '20분 이내']];
+const TABS = [['all', '전체'], ['short', '10분 이내'], ['mid', '20분 이내'], ['long', '30분 이상']];
 const CAP = { short: 600, mid: 1200 };
+const LONG_FROM = 1800;   // 30분 이상
 
 export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
   const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
@@ -24,6 +25,7 @@ export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
     const byTime = tab === 'all' ? routines
       : routines.filter((r) => {
         const sec = routineSummary(r.cards || []).durationSec;
+        if (tab === 'long') return sec >= LONG_FROM;
         return sec > 0 && sec <= CAP[tab];
       });
     if (!q.trim()) return byTime;

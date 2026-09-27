@@ -156,10 +156,10 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
   const topPart = F.parts[0] ? { key: F.parts[0][0], ko: PART_KO[F.parts[0][0]] || '다른 곳', c: F.parts[0][1] } : null;
   const qLine = (salt, list) => (q ? pick(salt, list) : '');
   // 주마다 며칠 — '첫째 주 3일, 둘째 주 5일, …'
-  const weekList = F.perWeek.map((c, i) => (c ? `${WEEK_KO[i]} ${c}일` : null)).filter(Boolean).join(', ');
+  const weekList = F.perWeek.map((c, i) => (c ? `${WEEK_KO[i]} ${c}번` : null)).filter(Boolean).join(', ');
   // 기분 다섯 가지가 각각 며칠 — 많은 순
   const moodList = [5, 4, 3, 2, 1].map((v) => ({ v, c: F.days.filter((d) => d.mood === v).length }))
-    .filter((x) => x.c).sort((a, b) => b.c - a.c).map((x) => `${MOOD_DAY[x.v]} ${x.c}일`).join(', ');
+    .filter((x) => x.c).sort((a, b) => b.c - a.c).map((x) => `${MOOD_DAY[x.v]} ${x.c}번`).join(', ');
   // 월초·월말의 대표 기분(가장 많이 고른 것)
   const modeOf = (arr) => { const c = {}; arr.forEach((d) => { c[d.mood] = (c[d.mood] || 0) + 1; }); const t = top(c); return t ? Number(t[0]) : null; };
   const earlyMood = modeOf(F.days.filter((d) => dayNum(d.date) <= 10));
@@ -172,12 +172,12 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
   if (tier === 'visit') {
     const lastMood = F.days[F.days.length - 1].mood;
     const p1 = [greet(),
-      M(`${nm}님, ${month}월에는 ${F.n}일을 적어 주셨어요. 바쁜 한 달 사이에 잠깐이라도 들러 주신 게 참 반가웠어요.`,
-        `${nm}님, ${month}월에는 ${F.n}일을 적으셨어요. 짧게라도 들러 주셔서 반가웠습니다.`),
+      M(`${nm}님, ${month}월에는 ${F.n}번 적어 주셨어요. 바쁜 한 달 사이에 잠깐이라도 들러 주신 게 참 반가웠어요.`,
+        `${nm}님, ${month}월에는 ${F.n}번 적으셨어요. 짧게라도 들러 주셔서 반가웠습니다.`),
       M(`처음 적으신 날은 ${md(F.first)}${was(md(F.first))}지요. 그날 문을 열어 주신 덕분에 이렇게 편지를 쓸 수 있게 되었어요.`,
         `처음 적은 날은 ${md(F.first)}${was(md(F.first))}어요.`),
-      M(`기록이 많지 않아도 괜찮아요. 적어 주신 ${F.n}일 덕분에 ${month}월의 ${nm}님을 조금은 알게 되었거든요.`,
-        `기록이 적어도 괜찮아요. ${F.n}일의 기록으로도 ${month}월의 모습이 조금은 보였어요.`),
+      M(`기록이 많지 않아도 괜찮아요. 적어 주신 ${F.n}번 덕분에 ${month}월의 ${nm}님을 조금은 알게 되었거든요.`,
+        `기록이 적어도 괜찮아요. ${F.n}번의 기록으로도 ${month}월의 모습이 조금은 보였어요.`),
       `마지막으로 적으신 날은 ${MOOD_DAY[lastMood]}이었어요. ${MOOD_EMP[m ? 'm' : 'z'][lastMood]}`,
       M(`적어 주신 날들을 모아 보면 ${moodList}이었어요. 짧은 기록 속에서도 그날그날의 ${nm}님이 보였어요.`,
         `적은 날의 기분은 ${moodList}이었어요. 기록이 적어도 편지는 이렇게 도착합니다. 더 적은 달엔 더 자세한 편지를 드릴게요.`),
@@ -197,12 +197,12 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
 
   // ── 1장: 인사 + 성실함 ──
   const p1 = [greet()];
-  p1.push(M(`${nm}님, ${month}월에는 ${F.n}일을 적어 주셨어요.`, `${nm}님, ${month}월에는 ${F.n}일을 적으셨어요.`));
+  p1.push(M(`${nm}님, ${month}월에는 ${F.n}번 적어 주셨어요.`, `${nm}님, ${month}월에는 ${F.n}번 적으셨어요.`));
   p1.push(M(`처음 적으신 날은 ${md(F.first)}, 마지막으로 적으신 날은 ${md(F.last)}${was(md(F.last))}지요.`, `처음은 ${md(F.first)}, 마지막은 ${md(F.last)}${was(md(F.last))}어요.`));
   p1.push(M(`주마다 보면 ${weekList}이었어요.`, `주마다 보면 ${weekList}이었어요.`));
   if (tier === 'full') {
-    p1.push(M(`그중에서도 ${WEEK_KO[F.bestW]}에는 ${F.perWeek[F.bestW]}일을 적으셨더라고요. 가장 꾸준했던 한 주였어요.`,
-      `${WEEK_KO[F.bestW]}에 ${F.perWeek[F.bestW]}일로 가장 꾸준했어요.`));
+    p1.push(M(`그중에서도 ${WEEK_KO[F.bestW]}에는 ${F.perWeek[F.bestW]}번 적으셨더라고요. 가장 꾸준했던 한 주였어요.`,
+      `${WEEK_KO[F.bestW]}에 ${F.perWeek[F.bestW]}번으로 가장 꾸준했어요.`));
     if (F.streak >= 3) p1.push(M(`${F.streak}일 연속으로 이어 적은 때도 있었지요. 마음먹는다고 쉽게 되는 일이 아니에요.`, `${F.streak}일 연속으로 적은 때도 있었어요.`));
   }
   p1.push(pick('p1c', m ? [
@@ -215,8 +215,8 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
     '짧은 기록이라도 쌓이면 흐름이 됩니다. 그 흐름이 이번 달에 제법 선명해졌어요.',
   ]));
   p1.push(qLine('p1q', ['기록을 이어 온 힘은 어디서 나왔을까요?', '어떤 날에 더 적고 싶어지셨나요?']));
-  p1.push(M(`이번 편지에는 그 ${F.n}일 동안 ${nm}님이 지나온 길을 제가 옆에서 본 대로 적어 볼게요. 천천히 넘겨 보세요.`,
-    `${F.n}일의 기록으로 ${month}월을 차례로 짚어 볼게요.`));
+  p1.push(M(`이번 편지에는 그 ${F.n}번의 기록 속에서 ${nm}님이 지나온 길을 제가 옆에서 본 대로 적어 볼게요. 천천히 넘겨 보세요.`,
+    `${F.n}번의 기록으로 ${month}월을 차례로 짚어 볼게요.`));
 
   // ── 2장: 마음의 흐름 + 인용 ──
   const p2 = [];
@@ -234,9 +234,9 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
     `월초엔 ${MOOD_DAY[earlyMood]}, 월말엔 ${MOOD_DAY[lateMood]}이 많았어요.`));
   p2.push(M(`가장 자주 고르신 기분은 '${MOOD_DAY[F.topMood]}'이었어요. ${MOOD_EMP.m[F.topMood]}`,
     `가장 자주 고른 기분은 '${MOOD_DAY[F.topMood]}'이었어요. ${MOOD_EMP.z[F.topMood]}`));
-  if (F.upN && F.downN) p2.push(M(`괜찮거나 좋은 날이 ${F.upN}일, 지치거나 마음이 무거웠던 날이 ${F.downN}일이었어요.`,
-    `괜찮거나 좋은 날 ${F.upN}일, 지치거나 무거웠던 날 ${F.downN}일이었어요.`));
-  else if (F.upN) p2.push(M(`지치거나 마음이 무거웠던 날 없이, 괜찮거나 좋은 날이 ${F.upN}일이었어요.`, `무거웠던 날 없이 괜찮거나 좋은 날이 ${F.upN}일이었어요.`));
+  if (F.upN && F.downN) p2.push(M(`괜찮거나 좋은 날이 ${F.upN}번, 지치거나 마음이 무거웠던 날이 ${F.downN}번이었어요.`,
+    `괜찮거나 좋은 날 ${F.upN}번, 지치거나 무거웠던 날 ${F.downN}번이었어요.`));
+  else if (F.upN) p2.push(M(`지치거나 마음이 무거웠던 날 없이, 괜찮거나 좋은 날이 ${F.upN}번이었어요.`, `무거웠던 날 없이 괜찮거나 좋은 날이 ${F.upN}번이었어요.`));
   if (!m) p2.push(`하나씩 보면 ${moodList}이었어요.`);
   if (F.bestDay && F.bestDay.mood >= 4) p2.push(M(`그중 가장 마음이 밝았던 날은 ${md(F.bestDay.date)}${was(md(F.bestDay.date))}어요.`, `가장 기분이 좋았던 날은 ${md(F.bestDay.date)}${was(md(F.bestDay.date))}어요.`));
   if (tier === 'full' && F.lowWd) p2.push(M(`${WEEKDAY_KO[F.lowWd.w]}요일마다 조금 더 지쳐 보이셨어요. 한 주의 무게가 그날 몰렸던 걸까요.`,
@@ -296,12 +296,12 @@ export function buildLetterA(entries, { year, month, nickname, bmtiCode, partner
   // ── 잘한 것 · 약속 ──
   const good = [];
   if (F.streak >= 3) good.push(`${F.streak}일 연속으로 적으신 것`);
-  if (F.moveN >= 3) good.push(F.topEx ? `${josa(F.topEx, '을')} 포함해 ${F.moveN}일을 움직이신 것` : `${F.moveN}일을 움직이신 것`);
+  if (F.moveN >= 3) good.push(F.topEx ? `${josa(F.topEx, '을')} 포함해 ${F.moveN}번 움직이신 것` : `${F.moveN}번 움직이신 것`);
   const gt = top(F.goodTag);
   if (gt) good.push(`${TAG_DAY[gt[0]].replace(/ 날$/, '')} 날이 ${gt[1]}번 있었던 것`);
   if (F.goodSleep >= 3) good.push(`푹 잔 밤을 ${F.goodSleep}번 만드신 것`);
-  if (F.upN >= 3) good.push(`괜찮은 날을 ${F.upN}일 만드신 것`);
-  if (good.length < 3) good.push(`${F.n}일을 적으신 것`);
+  if (F.upN >= 3) good.push(`괜찮은 날을 ${F.upN}번 만드신 것`);
+  if (good.length < 3) good.push(`${F.n}번 적으신 것`);
   const promises = [];
   if (topPart) promises.push(`${josa(topPart.ko, '이')} 무거운 날엔 1분만 풀어 주기`);
   if (F.heavy) promises.push('바쁜 주가 오면 쉬는 시간부터 먼저 적어 두기');
