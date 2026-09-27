@@ -684,11 +684,23 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
                   {speed}×
                 </button>
               </div>
-              <button type="button" onClick={() => setFull(false)}
-                style={{ border: 'none', background: '#fff',
-                  color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800,
-                  cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
-                설정 바꾸기
+              {/* 설정 바꾸기 — 밑에 아주 작게 '(이전으로)'. 글씨는 버튼 줄의 높이를 흔들지 않게 띄워 둔다 */}
+              <div style={{ position: 'relative' }}>
+                <button type="button" onClick={() => setFull(false)}
+                  style={{ border: 'none', background: '#fff',
+                    color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
+                    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+                  설정 바꾸기
+                </button>
+                <span style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, textAlign: 'center',
+                  fontSize: 9, fontWeight: 700, color: SUB, pointerEvents: 'none', whiteSpace: 'nowrap' }}>(이전으로)</span>
+              </div>
+              {/* 일시정지 — 영상과 소리를 함께 세운다 */}
+              <button type="button" onClick={togglePause} aria-label={paused ? '이어서 하기' : '일시정지'}
+                style={{ border: 'none', background: paused ? SET_BG : '#fff', color: paused ? SET_INK : INK, borderRadius: 999,
+                  width: 44, height: 42, fontSize: 15, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+                {paused ? '▶' : '❚❚'}
               </button>
             </div>
           )}

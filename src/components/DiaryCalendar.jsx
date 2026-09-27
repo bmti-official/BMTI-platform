@@ -314,7 +314,7 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                       <Mallang v={previewDay.entry.mood} size={54} />
                     </button>
                   ) : <Mallang v={previewDay.entry.mood} size={54} />}
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: 1.25 }}>{moodInfo?.label}</div>
+                  <div style={{ fontSize: dayMallang ? 9 : 11.5, fontWeight: 800, color: dayMallang ? C.sub : C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: dayMallang ? 1.2 : 1.25 }}>{moodInfo?.label}</div>
                   {/* 그날의 매일 한마디 바로 가기 — 말랑이 밑에 작게 */}
                   {dayMallang && (
                     <button type="button" onClick={() => setDayPop("word")}
