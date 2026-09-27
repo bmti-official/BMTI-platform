@@ -130,11 +130,13 @@ export function parseCard(text) {
   }
 
   const has = (re) => filled.filter((k) => re.test(k)).length;
+  // 자막은 덩어리 수로 센다(시작 전·1세트… × Z·M)
+  const subs = [...(out.sub_sets_z || []), ...(out.sub_sets_m || [])].filter((x) => String(x).trim()).length;
   const report = [
     has(/^title_/) ? `제목 ${has(/^title_/)}` : null,
     has(/^(good_when|avoid_when|focus_body)$/) ? `알아 두기 ${has(/^(good_when|avoid_when|focus_body)$/)}` : null,
     filled.includes('thumb_text') ? '동작 이름' : null,
-    has(/^sub_/) ? `자막 ${has(/^sub_/)}` : null,
+    subs ? `자막 ${subs}` : null,
     filled.includes('kind') ? '종류' : null,
     filled.includes('duration_sec') ? '소요 시간' : null,
     filled.includes('tools') ? '도구' : null,
