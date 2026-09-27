@@ -17,14 +17,16 @@ const BABY_COUNT = 4;
 
 export default function MallangStressPopup({ mood, charImage, onNext, nextLabel = "다음",
   // 오늘 기록을 마쳤을 때 — 내 파트너가 건네는 한마디. 넘기지 않으면 안 뜬다.
-  word = "", partner = "" }) {
+  word = "", partner = "",
+  // 처음부터 매일 한마디 책을 펼쳐 둘지 — '매일 한마디 →' 버튼으로 바로 들어올 때
+  initialOpenWord = false }) {
   const t = getTypeAccent();
   const [tapKey, setTapKey] = useState(0);
   const [level, setLevel] = useState(mood);
   const [showBabies, setShowBabies] = useState(false);
   const [babyTapKey, setBabyTapKey] = useState(0);
   const [phase, setPhase] = useState("idle"); // idle | press | release — 젤리 스쿼시&스트레치
-  const [openWord, setOpenWord] = useState(false);
+  const [openWord, setOpenWord] = useState(initialOpenWord && !!word);
   const lastTapAt = useRef(0);
   const comboRef = useRef(0);
   const releaseTimer = useRef(null);

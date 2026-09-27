@@ -1,4 +1,6 @@
-import { useState, useRef, useMemo, Fragment } from "react";
+import { useState, useRef, useMemo, Fragment, createContext, useContext } from "react";
+import { IconBox } from "./DiscoveryIcons";
+import { MonthLetterCard } from "./MonthLetter";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Mallang } from "./Mallang";
@@ -985,7 +987,7 @@ function WeatherFindingCards({ entries, onWeatherUpdated }) {
   // 아직 날씨를 안 붙였으면(위치 미허용) 안내 + 동의 버튼
   if (wDays.length === 0) {
     return (
-      <InsCard badge="이번 달 발견 · 날씨" title="날씨와 내 몸·마음을 겹쳐볼까요?" sub="위치를 한 번만 허용하면 비·기온·습도·미세먼지와 이번 달 기록을 이어봐요">
+      <InsCard icon="weather" badge="이번 달 발견 · 날씨" title="날씨와 내 몸·마음을 겹쳐볼까요?" sub="위치를 한 번만 허용하면 비·기온·습도·미세먼지와 이번 달 기록을 이어봐요">
         <button onClick={enable} disabled={loading}
           style={{ width: "100%", padding: "14px 0", borderRadius: 13, border: "none", background: loading ? "#E7E2D8" : GOLD, color: loading ? "#B7B2A9" : "#fff", fontSize: 14.5, fontWeight: 800, cursor: loading ? "default" : "pointer", fontFamily: "inherit" }}>
           {loading ? "날씨 불러오는 중…" : "📍 날씨 위치 정보 동의하기"}
@@ -1046,7 +1048,7 @@ function WeatherFindingCards({ entries, onWeatherUpdated }) {
   ].filter((r) => r.days > 0);
 
   return (
-    <InsCard badge="이번 달 발견 · 날씨" title="날씨와 겹쳐 본 기록" sub="이런 날이 며칠이었고, 그날 몸·기분 기록이 어땠는지 한눈에">
+    <InsCard icon="weather" badge="이번 달 발견 · 날씨" title="날씨와 겹쳐 본 기록" sub="이런 날이 며칠이었고, 그날 몸·기분 기록이 어땠는지 한눈에">
       {rows.length ? (
         <div style={{ background: "#FBFAF6", border: `1px solid ${C.line}`, borderRadius: 16, padding: "4px 15px" }}>
           {rows.map((r, i) => (
@@ -2655,7 +2657,26 @@ function computeInsights(entries, userData, report, bmtiCode) {
 }
 
 // ── 인사이트 카드 공통 껍데기 ──
-function InsCard({ badge, title, sub, children, bg }) {
+// 10월 판(관리자 미리보기)인지 — 발견 카드들이 제목 위 보라색 부제목을 떼고 제목 옆에 아이콘을 단다.
+// 손님 화면(10월 판 아님)은 예전 모양 그대로 둔다.
+const OctCtx = createContext(false);
+
+function InsCard({ badge, title, sub, children, bg, icon = null }) {
+  const oct = useContext(OctCtx);
+  if (oct) {
+    return (
+      <div style={{ background: bg || C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          {icon && <IconBox name={icon} bg={getTypeAccent().accentSoft} />}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em", wordBreak: "keep-all", textWrap: "balance", lineHeight: 1.35, paddingTop: icon ? 5 : 0 }}>{title}</div>
+            {sub && <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{sub}</p>}
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}>{children}</div>
+      </div>
+    );
+  }
   return (
     <div style={{ background: bg || C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: getTypeAccent().accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>{badge}</div>
@@ -2714,15 +2735,27 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   const fcUnlocked = !!(ins.factcheck || hasProfile);
   if (!oct && fcUnlocked) items.push({ locked: false, node: <FactCheckCard key="factcheck" rows={ins.factcheck || []} profile={profileSummary} userInfo={userData} isLoggedIn={!!userData?.id} /> });
   else if (!oct && exIns.factcheck) items.push({ locked: true, node: <Fragment key="factcheck">{lock(<FactCheckCard rows={exIns.factcheck} profile={exProfile} />)}</Fragment> });
-  items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
+  // 10월 판 — 편지는 그달이 끝나면 도착한다. 공감·되짚기와 다음 달 응원 두 가지만, 따로 창에 크게.
+  // 미리보기(관리자)에서는 달이 끝나기 전에도 열어 볼 수 있게 둔다.
+  if (oct) {
+    const per = report?.period || {};
+    const now = new Date();
+    items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
+      <MonthLetterCard entries={entries} year={per.year || now.getFullYear()} month={per.month || now.getMonth() + 1}
+        nickname={nickname} bmtiCode={bmtiCode} parts={PARTS} peek />,
+      <MonthLetterCard entries={EXAMPLE_ENTRIES} year={per.year || now.getFullYear()} month={per.month || now.getMonth() + 1}
+        nickname={nickname} bmtiCode={bmtiCode} parts={PARTS} />, hasAny)}</Fragment> });
+  } else items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
     <LetterCard data={ins.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />,
     <LetterCard data={exIns.letter} isM={isM} bmtiCode={bmtiCode} pdfMode={pdfMode} />, hasAny)}</Fragment> });
 
   const ordered = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {ordered.map((i) => i.node)}
-    </div>
+    <OctCtx.Provider value={oct}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {ordered.map((i) => i.node)}
+      </div>
+    </OctCtx.Provider>
   );
 }
 
@@ -2895,6 +2928,7 @@ function TrendSwitchPill({ mode, onSelect, t }) {
 }
 
 function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
+  const octTrend = useContext(OctCtx);
   const t = getTypeAccent();
   const real = (entries || []).filter((e) => e && typeof e.mood === "number" && e.date);
   const hasEnough = real.length >= 2;
@@ -3087,10 +3121,16 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
   const card = (
     <div style={{ background: C.card, borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, border: "1px solid #F1EEE8" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>기분·불편함 추이</div>
-          <div style={{ fontSize: 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>📈 기분과 불편함 추이</div>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+          {octTrend && <IconBox name="soreBars" bg={t.accentSoft} />}
+          <div style={{ minWidth: 0 }}>
+          {!octTrend && <div style={{ fontSize: 11, fontWeight: 800, color: t.accentDeep, letterSpacing: "0.02em", marginBottom: 3 }}>기분·불편함 추이</div>}
+          {/* 10월 판 — 고른 보기(일간·주간·요일별)에 따라 무엇을 보는지 제목이 바로 말한다 */}
+          <div style={{ fontSize: octTrend ? 16 : 16.5, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>
+            {octTrend ? (mode === "daily" ? "불편함이 몰린 날" : mode === "weekday" ? "불편함이 몰린 요일" : "불편함이 몰린 주") : "📈 기분과 불편함 추이"}
+          </div>
           <p style={{ fontSize: 12, color: C.sub, fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all", minHeight: 32, lineHeight: 1.35 }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : mode === "daily" ? "하루하루의 기록 · 좌우로 넘겨보세요" : "요일별 평균으로 봤어요"}</p>
+          </div>
         </div>
         <TrendSwitchPill mode={mode} onSelect={setMode} t={t} />
       </div>
@@ -3104,6 +3144,7 @@ function TrendChartsCard({ entries, exampleEntries, pdfMode = false }) {
 
 // {닉네임}의 밤 — 주간/일간 토글(기분·불편함 추이와 동일). 잠든 시간대=막대, 수면의 질=꺾은선(4가지 수면 아이콘).
 function MallangNightCard({ entries, nickname, pdfMode = false }) {
+  const octNight = useContext(OctCtx);
   // 훅은 아래 'return null'보다 먼저, 항상 같은 순서로 불러야 한다.
   const [modeState, setMode] = useState("daily");
   const [barsOnTop, setBarsOnTop] = useState(false); // 평소엔 꺾은선이 앞, 커서를 올리면 막대가 앞으로
@@ -3212,10 +3253,13 @@ function MallangNightCard({ entries, nickname, pdfMode = false }) {
     <div style={{ background: "linear-gradient(180deg,#493F73,#61548F)", borderRadius: 20, padding: "18px 18px 20px", boxShadow: CARD_SHADOW, position: "relative", overflow: "hidden" }}>
       {["✦", "✧", "⋆", "✦", "✧"].map((s, i) => (<span key={i} style={{ position: "absolute", left: `${13 + i * 19}%`, top: `${8 + (i % 2) * 8}%`, color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{s}</span>))}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, position: "relative" }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>{nightName}의 밤</div>
-          <div style={{ fontSize: 16.5, fontWeight: 800, color: "#fff" }}>🌙 {nightName}의 밤</div>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+          {octNight && <IconBox name="night" bg="rgba(255,255,255,0.14)" />}
+          <div style={{ minWidth: 0 }}>
+          {!octNight && <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD98A", letterSpacing: "0.02em", marginBottom: 3 }}>{nightName}의 밤</div>}
+          <div style={{ fontSize: octNight ? 16 : 16.5, fontWeight: 800, color: "#fff" }}>{octNight ? "" : "🌙 "}{nightName}의 밤</div>
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600, margin: "3px 0 0", wordBreak: "keep-all", minHeight: 32, lineHeight: 1.35 }}>{mode === "weekly" ? "이번 달을 4주로 나눈 평균이에요" : mode === "daily" ? "하루하루의 수면 · 좌우로 넘겨보세요" : "요일별 평균으로 봤어요"}</p>
+          </div>
         </div>
         <TrendSwitchPill mode={mode} onSelect={setMode} t={getTypeAccent()} />
       </div>
@@ -3438,7 +3482,7 @@ function StreakCard({ data }) {
 // 3. 원고지 정성
 function EffortCard({ data }) {
   return (
-    <InsCard badge="나를 돌본 시간" title="기록을 남긴 정성">
+    <InsCard icon="effort" badge="나를 돌본 시간" title="기록을 남긴 정성">
       <div style={{ display: "flex", gap: 10 }}>
         <div style={{ flex: 1, borderRadius: 12, background: "#FBFAF4", backgroundImage: "linear-gradient(#EDE7D6 1px,transparent 1px),linear-gradient(90deg,#EDE7D6 1px,transparent 1px)", backgroundSize: "13px 13px", border: "1px solid #E7DFCB", padding: "14px 10px", textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 900, color: C.ink }}>{data.count}편</div>
@@ -3458,7 +3502,7 @@ function EffortCard({ data }) {
 function LampClockCard({ data, nickname }) {
   const timeText = data.hour != null ? `${data.hour < 12 ? "오전" : "오후"} ${((data.hour + 11) % 12) + 1}시` : `${data.bucket}`;
   return (
-    <InsCard badge="나의 리듬" title="주로 기록을 남긴 시간대">
+    <InsCard icon="clock" badge="나의 리듬" title="주로 기록을 남긴 시간대">
       <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 8px" }}>
         <div style={{ width: 108, height: 108, borderRadius: "50%", background: "radial-gradient(circle at 50% 40%,#FFE9B0,#F6C560)", boxShadow: "0 0 26px rgba(246,197,96,0.6)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "lampGlow 3s ease-in-out infinite" }}>
           <span style={{ fontSize: 20 }}>🕯️</span>
@@ -3572,7 +3616,7 @@ function DdayCard({ data }) {
   const onScroll = () => { const el = ref.current; if (!el) return; setIdx(Math.round(el.scrollLeft / (el.clientWidth * 0.86))); };
   const goTo = (i) => { const el = ref.current; if (!el) return; const to = Math.max(0, Math.min(N - 1, i)); el.scrollTo({ left: to * el.clientWidth * 0.86, behavior: "smooth" }); };
   return (
-    <InsCard badge="여성 전용 · PMS 돋보기" title="마법의 D-Day 카운트다운" sub="생리 직전 일주일의 식욕·불편함 변화를 확대해서 봤어요">
+    <InsCard icon="dday" badge="여성 전용 · PMS 돋보기" title="마법의 D-Day 카운트다운" sub="생리 직전 일주일의 식욕·불편함 변화를 확대해서 봤어요">
       <div ref={ref} className="dday-scroll" onScroll={onScroll} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
         style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 2px 8px", margin: "0 -2px", scrollSnapType: "x mandatory", touchAction: "pan-x pan-y", cursor: "grab" }}>
         {data.cards.map((c, i) => (

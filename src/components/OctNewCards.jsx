@@ -3,6 +3,7 @@
 //   📸 옆모습 견주기        숫자만으로는 스스로 판단이 안 된다. 그림이 필요하다.
 //   🌙 무리한 날, 그 다음 날  인과는 못 말해도 **순서**는 말할 수 있다.
 //   🔄 주기와 함께           여성 이용자에게 가장 현실적인 물음. 재료는 태그에 이미 있다.
+import { DiscoveryIcon } from './DiscoveryIcons';
 import { sideShapes, dayAfterHeavy } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
 
@@ -126,7 +127,7 @@ export function DayAfterCard({ entries }) {
   if (!d) return null;
   const t = getTypeAccent();
   return (
-    <Card icon="🌙" title="무리한 날, 그 다음 날"
+    <Card icon={<DiscoveryIcon name="dayAfter" size={20} />} title="무리한 날, 그 다음 날"
       sub="부담이 컸던 날과 바로 다음 날을 나란히 놓았어요. 앞뒤 순서일 뿐, 무엇이 원인인지는 알 수 없어요.">
       <Big value={`${d.withSore}`} unit={`/ ${d.n}번`} note={`다음 날 불편한 곳을 적으셨어요 (${d.pct}%)`} />
 

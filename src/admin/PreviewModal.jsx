@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { INK, SUB, LINE, ACCENT, btn } from './theme';
 import { CHARACTERS } from '../data';
 import { Mallang } from '../components/Mallang';
+import MallangStressPopup from '../components/MallangStressPopup';
+import { dailyWord } from '../lib/dailyWord';
+import { CHARACTER_NAMES } from '../lib/bmtiTypes';
+import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 
 // 손님 화면 미리보기 창 — 휴대폰 틀 안에 넣어 실제로 보일 모습 그대로 확인한다.
 // Z/M 말투를 토글해 두 벌이 각각 어떻게 읽히는지 바로 비교할 수 있다.
@@ -135,6 +139,11 @@ function AppChrome({ tone, active: from }) {
   // 누른 자리에서 줄이 자라나는 것처럼 보이게 한다.
   const [grow, setGrow] = useState('');
   const { rows, at } = navFor(active);
+  // 다이어리 방 — 제목 옆 말랑이를 누르면 말랑이 팝업, 그 밑 버튼은 매일 한마디를 바로 펼친다
+  const [pop, setPop] = useState(null);   // null | 'mallang' | 'word'
+  const partner = String(CHARACTER_NAMES[code] || '').replace(/\n/g, ' ');
+  const todayEntry = pop ? getEntryForDate(todayISO()) : null;
+  const word = pop ? dailyWord(todayEntry, tone === 'm' ? 'm' : 'z', todayISO()) : '';
   const go = (key) => {
     if (key === 'back') { setGrow('right'); setActive('root'); return; }
     if (key === 'diary') { setGrow('right'); setActive('today'); return; }
@@ -165,12 +174,36 @@ function AppChrome({ tone, active: from }) {
       {at && (
         <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
           height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
-            {TITLE[at].icon}
-          </span>
+          {at === 'diary' ? (
+            <button type="button" onClick={() => setPop('mallang')} aria-label="말랑이 팝업 열기"
+              style={{ width: 30, height: 30, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', pointerEvents: 'auto' }}>
+              {TITLE[at].icon}
+            </button>
+          ) : (
+            <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
+              {TITLE[at].icon}
+            </span>
+          )}
           <span style={{ fontSize: TITLE[at].size, color: '#111', letterSpacing: '-0.01em',
             fontFamily: TITLE[at].font, whiteSpace: 'nowrap', lineHeight: 1 }}>{TITLE[at].text}</span>
         </div>
+      )}
+
+      {/* 다이어리 — 말랑이 밑 '매일 한마디' 바로 가기 */}
+      {at === 'diary' && (
+        <div style={{ position: 'absolute', top: 64, left: 0, right: 0, zIndex: 29, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+          <button type="button" onClick={() => setPop('word')}
+            style={{ pointerEvents: 'auto', border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
+              borderRadius: 999, padding: '6px 12px', fontSize: 11.5, fontWeight: 800, color: '#1C1A17',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.12)' }}>
+            {partner ? `'${partner}'의 매일 한마디` : '매일 한마디'} →
+          </button>
+        </div>
+      )}
+      {pop && (
+        <MallangStressPopup key={pop} mood={todayEntry?.mood ?? 4} charImage={ch?.image} word={word} partner={partner}
+          initialOpenWord={pop === 'word'} nextLabel="닫기" onNext={() => setPop(null)} />
       )}
 
       {/* 오른쪽 위 마이페이지 */}
