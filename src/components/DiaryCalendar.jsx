@@ -3,6 +3,10 @@ import { Mallang } from "./Mallang";
 import MallangStressPopup from "./MallangStressPopup";
 import { dailyWord } from "../lib/dailyWord";
 import { angleDayLine } from "../lib/angleDayLine";
+
+// 각도 수치(72°, 4° 등)만 연보라로
+const purpleNums = (text) => String(text).split(/(\d+(?:\.\d+)?°)/).map((part, i) => (
+  /°$/.test(part) ? <b key={i} style={{ color: "#8B7BD8", fontWeight: 900 }}>{part}</b> : <span key={i}>{part}</span>));
 import { CHARACTER_NAMES } from "../lib/bmtiTypes";
 import { DiaryIcon } from "./DiaryIcons";
 import DiaryHelpPopup from "./DiaryHelpPopup";
@@ -320,6 +324,20 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                     </button>
                   ) : <Mallang v={previewDay.entry.mood} size={54} />}
                   <div style={{ fontSize: dayMallang ? 9 : 11.5, fontWeight: 800, color: dayMallang ? C.sub : C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: dayMallang ? 1.2 : 1.25 }}>{moodInfo?.label}</div>
+                  {/* 그날의 매일 한마디 — 말랑이 박스 안, 기분 이름 밑. 상자 없이 연보라 형광펜 글씨로 두 줄 */}
+                  {dayMallang && (
+                    <button type="button" onClick={() => setDayPop("word")}
+                      style={{ marginTop: 2, border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit",
+                        textAlign: "center", lineHeight: 1.55 }}>
+                      {[partnerName ? `'${partnerName}'의` : "", "매일 한마디 →"].filter(Boolean).map((ln) => (
+                        <span key={ln} style={{ display: "block" }}>
+                          <span style={{ fontSize: 9.5, fontWeight: 800, color: C.ink, padding: "0 4px", borderRadius: "4px 8px 5px 9px",
+                            backgroundImage: "linear-gradient(100deg, rgba(186,166,246,0) 1%, rgba(186,166,246,0.6) 4%, rgba(186,166,246,0.42) 12%, rgba(186,166,246,0.5) 88%, rgba(186,166,246,0.65) 95%, rgba(186,166,246,0) 99%)",
+                            backgroundSize: "100% 62%", backgroundPosition: "0 78%", backgroundRepeat: "no-repeat" }}>{ln}</span>
+                        </span>
+                      ))}
+                    </button>
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "#FBEFD8", border: `1px solid ${C.yellowLine}`, borderRadius: 10, padding: "7px 8px", fontSize: 13.5, fontWeight: 800, color: C.ink, letterSpacing: "0.02em" }}>
@@ -340,22 +358,6 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                 </div>
               </div>
 
-              {/* 그날의 매일 한마디 — 말랑이 칸과 태그 칸 밑에 따로 한 줄 */}
-              {dayMallang && (
-                <div style={{ flexShrink: 0, padding: "0 16px 10px", textAlign: "center" }}>
-                  {/* 상자 없이 글씨만 — 연보라 형광펜을 대충 그은 듯 */}
-                  <button type="button" onClick={() => setDayPop("word")}
-                    style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: C.ink, padding: "1px 6px", borderRadius: "4px 8px 5px 9px",
-                      backgroundImage: "linear-gradient(100deg, rgba(186,166,246,0) 1%, rgba(186,166,246,0.6) 4%, rgba(186,166,246,0.42) 12%, rgba(186,166,246,0.5) 88%, rgba(186,166,246,0.65) 95%, rgba(186,166,246,0) 99%)",
-                      backgroundSize: "100% 62%", backgroundPosition: "0 78%", backgroundRepeat: "no-repeat",
-                      WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>
-                      {partnerName ? `'${partnerName}'의 매일 한마디` : "매일 한마디"} →
-                    </span>
-                  </button>
-                </div>
-              )}
-
               {/* 각도기록 — 잰 날에만. 날씨 적듯 항목과 수치 한 줄, 달라진 게 있으면 한 문장 */}
               {(() => {
                 const al = angleChecks ? angleDayLine(angleChecks, previewDay.dateStr) : null;
@@ -369,12 +371,12 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
                         <span>📐 이번 주 각도</span>
                         {al.chips.map((c) => (
                           <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ color: "#D6CFC1" }}>·</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{c}</span>
+                            <span style={{ color: "#D6CFC1" }}>·</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{purpleNums(c)}</span>
                           </span>
                         ))}
                         {onAngleOpen && <span style={{ marginLeft: "auto", color: C.sub, fontSize: 11 }}>›</span>}
                       </div>
-                      {al.note && <div style={{ marginTop: 3, fontSize: 11.5, fontWeight: 700, color: "#6B6459", lineHeight: 1.5 }}>{al.note}</div>}
+                      {al.note && <div style={{ marginTop: 3, fontSize: 11.5, fontWeight: 700, color: "#6B6459", lineHeight: 1.5 }}>{purpleNums(al.note)}</div>}
                     </button>
                   </div>
                 );

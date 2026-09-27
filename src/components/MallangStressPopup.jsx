@@ -1,6 +1,22 @@
 import { useRef, useState } from "react";
 import { Mallang } from "./Mallang";
 import { getTypeAccent } from "../lib/typeAccent";
+import { dailyWord } from "../lib/dailyWord";
+import { CHARACTER_NAMES } from "../lib/bmtiTypes";
+import { getEntryForDate, todayISO } from "../lib/diaryHistory";
+
+// 한마디를 넘겨받지 못했을 때 — 오늘 기록과 저장된 내 유형으로 직접 짓는다.
+// 부르는 곳마다 챙기지 않아도 모든 말랑이 팝업에 '매일 한마디' 버튼이 뜨게.
+function ownWord() {
+  let code = "";
+  try { code = String(localStorage.getItem("bmti_code") || ""); } catch { /* 무시 */ }
+  const axis = code.split("-")[0];
+  const day = todayISO();
+  return {
+    word: dailyWord(getEntryForDate(day) || null, axis.endsWith("M") ? "m" : "z", day),
+    partner: String(CHARACTER_NAMES[axis] || "").replace(/\n/g, " "),
+  };
+}
 
 // 말랑이를 고르거나 하루 기록을 마쳤을 때 뜨는 팝업 — 캐릭터가 채팅하듯
 // "말랑이를 눌러서 스트레스를 풀어보세요"라고 말을 걸고, 가운데 큼직하게 뜬
@@ -17,9 +33,12 @@ const BABY_COUNT = 4;
 
 export default function MallangStressPopup({ mood, charImage, onNext, nextLabel = "다음",
   // 오늘 기록을 마쳤을 때 — 내 파트너가 건네는 한마디. 넘기지 않으면 안 뜬다.
-  word = "", partner = "",
+  word: wordIn = "", partner: partnerIn = "",
   // 처음부터 매일 한마디 책을 펼쳐 둘지 — '매일 한마디 →' 버튼으로 바로 들어올 때
   initialOpenWord = false }) {
+  const [own] = useState(() => (wordIn ? null : ownWord()));
+  const word = wordIn || own?.word || "";
+  const partner = partnerIn || own?.partner || "";
   const t = getTypeAccent();
   const [tapKey, setTapKey] = useState(0);
   const [level, setLevel] = useState(mood);

@@ -11,6 +11,8 @@ import MallangDiscoveryReport from '../components/MallangDiscoveryReport';
 import AngleBodyAdmin from './AngleBodyAdmin';
 import { setDiaryDryRun, todayISO } from '../lib/diaryHistory';
 import AngleCapture from '../features/angle/AngleCapture';
+import { LetterArrival } from '../components/MonthLetter';
+import { PARTS } from '../lib/mallangReportEngine';
 import { DiaryIcon } from '../components/DiaryIcons';
 import { TAG_CATEGORIES, strainScore, strainWord } from '../lib/diaryTags';
 
@@ -33,6 +35,22 @@ function fakeWeeks(n) {
       arm_raise_r: Math.round((128 - i * 2.4) * 10) / 10,
       quality: 82,
     });
+  }
+  return out;
+}
+
+// 지난달 — 편지 도착 팝업 미리보기용
+const lastMonth = () => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return { y: d.getFullYear(), m: d.getMonth() + 1 }; };
+// 지난달 기록을 그럴듯하게 지어낸다 — 기분이 월말로 갈수록 나아지고, 목이 자주 불편한 한 달
+function fakeLastMonth() {
+  const { y, m } = lastMonth();
+  const out = [];
+  for (let d = 1; d <= 28; d += 1) {
+    if (d % 5 === 0) continue;
+    const date = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    out.push({ date, mood: d < 12 ? 2 + (d % 2) : 3 + (d % 3 === 0 ? 1 : 0),
+      soreness: d % 3 === 0 ? [{ part: 'neck', level: 3 }] : d % 4 === 0 ? [{ part: 'waist', level: 2 }] : [],
+      exercise: { did: d % 6 === 0 }, tags: d % 4 === 0 ? ['업무과다'] : [], created_at: `${date}T22:00:00` });
   }
   return out;
 }
@@ -122,6 +140,7 @@ export default function DiaryPreview() {
           <button onClick={() => { setReportTab('records'); setScreen('report'); }} style={btn(false)}>📅 이번달 기록</button>
           <button onClick={() => { setReportTab('discovery'); setScreen('report'); }} style={btn(false)}>📊 이번달 발견</button>
           <button onClick={() => setScreen('capture')} style={btn(false)}>📷 각도 재는 화면</button>
+          <button onClick={() => setScreen('letter')} style={btn(false)}>💌 편지 도착 팝업</button>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: SUB }}>
             말투
             <select value={tone} onChange={(e) => setTone(e.target.value)}
@@ -195,6 +214,12 @@ export default function DiaryPreview() {
             ✕ 미리보기 닫기
           </button>
         </>
+      )}
+
+      {/* 한 달이 지나 처음 들어왔을 때 뜨는 편지 — 지난달 기록을 지어 넣어 미리 본다(본 표시는 남기지 않음) */}
+      {screen === 'letter' && (
+        <LetterArrival entries={fakeLastMonth()} year={lastMonth().y} month={lastMonth().m} nickname="회원" bmtiCode={code}
+          parts={PARTS} onClose={() => setScreen('')} />
       )}
 
       {screen === 'capture' && (

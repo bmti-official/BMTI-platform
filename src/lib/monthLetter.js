@@ -89,3 +89,23 @@ export function buildMonthLetter(entries, { year, month, nickname, bmtiCode, par
 
   return { look, ahead, month, next, tone: tk };
 }
+
+// ── 편지 도착 팝업을 띄울지 ──
+// 조건: 로그인 · 지난달에 일기를 한 번이라도 적음 · 이번 달 들어 아직 안 띄움
+const SEEN_KEY = (y, m) => `bmti_letter_seen_${y}-${String(m).padStart(2, '0')}`;
+
+/** 지금 띄울 편지가 있나 — { year, month, entries } 또는 null. 지난달 편지다. */
+export function letterDue(history, { isLoggedIn, now = new Date() } = {}) {
+  if (!isLoggedIn) return null;
+  const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const m = now.getMonth() === 0 ? 12 : now.getMonth();
+  const pre = `${y}-${String(m).padStart(2, '0')}-`;
+  const entries = (history || []).filter((e) => e && String(e.date || '').startsWith(pre));
+  if (!entries.length) return null;
+  try { if (localStorage.getItem(SEEN_KEY(y, m))) return null; } catch { /* 무시 */ }
+  return { year: y, month: m, entries };
+}
+export function markLetterSeen(year, month) {
+  try { localStorage.setItem(SEEN_KEY(year, month), new Date().toISOString()); } catch { /* 무시 */ }
+}
+
