@@ -15,5 +15,7 @@ export function withRoutineSetup(card = {}) {
   if (side === 'off') { out.has_side = false; out.can_alternate = false; }
   if (side === 'both') { out.has_side = true; out.default_side = 'both'; }
   if (side === 'alt') { out.has_side = true; out.can_alternate = true; out.default_side = 'alt'; }
+  if (side === 'right' || side === 'left') out.default_side = side;   // 마이플리 — 한쪽만
+  if (card.rc_guide === 'count') out.default_guide = false;           // 마이플리 — 숫자만
   return out;
 }

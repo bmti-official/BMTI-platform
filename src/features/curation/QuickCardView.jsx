@@ -201,7 +201,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const [vol, setVol] = useState(0.85);
   const audioRef = useRef(null);
   // 설명을 들으며 할지, 숫자만 들을지 — 손님이 고른다.
-  const [guide, setGuide] = useState(true);   // 기본은 '설명 들으며'
+  const [guide, setGuide] = useState(card.default_guide !== false);   // 기본은 '설명 들으며'(마이플리에서 '숫자만'으로 정할 수 있다)
   // 고르는 칸은 접어 두고, 바꾸고 싶은 사람만 펼친다.
   const [optOpen, setOptOpen] = useState(false);
   const [paused, setPaused] = useState(false);

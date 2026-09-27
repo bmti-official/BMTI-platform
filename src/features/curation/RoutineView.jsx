@@ -6,6 +6,7 @@ import AiNote from './AiNote';
 import CardPeek from './CardPeek';
 import { CharRow, CurationThumb } from './CurationCard';
 import { isClip } from './media';
+import { plMaker } from './plMaker';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
@@ -24,6 +25,7 @@ const coverTag = (side) => ({
 
 export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onStart, onBrowse, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
+  const who = plMaker(routine);
   const s = routineSummary(cards);
   const rate = finishRate(routine);
   // 구경하기 — 표지는 그대로 두고 그 위에 창만 띄워, 옆으로 넘겨 가며 훑어본다.
@@ -68,6 +70,13 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
       {/* 묶음은 유형을 보고 고르기 때문에, 여기서만 추천 유형을 보여 준다 */}
       {(charImages || []).length > 0 && <CharRow chars={(charImages || []).slice(0, 4)} codes={charCodes || []} h={30} />}
       <h3 style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.4, margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h3>
+      {/* 회원이 올린 플리 — 만든 사람 */}
+      {who && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '-2px 0 8px', fontSize: 12.5, fontWeight: 700, color: SUB }}>
+          {who.img && <img src={who.img} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />}
+          {who.nick ? <span><b style={{ color: '#8A6A3A', fontWeight: 800 }}>{who.nick}</b>님이 만든 플리</span> : <span>회원이 만든 플리</span>}
+        </div>
+      )}
 
       <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
         {rate != null ? `완주율 ${rate}%` : '아직 기록이 쌓이지 않았어요'}

@@ -89,7 +89,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
               고칠 플리를 눌러 주세요.
             </div>
           )}
-          <PliGrid plis={myPlis} tone={tone} empty={EMPTY_WORD.mine} editMode={editMode}
+          <PliGrid plis={myPlis} tone={tone} empty={EMPTY_WORD.mine} editMode={editMode} maker={false}
             onOpen={(r) => (editMode
               ? setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], showNick: !!r.show_nick })
               : setOpenPli(r))} />

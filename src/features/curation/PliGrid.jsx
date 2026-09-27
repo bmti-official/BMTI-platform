@@ -4,13 +4,15 @@
 import { CurationThumb } from './CurationCard';
 import { isClip } from './media';
 import { routineSummary, mmss, pickRoutineTone } from './format';
+import { plMaker } from './plMaker';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 
 // action: 칸마다 밑에 붙는 작은 버튼 { label, onClick(r) } — 바로플리 '가져와 고치기'
+// maker: 만든 사람(캐릭터·닉네임)을 붙일지 — 마이플리는 모두 내 것이라 끈다
 // editMode: 마이플리 편집하기 — 표지 위에 '✎ 고치기'를 얹어 누르면 고친다는 걸 보인다
-export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직 담긴 플리가 없어요.', action = null, editMode = false }) {
+export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직 담긴 플리가 없어요.', action = null, editMode = false, maker = true }) {
   if (plis.length === 0) {
     return (
       <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '30px 16px', textAlign: 'center',
@@ -23,6 +25,7 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
         const cards = r.cards || [];
         const s = routineSummary(cards);
         const cover = r.cover_url ? r : { ...(cards[0] || {}), thumb_text: r.thumb_text };
+        const who = maker ? plMaker(r) : null;
         const clip = r.cover_url ? (isClip(r.cover_url) ? r.cover_url : '') : ((cards[0] || {}).video_url || '');
         return (
           <div key={r.id}>
@@ -44,11 +47,19 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4, marginTop: 6,
-              wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              {pickRoutineTone(r, tone).title}
+            {/* 제목 왼쪽에 만든 사람의 유형 캐릭터 — 제목이 두 줄이어도 첫 줄 옆에 둔다 */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 6 }}>
+              {who?.img && <img src={who.img} alt="" style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0, marginTop: -2 }} />}
+              <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4,
+                wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {pickRoutineTone(r, tone).title}
+              </div>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginTop: 2 }}>동작 {s.count}개</div>
+            {/* 닉네임을 보이기로 한 플리면 둘째 줄 앞에 */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginTop: 2, paddingLeft: who?.img ? 27 : 0,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {who?.nick && <span style={{ color: GOLD_INK }}>{who.nick} · </span>}동작 {s.count}개
+            </div>
           </button>
           {action && (
             <button type="button" onClick={() => action.onClick(r)}
