@@ -58,6 +58,8 @@ const STEADY_MS = 750; // 카운트다운 중 이만큼은 자세가 그대로�
 const READY_SEC = 3;   // '셋, 둘, 하나' — 재는 토막마다 앞에서 센다
 // 재는 토막 앞에서 트는 말 — 무엇을 재는지 이름을 붙여 센다
 const COUNT_VOICE = { neck: 'countNeck', trunk: 'countTrunk', arm: 'countArm' };
+// 다시 재는 판의 셋·둘·하나 — '정확도를 위해 한 번 더 측정할게요. ○○ 주세요. 셋, 둘, 하나'
+const RETRY_COUNT = { neck: 'againStill', trunk: 'againBend', arm: 'againRaise' };
 // 다시 잴 때 — 무엇을 다시 재는지 말한다
 const AGAIN_VOICE = { neck: 'againNeck', trunk: 'againTrunk', arm: 'againArm', side: 'againSide', front: 'againArm' };
 
@@ -189,7 +191,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     // 허리를 굽히는 동안엔 머리가 화면 밖으로 나가기 쉽다.
     // 그때 재는 건 어깨~골반 기울기뿐이라 머리는 없어도 된다.
     const run0 = runRef.current;
-    const bending = !!run0 && run0.ready === 0 && run0.take === 'trunk';
+    // 허리를 잴 차례면 카운트 중에도 — 다시 잴 땐 '허리를 굽혀 주세요'를 먼저 듣고 숙이기 시작한다
+    const bending = !!run0 && (run0.take === 'trunk' || st?.phases?.[run0.pi]?.take === 'trunk');
     // 앉아서 목만 잴 땐 골반이 없어도 된다. 허리·어깨는 골반을 기준으로 재므로 필요하다.
     const dist = distanceOk(pts, { needHead: !bending, needHips: !sitting });
     const face = side ? (sitting ? sideOkNeck(pts) : sideOk(pts)) : frontOk(pts);
@@ -433,7 +436,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     setCount(0); setReady(0); setPhase(null); setGot(0);
     setMsg(n >= MAX_RETRY ? '' : why);
     clearSaid();
-    if (voiceKey && n < MAX_RETRY) say(voiceKey, { force: true });
+    // 다시 잴 땐 셋·둘·하나 문장('정확도를 위해 한 번 더 측정할게요…')이 이유까지 말한다.
+    // 여기서 '○○을 한 번 더 잴게요'를 또 하면 같은 말이 두 번 나온다.
+    void voiceKey;
     if (n >= MAX_RETRY) setStep(-1);               // 세 번 어긋나면 가이드부터 다시
   };
 
@@ -566,15 +571,14 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     // 토막에 들어선다. **재는 토막이면 그 앞에서 따로 셋·둘·하나를 센다.**
     // 한 판 안에 목·허리처럼 두 가지를 이어서 재는데, 예전엔 판 앞에서만 한 번 세서
     // 두 번째 측정이 시작되는 줄 손님이 몰랐다.
-    // 토막 시작 안내 — 다시 재는 판이면 처음과 다르게.
-    //   가만히 있는 토막(목·앉아서) … 말하지 않는다('한 번 더 잴게요' + '셋, 둘, 하나'로 충분)
-    //   허리 굽히기 … '다시 한 번, 허리를 천천히 끝까지 굽혀 주세요. 끝에서 잠깐 멈춰요'
-    //   팔 들기     … '다시 한 번, 두 팔을 천천히 끝까지 올려 주세요. 끝에서 잠깐 멈춰요'
+    // 토막 시작 안내 — 처음엔 '시작합니다…·이제 ~해 주세요', 다시 재는 판이면 말하지 않는다.
+    // 다시 잴 땐 셋·둘·하나 문장이 '정확도를 위해 한 번 더 측정할게요. ○○ 주세요'까지 다 말한다.
     const startVoice = (run, ph) => {
-      if (!run.again) { say(ph.voice, { force: true }); return; }
-      if (ph.take === 'trunk') say('againBend', { force: true });
-      else if (ph.take === 'arm') say('againRaise', { force: true });
+      if (!run.again) say(ph.voice, { force: true });
+      // 다시 재는 판은 셋·둘·하나 문장에 할 일이 이미 들어 있다 — 따로 말하지 않는다
     };
+    // 셋·둘·하나 — 처음엔 '○○을 잽니다', 다시 잴 땐 '정확도를 위해 한 번 더 측정할게요'
+    const countKey = (run, ph) => (run.again ? RETRY_COUNT[ph.take] : COUNT_VOICE[ph.take]);
     const enter = (run, i) => {
       const ph = phases[i];
       run.pi = i; run.take = null;
@@ -583,10 +587,10 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
         // 앞의 말이 끝난 뒤에 센다 — '셋, 둘, 하나'는 그 말 다음에 이어 나온다
         // 화면 숫자가 '셋, 둘, 하나'와 같이 끝나게 — 그 말의 길이만큼 센다(앞의 '○○을 잽니다'
         // 동안엔 3에 머문다). 길이를 모르면 3초.
-        run.readyUntil = now() + speakingLeft() + Math.max(READY_SEC * 1000, clipMs(COUNT_VOICE[ph.take]));
+        run.readyUntil = now() + speakingLeft() + Math.max(READY_SEC * 1000, clipMs(countKey(run, ph)));
         run.ready = READY_SEC;
         setReady(READY_SEC);
-        say(COUNT_VOICE[ph.take], { force: true });   // '허리 굽힘을 잽니다. 셋, 둘, 하나'
+        say(countKey(run, ph), { force: true });   // '허리 굽힘을 잽니다. 셋, 둘, 하나'
       } else {
         run.readyUntil = 0; run.ready = 0;
         run.phaseAt = now();
@@ -608,9 +612,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
       if (run.readyUntil) {
         if (run.shaken) {
           run.shaken = false;
-          run.readyUntil = now() + Math.max(READY_SEC * 1000, clipMs(COUNT_VOICE[ph.take]));
+          run.readyUntil = now() + Math.max(READY_SEC * 1000, clipMs(countKey(run, ph)));
           setShook((n) => n + 1);
-          say(COUNT_VOICE[ph.take], { force: true, cut: true });   // 처음부터 다시 — 하던 말을 끊는다
+          say(countKey(run, ph), { force: true, cut: true });   // 처음부터 다시 — 하던 말을 끊는다
         }
         const r = Math.ceil((run.readyUntil - now()) / 1000);
         // 앞의 말을 기다리는 동안엔 '3'에 머문다
