@@ -61,6 +61,12 @@ const SWITCH_REST = 20;
 // right/left  한쪽만 · both  오른쪽을 다 하고 왼쪽으로 · alt  한 번 할 때마다 좌우가 바뀐다
 const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const SIDE_KO = Object.fromEntries(SIDES);
+// 배속 — 영상만 빨라지거나 느려진다. 설명·멘트 음성은 늘 원래 속도(빨리 틀면 알아듣기 어렵다).
+// 숫자 세기는 영상이 한 바퀴 돌 때마다 나오므로 저절로 박자를 따라간다.
+// 고른 속도는 기억해 두고 바로카드·바로플리 어디서나 같이 쓴다.
+const SPEEDS = [0.75, 1, 1.25, 1.5];
+const SPEED_KEY = 'bmti_card_speed';
+const readSpeed = () => { try { const v = Number(localStorage.getItem(SPEED_KEY)); return SPEEDS.includes(v) ? v : 1; } catch { return 1; } };
 
 export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch,
   // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 카드를 뒤집어 뒷면에 알아 두기를 보여 주고,
@@ -90,6 +96,18 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const [switching, setSwitching] = useState(false);
   const clipRef = useRef(null);
   const resting = useRef(false);
+  const [speed, setSpeedState] = useState(readSpeed);
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const setSpeed = (v) => { setSpeedState(v); setSpeedOpen(false); try { localStorage.setItem(SPEED_KEY, String(v)); } catch { /* 무시 */ } };
+  // 영상이 새로 붙어도(세트·좌우가 바뀌어도) 고른 속도를 그대로 입힌다
+  useEffect(() => {
+    const v = clipRef.current;
+    if (v && v.playbackRate !== speed) { try { v.playbackRate = speed; v.defaultPlaybackRate = speed; } catch { /* 무시 */ } }
+  });
+  // 세트가 끝났는데 멘트가 아직이면, 멘트가 끝난 뒤에 넘어간다(다음 말과 겹치지 않게)
+  const pendingRef = useRef(null);
+  const pendingTimer = useRef(0);
+  const voiceRoleRef = useRef('');
   // 좌우가 나뉘는 동작이면 어느 쪽을 할지 고른다.
   const [side, setSide] = useState(card.default_side || 'both');
   // '한쪽씩 둘 다'는 오른쪽을 다 하고 왼쪽으로 넘어간다. 지금 왼쪽 차례인가.
@@ -111,12 +129,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 세트 멘트를 듣고 시작하니 그 길이도 예상 시간에 든다. 들어 본 것 중 가장 긴 것으로 잡는다.
   const [mentSec, setMentSec] = useState(0);
   const oneRep = clipSec > 0 ? clipSec : card.duration_sec;
-  const perSet = oneRep > 0 ? Math.round(oneRep * reps) : 0;
+  const perSet = oneRep > 0 ? Math.round((oneRep * reps) / speed) : 0;   // 배속만큼 짧아지거나 길어진다
   const rounds = sets * (twoPhase ? 2 : 1);
   const restTotal = twoPhase ? restSec * (sets - 1) * 2 + sideRest : restSec * Math.max(0, sets - 1);
   const totalSec = perSet > 0 ? perSet * rounds + restTotal + Math.round(mentSec) * rounds : 0;
 
-  const restart = () => { setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); };
+  const restart = () => { pendingRef.current = null; clearTimeout(pendingTimer.current); setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); };
 
   // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
   const togglePause = () => {
@@ -152,9 +170,23 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     };
     if (side === 'alt') setAltFlip((f) => !f);
     if (rep + 1 < reps) { setRep(rep + 1); again(); return; }
-    if (done + 1 < sets) { setRep(0); setDone(done + 1); breathe(restSec); return; }
-    if (twoPhase && !secondSide) { setRep(0); setDone(0); setSecondSide(true); setAltFlip(false); breathe(sideRest, true); return; }
-    setRep(reps); setDone(sets);      // 다 채웠다. 여기서 멈춘다
+    const finishSet = () => {
+      if (done + 1 < sets) { setRep(0); setDone(done + 1); breathe(restSec); return; }
+      if (twoPhase && !secondSide) { setRep(0); setDone(0); setSecondSide(true); setAltFlip(false); breathe(sideRest, true); return; }
+      setRep(reps); setDone(sets);      // 다 채웠다. 여기서 멈춘다
+    };
+    // 세트 멘트가 아직 흐르는 중이면 멈춰 서서 기다린다 — 빠르게(배속) 할 때 특히 잦다.
+    // 소리가 끝났다는 알림이 안 올 때를 대비해 남은 길이만큼 지나면 그냥 넘어간다.
+    const a = audioRef.current;
+    if (voiceRoleRef.current === 'ment' && a && !a.paused && !a.ended) {
+      try { v.pause(); } catch { /* 무시 */ }
+      pendingRef.current = finishSet;
+      const left = Number.isFinite(a.duration) ? Math.max(0, a.duration - a.currentTime) : 6;
+      clearTimeout(pendingTimer.current);
+      pendingTimer.current = setTimeout(() => { const f = pendingRef.current; pendingRef.current = null; if (f) f(); }, (left + 1) * 1000);
+      return;
+    }
+    finishSet();
   };
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
   // 음성과 자막을 같은 자리끼리 짝지어 읽는다. 중간이 비어도 어긋나지 않는다.
@@ -229,6 +261,10 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           : introOn ? 'intro'
             : cueOn ? 'cue'
               : mentOn ? 'ment' : '';
+  useEffect(() => { voiceRoleRef.current = voiceRole; });
+  // 설명·멘트(큰 음성)가 흐르는 중인가 / 숫자·카운트다운 채널을 끄고 켜기
+  function talkingNow() { const m = audioRef.current; return !!(m && !m.paused && !m.ended); }
+  function muteCount(on) { const c = countRef.current; if (c) c.muted = on; }
   const nowVoice = voiceRole === 'hello' ? helloUrl
     : voiceRole === 'rest' ? ((switching && commonAt('switch', 0)) || commonAt('rest', restLen))
       : voiceRole === 'finish' ? commonAt('finish', 0)
@@ -377,6 +413,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           const a = countRef.current;
           if (a && commonAt('countdown', 0)) {
             a.volume = vol;
+            const m = audioRef.current;
+            a.muted = !!(m && !m.paused && !m.ended);   // 쉬는 멘트와 겹치면 겹치는 동안은 소리 없이
             try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
           }
         }
@@ -492,11 +530,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           </span>
           <h3 style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: 0, wordBreak: 'keep-all' }}>{title}</h3>
           {flippable && !started && (
-            <button type="button" onClick={() => setFlipped(true)} aria-label="카드 뒤집기"
+            <button type="button" onClick={() => setFlipped(true)} aria-label="설명 보기"
               style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
                 borderRadius: 10, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, color: SUB, whiteSpace: 'nowrap',
                 boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-              뒤집기 ↻
+              설명 보기 ↻
             </button>
           )}
         </div>
@@ -556,8 +594,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5. 전체 화면에서도 이 비율 그대로 키우기만 한다.
         // 그래야 위에 얹은 글씨가 화면 꼭대기가 아니라 영상 안에 앉는다.
-        // 하나씩 보는 화면에서 따라할 땐 전체 화면 영상 아래로 알아 두기가 펼쳐진다.
-        <FullWrap on={full} below={flippable ? <div style={{ padding: '4px 15px 30px' }}><KnowAll card={card} /></div> : null}>
+        <FullWrap on={full}>
         <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
@@ -622,13 +659,38 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
                 border: 'none', background: '#fff', color: INK, fontSize: 13, fontWeight: 900,
                 cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1, boxShadow: `inset 0 0 0 1px ${LINE}` }}>⛶</button>
           ) : (
-            <button type="button" onClick={() => setFull(false)}
-              style={{ position: 'absolute', left: '50%', bottom: 'max(22px, env(safe-area-inset-bottom))',
-                transform: 'translateX(-50%)', zIndex: 7, border: 'none', background: '#fff',
-                color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800,
-                cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
-              설정 바꾸기
-            </button>
+            <div style={{ position: 'absolute', left: '50%', bottom: 'max(22px, env(safe-area-inset-bottom))',
+              transform: 'translateX(-50%)', zIndex: 7, display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* 배속 — 누르면 네 단계 중에서 고른다. 보던 자리에서 속도만 바뀐다 */}
+              <div style={{ position: 'relative' }}>
+                {speedOpen && (
+                  <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+                    background: '#fff', borderRadius: 14, padding: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+                    display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {[...SPEEDS].reverse().map((x) => (
+                      <button key={x} type="button" onClick={() => setSpeed(x)}
+                        style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 10, padding: '8px 14px',
+                          fontSize: 13, fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
+                          background: x === speed ? SET_BG : 'transparent', color: x === speed ? SET_INK : INK }}>
+                        {x}×
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" onClick={() => setSpeedOpen((o) => !o)} aria-label="재생 속도"
+                  style={{ border: 'none', background: '#fff', color: speed === 1 ? INK : SET_INK, borderRadius: 999,
+                    padding: '11px 16px', fontSize: 13, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit',
+                    fontVariantNumeric: 'tabular-nums', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+                  {speed}×
+                </button>
+              </div>
+              <button type="button" onClick={() => setFull(false)}
+                style={{ border: 'none', background: '#fff',
+                  color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800,
+                  cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+                설정 바꾸기
+              </button>
+            </div>
           )}
 
           {/* 자막 — 지금 흐르는 멘트를 영상 아래에 겹쳐 준다 */}
@@ -722,12 +784,23 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               if (voiceRole === 'hello') setStage('move');
               else if (voiceRole === 'intro') setIntroDone(true);
               else if (voiceRole === 'cue') setCueDone(true);
-              else if (voiceRole === 'ment') setMentDone(setKey);
-            }} style={{ display: 'none' }} />
+              else if (voiceRole === 'ment') {
+                setMentDone(setKey);
+                const f = pendingRef.current; pendingRef.current = null; clearTimeout(pendingTimer.current);
+                if (f) f();
+              }
+              muteCount(false);   // 겹침이 끝났다 — 숫자·카운트다운을 다시 켠다
+            }}
+            // 설명·멘트가 나오는 동안엔 숫자·'셋, 둘, 하나, 시작!' 채널을 끈다 — 겹치는 부분은 안 들리게
+            onPlay={() => muteCount(true)}
+            onPause={() => muteCount(false)}
+            style={{ display: 'none' }} />
           {/* 숫자 세기 · 카운트다운 — 여기도 주소를 key로 둔다.
               주소만 갈아 끼우면 브라우저가 앞 숫자를 마저 세어 버린다. */}
           <audio ref={countRef} key={countUrl || 'none'} src={countUrl || undefined}
-            preload="auto" style={{ display: 'none' }} />
+            preload="auto" style={{ display: 'none' }}
+            // 새로 붙을 때도 — 큰 음성이 흐르는 중이면 꺼 둔 채로 시작한다
+            onPlay={() => muteCount(talkingNow())} />
           <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
             style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,
               background: voiceOn ? SET_BG : '#fff', boxShadow: voiceOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
@@ -767,8 +840,9 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         </div>
         {stage === 'move' && <div style={{ marginTop: 10 }}>{optBox}</div>}
         <AiNote top={10} />
-        {/* 하나씩 보는 화면 — 표지일 땐 뒷면에, 따라하는 동안엔 아래에 펼쳐 둔다 */}
-        {flippable ? (started && <KnowAll card={card} />) : <KnowBox card={card} />}
+        {/* 하나씩 보는 화면 — 표지일 땐 뒷면에, 따라하다 '설정 바꾸기'로 나오면 아래에 펼쳐 둔다
+            (전체 화면에선 영상만) */}
+        {flippable ? (started && !full && <KnowAll card={card} />) : <KnowBox card={card} />}
       </div>
     </article>
   );
@@ -819,7 +893,7 @@ function Rows({ items, color }) {
 }
 
 // 알아 두기를 모두 펼쳐 보인다 — 카드 뒷면, 그리고 따라하는 동안 영상 아래.
-// 차례: ① Z/M 유형 제목 ② 이럴 때 좋습니다 ③ 이럴 땐 하지 마세요 ④ 쓰는 곳
+// 차례: ① 이럴 때 좋습니다 ② 이럴 땐 하지 마세요 ③ 쓰는 곳
 function KnowAll({ card }) {
   const good = LINES(card?.good_when);
   const avoid = LINES(card?.avoid_when);
@@ -830,19 +904,6 @@ function KnowAll({ card }) {
   const box = { padding: '11px 13px', borderRadius: 13, background: '#FAF7F0' };
   return (
     <div style={{ display: 'grid', gap: 9, marginTop: 10 }}>
-      {(card?.title_z || card?.title_m) && (
-        <div style={box}>
-          {head('Z/M 유형 제목', INK)}
-          <div style={{ display: 'grid', gap: 5, marginTop: 7 }}>
-            {[['Z 담백', card.title_z], ['M 다정', card.title_m]].filter(([, v]) => v).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 12.5, lineHeight: 1.5, wordBreak: 'keep-all' }}>
-                <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 900, color: PURPLE, background: '#F1EEFB', borderRadius: 6, padding: '1px 6px' }}>{k}</span>
-                <span style={{ fontWeight: 700 }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       {good.length > 0 && <div style={box}>{head('👍 이럴 때 좋습니다', '#3F7F5B')}<Rows items={good} color="#3F7F5B" /></div>}
       {avoid.length > 0 && <div style={box}>{head('⛔ 이럴 땐 하지 마세요', '#B23B36')}<Rows items={avoid} color="#B23B36" /></div>}
       {focus.length > 0 && <div style={box}>{head('🎯 쓰는 곳', '#8A6A3A')}<Rows items={focus} color="#8A6A3A" /></div>}

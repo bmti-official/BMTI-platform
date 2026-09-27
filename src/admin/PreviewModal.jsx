@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { INK, SUB, LINE, ACCENT, btn } from './theme';
 import { CHARACTERS } from '../data';
 import { Mallang } from '../components/Mallang';
-import MallangStressPopup from '../components/MallangStressPopup';
-import { dailyWord } from '../lib/dailyWord';
-import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-import { getEntryForDate, todayISO } from '../lib/diaryHistory';
 
 // 손님 화면 미리보기 창 — 휴대폰 틀 안에 넣어 실제로 보일 모습 그대로 확인한다.
 // Z/M 말투를 토글해 두 벌이 각각 어떻게 읽히는지 바로 비교할 수 있다.
@@ -139,11 +135,6 @@ function AppChrome({ tone, active: from }) {
   // 누른 자리에서 줄이 자라나는 것처럼 보이게 한다.
   const [grow, setGrow] = useState('');
   const { rows, at } = navFor(active);
-  // 다이어리 방 — 제목 옆 말랑이를 누르면 말랑이 팝업, 그 밑 버튼은 매일 한마디를 바로 펼친다
-  const [pop, setPop] = useState(null);   // null | 'mallang' | 'word'
-  const partner = String(CHARACTER_NAMES[code] || '').replace(/\n/g, ' ');
-  const todayEntry = pop ? getEntryForDate(todayISO()) : null;
-  const word = pop ? dailyWord(todayEntry, tone === 'm' ? 'm' : 'z', todayISO()) : '';
   const go = (key) => {
     if (key === 'back') { setGrow('right'); setActive('root'); return; }
     if (key === 'diary') { setGrow('right'); setActive('today'); return; }
@@ -172,39 +163,13 @@ function AppChrome({ tone, active: from }) {
 
       {/* 가운데 위 — 지금 어느 방에 있는지. 하단 줄이 통째로 바뀌니 여기가 길잡이가 된다 */}
       {at && (
-        // 다이어리 방에선 제목 줄을 팝업 배경(기분 창 등)보다 위로 올린다 — 안 그러면 말랑이가 안 눌린다
-        <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: at === 'diary' ? 70 : 29, pointerEvents: 'none',
+        <div style={{ position: 'absolute', top: 20, left: 64, right: 150, zIndex: 29, pointerEvents: 'none',
           height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          {at === 'diary' ? (
-            <span style={{ position: 'relative', flexShrink: 0 }}>
-              <button type="button" onClick={() => setPop('mallang')} aria-label="말랑이 팝업 열기"
-                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', pointerEvents: 'auto' }}>
-                {TITLE[at].icon}
-              </button>
-              {/* 말랑이 바로 밑에 작게 — 매일 한마디 바로 가기 */}
-              <button type="button" onClick={() => setPop('word')}
-                style={{ position: 'absolute', top: 31, left: 2, pointerEvents: 'auto', border: 'none', background: 'transparent',
-                  padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 9.5, fontWeight: 800, color: '#8A8378',
-                  whiteSpace: 'nowrap', lineHeight: 1.2 }}>
-                {partner ? `'${partner}'의 매일 한마디` : '매일 한마디'} →
-              </button>
-            </span>
-          ) : (
-            <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
-              {TITLE[at].icon}
-            </span>
-          )}
+          <span style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
+            {TITLE[at].icon}
+          </span>
           <span style={{ fontSize: TITLE[at].size, color: '#111', letterSpacing: '-0.01em',
             fontFamily: TITLE[at].font, whiteSpace: 'nowrap', lineHeight: 1 }}>{TITLE[at].text}</span>
-        </div>
-      )}
-
-      {pop && (
-        // 제목 줄(70)보다 위에 뜨게 감싼다
-        <div style={{ position: 'relative', zIndex: 80 }}>
-          <MallangStressPopup key={pop} mood={todayEntry?.mood ?? 4} charImage={ch?.image} word={word} partner={partner}
-            initialOpenWord={pop === 'word'} nextLabel="닫기" onNext={() => setPop(null)} />
         </div>
       )}
 

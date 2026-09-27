@@ -43,7 +43,9 @@ const addWeeks = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n * 
 const sameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 const MONTH_MIN_DATE = new Date(MIN_YEAR, MIN_MONTH - 1, 1);
 
-export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown, userInfo = null, setUserProfile, gender = null }) {
+export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLoggedIn, onRequireLogin, initialStressMood = null, onStressShown, userInfo = null, setUserProfile, gender = null,
+  // 그날 일기장(미리보기 창)의 왼쪽 위 말랑이를 누르면 말랑이 팝업 — 관리자 미리보기에서 먼저 켠다
+  dayMallang = false }) {
   // 기록 후 캘린더로 돌아왔을 때 같은 보기(월간/주간)로 오도록 보기 상태를 저장해둔다.
   const [view, setView] = useState(() => { try { return localStorage.getItem("bmti_diary_calview") === "week" ? "week" : "month"; } catch { return "month"; } });
   useLayoutEffect(() => { try { localStorage.setItem("bmti_diary_calview", view); } catch {} }, [view]);
@@ -154,6 +156,8 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
   const [consentDone, setConsentDone] = useState(() => hasLocalHealthConsent());
   const [showKakaoPrompt, setShowKakaoPrompt] = useState(false);
   const [previewDay, setPreviewDay] = useState(null); // { dateStr, entry }
+  const [dayPop, setDayPop] = useState(null);         // 일기장 말랑이 팝업 — null | 'mallang' | 'word'
+  const closeDay = () => { setPreviewDay(null); setDayPop(null); };
   const [futureToast, setFutureToast] = useState(false); // 미래 날짜를 눌렀을 때 2초 안내
   const futureTimer = useRef(null);
   const showFutureToast = () => {
@@ -279,6 +283,15 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         <KakaoSavePromptPopup onLogin={() => { setShowKakaoPrompt(false); onRequireLogin && onRequireLogin(); }} onClose={() => setShowKakaoPrompt(false)} />
       )}
 
+      {/* 일기장에서 연 말랑이 팝업 — 일기장 창 위로 띄운다. 그날 적은 것으로 한마디를 짓는다 */}
+      {previewDay && dayPop && (
+        <div style={{ position: "relative", zIndex: 80 }}>
+          <MallangStressPopup key={dayPop} mood={previewDay.entry.mood} charImage={charImage}
+            word={dailyWord(previewDay.entry, axisCode.endsWith("M") ? "m" : "z", previewDay.dateStr)} partner={partnerName}
+            initialOpenWord={dayPop === "word"} onNext={() => setDayPop(null)} />
+        </div>
+      )}
+
       {previewDay && (() => {
         const paras = buildDiaryParagraphs(previewDay.entry);
         const moodInfo = MOODS.find(m => m.v === previewDay.entry.mood);
@@ -286,17 +299,31 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
         const [, mo, da] = previewDay.dateStr.split("-");
         const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(previewDay.dateStr + "T00:00:00").getDay()];
         return (
-          <div onClick={() => setPreviewDay(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={() => closeDay()} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(28,26,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
             {/* 그림일기 — 왼쪽 위 말랑이, 오른쪽 위 날짜·태그, 아래로 줄노트 문단 */}
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#FFFFFF", border: `1px solid ${C.yellowLine}`, borderRadius: 20, position: "relative", maxHeight: "min(660px, calc(100vh - 150px))", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 18px 48px rgba(0,0,0,0.24)" }}>
-              <button onClick={() => setPreviewDay(null)} aria-label="닫기"
+              <button onClick={() => closeDay()} aria-label="닫기"
                 style={{ position: "absolute", top: 9, right: 9, zIndex: 3, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.92)", color: C.sub, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>✕</button>
 
               {/* 머리 — 왼쪽 말랑이 칸 · 오른쪽 날짜와 오늘의 태그 */}
               <div style={{ flexShrink: 0, display: "flex", gap: 10, padding: "16px 16px 12px" }}>
                 <div style={{ width: 104, flexShrink: 0, background: "#EFF6EA", border: `1px solid ${C.yellowLine}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 6px", gap: 5 }}>
-                  <Mallang v={previewDay.entry.mood} size={54} />
+                  {dayMallang ? (
+                    <button type="button" onClick={() => setDayPop("mallang")} aria-label="말랑이 팝업 열기"
+                      style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "block" }}>
+                      <Mallang v={previewDay.entry.mood} size={54} />
+                    </button>
+                  ) : <Mallang v={previewDay.entry.mood} size={54} />}
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, textAlign: "center", wordBreak: "keep-all", lineHeight: 1.25 }}>{moodInfo?.label}</div>
+                  {/* 그날의 매일 한마디 바로 가기 — 말랑이 밑에 작게 */}
+                  {dayMallang && (
+                    <button type="button" onClick={() => setDayPop("word")}
+                      style={{ border: "none", background: "#fff", borderRadius: 999, padding: "4px 8px", cursor: "pointer", fontFamily: "inherit",
+                        fontSize: 9.5, fontWeight: 800, color: C.ink, lineHeight: 1.3, wordBreak: "keep-all", textAlign: "center",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                      {partnerName ? `'${partnerName}'의 매일 한마디` : "매일 한마디"} →
+                    </button>
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "#FBEFD8", border: `1px solid ${C.yellowLine}`, borderRadius: 10, padding: "7px 8px", fontSize: 13.5, fontWeight: 800, color: C.ink, letterSpacing: "0.02em" }}>
@@ -342,11 +369,11 @@ export default function DiaryCalendar({ onPickMood, onEditDay, bmtiCode, isLogge
               </div>
 
               <div style={{ flexShrink: 0, padding: "12px 16px 16px" }}>
-                <button onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); setPreviewDay(null); }}
+                <button onClick={() => { onEditDay && onEditDay(previewDay.dateStr, previewDay.entry); closeDay(); }}
                   style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: C.gold, color: "#fff", fontSize: 14.5, fontWeight: 800, cursor: "pointer", marginBottom: 5, boxShadow: "0 4px 14px rgba(201,151,90,0.28)" }}>
                   이 기록 수정할래요
                 </button>
-                <button onClick={() => setPreviewDay(null)}
+                <button onClick={() => closeDay()}
                   style={{ width: "100%", padding: 11, borderRadius: 14, border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                   괜찮아요, 그냥 볼게요
                 </button>

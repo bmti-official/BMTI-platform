@@ -93,6 +93,7 @@ export default function DiaryPreview() {
       onPickMood={(mood) => setWriting({ mood, date: todayISO(), entry: null })}
       onEditDay={(dateStr, entry) => setWriting({ mood: entry?.mood ?? null, date: dateStr, entry: entry || null })}
       initialStressMood={justSaved ? justSaved.mood : null}
+      dayMallang
       onStressShown={() => setJustSaved(null)}
     />
   );
