@@ -8,8 +8,9 @@ import { routineSummary, mmss, pickRoutineTone } from './format';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 
-// action: 칸마다 밑에 붙는 작은 버튼 { label, onClick(r) } — 마이플리 '고치기', 바로플리 '가져와 고치기'
-export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직 담긴 플리가 없어요.', action = null }) {
+// action: 칸마다 밑에 붙는 작은 버튼 { label, onClick(r) } — 바로플리 '가져와 고치기'
+// editMode: 마이플리 편집하기 — 표지 위에 '✎ 고치기'를 얹어 누르면 고친다는 걸 보인다
+export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직 담긴 플리가 없어요.', action = null, editMode = false }) {
   if (plis.length === 0) {
     return (
       <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '30px 16px', textAlign: 'center',
@@ -35,6 +36,13 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
                 color: GOLD_INK, background: YELLOW, borderRadius: 7, padding: '3px 7px', lineHeight: 1.2 }}>
                 {s.durationSec > 0 ? mmss(s.durationSec) : '시간 미정'}
               </span>
+              {editMode && (
+                <span style={{ position: 'absolute', inset: 0, borderRadius: 12, background: 'rgba(28,26,23,0.38)',
+                  boxShadow: `inset 0 0 0 2px ${GOLD_INK}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ background: '#fff', color: GOLD_INK, borderRadius: 999, padding: '6px 12px',
+                    fontSize: 12, fontWeight: 900 }}>✎ 고치기</span>
+                </span>
+              )}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4, marginTop: 6,
               wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>

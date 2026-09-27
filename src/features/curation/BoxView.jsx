@@ -36,6 +36,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
   plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine }) {
   const [tab, setTab] = useState('mine');
   const [editing, setEditing] = useState(null);   // 마이플리 만들기·고치기 창 { id?, title, cards, from? }
+  const [editMode, setEditMode] = useState(false);   // 마이플리 편집하기 — 켜면 플리를 눌러 고친다
   const [openId, setOpenId] = useState(null);
   const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
 
@@ -68,13 +69,30 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
 
       {tab === 'mine' ? (
         <>
-          <button type="button" onClick={() => setEditing({ title: '', cards: [] })}
-            style={{ width: '100%', border: `1.5px dashed ${LINE}`, background: '#fff', borderRadius: 12, padding: 12, marginBottom: 10,
-              cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, color: GOLD_INK }}>
-            ＋ 새 플리 만들기
-          </button>
-          <PliGrid plis={myPlis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.mine}
-            action={{ label: '✎ 고치기', onClick: (r) => setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], showNick: !!r.show_nick }) }} />
+          {/* 새로 만들기와 편집하기를 나란히 — 편집하기를 누르면 플리를 눌러 고친다 */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <button type="button" onClick={() => { setEditMode(false); setEditing({ title: '', cards: [] }); }}
+              style={{ flex: 1, border: `1.5px dashed ${LINE}`, background: '#fff', borderRadius: 12, padding: 12,
+                cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, color: GOLD_INK }}>
+              ＋ 새 플리 만들기
+            </button>
+            <button type="button" disabled={myPlis.length === 0} onClick={() => setEditMode((v) => !v)}
+              style={{ flex: 1, border: editMode ? 'none' : `1.5px solid ${LINE}`, borderRadius: 12, padding: 12,
+                background: editMode ? GOLD_INK : '#fff', color: editMode ? '#fff' : (myPlis.length ? GOLD_INK : SUB),
+                cursor: myPlis.length ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
+                opacity: myPlis.length ? 1 : 0.6 }}>
+              {editMode ? '✓ 편집 끝내기' : '✎ 편집하기'}
+            </button>
+          </div>
+          {editMode && (
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, textAlign: 'center', margin: '0 0 10px' }}>
+              고칠 플리를 눌러 주세요.
+            </div>
+          )}
+          <PliGrid plis={myPlis} tone={tone} empty={EMPTY_WORD.mine} editMode={editMode}
+            onOpen={(r) => (editMode
+              ? setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], showNick: !!r.show_nick })
+              : setOpenPli(r))} />
         </>
       ) : tab === 'pli' ? (
         <PliGrid plis={plis} tone={tone} onOpen={(r) => setOpenPli(r)} empty={EMPTY_WORD.pli}
@@ -119,7 +137,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
       )}
       {editing && (
         <MyPliEditor initial={editing} allCards={allCards} tone={tone} onCancel={() => setEditing(null)}
-          onSave={(p) => { setEditing(null); setTab('mine'); onSaveMine && onSaveMine(p); }} />
+          onSave={(p) => { setEditing(null); setEditMode(false); setTab('mine'); onSaveMine && onSaveMine(p); }} />
       )}
     </div>
   );
