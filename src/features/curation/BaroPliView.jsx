@@ -9,6 +9,7 @@ import PickRow from './PickRow';
 import PliFeed from './PliFeed';
 import { routineSummary } from './format';
 import { matches } from './browseOrder';
+import { usePanelTime } from '../../lib/usePanelTime';
 
 const INK = '#1C1A17';
 
@@ -17,6 +18,7 @@ const CAP = { short: 600, mid: 1200 };
 const LONG_FROM = 1800;   // 30분 이상
 
 export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
+  usePanelTime('baropli');   // 행동 기록 — 이 창에 머문 시간
   const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
   const [tab, setTab] = useState('all');
   const [q, setQ] = useState('');

@@ -1,6 +1,6 @@
 // 내 BMTI 유형의 편지(10월 판) — 그달이 끝나면 도착하는 편지.
 // 목록에는 봉투 카드만 두고, 열면 따로 창(팝업)에 크게 펼친다.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getTypeAccent } from '../lib/typeAccent';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
@@ -8,6 +8,8 @@ import { letterArrival, markLetterSeen } from '../lib/monthLetter';
 import { buildLetterA } from '../lib/monthLetterA';
 import { IconBox } from './DiscoveryIcons';
 import { josa } from '../lib/josa';
+import { track } from '../lib/analytics';
+import { usePanelTime } from '../lib/usePanelTime';
 
 const C = { ink: '#1C1A17', sub: '#8A8378', line: '#EDE9E2' };
 const SHADOW = '0 1px 2px rgba(28,26,23,0.04), 0 8px 24px rgba(28,26,23,0.06)';
@@ -107,8 +109,18 @@ function PageFace({ text, sign, t, lifted = false }) {
 
 // 편지지 — 한 장에 한 부분씩, 옆으로 넘긴다(밀거나 ‹ ›). 아래에 점과 'n / 전체'.
 // 괘선은 글줄 높이(30px)에 맞춰 문단에 깐다. 첫 장에 'To.', 마지막 장에 서명.
-function LetterPaper({ letter, nickname, chName, ch, t, onClose }) {
+function LetterPaper({ letter, nickname, chName, ch, t, onClose, from = 'card' }) {
   const [at, setAt] = useState(0);
+  // 행동 기록 — 편지에 머문 시간, 몇 장까지 넘겼는지(끝까지 읽었나)
+  usePanelTime('letter');
+  const farRef = useRef(0);
+  useEffect(() => { farRef.current = Math.max(farRef.current, at); }, [at]);
+  useEffect(() => {
+    const n0 = letter.pages.length;
+    track('letter_open', { from, pages: n0, tier: letter.tier || '' });
+    return () => track('letter_close', { from, far: farRef.current + 1, of: n0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 넘기는 중인 장 — { page, dir }. 다음 장: 지금 장이 왼쪽 가장자리를 축으로 들려 넘어간다.
   // 이전 장: 앞 장이 왼쪽에서 되넘어와 덮는다. 끝나면 지운다.
   const [turn, setTurn] = useState(null);
@@ -216,7 +228,7 @@ export function LetterArrival({ entries, year, month, nickname, bmtiCode, parts,
   const letter = buildLetterA(entries, { year, month, nickname, bmtiCode, partnerName: chName });
   void parts;   // 부위 이름은 이제 용어집(letterTerms)이 맡는다
   if (!letter) return null;
-  const close = () => { markLetterSeen(year, month); onClose?.(); };
+  const close = () => { markLetterSeen(year, month); if (!opened) track('letter_arrival_skip'); onClose?.(); };
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 95, background: 'rgba(247,244,238,0.72)', backdropFilter: 'blur(14px)',
       WebkitBackdropFilter: 'blur(14px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -258,7 +270,7 @@ export function LetterArrival({ entries, year, month, nickname, bmtiCode, parts,
           </>
         ) : (
           <div style={{ textAlign: 'left', animation: 'letterRise .55s cubic-bezier(.2,.8,.3,1)' }}>
-            <LetterPaper letter={letter} nickname={nickname} chName={chName} ch={ch} t={t} onClose={close} />
+            <LetterPaper letter={letter} nickname={nickname} chName={chName} ch={ch} t={t} onClose={close} from="arrival" />
           </div>
         )}
       </div>

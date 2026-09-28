@@ -145,6 +145,12 @@ function Tile({ label, value, sub, tone }) {
   );
 }
 
+const PANEL_LABEL = {
+  browse: '둘러보기', baropli: '바로플리 목록', box: '내 보관함', discover: '기록·발견',
+  letter: '월간 편지', angle: '각도기록', write: '오늘 쓰기',
+};
+const FIELD_LABEL = { mood: '기분', sore: '아픈 부위', tags: '오늘의 태그', sleep: '수면', overwork: '무리했나요', exercise: '운동', note: '매일 한마디' };
+
 function Bars({ title, rows, total, note }) {
   const max = Math.max(1, ...rows.map((r) => r.n));
   return (
@@ -392,6 +398,47 @@ export default function MetricsView() {
   }, [users]);
 
   // ⑥ 행동 기록에서 뽑는 것들
+  // 자기점검·다이어리·각도기록 안쪽 — 론칭 전 측정 공백을 메우려고 더한 기록(usePanelTime·card_*·pli_*·angle_*·write_*·letter_*)
+  const act = useMemo(() => {
+    const of = (n) => events.filter((e) => e.name === n);
+    const count = (rows, key) => Object.entries(rows.reduce((m, e) => {
+      const k = key(e); if (k == null) return m; m[k] = (m[k] || 0) + 1; return m;
+    }, {}));
+    // 창별 — 한 번 열었을 때 평균 머문 시간 = 머문 초 합 ÷ 연 횟수
+    const opened = count(of('panel_enter'), (e) => e.meta?.panel);
+    const secs = of('panel_leave').reduce((m, e) => { const k = e.meta?.panel; if (k) m[k] = (m[k] || 0) + (Number(e.meta.sec) || 0); return m; }, {});
+    const panels = opened.map(([k, n]) => ({ label: PANEL_LABEL[k] || k, n: Math.round((secs[k] || 0) / n), cnt: n, total: secs[k] || 0 }))
+      .sort((a, b) => b.total - a.total);
+    const rate = (done, quit) => ({ done, all: done + quit });
+    const quitAt = (rows, key, unit) => count(rows, key).sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([k, n]) => ({ label: `${k}${unit}`, n }));
+    const writes = of('write_done');
+    const filled = ['mood', 'sore', 'tags', 'sleep', 'overwork', 'exercise', 'note']
+      .map((k) => ({ label: FIELD_LABEL[k], n: writes.filter((e) => e.meta?.[k] && e.meta[k] !== 0).length }));
+    const angleReach = {};
+    of('angle_step').forEach((e) => { const st = e.meta?.step; if (st != null) (angleReach[st] ||= new Set()).add(e.anon_id); });
+    const letters = of('letter_close');
+    return {
+      panels,
+      card: rate(of('card_done').length, of('card_quit').length),
+      cardStart: of('card_start').length,
+      pli: rate(of('pli_done').length, of('pli_quit').length),
+      pliStart: of('pli_start').length,
+      write: rate(writes.length, of('write_quit').length),
+      angle: rate(of('angle_done').length, of('angle_quit').length),
+      angleRetry: of('angle_retry').length,
+      letterFull: letters.filter((e) => Number(e.meta?.far) >= Number(e.meta?.of)).length,
+      letterAll: letters.length,
+      pushOpen: of('push_open').length,
+      cardQuitAt: quitAt(of('card_quit'), (e) => e.meta?.sets_done, '세트 한 뒤'),
+      pliQuitAt: quitAt(of('pli_quit'), (e) => e.meta?.at, '번째 동작'),
+      speeds: count([...of('card_start')], (e) => (e.meta?.speed != null ? `${e.meta.speed}×` : null)).map(([label, n]) => ({ label, n })),
+      guides: count(of('card_start'), (e) => (e.meta?.guide === 'count' ? '숫자만' : e.meta?.guide ? '설명 들으며' : null)).map(([label, n]) => ({ label, n })),
+      angleReach: Object.keys(angleReach).map(Number).sort((a, b) => a - b).map((st) => ({ label: `${st + 1}번째 판`, n: angleReach[st].size })),
+      filled, writes: writes.length,
+    };
+  }, [events]);
+
   const ev = useMemo(() => {
     const of = (n) => events.filter((e) => e.name === n);
     const uniq = (rows) => new Set(rows.map((r) => r.anon_id)).size;
@@ -556,6 +603,47 @@ export default function MetricsView() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 창 안쪽 행동 — 자기점검·다이어리·각도기록 */}
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 8 }}>
+          자기점검·다이어리·각도기록 안쪽 <span style={{ fontWeight: 600, color: SUB, fontSize: 12 }}>· 2026-09-29부터 쌓임 · 관리자 미리보기에서 누른 것은 남지 않음</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          <Tile label="바로카드 완주율" value={act.card.all ? `${pct(act.card.done, act.card.all)}%` : '—'} tone={GOLD}
+            sub={`시작 ${act.cardStart} · 완주 ${act.card.done} · 중단 ${act.card.all - act.card.done}`} />
+          <Tile label="바로플리 완주율" value={act.pli.all ? `${pct(act.pli.done, act.pli.all)}%` : '—'} tone={GOLD}
+            sub={`시작 ${act.pliStart} · 완주 ${act.pli.done} · 중단 ${act.pli.all - act.pli.done}`} />
+          <Tile label="오늘 쓰기 저장률" value={act.write.all ? `${pct(act.write.done, act.write.all)}%` : '—'} tone="#2F7A4F"
+            sub={`저장 ${act.write.done} · 그만둠 ${act.write.all - act.write.done}`} />
+          <Tile label="각도기록 완주율" value={act.angle.all ? `${pct(act.angle.done, act.angle.all)}%` : '—'}
+            sub={`끝까지 ${act.angle.done} · 다시 재기 ${act.angleRetry}번`} />
+          <Tile label="편지 끝까지 읽음" value={act.letterAll ? `${pct(act.letterFull, act.letterAll)}%` : '—'}
+            sub={`연 횟수 ${act.letterAll}`} />
+          <Tile label="알림 눌러 들어옴" value={act.pushOpen.toLocaleString()} sub="주간 각도기록 알림" />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
+        <div style={box}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>창별 체류 시간</div>
+          <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>한 번 열었을 때 평균 · 오른쪽은 연 횟수 · 머문 시간 합이 큰 순서</div>
+          {act.panels.length === 0 && <div style={{ fontSize: 12.5, color: SUB }}>아직 데이터가 없습니다.</div>}
+          {act.panels.map((r) => (
+            <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: `1px solid ${LINE}` }}>
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, color: INK }}>{r.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: GOLD, fontVariantNumeric: 'tabular-nums' }}>{Math.floor(r.n / 60)}분 {r.n % 60}초</span>
+              <span style={{ fontSize: 11, color: SUB, width: 46, textAlign: 'right' }}>{r.cnt}회</span>
+            </div>
+          ))}
+        </div>
+        <Bars title="바로카드를 그만둔 자리" note="몇 세트를 하고 나갔는지 — 0세트는 시작만 하고 나간 것" rows={act.cardQuitAt} total={act.card.all - act.card.done} />
+        <Bars title="바로플리를 그만둔 자리" note="몇 번째 동작에서 나갔는지" rows={act.pliQuitAt} total={act.pli.all - act.pli.done} />
+        <Bars title="배속" note="따라 하기를 시작할 때 고른 빠르기" rows={act.speeds} total={act.cardStart} />
+        <Bars title="안내" note="설명 들으며 / 숫자만 — 숫자만이면 세트 멘트가 나가지 않습니다" rows={act.guides} total={act.cardStart} />
+        <Bars title="각도기록 도달한 판" note="판마다 여기까지 온 사람 수 — 뚝 떨어지는 판이 어려운 판입니다" rows={act.angleReach} />
+        <Bars title="오늘 쓰기에서 채운 칸" note="저장한 기록 중 그 칸을 채운 비율(적은 내용은 남기지 않음)" rows={act.filled} total={act.writes} />
       </div>
 
       {/* 다이어리 기반 */}

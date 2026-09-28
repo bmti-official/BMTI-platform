@@ -18,6 +18,8 @@ import { recentChecks } from "../lib/angleRecord";
 import PushToggle from "../features/angle/PushToggle";
 import { loadAssets } from "../lib/appAssets";
 import { allSetKeys, setKey, nearestShot, nearestPair, armMeta } from "../lib/angleShots";
+import { usePanelTime } from "../lib/usePanelTime";
+import { track } from "../lib/analytics";
 
 // 하루 기록에서 고를 수 있는 불편한 부위 최대 개수 (BodySelector3D의 MAX_PARTS와 맞춘다)
 const MAX_SORE_PARTS = 3;
@@ -141,6 +143,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   tagCats = null, dropBlock = null,
   // 각도 재러 갈 때 — 카메라는 전체 화면으로 따로 뜬다
   onAngle = null }) {
+  usePanelTime('write');   // 행동 기록 — 이 창에 머문 시간
   const [phase, setPhase] = useState(initialPhase === "day" || initialPhase === "work" ? "form" : initialPhase);
 
   // ── 데이터 ──
@@ -409,9 +412,10 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       setShowLeaveWarning(true);
       return;
     }
+    trackWrite("write_quit");
     if (onClose) onClose();
   };
-  const discardAndLeave = () => { setShowLeaveWarning(false); if (onClose) onClose(); };
+  const discardAndLeave = () => { setShowLeaveWarning(false); trackWrite("write_quit"); if (onClose) onClose(); };
 
   // 기록 저장 → 말랑이 스트레스 해소 팝업 → '다음'을 누르면 캘린더로 복귀
   // 말랑이의 발견(월간 리포트, mallangReportEngine.js)이 sleep/overwork/exercise/soreness/note를
@@ -445,7 +449,18 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
     return { sleep: sleep >= 0 ? sleep : null, sleepTime, overwork, exercise, soreness, note, tags };
   };
 
+  // 행동 기록 — 어느 칸까지 채우고 저장했는지, 어디서 그만뒀는지. 적은 내용은 남기지 않고 채웠는지만 센다.
+  const trackWrite = (name) => {
+    try {
+      track(name, {
+        mood: !!dayMood, sore: sore.parts.length, tags: tags.length, sleep: sleepVal != null,
+        overwork: overexertVal != null, exercise: exerciseDidIt != null, note: !!oneLine.text.trim(),
+      });
+    } catch { /* 기록 실패는 무시 */ }
+  };
+
   const finishFlow = () => {
+    trackWrite("write_done");
     // 저장은 부모(AiChatHub)에 맡기고, 완료 말랑이 팝업은 캘린더로 돌아가 그 위에서 띄운다.
     // (onFinish가 상세 폼을 닫으므로 여기서 celebrate 단계를 띄우지 않는다.)
     if (onFinish) onFinish(dayMood, buildEntryExtra());

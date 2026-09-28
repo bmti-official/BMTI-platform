@@ -26,6 +26,8 @@ import NeckShot from '../../components/NeckShot';
 import { allRefKeys, refUrl } from '../../lib/angleRefs';
 import { isClip } from '../curation/media';
 import { TrunkShot, ArmShot } from '../../components/BodyShots';
+import { usePanelTime } from '../../lib/usePanelTime';
+import { track } from '../../lib/analytics';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -73,6 +75,7 @@ const shapeOf = (pts) => (pts || []).map((q) => ({
 // admin — 관리자 미리보기에서만 켠다. 막혔을 때 어떤 검사에 걸렸는지 숫자로 보여 준다.
 // 손님에게 숫자 네 줄은 도움이 안 된다 — 손님에겐 '이대로 시작'만 남긴다.
 export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk', 'arm'], admin = false, gender = null }) {
+  usePanelTime('angle');   // 행동 기록 — 이 창에 머문 시간
   const STEPS = useMemo(() => buildSteps(want), [want]);
   const [step, setStep] = useState(-1);          // -1 안내 · 0 측면 · 1 정면 · 2 끝
   const [msg, setMsg] = useState('');
@@ -428,6 +431,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   const again = (why = '잘 잡히지 않았어요. 한 번 더 해 볼까요?', voiceKey = null) => {
     // 몇 번째 어긋남인지는 ref로 센다 — 여기서 바로 보고 판단해야 한다.
     tryRef.current += 1;
+    track('angle_retry', { step: Math.floor(stepRef.current), n: tryRef.current });
     againRef.current = true;                          // 다음 판은 '다시 재는 판' — 시작 안내를 바꾼다
     const n = tryRef.current;
     setRetry(n);
@@ -518,6 +522,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     const quality = next.blurry ? Math.min(q0, 40) : q0;
     setLastQuality(quality);
     say('done', { force: true });
+    angleRun.current.ended = true;
+    track('angle_done', { want: want.join(','), quality, sec: Math.round((Date.now() - angleRun.current.at) / 1000) });
     setStep(STEPS.length);
     if (onDone) onDone({ ...next, quality, retries: retry, want });
   };
@@ -645,6 +651,19 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
     tiltRef.current = tilt; rollSignRef.current = rollSign; adminRef.current = admin;
   });
   useEffect(() => { checkRef.current = check; stillPlacingRef.current = stillPlacing; });
+  // 행동 기록 — 어느 판까지 갔는지, 몇 번 다시 쟀는지, 끝까지 했는지
+  const angleRun = useRef({ at: 0, ended: false });
+  useEffect(() => {
+    if (Number.isInteger(step) && step >= 0 && step < STEPS.length) track('angle_step', { step, part: STEPS[step]?.id || '' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  useEffect(() => {
+    const r = angleRun.current;
+    r.at = Date.now();
+    track('angle_start', { want: want.join(',') });
+    return () => { if (!r.ended) track('angle_quit', { step: Math.floor(stepRef.current), sec: Math.round((Date.now() - r.at) / 1000) }); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 판이 열릴 때 — 첫 판이면 할 일을 먼저 말하고 자리 잡기를 새로 센다.
   // 둘째 판(앞모습)은 쉼터에서 이미 돌아서 섰으므로 바로 검사한다.
   useEffect(() => {

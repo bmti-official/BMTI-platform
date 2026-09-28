@@ -36,6 +36,7 @@ import bodyMaleBack from "../assets/3d_body/male_back.png";
 import { openKakaoChannelChat } from "../lib/kakaoChannel";
 import { getRecordMessage } from "../lib/recordMessage";
 import { pickBy, toneKey, HELLO, MOOD_LINES, BODY_SLEEP, BODY_SORE, BODY_RECOVER, HABIT_MOVE, HABIT_TAG, HABIT_NOTE, TONE, BYE } from "../lib/letterVoice";
+import { usePanelTime } from "../lib/usePanelTime";
 
 // mallangReportEngine.js는 순수 로직 파일 — 이 컴포넌트는 그 출력을 그리기만 한다.
 // (IMPLEMENTATION.md: "당신이 할 일은 UI를 만드는 것뿐입니다")
@@ -285,6 +286,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   //   angleRows  각도 판을 밖에서 넘길 때(관리자 미리보기). 없으면 직접 읽어 온다
   //   initialTab  'records' | 'discovery' — 어느 탭으로 열지. 보던 달은 그대로 둔다.
   oct = false, initialTab = null, angleRows = null }) {
+  usePanelTime('discover');   // 행동 기록 — 이 창에 머문 시간
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed

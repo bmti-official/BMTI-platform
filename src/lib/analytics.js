@@ -8,6 +8,9 @@ const ANON_KEY = "bmti_anon_id";
 const QUEUE_MAX = 20;
 
 let queue = [];
+
+// 관리자 미리보기(admin.html)에서 누른 것은 남기지 않는다 — 론칭 뒤 실측이 운영자 손으로 흐려지지 않게.
+const PREVIEW = (() => { try { return /admin/.test(window.location.pathname); } catch { return false; } })();
 let flushTimer = null;
 
 function anonId() {
@@ -32,6 +35,9 @@ async function flush() {
   try { await supabase.from("app_events").insert(rows); } catch { /* 기록 실패는 무시 */ }
 }
 
+/** 지금 바로 보낸다 — 탭이 가려지는 순간처럼 기다릴 틈이 없을 때. */
+export function flushNow() { flush(); }
+
 function scheduleFlush() {
   if (flushTimer) return;
   flushTimer = setTimeout(() => { flushTimer = null; flush(); }, 1500);
@@ -48,7 +54,7 @@ export function trackAnomaly(kind, meta = {}) {
 
 /** 행동 한 건을 남긴다. track('quiz_done', { code: 'OLQM' }) */
 export function track(name, meta = {}) {
-  if (!name) return;
+  if (!name || PREVIEW) return;
   try {
     queue.push({ anon_id: anonId(), user_id: currentUserId(), name: String(name).slice(0, 40), meta });
     if (queue.length >= QUEUE_MAX) flush(); else scheduleFlush();
@@ -85,6 +91,12 @@ export function initAnalytics() {
       ref: (document.referrer || "").slice(0, 120),
       pwa: window.matchMedia?.("(display-mode: standalone)").matches || false,
     });
+
+    // 주간 알림(웹 푸시)을 눌러 들어왔는가 — 알림이 '/?go=angle' 로 연다
+    try {
+      const go = new URLSearchParams(window.location.search).get("go");
+      if (go) track("push_open", { go: go.slice(0, 20) });
+    } catch { /* 무시 */ }
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") { closeScreen(); flush(); }

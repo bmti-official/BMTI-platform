@@ -12,6 +12,7 @@ import { CHARACTERS } from '../../data';
 import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommon';
 import { axisOf } from './typeTint';
 import { markFinish } from '../../lib/cardFinish';
+import { track } from '../../lib/analytics';
 import { HELLO_LINE } from './helloLine';
 import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
@@ -68,7 +69,7 @@ const SPEEDS = [0.75, 1, 1.25, 1.5];
 const SPEED_KEY = 'bmti_card_speed';
 const readSpeed = () => { try { const v = Number(localStorage.getItem(SPEED_KEY)); return SPEEDS.includes(v) ? v : 1; } catch { return 1; } };
 
-export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch,
+export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch, pliId = null,
   // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 카드를 뒤집어 뒷면에 알아 두기를 보여 주고,
   // '바로 따라하기'를 누르면 곧장 전체 화면으로 간다(바로플리처럼).
   flippable = false, fullOnStart = false }) {
@@ -98,7 +99,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const resting = useRef(false);
   const [speed, setSpeedState] = useState(readSpeed);
   const [speedOpen, setSpeedOpen] = useState(false);
-  const setSpeed = (v) => { setSpeedState(v); setSpeedOpen(false); try { localStorage.setItem(SPEED_KEY, String(v)); } catch { /* 무시 */ } };
+  const setSpeed = (v) => { setSpeedState(v); setSpeedOpen(false); track('speed_set', { v, card: card.id }); try { localStorage.setItem(SPEED_KEY, String(v)); } catch { /* 무시 */ } };
   // 영상이 새로 붙어도(세트·좌우가 바뀌어도) 고른 속도를 그대로 입힌다
   useEffect(() => {
     const v = clipRef.current;
@@ -320,6 +321,33 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, allDone, stage]);
 
+  // 행동 기록 — 시작·중단·완주. 몇 세트째에서 그만두는지, 배속·안내를 어떻게 두는지 본다.
+  // 한 번 따라 하기가 한 판(run)이다. '한 번 더 하기'는 새 판으로 센다.
+  const runRef = useRef(null);
+  const liveRef = useRef({});
+  useEffect(() => { liveRef.current = { done, sets, speed, guide }; });
+  useEffect(() => {
+    if (stage !== 'move') return;
+    if (runRef.current && !runRef.current.ended) return;
+    runRef.current = { id: card.id, at: Date.now(), ended: false };
+    track('card_start', { card: card.id, pli: pliId, sets, speed, guide: guide ? 'talk' : 'count' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, done === 0 && rep === 0]);
+  useEffect(() => {
+    const r = runRef.current;
+    if (!allDone || !r || r.ended) return;
+    r.ended = true;
+    track('card_done', { card: r.id, pli: pliId, sets, sec: Math.round((Date.now() - r.at) / 1000), speed });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDone]);
+  useEffect(() => () => {
+    const r = runRef.current;
+    if (!r || r.ended) return;
+    const l = liveRef.current;
+    track('card_quit', { card: r.id, pli: pliId, sets_done: l.done, sets: l.sets, sec: Math.round((Date.now() - r.at) / 1000), speed: l.speed });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 전체 화면일 땐 뒤쪽이 움직이지 않고, ESC로 빠져나온다.
   useEffect(() => {
     if (!full) return undefined;
@@ -500,7 +528,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {label('안내')}
             {[[true, '설명 들으며'], [false, '숫자만']].map(([g, lb]) => (
-              <button key={lb} type="button" onClick={() => change(setGuide)(g)} style={pillBtn(g === guide)}>{lb}</button>
+              <button key={lb} type="button" onClick={() => { change(setGuide)(g); track('guide_set', { v: g ? 'talk' : 'count', card: card.id }); }} style={pillBtn(g === guide)}>{lb}</button>
             ))}
             {totalSec > 0 && (
               <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
 import { markFinish } from '../../lib/cardFinish';
+import { track } from '../../lib/analytics';
 import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS, BGM_PARTS, bgmN, bgmSet, bgmFade, XFADE_SEC, UNDER } from './voiceCommon';
 import { pickCardTone, pickRoutineTone, subLines } from './format';
 import PartnerStage from './PartnerStage';
@@ -132,6 +133,20 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
     setPart('outro');
   };
 
+  // 행동 기록 — 플리를 열고, 몇 번째 동작에서 그만두거나 끝까지 갔는지.
+  const pliRun = useRef({ at: 0, ended: false, idx: 0 });
+  useEffect(() => { pliRun.current.idx = at; }, [at]);
+  useEffect(() => {
+    const r = pliRun.current;
+    r.at = Date.now();
+    track('pli_start', { pli: routine?.id ?? null, cards: cards.length });
+    return () => {
+      if (r.ended) return;
+      track('pli_quit', { pli: routine?.id ?? null, at: r.idx + 1, of: cards.length, sec: Math.round((Date.now() - r.at) / 1000) });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 한 동작이라도 끝냈으면 플리를 '했음'으로 남긴다. 끝까지 가면 위에서 '완주'로 덮는다.
   useEffect(() => {
     if (at > 0) markFinish({ kind: 'routine', routineId: routine?.id, done: false, setsDone: at });
@@ -208,12 +223,18 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
             onSkip={() => { setGap(0); setAt((n) => n + 1); }} />
         ) : (
           <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
-            autoStart skipOpening={at > 0} full={full} onFull={setFull}
+            autoStart skipOpening={at > 0} full={full} onFull={setFull} pliId={routine?.id ?? null}
             hideFinish={!last}
             onQuiet={setQuiet}
             onFinalStretch={() => { if (last) toOutro(); }}
             onAllDone={() => {
-              if (last) markFinish({ kind: 'routine', routineId: routine?.id, done: true, setsDone: cards.length });
+              if (last) {
+                markFinish({ kind: 'routine', routineId: routine?.id, done: true, setsDone: cards.length });
+                if (!pliRun.current.ended) {
+                  pliRun.current.ended = true;
+                  track('pli_done', { pli: routine?.id ?? null, cards: cards.length, sec: Math.round((Date.now() - pliRun.current.at) / 1000) });
+                }
+              }
               else { setGap(GAP_SEC); setQuiet(false); }
             }} />
         )}

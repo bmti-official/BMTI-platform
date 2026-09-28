@@ -16,6 +16,7 @@ import { CHARACTERS } from '../../data';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { axisOf } from './typeTint';
 import MyPliEditor from './MyPliEditor';
+import { usePanelTime } from '../../lib/usePanelTime';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
@@ -34,6 +35,7 @@ const EMPTY_WORD = {
 
 export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
   plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine }) {
+  usePanelTime('box');   // 행동 기록 — 이 창에 머문 시간
   const [tab, setTab] = useState('mine');
   const [editing, setEditing] = useState(null);   // 마이플리 만들기·고치기 창 { id?, title, cards, from? }
   const [editMode, setEditMode] = useState(false);   // 마이플리 편집하기 — 켜면 플리를 눌러 고친다

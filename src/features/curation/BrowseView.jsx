@@ -12,6 +12,7 @@ import PickRow from './PickRow';
 import { cardTotalSec } from './cardDefaults';
 import { cardCount } from './newsSlides';
 import { mixGrid, readMin, matches } from './browseOrder';
+import { usePanelTime } from '../../lib/usePanelTime';
 
 const SUB = '#8A8378', LINE = '#EDE9E2';
 
@@ -19,6 +20,7 @@ const SUB = '#8A8378', LINE = '#EDE9E2';
 const TABS = [['all', '전체'], ['read', '읽을거리'], ['card', '바로카드']];
 
 export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCode, onOpenRead }) {
+  usePanelTime('browse');   // 행동 기록 — 이 창에 머문 시간
   const [openRead, setOpenRead] = useState(null);   // 펼쳐 본 읽을거리
   const [seed] = useState(() => Math.floor(Math.random() * 2000000) + 1);
   const [tab, setTab] = useState('all');
