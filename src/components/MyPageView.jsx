@@ -3,7 +3,7 @@ import { badNameReason, badNameMessage } from '../lib/nameFilter';
 import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../data';
 import { supabase } from '../lib/supabaseClient';
 import BodySelector3D from './BodySelector3D';
-import { canRetakeTest } from '../lib/bmtiSystem';
+import { canRetakeTest, archiveBeforeRetake } from '../lib/bmtiSystem';
 import TypeGallery from './TypeGallery';
 import { Mallang } from './Mallang';
 import { hasLocalHealthConsent, setLocalHealthConsent, updateHealthRecordConsent } from '../lib/healthConsentSystem';
@@ -308,8 +308,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
       : '정말 새로운 검사를 진행하시겠습니까?';
     if (window.confirm(confirmText)) {
       if (userData?.id && bmtiCode) {
-        try { await supabase.from('bmti_history').insert({ user_id: userData.id, bmti_code: bmtiCode }); }
-        catch (e) { console.error(e); }
+        await archiveBeforeRetake(userData.id, bmtiCode);
       }
       setView('quiz');
     }

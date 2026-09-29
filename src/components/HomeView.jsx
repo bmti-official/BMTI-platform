@@ -1,8 +1,7 @@
 /* eslint-disable */
 import { useState, useRef, useEffect } from 'react';
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
-import { canRetakeTest } from '../lib/bmtiSystem';
-import { supabase } from '../lib/supabaseClient';
+import { canRetakeTest, archiveBeforeRetake } from '../lib/bmtiSystem';
 import { BMTI_INFO } from './ResultView';
 import { BMTI_RESULTS } from '../bmti_results';
 import { getEntryForDate, todayISO } from '../lib/diaryHistory';
@@ -50,11 +49,7 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
     if (window.confirm(confirmText)) {
       // 재검사로 덮어써지기 전에, 지금까지의 결과를 히스토리에 남겨둔다.
       if (userProfile?.id && bmtiCode) {
-        try {
-          await supabase.from('bmti_history').insert({ user_id: userProfile.id, bmti_code: bmtiCode });
-        } catch (e) {
-          console.error(e);
-        }
+        await archiveBeforeRetake(userProfile.id, bmtiCode);
       }
       setView('quiz');
     }

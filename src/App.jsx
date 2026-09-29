@@ -55,8 +55,15 @@ function App() {
     return saved || '';
   }); // e.g. "ALDZ-Tl"
   const [bmtiAnswers, setBmtiAnswers] = useState(() => {
-    const saved = localStorage.getItem('bmti_answers');
-    return saved ? JSON.parse(saved) : null;
+    // 저장된 값이 깨져 있으면 JSON.parse가 던져 앱 전체가 빈 화면이 된다 — 버리고 새로 시작한다.
+    try {
+      const saved = localStorage.getItem('bmti_answers');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      try { localStorage.removeItem('bmti_answers'); } catch { /* 무시 */ }
+      trackAnomaly('bad_saved_answers');
+      return null;
+    }
   });
   // 비로그인 + 테스트 완료 유저 → 다른 탭 클릭 시 카카오 저장 팝업 (세션당 1회)
   const [showSavePrompt, setShowSavePrompt] = useState(false);
@@ -220,10 +227,12 @@ function App() {
           }
 
           if (!error) {
-            await supabase
+            // 쿼리 빌더는 .then()만 있는 thenable이라 .catch()를 붙이면 TypeError가 난다(아래 사전 등록 주석 참고).
+            // 결과의 error로 확인하고, 이력 저장이 실패해도 프로필 갱신은 이어 간다.
+            const { error: histErr } = await supabase
               .from('bmti_history')
-              .insert({ user_id: userProfile.id, bmti_code: bmtiCode })
-              .catch(e => console.error(e));
+              .insert({ user_id: userProfile.id, bmti_code: bmtiCode });
+            if (histErr) console.error('검사 이력 저장 실패', histErr);
 
             const updatedProfile = { ...userProfile, bmti_type: bmtiCode, bmti_answers: bmtiAnswers };
             setUserProfile(updatedProfile);
