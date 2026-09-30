@@ -736,7 +736,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           </div>
           <div style={{ background: YELLOW, borderRadius: 12, padding: '12px 14px', fontSize: 12.5,
             color: GOLD_INK, fontWeight: 700, lineHeight: 1.75, marginBottom: 18 }}>
-            사진과 영상은 <b>이 기기 밖으로 나가지 않습니다.</b><br />남는 건 각도 숫자뿐이에요.
+            사진과 영상은 <b>이 기기 밖으로 나가지 않습니다.</b><br />남는 건 각도 숫자와 관절 자리 점(얼굴·방 모습 없이)뿐이에요.
           </div>
           <button type="button" onClick={() => { askLevel(); tryRef.current = 0; setRetry(0); setPlacing(true); setStep(0); }} style={bigBtn(true)}>시작하기 →</button>
         </div>

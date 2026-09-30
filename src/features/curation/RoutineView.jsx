@@ -7,6 +7,7 @@ import CardPeek from './CardPeek';
 import { CharRow, CurationThumb } from './CurationCard';
 import { isClip } from './media';
 import { plMaker } from './plMaker';
+import { useKeep } from './keep';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
@@ -26,6 +27,7 @@ const coverTag = (side) => ({
 export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onStart, onBrowse, charImages, charCodes }) {
   const { title } = pickRoutineTone(routine, tone);
   const who = plMaker(routine);
+  const keep = useKeep('routine', routine?.mine ? null : routine?.id);
   const s = routineSummary(cards);
   const rate = finishRate(routine);
   // 구경하기 — 표지는 그대로 두고 그 위에 창만 띄워, 옆으로 넘겨 가며 훑어본다.
@@ -69,7 +71,10 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
 
       {/* 묶음은 유형을 보고 고르기 때문에, 여기서만 추천 유형을 보여 준다 */}
       {(charImages || []).length > 0 && <CharRow chars={(charImages || []).slice(0, 4)} codes={charCodes || []} h={30} />}
-      <h3 style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.4, margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h3>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <h3 style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800, lineHeight: 1.4, margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h3>
+        {keep && <KeepToggle keep={keep} />}
+      </div>
       {/* 회원이 올린 플리 — 만든 사람 */}
       {who && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '-2px 0 8px', fontSize: 12.5, fontWeight: 700, color: SUB }}>
@@ -149,5 +154,16 @@ export function RoutineDetail({ routine, cards, tone = 'z', onStart, onCopy, cha
 
       <AiNote />
     </div>
+  );
+}
+
+// 보관 — 누르면 담기고, 다시 누르면 빠진다
+function KeepToggle({ keep }) {
+  return (
+    <button type="button" onClick={(e) => { e.stopPropagation(); keep.toggle(); }} aria-pressed={keep.saved}
+      style={{ flexShrink: 0, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, fontFamily: 'inherit', borderRadius: 14,
+        border: 'none', cursor: 'pointer', background: '#FDF2CE', color: '#6E5A1C', whiteSpace: 'nowrap' }}>
+      {keep.saved ? '보관됨 ✓' : '보관하기'}
+    </button>
   );
 }

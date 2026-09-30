@@ -18,7 +18,7 @@ const SIDE_OPTS = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 �
 const GUIDE_OPTS = [['talk', '설명 들으며'], ['count', '숫자만']];
 
 /** initial: { id?, title, cards: [...] } · allCards: 고를 수 있는 바로카드 */
-export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave, onCancel }) {
+export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave, onCancel, onDelete = null }) {
   const [title, setTitle] = useState(initial?.title || '');
   const [cards, setCards] = useState(initial?.cards || []);
   const [picking, setPicking] = useState(false);
@@ -61,7 +61,7 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
         <button type="button" disabled={!ok} onClick={() => {
           const bad = badNameReason(title);
           if (bad) { window.alert(`플리 이름에 쓸 수 없는 말(${bad})이 들어 있어요. 다른 이름을 적어 주세요.`); return; }
-          onSave({ id: initial?.id, title: title.trim(), cards, showNick });
+          onSave({ id: initial?.id, title: title.trim(), cards, showNick, sourceId: initial?.sourceId || null });
         }}
           style={{ border: 'none', cursor: ok ? 'pointer' : 'default', fontFamily: 'inherit', borderRadius: 999, padding: '8px 16px',
             fontSize: 13, fontWeight: 800, background: ok ? GOLD : '#F1EEE8', color: ok ? '#fff' : '#C6C0B5' }}>
@@ -177,6 +177,14 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
           ))}
         </div>
 
+        {/* 고치는 중일 때만 — 지운 플리는 되살릴 수 없다 */}
+        {onDelete && (
+          <button type="button" onClick={() => { if (window.confirm(`'${title.trim() || '이 플리'}'를 지울까요?\n지운 플리는 되살릴 수 없어요.`)) onDelete(); }}
+            style={{ display: 'block', margin: '22px auto 0', border: 'none', background: 'transparent', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, color: '#B23B36', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            이 플리 지우기
+          </button>
+        )}
       </div>
     </div>
   );

@@ -12,6 +12,11 @@ import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
 import MyPageView from './components/MyPageView';
 import AiChatHub from './components/AiChatHub';
+import SelfCheckView from './features/self/SelfCheckView';
+import { LetterArrival } from './components/MonthLetter';
+import { letterDue } from './lib/monthLetter';
+import { getDiaryHistory, syncDiaryHistoryFromServer } from './lib/diaryHistory';
+import { PARTS } from './lib/mallangReportEngine';
 import SavePromptModal from './components/SavePromptModal';
 import KakaoChannelPrompt from './components/KakaoChannelPrompt';
 // 카카오 로그인에서 돌아오면 주소 끝에 #access_token=... 이 붙는다.
@@ -36,11 +41,31 @@ function App() {
   const hashCode = (initialHash && initialHash !== 'quiz' && !exampleCode && isBmtiCode(initialHash)) ? initialHash : null;
   // 재방문(다이어리 온보딩을 마친) 유저는 첫 화면을 다이어리로 연다. 단, 링크에 해시가 있으면 그 화면 우선.
   const isReturningDiaryUser = (() => { try { return localStorage.getItem('bmti_diary_onboarded') === '1'; } catch { return false; } })();
+  // 주간 각도기록 알림(웹 푸시)은 '/?go=angle' 로 연다 — 다이어리에서 재는 화면을 바로 띄운다
+  const goAngle = (() => { try { return new URLSearchParams(window.location.search).get('go') === 'angle'; } catch { return false; } })();
+  const [openAngle, setOpenAngle] = useState(goAngle);
   const [currentView, setCurrentView] = useState(
-    initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (isReturningDiaryUser ? 'aichat' : 'home')))
+    initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (goAngle || isReturningDiaryUser ? 'aichat' : 'home')))
   );
+  // 자기점검 층 — 둘러보기 · 바로플리 · 내 보관함
+  const [selfTab, setSelfTab] = useState('browse');
+  // 지난달 편지 — 한 달이 지나 처음 들어왔을 때 한 번 띄운다
+  const [letter, setLetter] = useState(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // 편지 도착 — 로그인이 자리 잡으면 서버 기록까지 받아 본 뒤, 지난달 기록이 있고 아직 안 띄웠으면 한 번 띄운다
+  useEffect(() => {
+    if (!isLoggedIn) return undefined;
+    let alive = true;
+    const t = setTimeout(() => {
+      syncDiaryHistoryFromServer().catch(() => {}).then(() => {
+        if (!alive) return;
+        const due = letterDue(getDiaryHistory(), { isLoggedIn: true });
+        if (due) setLetter(due);
+      });
+    }, 1200);
+    return () => { alive = false; clearTimeout(t); };
+  }, [isLoggedIn]);
   const [showSignup, setShowSignup] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [bmtiCode, setBmtiCode] = useState(() => {
@@ -354,6 +379,8 @@ function App() {
         onRequireLogin={() => setShowSignup(true)}
         userProfile={userProfile}
         bmtiCode={bmtiCode}
+        selfTab={selfTab}
+        setSelfTab={setSelfTab}
       />
 
       <main>
@@ -398,7 +425,16 @@ function App() {
             isLoggedIn={isLoggedIn}
             onRequireLogin={() => setShowSignup(true)}
             setUserProfile={setUserProfile}
+            openAngle={openAngle}
+            onAngleShown={() => setOpenAngle(false)}
+            onOpenRecords={() => window.dispatchEvent(new CustomEvent('bmti:open-report', { detail: 'records' }))}
           />
+        )}
+        {currentView === 'self' && (
+          <div style={{ maxWidth: 560, margin: '0 auto', padding: '76px 16px 110px' }}>
+            <SelfCheckView tab={selfTab} bmtiCode={bmtiCode} userProfile={userProfile} isLoggedIn={isLoggedIn}
+              onRequireLogin={() => setShowSignup(true)} />
+          </div>
         )}
         {currentView === 'mypage' && (
           <MyPageView
@@ -441,6 +477,11 @@ function App() {
       />
 
       {currentView !== 'quiz' && <KakaoChannelPrompt />}
+
+      {letter && currentView !== 'quiz' && (
+        <LetterArrival entries={letter.entries} year={letter.year} month={letter.month}
+          nickname={userProfile?.nickname} bmtiCode={bmtiCode} parts={PARTS} onClose={() => setLetter(null)} />
+      )}
     </div>
   );
 }

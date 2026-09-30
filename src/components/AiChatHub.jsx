@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { hasDiaryHistory, saveDiaryEntry, syncDiaryHistoryFromServer, todayISO } from '../lib/diaryHistory';
 import DiaryCalendar from './DiaryCalendar';
 import DiaryWriteFlow from './DiaryWriteFlow';
+import AngleCapture from '../features/angle/AngleCapture';
+import { TAG_CATEGORIES } from '../lib/diaryTags';
+import { recentChecks, saveCheck } from '../lib/angleRecord';
 
 /**
  * BMTI 하루일기 허브 — 첫 방문자는 온보딩, 이미 기록해본 사람은 캘린더로 바로 진입.
  */
 const ONBOARDED_KEY = 'bmti_diary_onboarded';
 
-const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, setUserProfile }) => {
+// 10월 개편 — 태그 목록을 10월 것으로, '오늘 평소보다 무리했나요' 블럭은 뺀다(태그가 대신한다).
+const OCT_DROP = ['sitting'];
+
+const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, setUserProfile, openAngle = false, onAngleShown, onOpenRecords }) => {
   const [hasHistory, setHasHistory] = useState(() => hasDiaryHistory());
   // 온보딩을 한 번 마친 사람은(첫 기록이 없어도) 다시 온보딩을 보지 않고 바로 캘린더로 간다.
   const [onboarded, setOnboarded] = useState(() => localStorage.getItem(ONBOARDED_KEY) === '1');
@@ -19,6 +25,38 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
   const [editingDate, setEditingDate] = useState(null); // 캘린더에서 특정 날짜를 수정하러 들어온 경우 그 날짜
   const [syncTick, setSyncTick] = useState(0); // 서버 동기화가 끝나면 캘린더를 새로 읽도록 리마운트
   const [postStressMood, setPostStressMood] = useState(null); // 상세 기록 완료 후, 캘린더로 돌아가 띄울 말랑이 팝업 무드
+  // 각도기록 — 재는 화면은 전체 화면으로 따로 뜬다. want: 고른 부위
+  const [angle, setAngle] = useState(null);
+  // 주간 알림(?go=angle)을 눌러 들어왔으면 재는 화면을 연다.
+  // 로그인 상태는 화면이 뜬 조금 뒤에 자리 잡으므로, 로그인이 확인되는 순간 연다.
+  const [pendingAngle, setPendingAngle] = useState(!!openAngle);
+  const shownAngle = angle || (pendingAngle && isLoggedIn ? ['neck', 'trunk', 'arm'] : null);
+  const [angleChecks, setAngleChecks] = useState(null);   // 그날 일기장에 적을 각도 한 줄
+  const [angleNote, setAngleNote] = useState('');
+  const loadChecks = () => { if (isLoggedIn) recentChecks(14).then((r) => setAngleChecks(r || [])); };
+  useEffect(loadChecks, [isLoggedIn]);
+  const isLoggedInRef = useRef(isLoggedIn);
+  useEffect(() => { isLoggedInRef.current = isLoggedIn; }, [isLoggedIn]);
+  // 알림으로 들어왔다는 표시는 한 번 쓰고 치운다. 몇 초가 지나도 로그인이 아니면 로그인부터.
+  useEffect(() => {
+    if (!openAngle) return undefined;
+    if (onAngleShown) onAngleShown();
+    const t = setTimeout(() => { if (!isLoggedInRef.current && onRequireLogin) onRequireLogin(); }, 3000);
+    return () => clearTimeout(t);
+  }, [openAngle]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const startAngle = (want) => {
+    if (!isLoggedIn) { if (onRequireLogin) onRequireLogin(); return; }
+    setAngle(want && want.length ? want : ['neck', 'trunk', 'arm']);
+  };
+  const angleScreen = shownAngle && (
+    <AngleCapture want={shownAngle} gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
+      onClose={() => { setAngle(null); setPendingAngle(false); }}
+      onDone={async (vals) => {
+        const r = await saveCheck(vals);
+        setAngleNote(r.ok ? '' : r.why);
+        loadChecks();
+      }} />
+  );
   const axisCode = bmtiCode ? bmtiCode.split('-')[0] : '';
   const charData = CHARACTERS.find(c => c.id === axisCode);
   const charName = charData ? CHARACTER_NAMES[charData.id] : undefined;
@@ -65,9 +103,21 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
     setShowDiaryFlow(true);
   };
 
+  const saveFail = angleNote && (
+    <div role="alert" onClick={() => setAngleNote('')}
+      style={{ position: 'fixed', left: 16, right: 16, bottom: 96, zIndex: 95, background: '#FDECEA', color: '#B23B36', borderRadius: 12,
+        padding: '11px 14px', fontSize: 13, fontWeight: 700, boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}>
+      각도기록을 {angleNote} (눌러서 닫기)
+    </div>
+  );
+
   if (showDiaryFlow) {
     return (
+      <>
       <DiaryWriteFlow
+        tagCats={TAG_CATEGORIES}
+        dropBlock={OCT_DROP}
+        onAngle={startAngle}
         onClose={() => { setShowDiaryFlow(false); setEditingDate(null); setPendingEntry(null); }}
         onFinish={handleWriteFlowFinish}
         initialPhase="form"
@@ -82,12 +132,22 @@ const AiChatHub = ({ bmtiCode, setView, userInfo, isLoggedIn, onRequireLogin, se
         userInfo={userInfo}
         setUserProfile={setUserProfile}
       />
+      {angleScreen}
+      {saveFail}
+      </>
     );
   }
 
   // 온보딩 3페이지 제거 — 처음 들어온 사용자도 바로 월간 캘린더로.
   // (일상 정보(불편 부위·운동 습관·자세)는 마이페이지 '말랑 정보'에서 입력·수정)
-  return <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} userInfo={userInfo} setUserProfile={setUserProfile} gender={userInfo?.kakaoGender || userInfo?.kakao_gender} />;
+  return (
+    <>
+      <DiaryCalendar key={syncTick} onPickMood={openDiaryFlow} onEditDay={openDiaryFlowForEdit} bmtiCode={bmtiCode} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} initialStressMood={postStressMood} onStressShown={() => setPostStressMood(null)} userInfo={userInfo} setUserProfile={setUserProfile} gender={userInfo?.kakaoGender || userInfo?.kakao_gender}
+        dayMallang angleChecks={angleChecks} onAngleOpen={onOpenRecords} />
+      {angleScreen}
+      {saveFail}
+    </>
+  );
 };
 
 export default AiChatHub;

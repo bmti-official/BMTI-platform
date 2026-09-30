@@ -34,7 +34,7 @@ const EMPTY_WORD = {
 };
 
 export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
-  plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine }) {
+  plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine, onDeleteMine }) {
   usePanelTime('box');   // 행동 기록 — 이 창에 머문 시간
   const [tab, setTab] = useState('mine');
   const [editing, setEditing] = useState(null);   // 마이플리 만들기·고치기 창 { id?, title, cards, from? }
@@ -101,7 +101,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
           action={{ label: '가져와 고치기', onClick: (r) => {
             const t = tone === 'm' ? (r.title_m || r.title_z) : (r.title_z || r.title_m);
             if (window.confirm(`'${t}'을 마이플리로 가져와 고칠까요?\n원래 바로플리는 그대로 두고, 고친 것은 마이플리에 새로 저장돼요.`)) {
-              setEditing({ title: t, cards: [...(r.cards || [])], from: t });
+              setEditing({ title: t, cards: [...(r.cards || [])], from: t, sourceId: r.id });
             }
           } }} />
       ) : grid.length === 0 ? <Empty text={EMPTY_WORD[tab]} /> : (
@@ -139,6 +139,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
       )}
       {editing && (
         <MyPliEditor initial={editing} allCards={allCards} tone={tone} onCancel={() => setEditing(null)}
+          onDelete={editing.id && onDeleteMine ? () => { onDeleteMine(editing.id); setEditing(null); setEditMode(false); } : null}
           onSave={(p) => { setEditing(null); setEditMode(false); setTab('mine'); onSaveMine && onSaveMine(p); }} />
       )}
     </div>

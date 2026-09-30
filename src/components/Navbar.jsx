@@ -5,7 +5,7 @@ const KakaoIcon = ({ className = "w-3.5 h-3.5 fill-current" }) => (
   </svg>
 );
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
 import { todayISO, getEntryForDate } from '../lib/diaryHistory';
@@ -83,12 +83,43 @@ const OpenBookIcon = ({ active }) => (
   </svg>
 );
 
+// ── 10월 하단 네비 — 두 층 ─────────────────────────────────
+// 루트: 다이어리 · [캐릭터] · 자기점검
+// 다이어리: 이전 · 오늘 쓰기 · [캐릭터] · 이번달 기록 · 이번달 발견
+// 자기점검: 이전 · 둘러보기 · [캐릭터] · 바로플리 · 내 보관함
+// 모양은 관리자 미리보기(admin/PreviewModal.jsx)와 같다.
+const BoltMark = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none"><path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" /></svg>
+);
+const GlassMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>
+);
+const PlayMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M8 5.5l11 6.5-11 6.5z" fill="currentColor" /></svg>
+);
+const BoxMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5h18v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5z" /><path d="M2.5 4.5h19v4h-19zM9.5 13h5" /></svg>
+);
+const PenMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20l4.5-1.2L20 7.3a2 2 0 0 0 0-2.8l-.5-.5a2 2 0 0 0-2.8 0L5.2 15.5z" /><path d="M15.5 6l2.5 2.5" /></svg>
+);
+const ChartMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 20V12M12 20V5M19 20v-6" /></svg>
+);
+const CalMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3.5v3M16 3.5v3" /></svg>
+);
+const BackMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
+);
+const ROUND = "'Jua','Pretendard',-apple-system,sans-serif";
+
 // 알약 안의 한 칸(아이콘 + 라벨). 여러 칸을 묶어 화면 가로를 꽉 채우는 알약을 만든다.
 const PillTab = ({ active, onClick, icon, label }) => (
   <button onClick={onClick} className="flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl active:scale-95 transition-transform"
     style={active ? { background: '#F3F1EC' } : undefined}>
     <span className={`w-6 h-6 flex items-center justify-center ${active ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
-    <span className={`text-[9.5px] font-bold whitespace-nowrap ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
+    <span className={`${label.length > 4 ? 'text-[8.5px]' : 'text-[9.5px]'} font-bold whitespace-nowrap ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
   </button>
 );
 
@@ -120,7 +151,7 @@ const AppScrollTop = () => {
   );
 };
 
-const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode }) => {
+const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode, selfTab = 'browse', setSelfTab }) => {
 
   const [lastChatDate, setLastChatDate] = useState(localStorage.getItem('last_chat_date'));
 
@@ -148,16 +179,79 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
 
   // 말랑이의 발견 — 기분 기록이 쌓인 달에서 패턴을 찾아 보여주는 월간 리포트.
   const [showDiscovery, setShowDiscovery] = useState(false);
+  const [discTab, setDiscTab] = useState('records');   // 'records' 이번달 기록 | 'discovery' 이번달 발견
   // 기록·발견은 [선택] 동의가 있어야 열람 가능 — 없으면 동의 유도 팝업.
   const [showDiscConsent, setShowDiscConsent] = useState(false);
-  const openDiscovery = () => {
-    if (hasOptionalHealthConsent()) { setShowDiscovery(true); setView('home'); }
+  // 기록·발견은 다이어리 층 안에서 연다 — 뒤에는 오늘 쓰기(캘린더)를 깔아 둔다
+  const openDiscovery = (tab = 'records') => {
+    const t = typeof tab === 'string' ? tab : 'records';
+    setDiscTab(t);
+    if (hasOptionalHealthConsent()) { enterLayer(); setShowDiscovery(true); setView('aichat'); }
     else { setShowDiscConsent(true); }
   };
+
+  // ── 어느 층에 있나 ──
+  const layer = showDiscovery || currentView === 'aichat' ? 'diary' : currentView === 'self' ? 'self' : 'root';
+  const layerRef = useRef(layer);
+  useEffect(() => { layerRef.current = layer; }, [layer]);
+  // 펼쳐지는 결 — 다이어리는 왼쪽 칸이라 오른쪽으로, 자기점검은 오른쪽 칸이라 왼쪽으로
+  const [grow, setGrow] = useState('');
+  // 휴대폰 뒤로가기·가장자리 스와이프 — 층 안에서 누르면 루트로 나온다(사이트를 떠나지 않게).
+  // 루트에서 층으로 들어갈 때 한 칸을 쌓아 두고, 뒤로가기가 그 칸을 꺼내면 루트로 돌린다.
+  const pushed = useRef(false);
+  const enterLayer = () => {
+    if (layerRef.current !== 'root' || pushed.current) return;
+    try { window.history.pushState({ bmtiLayer: 1 }, ''); pushed.current = true; } catch { /* 무시 */ }
+  };
+  const toRoot = () => { setGrow('right'); setShowDiscovery(false); setView('home'); };
+  useEffect(() => {
+    const onPop = () => {
+      pushed.current = false;
+      if (layerRef.current !== 'root') toRoot();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  const goBack = () => {
+    if (pushed.current) { try { window.history.back(); return; } catch { /* 무시 */ } }
+    toRoot();
+  };
+  const goDiary = () => { enterLayer(); setGrow('right'); setShowDiscovery(false); setView('aichat'); };
+  const goSelf = (tab = 'browse') => { enterLayer(); setGrow('left'); setShowDiscovery(false); setSelfTab && setSelfTab(tab); setView('self'); };
+  const tabOn = (k) => (layer === 'diary' ? (showDiscovery ? discTab === k : k === 'today') : layer === 'self' ? selfTab === k : false);
+  const ROWS = {
+    root: [
+      { key: 'diary', label: '다이어리', icon: <Mallang v={diaryMoodTick} size={24} noBlink />, on: goDiary },
+      { key: 'char' },
+      { key: 'self', label: '자기점검', icon: <BoltMark />, on: () => goSelf('browse') },
+    ],
+    diary: [
+      { key: 'back', label: '이전', icon: <BackMark />, on: goBack },
+      { key: 'today', label: '오늘 쓰기', icon: <PenMark />, on: () => { setShowDiscovery(false); setView('aichat'); } },
+      { key: 'char' },
+      { key: 'records', label: '이번달 기록', icon: <CalMark />, on: () => openDiscovery('records') },
+      { key: 'discovery', label: '이번달 발견', icon: <ChartMark />, on: () => openDiscovery('discovery') },
+    ],
+    self: [
+      { key: 'back', label: '이전', icon: <BackMark />, on: goBack },
+      { key: 'browse', label: '둘러보기', icon: <GlassMark />, on: () => setSelfTab && setSelfTab('browse') },
+      { key: 'char' },
+      { key: 'baro', label: '바로플리', icon: <PlayMark />, on: () => setSelfTab && setSelfTab('baro') },
+      { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box') },
+    ],
+  };
+  const TITLE = { diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink /> }, self: { text: '자기점검', icon: <BoltMark size={21} /> } };
   // 홈·결과지·파트너 팝업의 '이번달 기록·발견 알아보기' CTA(DiaryCta)가 발행하는 이벤트로 기록·발견을 연다.
   useEffect(() => {
-    window.addEventListener('bmti:open-discovery', openDiscovery);
-    return () => window.removeEventListener('bmti:open-discovery', openDiscovery);
+    const open = () => openDiscovery('records');
+    window.addEventListener('bmti:open-discovery', open);
+    return () => window.removeEventListener('bmti:open-discovery', open);
+  }, [setView]);
+  // 다이어리 안에서 '각도기록 보기' 등으로 이번달 기록을 열 때
+  useEffect(() => {
+    const open = (e) => openDiscovery(e.detail || 'records');
+    window.addEventListener('bmti:open-report', open);
+    return () => window.removeEventListener('bmti:open-report', open);
   }, [setView]);
 
   // 가운데 캐릭터를 누르면 뜨는 '내 BMTI 유형' 팝업.
@@ -198,13 +292,22 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       {/* 상단: 홈(집) 원형 버튼 — 항상 떠 있음 */}
       <div className="fixed top-3 left-3 z-40">
         <button
-          onClick={() => { setShowDiscovery(false); setView('home'); }}
+          onClick={() => { if (layer !== 'root') goBack(); else { setShowDiscovery(false); setView('home'); } }}
           aria-label="홈"
           className="w-11 h-11 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border border-gray-100 flex items-center justify-center active:scale-95 transition-transform"
         >
           <HomeIcon className={`w-6 h-6 ${currentView === 'home' ? 'text-black' : 'text-gray-500'}`} />
         </button>
       </div>
+
+      {/* 상단 가운데: 지금 어느 방인지 — 하단 줄이 통째로 바뀌니 여기가 길잡이다 */}
+      {layer !== 'root' && currentView !== 'quiz' && (
+        <div className="fixed top-3 z-40 pointer-events-none flex items-center justify-center gap-1.5"
+          style={{ left: 64, right: isLoggedIn ? 170 : 150, height: 44 }}>
+          <span className="w-6 h-6 flex items-center justify-center text-black">{TITLE[layer].icon}</span>
+          <span style={{ fontFamily: ROUND, fontSize: 21, color: '#111', lineHeight: 1, whiteSpace: 'nowrap' }}>{TITLE[layer].text}</span>
+        </div>
+      )}
 
       {/* 상단: 닉네임 + 마이페이지(사람) 알약 / 미로그인 시 카카오 로그인 — 항상 떠 있음 */}
       <div id="login-button" className="fixed top-3 right-3 z-40">
@@ -239,18 +342,22 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       {/* 하단: 하나의 기다란 떠 있는 알약(가운데 캐릭터 자리) — BMTI 설문 중에는 숨긴다 */}
       {currentView !== 'quiz' && (
         <>
+          <style>{
+            '@keyframes navGrowR{0%{clip-path:inset(0 100% 0 0);opacity:.35;transform:translateX(-6px)}55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:1;transform:translateX(0)}}'
+            + '@keyframes navGrowL{0%{clip-path:inset(0 0 0 100%);opacity:.35;transform:translateX(6px)}55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:1;transform:translateX(0)}}'
+            + '@keyframes navTabIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}'
+            + '@media (prefers-reduced-motion: reduce){.bmti-nav,.bmti-nav *{animation:none!important}}'
+          }</style>
           <div className="fixed bottom-3 left-2 right-2 z-40">
-            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1">
-              <PillTab active={currentView === 'home' && !showDiscovery} onClick={() => { setShowDiscovery(false); setView('home'); }}
-                icon={<OpenBookIcon active={currentView === 'home' && !showDiscovery} />} label="BMTI" />
-              <PillTab active={currentView === 'result'} onClick={() => { setShowDiscovery(false); if (bmtiCode) setView('result'); else setShowPartner(true); }}
-                icon={<CheckIcon active={currentView === 'result'} />} label="나의유형" />
-              {/* 가운데 캐릭터 자리 */}
-              <span className="w-14 shrink-0" aria-hidden="true" />
-              <PillTab active={currentView === 'aichat'} onClick={() => { setView('aichat'); setShowDiscovery(false); }}
-                icon={<Mallang v={diaryMoodTick} size={24} noBlink />} label="다이어리" />
-              <PillTab active={showDiscovery} onClick={openDiscovery}
-                icon={<ChartIcon className="w-5 h-5 text-gray-500" active={showDiscovery} />} label="기록·발견" />
+            <div key={`${layer}-${grow}`} className="bmti-nav flex items-center bg-white/95 backdrop-blur-md rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.14)] border border-gray-100 px-1.5 py-1"
+              style={{ animation: grow ? `navGrow${grow === 'right' ? 'R' : 'L'} .5s cubic-bezier(.16,.84,.28,1) both` : 'none' }}>
+              {ROWS[layer].map((t, i) => (t.key === 'char' ? (
+                <span key="char" className="w-14 shrink-0" aria-hidden="true" />
+              ) : (
+                <span key={t.key} className="flex-1 min-w-0 flex" style={{ animation: grow ? `navTabIn .34s ease-out ${0.08 + i * 0.045}s both` : 'none' }}>
+                  <PillTab active={tabOn(t.key)} onClick={t.on} icon={t.icon} label={t.label} />
+                </span>
+              )))}
             </div>
           </div>
 
@@ -284,7 +391,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       )}
 
       {showDiscovery && (
-        <MallangDiscoveryReport onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
+        <MallangDiscoveryReport key={discTab} oct initialTab={discTab} onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
       )}
 
       {showTypeGallery && (
@@ -300,7 +407,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
         <DiscoveryConsentPrompt
           userId={userProfile?.id}
           onClose={() => setShowDiscConsent(false)}
-          onAgreed={() => { setShowDiscConsent(false); setShowDiscovery(true); setView('home'); }}
+          onAgreed={() => { setShowDiscConsent(false); enterLayer(); setShowDiscovery(true); setView('aichat'); }}
         />
       )}
 

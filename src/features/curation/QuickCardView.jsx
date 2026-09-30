@@ -13,6 +13,7 @@ import { loadVoiceAssets, loadHello, voiceKey, COUNTDOWN_AT } from './voiceCommo
 import { axisOf } from './typeTint';
 import { markFinish } from '../../lib/cardFinish';
 import { track } from '../../lib/analytics';
+import { useKeep } from './keep';
 import { HELLO_LINE } from './helloLine';
 import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
@@ -202,6 +203,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const [vol, setVol] = useState(0.85);
   const audioRef = useRef(null);
   // 설명을 들으며 할지, 숫자만 들을지 — 손님이 고른다.
+  const keep = useKeep('card', card.id);   // 자기점검에서 열었으면 보관함과 이어진다
   const [guide, setGuide] = useState(card.default_guide !== false);   // 기본은 '설명 들으며'(마이플리에서 '숫자만'으로 정할 수 있다)
   // 고르는 칸은 접어 두고, 바꾸고 싶은 사람만 펼친다.
   const [optOpen, setOptOpen] = useState(false);
@@ -875,12 +877,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
               fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: KEEP_SHADOW }}>
             {started ? '플리 루틴 만들기 ＋' : '바로 따라하기 →'}
           </button>
-          {!started && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); }}
+          {!started && (onSave || keep) && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); if (onSave) onSave(); else keep.toggle(); }}
+              aria-pressed={!!keep?.saved}
               style={{ flexShrink: 0, padding: '0 16px', borderRadius: 13, border: 'none', background: KEEP_BG, color: KEEP_INK,
                 fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.25,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span>보관</span><span>하기</span>
+              {keep?.saved ? <><span>보관</span><span>됨 ✓</span></> : <><span>보관</span><span>하기</span></>}
             </button>
           )}
         </div>
