@@ -1182,7 +1182,10 @@ function AngleWeekStrip({ weeks, onAngle, t, gender }) {
         <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 900, color: C.ink }}>
           각도기록
           <span style={{ fontWeight: 700, color: C.sub, fontSize: 11.5, marginLeft: 6 }}>
-            {now.on ? `이번 주 다 쟀어요 · 최근 4주 중 ${done}번` : `이번 주 아직이에요 · 최근 4주 중 ${done}번`}
+            {/* 말 덩어리째 줄이 바뀌게 — '0'과 '번' 사이에서 끊기지 않는다 */}
+            <span style={{ whiteSpace: "nowrap" }}>{now.on ? "이번 주 다 쟀어요" : "이번 주 아직이에요"}</span>
+            {" · "}
+            <span style={{ whiteSpace: "nowrap" }}>최근 4주 중 {done}번</span>
           </span>
         </span>
         {/* 셋을 늘 다 잴 필요는 없다. 오늘 보고 싶은 곳만 고를 수 있게 문을 하나 둔다. */}

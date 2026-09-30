@@ -44,6 +44,11 @@ function App() {
   // 주간 각도기록 알림(웹 푸시)은 '/?go=angle' 로 연다 — 다이어리에서 재는 화면을 바로 띄운다
   const goAngle = (() => { try { return new URLSearchParams(window.location.search).get('go') === 'angle'; } catch { return false; } })();
   const [openAngle, setOpenAngle] = useState(goAngle);
+  // 한 번 읽었으면 주소에서 뗀다 — 새로고침할 때마다 카메라 화면이 다시 뜨지 않게
+  useEffect(() => {
+    if (!goAngle) return;
+    try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch { /* 무시 */ }
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   const [currentView, setCurrentView] = useState(
     initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (goAngle || isReturningDiaryUser ? 'aichat' : 'home')))
   );
