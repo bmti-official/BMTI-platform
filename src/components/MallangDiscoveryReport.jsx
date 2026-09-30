@@ -285,7 +285,9 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   //        각도·부담 발견 박스를 넣는다
   //   angleRows  각도 판을 밖에서 넘길 때(관리자 미리보기). 없으면 직접 읽어 온다
   //   initialTab  'records' | 'discovery' — 어느 탭으로 열지. 보던 달은 그대로 둔다.
-  oct = false, initialTab = null, angleRows = null }) {
+  oct = false, initialTab = null, angleRows = null,
+  //   letterPeek  편지를 달이 끝나기 전에도 열어 볼지 — 관리자 미리보기에서만 켠다
+  letterPeek = false }) {
   usePanelTime('discover');   // 행동 기록 — 이 창에 머문 시간
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -565,7 +567,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
             })()}
           </div>
         ) : (
-          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
+          <DiscoveryInsights report={report} entries={entries} userData={userData} nickname={userData?.nickname} bmtiCode={bmtiCode} exIns={exIns} pdfMode={savingPDF} oct={oct} letterPeek={letterPeek} onWeatherUpdated={() => forceWeatherRefresh((n) => n + 1)} />
         )}
         </div>
         </div>
@@ -2692,7 +2694,7 @@ function Insight({ children }) {
   return <p style={{ fontSize: 13.5, color: "#3F3A31", fontWeight: 600, lineHeight: 1.62, margin: "14px 0 0", wordBreak: "keep-all", textWrap: "pretty" }}>{children}</p>;
 }
 
-function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false }) {
+function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIns, pdfMode = false, onWeatherUpdated, oct = false, letterPeek = false }) {
   const ins = computeInsights(entries, userData, report, bmtiCode);
   const isM = (bmtiCode ? bmtiCode.split("-")[0] : "").includes("M");
   const g = String(userData?.kakao_gender || userData?.kakaoGender || "").toLowerCase();
@@ -2744,7 +2746,7 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
     const now = new Date();
     items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(
       <MonthLetterCard entries={entries} year={per.year || now.getFullYear()} month={per.month || now.getMonth() + 1}
-        nickname={nickname} bmtiCode={bmtiCode} parts={PARTS} peek />,
+        nickname={nickname} bmtiCode={bmtiCode} parts={PARTS} peek={letterPeek} />,
       <MonthLetterCard entries={EXAMPLE_ENTRIES} year={per.year || now.getFullYear()} month={per.month || now.getMonth() + 1}
         nickname={nickname} bmtiCode={bmtiCode} parts={PARTS} />, hasAny)}</Fragment> });
   } else items.push({ locked: !hasAny, node: <Fragment key="letter">{maybeLock(

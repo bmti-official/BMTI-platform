@@ -6,7 +6,7 @@ import BodySelector3D from './BodySelector3D';
 import { canRetakeTest, archiveBeforeRetake } from '../lib/bmtiSystem';
 import TypeGallery from './TypeGallery';
 import { Mallang } from './Mallang';
-import { hasLocalHealthConsent, setLocalHealthConsent, updateHealthRecordConsent } from '../lib/healthConsentSystem';
+import { hasLocalHealthConsent, setLocalHealthConsent, updateHealthRecordConsent, hasOptionalHealthConsent, withdrawHealthConsent, deleteMyAccount, CONSENT_ITEMS, CONSENT_WITHDRAW_NOTE } from '../lib/healthConsentSystem';
 
 // 하단 네비게이션 바 'BMTI' 탭과 동일한 펼친 책 아이콘 (currentColor)
 const BookIcon = ({ className = 'w-6 h-6', style }) => (
@@ -104,10 +104,9 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   const [showGallery, setShowGallery] = useState(false); // '다른 유형 구경' 갤러리
 
   // 건강 기록 동의(필수·선택) — 다이어리 첫 진입 게이트와 동일 항목을 마이페이지에서도 관리
-  const consentStr = (() => { try { return localStorage.getItem('bmti_health_consent') || ''; } catch { return ''; } })();
   const [consentGiven, setConsentGiven] = useState(hasLocalHealthConsent());
   const [cReq, setCReq] = useState(hasLocalHealthConsent());
-  const [cOpt, setCOpt] = useState(consentStr.includes(':opt'));
+  const [cOpt, setCOpt] = useState(hasOptionalHealthConsent());
   const [cSaving, setCSaving] = useState(false);
 
   const saveConsent = async () => {
@@ -118,6 +117,31 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     setCSaving(false);
     setConsentGiven(true);
   };
+  // 필수 동의 철회 — 다이어리 기록과 각도기록이 지워진다(개인정보처리방침 제4-1조)
+  const [busyLeave, setBusyLeave] = useState(false);
+  const withdraw = async () => {
+    if (busyLeave) return;
+    if (!window.confirm('건강 기록 동의를 철회할까요?\n\n철회하면 지금까지의 다이어리 기록과 각도기록이 모두 지워지고, 되살릴 수 없어요.\n다시 기록하려면 동의를 새로 해 주셔야 해요.')) return;
+    setBusyLeave(true);
+    const r = await withdrawHealthConsent();
+    setBusyLeave(false);
+    if (!r.ok) { window.alert(r.why); return; }
+    setConsentGiven(false); setCReq(false); setCOpt(false);
+    window.alert('동의를 철회했어요. 다이어리 기록과 각도기록을 지웠어요.');
+  };
+  // 회원 탈퇴 — 회원 정보와 모든 기록을 지우고 로그아웃한다
+  const leave = async () => {
+    if (busyLeave) return;
+    if (!window.confirm('회원 탈퇴를 할까요?\n\n회원 정보, BMTI 검사 결과, 다이어리·각도기록, 보관함·마이플리, 알림 설정이 모두 지워지고 되살릴 수 없어요.')) return;
+    if (!window.confirm('정말 탈퇴할까요? 이 선택은 되돌릴 수 없어요.')) return;
+    setBusyLeave(true);
+    const r = await deleteMyAccount();
+    setBusyLeave(false);
+    if (!r.ok) { window.alert(r.why); return; }
+    window.alert('탈퇴했어요. 그동안 BMTI와 함께해 주셔서 고마워요.');
+    if (onLogout) onLogout();
+  };
+
   // 이미 동의한 상태에서 선택 항목만 켜고 끈다
   const updateOptional = async (opt) => {
     setCOpt(opt);
@@ -444,10 +468,10 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         {!isEditing && !consentGiven && (
           <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: '#EDE9E2', background: '#FCFBF7' }}>
             <div className="text-[13px] font-black text-gray-900 mb-0.5">🔒 건강 기록 동의</div>
-            <p className="text-[11px] text-gray-500 font-semibold mb-3 break-keep">기분·불편함·수면은 민감정보(건강정보)예요. 동의가 있어야 안전하게 기록·분석해 드려요.</p>
+            <p className="text-[11px] text-gray-500 font-semibold mb-3 break-keep">기분·통증·수면, 몸 상태 태그, 각도기록은 민감정보(건강정보)예요. 동의가 있어야 안전하게 기록·분석해 드려요.</p>
             <div className="flex flex-col gap-2">
               <ConsentRow checked={cReq} onToggle={() => setCReq(v => !v)} tag="필수">
-                기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
+                {CONSENT_ITEMS} 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
               </ConsentRow>
               <ConsentRow checked={cOpt} onToggle={() => setCOpt(v => !v)} tag="선택">
                 <b>가명처리</b> 후 통계·연구·서비스 개선(B2B 포함)에 활용하는 것에 동의합니다.
@@ -459,7 +483,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
               style={{ background: cReq ? GOLD : '#E7E2D8', color: cReq ? '#fff' : '#B7B2A9', cursor: cReq && !cSaving ? 'pointer' : 'default' }}>
               {cSaving ? '저장 중…' : '동의하고 저장하기'}
             </button>
-            <p className="text-[10px] text-gray-400 font-medium mt-2.5 leading-relaxed break-keep">동의는 마이페이지에서 관리할 수 있고, 저장·처리는 위탁·국외이전 고지에 따릅니다.</p>
+            <p className="text-[10px] text-gray-400 font-medium mt-2.5 leading-relaxed break-keep">{CONSENT_WITHDRAW_NOTE} 저장·처리는 개인정보처리방침의 위탁·국외이전 고지에 따릅니다.</p>
           </div>
         )}
       </div>
@@ -683,7 +707,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
           <div className="bg-white rounded-3xl p-5 md:p-6 border border-[#F3EFE6] mb-2" style={{ boxShadow: YELLOW_SHADOW }}>
             <div className="flex flex-col gap-2">
               <ConsentRow checked disabled tag="필수">
-                기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용에 동의함
+                {CONSENT_ITEMS} 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용에 동의함
                 <span className="block mt-1 text-[11px] font-bold text-gray-400">· 동의 완료</span>
               </ConsentRow>
               <ConsentRow checked={cOpt} onToggle={() => updateOptional(!cOpt)} tag="선택">
@@ -691,10 +715,22 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                 <span className="block mt-1 text-[11px] font-extrabold" style={{ color: GOLD }}>✨ 선택 동의 시 기록·발견의 분석을 모두 확인할 수 있어요.</span>
               </ConsentRow>
             </div>
-            <p className="text-[11px] text-gray-400 font-medium mt-3 break-keep">선택 항목은 언제든 껐다 켤 수 있어요. 필수 동의 철회는 고객센터로 문의해 주세요.</p>
+            <p className="text-[11px] text-gray-400 font-medium mt-3 break-keep">선택 항목은 언제든 껐다 켤 수 있어요. 필수 동의를 철회하면 다이어리 기록과 각도기록이 지워져요.</p>
+            <button type="button" onClick={withdraw} disabled={busyLeave}
+              className="mt-3 text-[12px] font-extrabold underline underline-offset-2" style={{ color: '#B23B36' }}>
+              {busyLeave ? '처리 중…' : '필수 동의 철회하기'}
+            </button>
           </div>
         </>
       )}
+
+      {/* 회원 탈퇴 — 맨 아래에 작게 */}
+      <div className="text-center mt-8 mb-4">
+        <button type="button" onClick={leave} disabled={busyLeave}
+          className="text-[11.5px] font-bold text-gray-400 underline underline-offset-2">
+          {busyLeave ? '처리 중…' : '회원 탈퇴'}
+        </button>
+      </div>
 
       {showGallery && <TypeGallery onClose={() => setShowGallery(false)} />}
     </div>

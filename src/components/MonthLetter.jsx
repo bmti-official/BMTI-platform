@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getTypeAccent } from '../lib/typeAccent';
 import { CHARACTERS } from '../data';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-import { letterArrival, markLetterSeen } from '../lib/monthLetter';
+import { letterArrival, markLetterSeen, letterBegins, LETTER_FROM } from '../lib/monthLetter';
 import { buildLetterA } from '../lib/monthLetterA';
 import { IconBox } from './DiscoveryIcons';
 import { josa } from '../lib/josa';
@@ -26,6 +26,9 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
   const letter = buildLetterA(entries, { year, month, nickname, bmtiCode, partnerName: chName });
   void parts;   // 부위 이름은 이제 용어집(letterTerms)이 맡는다
   const next = month === 12 ? 1 : month + 1;
+  // 편지를 보내기 전 달(2026년 9월까지) — 첫 편지가 언제 오는지만 알린다(미리보기는 그대로 열어 본다)
+  const begun = letterBegins(year, month) || peek;
+  const firstNext = LETTER_FROM.month === 12 ? 1 : LETTER_FROM.month + 1;
 
   return (
     <div style={{ background: '#fff', borderRadius: 20, padding: '18px 18px 20px', boxShadow: SHADOW, border: '1px solid #F1EEE8' }}>
@@ -42,7 +45,7 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
       {/* 봉투 — 도착 전엔 봉인, 도착하면 열어 보기 */}
       <div style={{ position: 'relative', margin: '16px auto 4px', width: '86%', maxWidth: 280, aspectRatio: '1.55 / 1',
         borderRadius: 14, background: `linear-gradient(160deg, #FFF8E7, #F6E7C8)`, boxShadow: '0 6px 18px rgba(180,150,80,0.18)',
-        overflow: 'hidden', animation: arrive.open ? 'letterBob 2.6s ease-in-out infinite' : 'none' }}>
+        overflow: 'hidden', animation: begun && arrive.open ? 'letterBob 2.6s ease-in-out infinite' : 'none' }}>
         {/* 뚜껑 */}
         <svg viewBox="0 0 100 64" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
           <path d="M0 0 L50 38 L100 0 Z" fill="#F1DDB2" />
@@ -58,7 +61,12 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        {arrive.open ? (
+        {!begun ? (
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.6, wordBreak: 'keep-all' }}>
+            편지는 <b style={{ color: t.accentDeep }}>{LETTER_FROM.month}월</b>부터 보내 드려요.<br />
+            {LETTER_FROM.month}월 한 달을 보내면 {firstNext}월 1일에 첫 편지가 도착해요.
+          </div>
+        ) : arrive.open ? (
           <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>{month}월의 편지가 도착했어요</div>
         ) : (
           <div style={{ fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.6 }}>
@@ -67,7 +75,7 @@ export function MonthLetterCard({ entries, year, month, nickname, bmtiCode, part
               borderRadius: 999, padding: '2px 8px' }}>D-{arrive.left}</span>
           </div>
         )}
-        {letter && (arrive.open || peek) && (
+        {letter && begun && (arrive.open || peek) && (
           <button type="button" onClick={() => setOpen(true)}
             style={{ marginTop: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: arrive.open ? t.accent : '#fff',
               color: arrive.open ? '#fff' : t.accentDeep, borderRadius: 999, padding: '11px 20px', fontSize: 13, fontWeight: 800,

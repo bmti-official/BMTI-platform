@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { updateHealthRecordConsent, setLocalHealthConsent } from "../lib/healthConsentSystem";
+import { updateHealthRecordConsent, setLocalHealthConsent, hadOldHealthConsent, CONSENT_ITEMS, CONSENT_WITHDRAW_NOTE } from "../lib/healthConsentSystem";
 
 // 첫 다이어리 기록 전, 민감정보(기분·통증·수면=건강정보, PIPA §23) 별도 동의를 강제하는 게이트.
 // (필수) 개인 리포트 제공 목적 수집·이용 / (선택) 가명처리 후 통계·연구·서비스 개선(B2B 포함).
@@ -10,6 +10,7 @@ export default function HealthConsentGate({ userId, isLoggedIn, onAgree }) {
   const [required, setRequired] = useState(false);
   const [optional, setOptional] = useState(false);
   const [saving, setSaving] = useState(false);
+  const again = hadOldHealthConsent();   // 예전 판에 동의했던 회원 — 다시 묻는 까닭을 알린다
 
   const agree = async () => {
     if (!required || saving) return;
@@ -36,19 +37,24 @@ export default function HealthConsentGate({ userId, isLoggedIn, onAgree }) {
         <div style={{ padding: "22px 20px 12px" }}>
           <div style={{ fontSize: 18, fontWeight: 900 }}>건강 기록, 시작하기 전에</div>
           <p style={{ fontSize: 12.5, color: C.sub, fontWeight: 600, margin: "6px 0 0", lineHeight: 1.6, wordBreak: "keep-all" }}>
-            기분·불편함·수면은 <b>민감정보(건강정보)</b>예요. 아래 동의가 있어야 안전하게 기록·분석해 드릴 수 있어요.
+            기분·통증·수면, 몸 상태 태그, 각도기록은 <b>민감정보(건강정보)</b>예요. 아래 동의가 있어야 안전하게 기록·분석해 드릴 수 있어요.
           </p>
+          {again && (
+            <p style={{ fontSize: 12, color: "#8A6A3A", fontWeight: 700, margin: "10px 0 0", lineHeight: 1.6, background: "#FDF6DC", borderRadius: 10, padding: "8px 11px", wordBreak: "keep-all" }}>
+              10월 1일부터 오늘의 태그와 각도기록이 새로 더해져, 동의를 한 번 더 받고 있어요. 지금까지 남긴 기록은 그대로예요.
+            </p>
+          )}
         </div>
         <div style={{ overflowY: "auto", padding: "6px 20px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
           <Row checked={required} onToggle={() => setRequired(v => !v)} tag="필수">
-            기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
+            {CONSENT_ITEMS} 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
           </Row>
           <Row checked={optional} onToggle={() => setOptional(v => !v)} tag="선택">
             <b>가명처리</b> 후 통계·연구·서비스 개선(B2B 포함)에 활용하는 것에 동의합니다.
             <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 800, color: C.gold }}>✨ 선택 동의를 해야 <u>기록·발견의 분석</u>을 모두 확인할 수 있어요.</span>
           </Row>
           <p style={{ fontSize: 11, color: C.sub, fontWeight: 600, lineHeight: 1.6, margin: "2px 2px 0", wordBreak: "keep-all" }}>
-            동의는 마이페이지에서 언제든 철회할 수 있고, 철회 시 관련 기록은 파기돼요. 저장·처리는 위탁·국외이전 고지에 따릅니다.
+            {CONSENT_WITHDRAW_NOTE} 저장·처리는 개인정보처리방침의 위탁·국외이전 고지에 따릅니다.
           </p>
         </div>
         <div style={{ padding: "8px 20px 22px", flexShrink: 0 }}>

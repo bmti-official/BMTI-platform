@@ -204,6 +204,12 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
     try { window.history.pushState({ bmtiLayer: 1 }, ''); pushed.current = true; } catch { /* 무시 */ }
   };
   const toRoot = () => { setGrow('right'); setShowDiscovery(false); setView('home'); };
+  // 어느 길로 들어왔든(첫 화면이 다이어리인 재방문 회원, 홈의 '다이어리 기록하기' 버튼 등)
+  // 층에 들어온 순간 한 칸을 쌓아 둔다 — 그래야 첫 뒤로가기가 사이트를 떠나지 않고 루트로 온다.
+  useEffect(() => {
+    if (layer === 'root' || pushed.current) return;
+    try { window.history.pushState({ bmtiLayer: 1 }, ''); pushed.current = true; } catch { /* 무시 */ }
+  }, [layer]);
   useEffect(() => {
     const onPop = () => {
       pushed.current = false;

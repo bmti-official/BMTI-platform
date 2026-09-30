@@ -15,6 +15,12 @@ const MOOD_NAME = { 1: '힘들었어요', 2: '지쳤어요', 3: '그냥저냥', 
 const has = (w) => { const s = String(w || ''); const c = s.charCodeAt(s.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
 const j = (w, a, b) => `${w}${has(w) ? a : b}`;
 
+// 편지는 2026년 10월치부터 보낸다(첫 편지는 11월 1일 도착).
+// 9월은 10월 개편 전이라 기록 항목이 달라, 편지로 엮지 않기로 했다.
+export const LETTER_FROM = { year: 2026, month: 10 };
+/** 이 달의 편지를 보내는가 */
+export const letterBegins = (year, month) => year > LETTER_FROM.year || (year === LETTER_FROM.year && month >= LETTER_FROM.month);
+
 /** 편지가 도착했는가 — 그달이 끝난 다음 날(다음 달 1일)부터 */
 export function letterArrival(year, month, now = new Date()) {
   const at = new Date(year, month, 1);          // month는 1~12, Date는 0부터라 이게 곧 다음 달 1일
@@ -99,6 +105,7 @@ export function letterDue(history, { isLoggedIn, now = new Date() } = {}) {
   if (!isLoggedIn) return null;
   const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
   const m = now.getMonth() === 0 ? 12 : now.getMonth();
+  if (!letterBegins(y, m)) return null;
   const pre = `${y}-${String(m).padStart(2, '0')}-`;
   const entries = (history || []).filter((e) => e && String(e.date || '').startsWith(pre));
   if (!entries.length) return null;

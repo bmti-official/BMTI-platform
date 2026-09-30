@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { hasLocalHealthConsent, setLocalHealthConsent, updateHealthRecordConsent } from '../lib/healthConsentSystem';
+import { hasLocalHealthConsent, setLocalHealthConsent, updateHealthRecordConsent, CONSENT_ITEMS } from '../lib/healthConsentSystem';
 
 const GOLD = '#C9975A';
 
@@ -43,7 +43,7 @@ export default function DiscoveryConsentPrompt({ userId, onClose, onAgreed }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {!requiredAlready && (
             <Row checked={req} onToggle={() => setReq(v => !v)} tag="필수">
-              기분·통증·수면 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
+              {CONSENT_ITEMS} 등 건강정보를 <b>내 개인 리포트 제공</b> 목적으로 수집·이용하는 것에 동의합니다.
             </Row>
           )}
           <Row checked={opt} onToggle={() => setOpt(v => !v)} tag="선택">

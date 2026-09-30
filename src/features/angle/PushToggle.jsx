@@ -18,9 +18,10 @@ export default function PushToggle() {
     return () => { alive = false; };
   }, []);
 
-  if (!canPush()) return null;
-
+  // 아이폰은 홈 화면에 추가하기 전엔 브라우저가 알림 기능 자체를 숨긴다(canPush가 false).
+  // 그래도 방법은 알려야 하니, 그때는 안내만 작게 보여 준다.
   const home = needsHomeScreen();
+  if (!canPush() && !home) return null;
   const flip = async () => {
     setBusy(true); setWhy('');
     const r = on ? await turnOff() : await turnOn();
@@ -46,7 +47,7 @@ export default function PushToggle() {
         <div style={{ flex: 1, minWidth: 0, fontSize: 11, lineHeight: 1.5 }}>
           <b style={{ fontWeight: 900, color: INK }}>🔔 주간 알림</b>
           <span style={{ fontWeight: 700, color: SUB, marginLeft: 5 }}>
-            {home ? '아이폰은 홈 화면에 추가해야 받을 수 있어요.' : '그 주에 아직 안 쟀을 때만 한 번 알려 드려요.'}
+            {home ? '아이폰은 Safari 아래 공유 버튼 → ‘홈 화면에 추가’ 후, 홈 화면 아이콘으로 열면 켤 수 있어요.' : '그 주에 아직 안 쟀을 때만 한 번 알려 드려요.'}
           </span>
         </div>
         <button type="button" onClick={flip} disabled={busy || home} aria-label="주간 알림 켜고 끄기"

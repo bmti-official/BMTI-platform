@@ -738,6 +738,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             color: GOLD_INK, fontWeight: 700, lineHeight: 1.75, marginBottom: 18 }}>
             사진과 영상은 <b>이 기기 밖으로 나가지 않습니다.</b><br />남는 건 각도 숫자와 관절 자리 점(얼굴·방 모습 없이)뿐이에요.
           </div>
+          <InAppNotice />
           <button type="button" onClick={() => { askLevel(); tryRef.current = 0; setRetry(0); setPlacing(true); setStep(0); }} style={bigBtn(true)}>시작하기 →</button>
         </div>
       </Shell>
@@ -1278,5 +1279,39 @@ function RefPic({ url, alt }) {
   return (
     <img src={url} alt={alt}
       style={{ flex: '0 0 76px', width: 76, height: 132, objectFit: 'contain', borderRadius: 12, background: '#FAF7F0' }} />
+  );
+}
+
+// 앱 안 브라우저(카카오톡·인스타그램·네이버 등)에서는 카메라가 막히는 일이 잦다.
+// 그런 자리에서 열었을 때만 Safari·Chrome으로 열어 달라고 알린다.
+// 카카오톡은 바깥 브라우저로 여는 주소가 있어 버튼 하나로 넘긴다.
+const IN_APP = [
+  ['kakao', /KAKAOTALK/i, '카카오톡'], ['insta', /Instagram/i, '인스타그램'], ['fb', /FBAN|FBAV/i, '페이스북'],
+  ['naver', /NAVER\(inapp|NAVER\//i, '네이버 앱'], ['line', /\bLine\//i, '라인'], ['band', /BAND\//i, '밴드'],
+];
+function InAppNotice() {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent || '';
+  const hit = IN_APP.find(([, re]) => re.test(ua));
+  if (!hit) return null;
+  const [id, , name] = hit;
+  const toOut = () => {
+    try { window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(window.location.href)}`; } catch { /* 무시 */ }
+  };
+  return (
+    <div role="note" style={{ background: '#FDECEA', borderRadius: 12, padding: '12px 14px', marginBottom: 14,
+      fontSize: 12.5, fontWeight: 700, color: '#8E2F2B', lineHeight: 1.7, wordBreak: 'keep-all' }}>
+      {name} 안에서는 카메라가 열리지 않을 수 있어요.<br />
+      <b>Safari·Chrome</b>에서 열어 주세요.
+      {id === 'kakao' ? (
+        <button type="button" onClick={toOut}
+          style={{ display: 'block', marginTop: 9, border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, background: '#fff', color: '#8E2F2B',
+            boxShadow: 'inset 0 0 0 1px #F2C4C0' }}>
+          Safari·Chrome으로 열기 ↗
+        </button>
+      ) : (
+        <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 4 }}>오른쪽 위 ⋯ 메뉴 → &lsquo;다른 브라우저로 열기&rsquo;</div>
+      )}
+    </div>
   );
 }
