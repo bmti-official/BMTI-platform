@@ -468,6 +468,8 @@ export default function RoutineAdmin() {
         </PreviewModal>
       )}
 
+      <MemberPlis />
+
       <div style={{ ...box, padding: 0, overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 780 }}>
           <thead>
@@ -508,6 +510,56 @@ export default function RoutineAdmin() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// 회원이 바로플리에 공개한 마이플리 — 검토 없이 바로 올라가므로, 문제가 있으면 여기서 내린다.
+// 내리면(hidden) 바로플리에서 사라지고, 만든 사람의 보관함에는 그대로 남는다. 만든 사람은 스스로 다시 올릴 수 없다.
+function MemberPlis() {
+  const [rows, setRows] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    supabase.from('routines').select('id,title_z,share_state,shared_at,author_nick,author_code,save_count,view_count')
+      .not('owner_id', 'is', null).in('share_state', ['public', 'hidden'])
+      .order('shared_at', { ascending: false, nullsFirst: false }).limit(300)
+      .then(({ data }) => { if (alive) setRows(data || []); });
+    return () => { alive = false; };
+  }, [tick]);
+  const flip = async (r) => {
+    const to = r.share_state === 'hidden' ? 'public' : 'hidden';
+    if (to === 'hidden' && !window.confirm(`'${r.title_z}'을(를) 바로플리에서 내릴까요?`)) return;
+    const { error } = await supabase.from('routines').update({ share_state: to }).eq('id', r.id);
+    if (error) { alert('바꾸지 못했습니다: ' + error.message); return; }
+    setTick((n) => n + 1);
+  };
+  const live = rows.filter((r) => r.share_state === 'public').length;
+  return (
+    <div style={{ ...box, marginBottom: 14 }}>
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', padding: 0,
+          fontSize: 13.5, fontWeight: 900, color: INK }}>
+        회원이 올린 플리 <span style={{ fontWeight: 700, color: SUB }}>— 공개 {live} · 내린 것 {rows.length - live} {open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+          {rows.length === 0 && <div style={{ fontSize: 12.5, color: SUB }}>아직 회원이 올린 플리가 없습니다.</div>}
+          {rows.map((r) => (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5, padding: '6px 0', borderBottom: `1px solid ${LINE}` }}>
+              <span style={{ width: 54, color: SUB }}>#{r.id}</span>
+              <span style={{ flex: 1, minWidth: 0, fontWeight: 800, color: INK }}>{r.title_z}</span>
+              <span style={{ color: SUB }}>{r.author_code || '—'}{r.author_nick ? ` · ${r.author_nick}` : ''}</span>
+              <span style={{ color: SUB, whiteSpace: 'nowrap' }}>조회 {r.view_count ?? 0} · 저장 {r.save_count ?? 0}</span>
+              <span style={{ color: r.share_state === 'hidden' ? '#B23B36' : '#2E7D50', fontWeight: 800, width: 44 }}>
+                {r.share_state === 'hidden' ? '내림' : '공개'}
+              </span>
+              <button type="button" onClick={() => flip(r)} style={smallBtn}>{r.share_state === 'hidden' ? '되살리기' : '내리기'}</button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

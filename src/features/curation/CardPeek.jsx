@@ -65,7 +65,7 @@ export default function CardPeek({ title = '담긴 동작', cards = [], tone = '
             {cards.map((c) => (
               <div key={c.id} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflow: 'hidden', padding: '10px 7px', boxSizing: 'border-box' }}>
                 <FitCard>
-                  <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode} skipOpening />
+                  <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode} skipOpening flippable />
                 </FitCard>
               </div>
             ))}

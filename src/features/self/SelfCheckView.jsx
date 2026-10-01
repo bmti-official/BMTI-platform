@@ -18,7 +18,25 @@ import { viewOnce } from '../../lib/counters';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
 
-// 공개된 것만 — 바로카드, 공식 바로플리(담긴 동작과 동작별 설정까지), 읽을거리
+// 플리에 담긴 동작을 붙인다(동작별 설정까지). 공개된 바로카드만 남고, 동작이 하나도 없으면 뺀다.
+const withCards = (rows, links, byId) => (rows || []).map((r) => ({
+  ...r,
+  cards: (links || []).filter((l) => l.routine_id === r.id)
+    .map((l) => (byId[l.card_id] ? { ...byId[l.card_id], rc_reps: l.reps, rc_sets: l.sets, rc_rest: l.rest, rc_side: l.side || '', rc_guide: l.guide || '' } : null))
+    .filter(Boolean),
+})).filter((r) => r.cards.length > 0);
+
+// 회원이 공개로 올린 마이플리 — 새로 올린 것부터
+async function loadShared(byId) {
+  const rts = await supabase.from('routines').select('*').not('owner_id', 'is', null).eq('share_state', 'public')
+    .order('shared_at', { ascending: false }).limit(200);
+  const ids = (rts.data || []).map((r) => r.id);
+  if (!ids.length) return [];
+  const links = await supabase.from('routine_cards').select('*').in('routine_id', ids).order('position', { ascending: true });
+  return withCards(rts.data, links.data, byId);
+}
+
+// 공개된 것만 — 바로카드, 바로플리(공식 + 회원이 공개한 것), 읽을거리
 async function loadPublic() {
   const [cards, rts, links, reads] = await Promise.all([
     supabase.from('quick_cards').select('*').eq('published', true).order('sort_order', { ascending: true }),
@@ -29,12 +47,8 @@ async function loadPublic() {
   ]);
   const cardRows = cards.data || [];
   const byId = Object.fromEntries(cardRows.map((c) => [c.id, c]));
-  const plis = (rts.data || []).map((r) => ({
-    ...r,
-    cards: (links.data || []).filter((l) => l.routine_id === r.id)
-      .map((l) => (byId[l.card_id] ? { ...byId[l.card_id], rc_reps: l.reps, rc_sets: l.sets, rc_rest: l.rest, rc_side: l.side || '', rc_guide: l.guide || '' } : null))
-      .filter(Boolean),
-  })).filter((r) => r.cards.length > 0);
+  // 공식 플리가 먼저, 그 뒤에 회원이 올린 플리
+  const plis = [...withCards(rts.data, links.data, byId), ...await loadShared(byId)];
   return { cards: cardRows, byId, plis, reads: reads.data || [] };
 }
 
@@ -99,18 +113,28 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     return { plis: pick('routine', pub.plis), cards: pick('card', pub.cards), reads: pick('curation', pub.reads) };
   }, [pub, saved]);
 
+  // 회원이 올린 플리 목록을 다시 읽는다 — 공개·비공개를 바꾸거나 지운 뒤 바로플리에 바로 반영되게
+  const reloadShared = async () => {
+    const shared = await loadShared(pub.byId);
+    setPub((p) => (p ? { ...p, plis: [...p.plis.filter((r) => !r.owner_id), ...shared] } : p));
+  };
+  // 바로플리 목록 — 내가 올린 것은 '내 것'으로 표시해 보관 버튼을 두지 않는다
+  const baroList = useMemo(() => (pub ? pub.plis.map((r) => (r.owner_id && r.owner_id === userId ? { ...r, mine: true } : r)) : []), [pub, userId]);
+
   const onSaveMine = async (p) => {
     if (!userId) { if (onRequireLogin) onRequireLogin(); return; }
     const r = await saveMyPli(userId, p);
     if (!r.ok) { window.alert(r.why); return; }
-    setNote(p.id ? '마이플리를 고쳤어요' : '마이플리를 만들었어요');
+    setNote(p.share === 'public' ? '바로플리에 올렸어요' : p.id ? '마이플리를 고쳤어요' : '마이플리를 만들었어요');
     setMine(await loadMyPlis(userId, pub.byId));
+    reloadShared();
   };
   const onDeleteMine = async (id) => {
     const ok = await deleteMyPli(userId, id);
     if (!ok) { window.alert('지우지 못했어요. 잠시 후 다시 해 주세요.'); return; }
     setNote('마이플리를 지웠어요');
     setMine((p) => p.filter((x) => x.id !== id));
+    reloadShared();
   };
 
   if (!pub) {
@@ -123,7 +147,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         {tab === 'browse' && (
           <BrowseView cards={pub.cards} reads={pub.reads} tone={tone} bmtiCode={bmtiCode} onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }} />
         )}
-        {tab === 'baro' && <BaroPliView routines={pub.plis} tone={tone} bmtiCode={bmtiCode} />}
+        {tab === 'baro' && <BaroPliView routines={baroList} tone={tone} bmtiCode={bmtiCode} />}
         {tab === 'box' && (userId ? (
           <BoxView nickname={userProfile?.nickname || '회원'} bmtiCode={bmtiCode} tone={tone}
             plis={box.plis} cards={box.cards} reads={box.reads} myPlis={mine} allCards={pub.cards}

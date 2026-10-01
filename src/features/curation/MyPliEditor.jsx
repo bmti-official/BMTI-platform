@@ -25,6 +25,10 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
   const [openSet, setOpenSet] = useState(null);      // 설정을 펼친 동작(id)
   // 바로플리에 올릴 때 만든 사람을 어떻게 보일지 — 기본은 유형 캐릭터만
   const [showNick, setShowNick] = useState(!!initial?.showNick);
+  // 공개하면 바로플리에 올라가 다른 사람도 본다. 기본은 비공개.
+  // 관리자가 숨긴 플리(hidden)는 다시 올릴 수 없다 — 고르개를 잠가 둔다.
+  const hidden = initial?.share === 'hidden';
+  const [share, setShare] = useState(initial?.share === 'public' ? 'public' : 'private');
   // 시간은 동작마다 고른 횟수·세트·쉬는 시간으로 센다
   const s = routineSummary(cards.map(withRoutineSetup));
   const setOf = (c) => cardSetup(withRoutineSetup(c));
@@ -61,7 +65,8 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
         <button type="button" disabled={!ok} onClick={() => {
           const bad = badNameReason(title);
           if (bad) { window.alert(`플리 이름에 쓸 수 없는 말(${bad})이 들어 있어요. 다른 이름을 적어 주세요.`); return; }
-          onSave({ id: initial?.id, title: title.trim(), cards, showNick, sourceId: initial?.sourceId || null });
+          onSave({ id: initial?.id, title: title.trim(), cards, showNick, sourceId: initial?.sourceId || null,
+            share: hidden ? 'hidden' : share });
         }}
           style={{ border: 'none', cursor: ok ? 'pointer' : 'default', fontFamily: 'inherit', borderRadius: 999, padding: '8px 16px',
             fontSize: 13, fontWeight: 800, background: ok ? GOLD : '#F1EEE8', color: ok ? '#fff' : '#C6C0B5' }}>
@@ -166,8 +171,37 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
 
         {/* 바로카드 고르기 — 둘러보기와 같은 칸(영상·표지 문구·시간), 두 줄 둘씩 넷, 옆으로 넘긴다. 누르면 담기·빼기 */}
         {picking && <CardPicker allCards={allCards} chosen={cards} onToggle={toggle} />}
-        {/* 바로플리에 올릴 때 만든 사람 표시 — 기본은 유형 캐릭터만 */}
+        {/* 공개·비공개 — 공개하면 바로플리에 바로 올라간다 */}
         <div style={{ marginTop: 16, padding: '11px 12px', borderRadius: 12, background: '#FAF7F0' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 8 }}>이 플리를 어떻게 저장할까요?</div>
+          {hidden ? (
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#B23B36', lineHeight: 1.6 }}>
+              운영 기준에 맞지 않아 바로플리에서 내려간 플리예요. 내 보관함에서는 그대로 쓸 수 있어요.
+            </div>
+          ) : (
+            <>
+              <div role="radiogroup" aria-label="공개 여부" style={{ display: 'flex', gap: 6 }}>
+                {[['private', '🔒 비공개', '나만 봐요'], ['public', '🌐 공개', '바로플리에 올려요']].map(([k, lb, sub]) => (
+                  <button key={k} type="button" role="radio" aria-checked={share === k} onClick={() => setShare(k)}
+                    style={{ flex: 1, border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 11, padding: '10px 8px',
+                      background: share === k ? YELLOW : '#fff', color: share === k ? GOLD_INK : SUB,
+                      boxShadow: share === k ? `inset 0 0 0 1.5px ${GOLD}` : `inset 0 0 0 1px ${LINE}` }}>
+                    <span style={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{lb}</span>
+                    <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, marginTop: 2 }}>{sub}</span>
+                  </button>
+                ))}
+              </div>
+              {share === 'public' && (
+                <div style={{ fontSize: 11, fontWeight: 700, color: SUB, lineHeight: 1.6, marginTop: 8 }}>
+                  저장하면 바로 올라가 다른 사람도 보고 보관할 수 있어요. 언제든 비공개로 되돌릴 수 있어요.
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* 바로플리에 올릴 때 만든 사람 표시 — 공개일 때만. 기본은 유형 캐릭터만 */}
+        <div style={{ marginTop: 10, padding: '11px 12px', borderRadius: 12, background: '#FAF7F0', display: share === 'public' && !hidden ? 'block' : 'none' }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 7 }}>바로플리에 올릴 때 만든 사람 표시</div>
           {[[false, '유형 캐릭터만'], [true, '닉네임 + 유형 캐릭터']].map(([v, lb]) => (
             <label key={lb} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 700, color: INK, padding: '3px 0', cursor: 'pointer' }}>

@@ -39,6 +39,15 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
                 color: GOLD_INK, background: YELLOW, borderRadius: 7, padding: '3px 7px', lineHeight: 1.2 }}>
                 {s.durationSec > 0 ? mmss(s.durationSec) : '시간 미정'}
               </span>
+              {/* 내가 공개로 올린 플리 — 왼쪽 위에 작게 */}
+              {r.mine && r.share_state === 'public' && (
+                <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 10, fontWeight: 800, color: '#fff',
+                  background: 'rgba(28,26,23,0.62)', borderRadius: 7, padding: '3px 7px', lineHeight: 1.2 }}>🌐 공개</span>
+              )}
+              {r.mine && r.share_state === 'hidden' && (
+                <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 10, fontWeight: 800, color: '#fff',
+                  background: 'rgba(178,59,54,0.85)', borderRadius: 7, padding: '3px 7px', lineHeight: 1.2 }}>내려감</span>
+              )}
               {editMode && (
                 <span style={{ position: 'absolute', inset: 0, borderRadius: 12, background: 'rgba(28,26,23,0.38)',
                   boxShadow: `inset 0 0 0 2px ${GOLD_INK}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
