@@ -73,7 +73,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   const bumpLocal = useCallback((type, id, field, d) => setPub((p) => (p && LIST[type] ? {
     ...p, [LIST[type]]: p[LIST[type]].map((x) => (x.id === id ? { ...x, [field]: Math.max(0, (Number(x[field]) || 0) + d) } : x)),
   } : p)), []);   // eslint-disable-line react-hooks/exhaustive-deps
-  const view = useCallback((type, id) => { if (viewOnce(type, id)) bumpLocal(type, id, 'view_count', 1); }, [bumpLocal]);
+  const view = useCallback((type, id) => viewOnce(type, id, () => bumpLocal(type, id, 'view_count', 1)), [bumpLocal]);
 
   const savedSet = useMemo(() => new Set(saved.map((s) => key(s.item_type, s.item_id))), [saved]);
   const toggle = useCallback(async (type, id) => {
