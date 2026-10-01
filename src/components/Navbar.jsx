@@ -118,7 +118,8 @@ const ROUND = "'Jua','Pretendard',-apple-system,sans-serif";
 const PillTab = ({ active, onClick, icon, label }) => (
   <button onClick={onClick} className="flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl active:scale-95 transition-transform"
     style={active ? { background: '#F3F1EC' } : undefined}>
-    <span className={`w-6 h-6 flex items-center justify-center ${active ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
+    {/* 고른 칸은 예전 '나의 유형'처럼 세 번 내려갔다 올라오며 색이 바뀐다 */}
+    <span className={`w-6 h-6 flex items-center justify-center ${active ? 'nav-check-anim' : 'opacity-45 grayscale'}`}>{icon}</span>
     <span className={`${label.length > 4 ? 'text-[8.5px]' : 'text-[9.5px]'} font-bold whitespace-nowrap ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
   </button>
 );
@@ -331,7 +332,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
         </button>
       </div>
 
-      {layer === 'self' && currentView === 'self' && (
+      {/* 이번달 기록·발견도 같은 띠를 깐다(달력 화면은 스스로 깔고 있다) */}
+      {((layer === 'self' && currentView === 'self') || (layer === 'diary' && showDiscovery)) && (
         <div aria-hidden="true" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 64, zIndex: 34, pointerEvents: 'none',
           background: 'linear-gradient(#FFFFFF, rgba(255,255,255,0))', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
       )}
@@ -437,7 +439,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       )}
 
       {showDiscovery && (
-        <MallangDiscoveryReport key={discTab} oct initialTab={discTab} onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
+        <MallangDiscoveryReport oct tab={discTab} onTab={setDiscTab} onClose={() => setShowDiscovery(false)} bmtiCode={bmtiCode} userData={userProfile} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
       )}
 
       {showTypeGallery && (

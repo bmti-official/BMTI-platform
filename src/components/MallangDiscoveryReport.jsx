@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, Fragment, createContext, useContext } from "react";
+import { useState, useRef, useMemo, useEffect, Fragment, createContext, useContext } from "react";
 import { IconBox } from "./DiscoveryIcons";
 import { MonthLetterCard } from "./MonthLetter";
 import html2canvas from "html2canvas";
@@ -26,6 +26,8 @@ import {
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
 import { QuickFindings } from "./OctFindingCards";
 import { useAngleRows, hasUsableAngle, ANGLE_EXAMPLE } from "../lib/useAngleRows";
+import { ExerciseMonthCard, MoveRestCard } from "./ExerciseCards";
+import { exerciseMonth, moveVsRest } from "../lib/exerciseFindings";
 import StrainTrendCard from "./StrainTrendCard";
 import { DayAfterCard } from "./OctNewCards";
 import { strainTrend } from "../lib/strainTrend";
@@ -248,7 +250,7 @@ function buildExampleEntries() {
     [3, 3, 2, "12시", 22, { soreness: [S("shoulder", "moving", 4)], tags: ["야식·과식"] }],
     [4, 2, 2, "2시 이후", 23, { exercise: { did: false, reason: "tired" }, tags: ["스마트폰·PC"], note: { category: "고민", text: "너무 피곤해서 아무것도 못 했다." } }],
     [5, 5, 1, "1시", 21, { exercise: { did: false, reason: "rest" }, tags: ["수분 보충"] }],
-    [6, 4, 3, "~11시", 22, { exercise: { did: true, types: ["걷기/산책"] }, overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 5)], tags: ["스트레스", "카페인"] }],
+    [6, 4, 3, "~11시", 22, { exercise: { did: true, types: ["걷기/산책", "바로카드"] }, overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 5)], tags: ["스트레스", "카페인"] }],
     [7, 5, 3, "~11시", 21, { tags: ["수분 보충"], note: { category: "일상", text: "오랜만에 푹 잤다. 컨디션 최고." } }],
     [8, 4, 2, "12시", 22, { exercise: { did: true, types: ["헬스·PT"] }, soreness: [S("shoulder", "standing", 4)], tags: ["카페인"] }],
     [9, 3, 1, "1시", 23, { soreness: [S("neck", "sitting", 4)], tags: ["야식·과식", "카페인"] }],
@@ -257,7 +259,7 @@ function buildExampleEntries() {
     [12, 3, 2, "12시", 22, { overwork: { yes: true, loads: ["stand"] }, soreness: [S("neck", "sitting", 4)] }],
     [13, 4, 1, "1시", 22, { overwork: { yes: true, loads: ["sit"] }, soreness: [S("pelvis", "allday", 6)], tags: ["긴장함"] }],
     [14, 4, 3, "~11시", 22, { overwork: { yes: true, loads: ["sit"] }, soreness: [S("neck", "sitting", 4)] }],
-    [15, 5, 3, "~11시", 21, { exercise: { did: true, types: ["요가"] }, soreness: [S("waist", "morning", 6)], tags: ["야식·과식"], note: { category: "일상", text: "요가하고 나니 몸이 개운. 근데 밤에 야식이 당긴다." } }],
+    [15, 5, 3, "~11시", 21, { exercise: { did: true, types: ["요가", "바로카드"] }, soreness: [S("waist", "morning", 6)], tags: ["야식·과식"], note: { category: "일상", text: "요가하고 나니 몸이 개운. 근데 밤에 야식이 당긴다." } }],
     [16, 4, 2, "12시", 22, { soreness: [S("pelvis", "allday", 5)], tags: ["야식·과식", "달달 디저트"] }],
     [17, 5, 3, "~11시", 22, { exercise: { did: true, types: ["걷기/산책"] }, soreness: [S("waist", "morning", 6)], tags: ["야식·과식", "카페인"] }],
     [18, 2, 0, "2시 이후", 23, { exercise: { did: false, reason: "rest" }, soreness: [S("pelvis", "allday", 5)], tags: ["야식·과식"], note: { category: "고민", text: "이유 없이 예민한 하루." } }],
@@ -266,7 +268,7 @@ function buildExampleEntries() {
     [21, 2, 1, "1시", 23, { tags: ["생리 중", "달달 디저트"], note: { category: "일상", text: "컨디션 난조. 초콜릿으로 버티는 중." } }],
     [22, 4, 3, "~11시", 22, { exercise: { did: false, reason: "busy" }, tags: ["생리 중"] }],
     [23, 5, 3, "~11시", 21, { soreness: [S("shoulder", "sitting", 4)], tags: ["카페인"] }],
-    [24, 4, 2, "12시", 22, { exercise: { did: true, types: ["헬스·PT"] }, tags: ["수분 보충"] }],
+    [24, 4, 2, "12시", 22, { exercise: { did: true, types: ["헬스·PT", "바로카드"] }, tags: ["수분 보충"] }],
     [25, 3, 2, "12시", 22, { exercise: { did: false, reason: "tired" }, soreness: [S("neck", "sitting", 3)] }],
     [26, 5, 3, "~11시", 21, { exercise: { did: true, types: ["요가"] }, tags: ["수분 보충"], note: { category: "운동습관", text: "한 달 마무리 요가. 뿌듯!" } }],
   ];
@@ -289,6 +291,8 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   //   angleRows  각도 판을 밖에서 넘길 때(관리자 미리보기). 없으면 직접 읽어 온다
   //   initialTab  'records' | 'discovery' — 어느 탭으로 열지. 보던 달은 그대로 둔다.
   oct = false, initialTab = null, angleRows = null,
+  //   tab·onTab  바깥(하단 네비)이 탭을 쥐고 있을 때 — 창 안에서 탭을 바꿔도 하단 네비의 고른 칸이 같이 따라간다
+  tab: tabProp = null, onTab = null,
   //   letterPeek  편지를 달이 끝나기 전에도 열어 볼지 — 관리자 미리보기에서만 켠다
   letterPeek = false }) {
   usePanelTime('discover');   // 행동 기록 — 이 창에 머문 시간
@@ -297,12 +301,16 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
   const [showExample, setShowExample] = useState(false);
-  const [tab, setTab] = useState(initialTab || "records"); // "records" | "discovery"
+  const [ownTab, setOwnTab] = useState(initialTab || "records"); // "records" | "discovery"
+  const tab = tabProp || ownTab;
+  const setTab = (key) => { setOwnTab(key); if (onTab) onTab(key); };
   const [, forceWeatherRefresh] = useState(0); // 날씨를 붙인 뒤 리포트를 다시 읽게 하는 트리거
   const [savingPDF, setSavingPDF] = useState(false);
   const contentRef = useRef(null);
   const scrollerRef = useRef(null);
-  const goTab = (key) => { setTab(key); scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" }); };
+  const goTab = (key) => setTab(key);
+  // 탭이 바뀌면(창 안에서든 하단 네비에서든) 맨 위부터 보여 준다
+  useEffect(() => { scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, [tab]);
 
   // 다음 페인트까지 대기(탭 전환 후 DOM 갱신 + 이미지 로딩)
   const nextPaint = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120))));
@@ -560,9 +568,15 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
                 }
                 items.push({ id: s.id, locked: !s.unlocked, node: card });
               });
-              // 10월 판 순서 — 각도기록 > 바디 스캔 > 이번 달 태그 > 기분 달력 > 한 줄 일기장.
+              // 이번 달 운동 — 운동 칸을 적은 날이 모자라면 예시를 잠긴 채로 둔다
+              if (oct) {
+                const exOk = !!exerciseMonth(entries);
+                items.push({ id: "exercise", locked: !exOk, node: exOk ? <ExerciseMonthCard key="exercise" entries={entries} />
+                  : <LockedPreview key="exercise" label={LOCK_HINT}><ExerciseMonthCard entries={EXAMPLE_ENTRIES} /></LockedPreview> });
+              }
+              // 10월 판 순서 — 각도기록 > 바디 스캔 > 이번 달 태그 > 이번 달 운동 > 기분 달력 > 한 줄 일기장.
               // 그 안에서도 내용이 있는(열린) 칸이 위, 잠긴 칸이 아래다.
-              const RANK = { sore_map: 1, tags: 2, mood_calendar: 3, notes: 4 };
+              const RANK = { sore_map: 1, tags: 2, exercise: 3, mood_calendar: 4, notes: 5 };
               if (oct) items.sort((a, b) => (RANK[a.id] || 9) - (RANK[b.id] || 9));
               const opened = items.filter((i) => !i.locked), closed = items.filter((i) => i.locked);
               // 각도기록 — 잰 판이 있으면 맨 앞에, 아직 없으면 잠긴 칸들의 맨 앞에 예시로 세운다
@@ -2732,6 +2746,9 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
       : lockEx("strain", <StrainTrendCard entries={EXAMPLE_ENTRIES} />));
     if (dayAfterHeavy(entries)) items.push({ locked: false, node: <DayAfterCard key="dayafter" entries={entries} /> });
     else if (dayAfterHeavy(EXAMPLE_ENTRIES)) items.push(lockEx("dayafter", <DayAfterCard entries={EXAMPLE_ENTRIES} />));
+    // 움직인 날, 쉬어 간 날 — 양쪽 다 4일 이상 적혀야 나란히 둔다
+    items.push(moveVsRest(entries) ? { locked: false, node: <MoveRestCard key="moverest" entries={entries} /> }
+      : lockEx("moverest", <MoveRestCard entries={EXAMPLE_ENTRIES} />));
   }
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)

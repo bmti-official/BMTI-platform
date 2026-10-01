@@ -27,7 +27,7 @@ const euRo = (w) => { const j = jongseong(w); return (j === 0 || j === 8) ? "로
 const SLEEP_CONJ = ["밤을 새웠고", "뒤척였고", "그냥 그랬고", "푹 잤고"];
 
 // 운동을 못 한 이유 → '~서'
-const REASON_PHRASE = {
+export const REASON_PHRASE = {
   busy: "바빠서", tired: "피곤해서", sick: "몸이 안좋아서",
   rest: "그냥 쉬고 싶어서", forgot: "깜빡해서",
 };
