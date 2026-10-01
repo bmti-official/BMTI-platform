@@ -902,8 +902,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     <div style={{ perspective: 1400 }}>
       <div style={{ position: 'relative', transformStyle: 'preserve-3d', transition: 'transform .6s cubic-bezier(.3,.7,.2,1)',
         transform: flipped ? 'rotateY(180deg)' : 'none' }}>
-        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>{front}</div>
-        <div style={{ position: 'absolute', inset: 0, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
+        {/* 표지 위에 얹은 글씨(부위·도구·조회·저장)와 영상은 브라우저가 따로 그리는 층이라
+            '뒷면 감추기'를 따르지 않고 뒤집힌 채 비친다. 그래서 반쯤 돌았을 때(0.3초) 면을 통째로 감춘다. */}
+        <div aria-hidden={flipped} style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+          visibility: flipped ? 'hidden' : 'visible', transition: 'visibility 0s linear .3s' }}>{front}</div>
+        <div aria-hidden={!flipped} style={{ position: 'absolute', inset: 0, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
+          visibility: flipped ? 'visible' : 'hidden', transition: 'visibility 0s linear .3s',
           WebkitBackfaceVisibility: 'hidden', background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16,
           overflowY: 'auto', padding: '16px 16px 20px', fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
