@@ -18,12 +18,6 @@ export const mmss = (sec) => {
   const s = Math.max(0, Number(sec) || 0);
   return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, '0')}초`;
 };
-// 완주율 — 시작한 사람 중 끝까지 한 비율. 시작 기록이 없으면 아직 알 수 없다.
-export const finishRate = (c) => {
-  const st = Number(c.start_count) || 0;
-  return st > 0 ? Math.round(((Number(c.finish_count) || 0) / st) * 100) : null;
-};
-
 export const pickRoutineTone = (r, tone) => ({
   title: (tone === 'm' ? r.title_m : r.title_z) || r.title_z || r.title_m || '',
 });

@@ -1,4 +1,4 @@
-// 손님에게 보이는 루틴(플레이리스트) — 총 소요시간·완주율·도구·타겟을 한눈에 보여주고
+// 손님에게 보이는 루틴(플레이리스트) — 총 소요시간·도구·타겟을 한눈에 보여주고
 // '바로 시작하기'와 '일단 구경하기'로 이어진다.
 import { useState } from 'react';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
@@ -8,7 +8,7 @@ import { CharRow, CurationThumb } from './CurationCard';
 import { isClip } from './media';
 import { plMaker } from './plMaker';
 import { useKeep, useViewMark } from './keep';
-import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
+import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
@@ -30,7 +30,6 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
   const keep = useKeep('routine', routine?.mine ? null : routine?.id);
   const seenRef = useViewMark('routine', routine?.mine ? null : routine?.id);
   const s = routineSummary(cards);
-  const rate = finishRate(routine);
   // 구경하기 — 표지는 그대로 두고 그 위에 창만 띄워, 옆으로 넘겨 가며 훑어본다.
   const [peek, setPeek] = useState(false);
   // 표지 영상 — 담긴 동작을 차례대로 한 편씩 돌린다. 끝까지 가면 처음으로.
@@ -84,10 +83,13 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
-        {rate != null ? `완주율 ${rate}%` : '아직 기록이 쌓이지 않았어요'}
-        {routine.finish_count > 0 && ` · 완주 ${fmtCount(routine.finish_count)}회`}
-      </div>
+      {/* 완주율·완주 수는 초기엔 숫자가 작아 뜻이 없어 보이지 않게 뺐다. 바로카드처럼 조회·저장만 적는다.
+          내가 만든 마이플리는 세지 않으니 적지 않는다. */}
+      {!routine.mine && (
+        <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>
+          조회 {fmtCount(routine.view_count)} · 저장 {fmtCount(routine.save_count)}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 7, marginTop: 14 }}>
         <button onClick={onStart}

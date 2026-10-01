@@ -18,7 +18,7 @@ import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
 import BaroPliView from '../features/curation/BaroPliView';
 import BoxView from '../features/curation/BoxView';
-import { KIND_LABEL, routineSummary, mmss, finishRate } from '../features/curation/format';
+import { KIND_LABEL, routineSummary, mmss } from '../features/curation/format';
 import { RC_SIDES } from '../features/curation/routineSetup';
 import { cardSetup, REST_LIST } from '../features/curation/cardDefaults';
 
@@ -472,17 +472,16 @@ export default function RoutineAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 780 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['차례', '상태', '#', '제목(Z)', '동작', '총 시간', 'BEST 유형', '완주율', ''].map((h) => (
+              {['차례', '상태', '#', '제목(Z)', '동작', '총 시간', 'BEST 유형', '조회', '저장', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={9} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={9} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 루틴이 없습니다.</td></tr>}
+            {loading && <tr><td colSpan={10} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={10} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 루틴이 없습니다.</td></tr>}
             {shown.map((r, i) => {
               const s = routineSummary(r.cards);
-              const rate = finishRate(r);
               const td = { padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB };
               return (
                 <tr key={r.id}>
@@ -495,7 +494,8 @@ export default function RoutineAdmin() {
                   <td style={td}>{s.count}개</td>
                   <td style={td}>{s.durationSec > 0 ? mmss(s.durationSec) : '—'}</td>
                   <td style={td}>{r.bmti_code || '—'}</td>
-                  <td style={td}>{rate != null ? `${rate}%` : '—'}</td>
+                  <td style={td}>{r.view_count ?? 0}</td>
+                  <td style={td}>{r.save_count ?? 0}</td>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
                     <button onClick={() => setPreview({ routine: r, cards: r.cards })} style={smallBtn}>미리보기</button>
                     <button onClick={() => { if (confirmLeave()) setEditing({ routine: r, cards: r.cards }); }} style={{ ...smallBtn, marginLeft: 6 }}>수정</button>

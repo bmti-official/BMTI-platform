@@ -1,4 +1,5 @@
-// 조회수·시작·완주 — 서버의 bump_counter(01_curation.sql)로 1씩 올린다.
+// 조회수 — 서버의 bump_counter(01_curation.sql)로 1씩 올린다.
+// 시작·완주 수는 초기엔 뜻이 없어 올리지 않는다(완주는 행동 기록 card_done·pli_done 으로 관리자 통계에서 본다).
 // 저장수는 보관함(saved_items)에 담기고 빠질 때 서버가 스스로 센다(57_counts_poster.sql).
 //
 // 조회는 같은 창(탭)에서 같은 콘텐츠를 여러 번 봐도 한 번만 센다.

@@ -23,7 +23,7 @@ import QuickCardView from '../features/curation/QuickCardView';
 import { makePoster } from './makePoster';
 import { kindSetup, REST_LIST } from '../features/curation/cardDefaults';
 import { AudioSlot } from './AudioInput';
-import { KIND_LABEL, finishRate } from '../features/curation/format';
+import { KIND_LABEL } from '../features/curation/format';
 
 // 바로카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
@@ -717,7 +717,7 @@ export default function QuickCardAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['차례', '상태', '#', '종류', '동작 이름', '완주율', '조회', '저장', ''].map((h) => (
+              {['차례', '상태', '#', '종류', '동작 이름', '조회', '저장', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -726,7 +726,6 @@ export default function QuickCardAdmin() {
             {loading && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
             {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 바로카드가 없습니다.</td></tr>}
             {shown.map((r, i) => {
-              const rate = finishRate(r);
               return (
                 <tr key={r.id}>
                   <td style={{ padding: '6px 10px', borderBottom: `1px solid ${LINE}` }}>
@@ -741,7 +740,6 @@ export default function QuickCardAdmin() {
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 13, fontWeight: 700, color: INK, whiteSpace: 'pre-line' }}>
                     {r.thumb_text?.trim() || <span style={{ color: SUB, fontWeight: 600 }}>{r.title_z || '이름 없음'}</span>}
                   </td>
-                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{rate != null ? `${rate}%` : '—'}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.view_count}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, fontSize: 12.5, color: SUB }}>{r.save_count}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>

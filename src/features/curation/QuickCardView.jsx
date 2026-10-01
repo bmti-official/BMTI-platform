@@ -14,7 +14,6 @@ import { axisOf } from './typeTint';
 import { markFinish } from '../../lib/cardFinish';
 import { track } from '../../lib/analytics';
 import { useKeep } from './keep';
-import { bump } from '../../lib/counters';
 import { HELLO_LINE } from './helloLine';
 import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
@@ -334,7 +333,6 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (runRef.current && !runRef.current.ended) return;
     runRef.current = { id: card.id, at: Date.now(), ended: false };
     track('card_start', { card: card.id, pli: pliId, sets, speed, guide: guide ? 'talk' : 'count' });
-    bump('card', card.id, 'start_count');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, done === 0 && rep === 0]);
   useEffect(() => {
@@ -342,7 +340,6 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (!allDone || !r || r.ended) return;
     r.ended = true;
     track('card_done', { card: r.id, pli: pliId, sets, sec: Math.round((Date.now() - r.at) / 1000), speed });
-    bump('card', r.id, 'finish_count');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allDone]);
   useEffect(() => () => {
