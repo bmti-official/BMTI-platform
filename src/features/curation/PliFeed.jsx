@@ -1,6 +1,6 @@
 // 바로플리 한 칸을 눌렀을 때 — 한 편씩 넘겨 보며 고른다.
 // 썸네일을 누르자마자 재생이 시작되면 무엇이 담겼는지 볼 새가 없다.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import RoutineView from './RoutineView';
 import RoutinePlayer from './RoutinePlayer';
 import { CHARACTERS } from '../../data';
@@ -18,12 +18,12 @@ export default function PliFeed({ plis = [], startId, tone = 'z', bmtiCode, onCl
   const first = useRef(true);
   const [playing, setPlaying] = useState(null);
 
-  // 누른 플리부터 보여 준다.
-  useEffect(() => {
+  // 누른 플리부터 보여 준다. 화면에 그리기 전에 옮겨, 첫 플리가 잠깐 보였다 넘어가지 않게 한다.
+  useLayoutEffect(() => {
     if (!first.current) return;
-    first.current = false;
     const box = boxRef.current, list = listRef.current;
     if (!box || !list) return;
+    first.current = false;
     // 글은 한 겹 안쪽에 있다. 스크롤 칸의 자식이 아니라 목록의 자식을 찾아야 한다.
     const i = Math.max(0, plis.findIndex((r) => r.id === startId));
     const el = list.children[i];

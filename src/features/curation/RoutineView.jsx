@@ -107,7 +107,7 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
       </div>
 
       {peek && (
-        <CardPeek title={title} cards={cards || []} tone={tone} bmtiCode={bmtiCode}
+        <CardPeek cards={cards || []} tone={tone} bmtiCode={bmtiCode}
           onClose={() => setPeek(false)} />
       )}
     </article>

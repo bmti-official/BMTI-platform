@@ -1,6 +1,6 @@
 // 바로카드 한 장을 눌렀을 때 — 인스타처럼 화면이 커지며 펼쳐지고,
 // 아래로 밀면 다음 동작이 이어진다.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
 import { useViewMark } from './keep';
@@ -54,14 +54,14 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
   }, [origin]);
 
   // 누른 카드부터 보여 준다 — 그 자리에서 커진 것처럼.
-  useEffect(() => {
-    if (!first.current) return;
+  // 처음엔 누른 카드 한 장만 그리고, 다 커지면(wide) 위아래 카드를 붙인다. 그 순간 위에 카드들이 끼어들므로
+  // 누른 카드 자리로 스크롤을 옮겨야 한다. 크롬은 스스로 자리를 지켜 주지만(스크롤 앵커) 아이폰 사파리는
+  // 그러지 않아, 옮기지 않으면 늘 목록의 첫 카드가 보인다. 화면에 그리기 전에 옮긴다.
+  useLayoutEffect(() => {
+    if (!wide || !first.current) return;
     first.current = false;
     const box = boxRef.current;
-    if (!box) return;
-    if (!wide) return;
-    first.current = false;
-    const el = box.children[at];
+    const el = box && box.children[at];
     if (el) box.scrollTop = el.offsetTop;
   }, [wide, at]);
 

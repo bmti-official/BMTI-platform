@@ -56,18 +56,20 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
                 </span>
               )}
             </div>
-            {/* 제목 왼쪽에 만든 사람의 유형 캐릭터 — 제목이 두 줄이어도 첫 줄 옆에 둔다 */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 6 }}>
-              {who?.img && <img src={who.img} alt="" style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0, marginTop: -2 }} />}
-              <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4,
-                wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {pickRoutineTone(r, tone).title}
+            {/* 제목과 아랫줄 왼쪽에 만든 사람의 유형 캐릭터 — 두 줄 높이만큼 크게 */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 6 }}>
+              {who?.img && <img src={who.img} alt="" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4,
+                  wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {pickRoutineTone(r, tone).title}
+                </div>
+                {/* 닉네임을 보이기로 한 플리면 둘째 줄 앞에 */}
+                <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginTop: 2,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {who?.nick && <span style={{ color: GOLD_INK }}>{who.nick} · </span>}동작 {s.count}개
+                </div>
               </div>
-            </div>
-            {/* 닉네임을 보이기로 한 플리면 둘째 줄 앞에 */}
-            <div style={{ fontSize: 11, fontWeight: 700, color: SUB, marginTop: 2, paddingLeft: who?.img ? 27 : 0,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {who?.nick && <span style={{ color: GOLD_INK }}>{who.nick} · </span>}동작 {s.count}개
             </div>
           </button>
           {action && (

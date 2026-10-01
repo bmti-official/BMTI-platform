@@ -243,9 +243,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
   // 오늘 바로카드·바로플리를 몇 번 했는지. **있으면 저절로 담는다.**
   // 우리가 이미 아는 것을 손님에게 다시 고르게 하는 건 두 번 일을 시키는 셈이다.
-  // 대신 아래 '바로카드 뺄게요'로 손님이 언제든 되돌릴 수 있다.
+  // 대신 옆의 '바로카드' 버튼으로 손님이 언제든 빼고 다시 담을 수 있다(담겼는지는 고른 종목으로 안다).
   const [baro, setBaro] = useState({ count: 0, full: 0 });
-  const [baroOff, setBaroOff] = useState(false);   // 손님이 손수 뺐으면 다시 담지 않는다
 
   const [exerciseReason, setExerciseReason] = useState(() => (
     initialEntry?.exercise?.did === false ? (REASON_TO_EXERCISE_LABEL[initialEntry.exercise.reason] || null) : null
@@ -704,38 +703,42 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       return (
         <AccordionCard question="오늘 운동·스트레칭·산책 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
           expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
-          {/* 오늘 바로카드를 한 기록이 있으면 저절로 담아 두고, 틀렸으면 손님이 되돌린다. */}
-          {baro.count > 0 && (
-            <div style={{ marginBottom: 12, padding: "11px 13px", borderRadius: 14, background: C.yellow }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <DiaryIcon name="flex" size={22} />
-                <span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5, wordBreak: "keep-all" }}>
-                  오늘 바로카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}
-                  <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>
-                    {baroOff ? "빼 두었어요. 다시 담을 수 있어요." : "따로 고르지 않아도 담아 뒀어요."}
-                  </span>
-                </span>
+          {/* 오늘 바로카드를 한 기록이 있으면 저절로 담아 두고, 틀렸으면 손님이 되돌린다.
+              오른쪽에 '바로카드' 버튼을 나란히 둔다 — 종목 목록에 'BMTI' 줄을 따로 두면 창이 길어진다. */}
+          {(baro.count > 0 || exerciseDidIt === "yes") && (() => {
+            const baroOn = exerciseTypes.includes("바로카드");
+            // 기록이 있는 날은 '담기·빼기'로, 없는 날은 여느 종목처럼 고른다
+            const flipBaro = () => {
+              if (baro.count > 0) {
+                if (baroOn) setExerciseTypes(prev => prev.filter(x => x !== "바로카드"));
+                else {
+                  setExerciseDidIt("yes");
+                  setExerciseTypes(prev => (prev.includes("바로카드") || prev.length >= 2 ? prev : ["바로카드", ...prev]));
+                }
+              } else toggleExerciseType("바로카드");
+            };
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ flex: 1, minWidth: 0, padding: "11px 13px", borderRadius: 14, background: C.yellow }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <DiaryIcon name="flex" size={22} />
+                    <span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5, wordBreak: "keep-all" }}>
+                      {baro.count > 0
+                        ? <>오늘 바로카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}</>
+                        : "오늘 바로카드를 했다면 오른쪽을 눌러 주세요"}
+                      {baro.count > 0 && (
+                        <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>
+                          {baroOn ? "따로 고르지 않아도 담아 뒀어요." : "빼 두었어요. 오른쪽을 누르면 다시 담겨요."}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <Tile content="바로카드" on={baroOn} onClick={flipBaro}
+                  disabled={!baroOn && exerciseTypes.length >= 2} size={62} tint={C.yellow} />
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
-                <button type="button"
-                  onClick={() => {
-                    if (baroOff) {
-                      setBaroOff(false);
-                      setExerciseDidIt("yes");
-                      setExerciseTypes(prev => (prev.includes("바로카드") || prev.length >= 2 ? prev : ["바로카드", ...prev]));
-                    } else {
-                      setBaroOff(true);
-                      setExerciseTypes(prev => prev.filter(x => x !== "바로카드"));
-                    }
-                  }}
-                  style={{ border: "none", background: "#fff", cursor: "pointer", fontFamily: "inherit",
-                    borderRadius: 999, padding: "6px 12px", fontSize: 11.5, fontWeight: 800, color: GOLD,
-                    boxShadow: "0 2px 7px rgba(0,0,0,0.09)" }}>
-                  {baroOff ? "다시 담기 ↩" : "바로카드 뺄게요 ✕"}
-                </button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {exerciseDidIt === null && (
             <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 4px" }}>
@@ -759,7 +762,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
           {exerciseDidIt === "yes" && (
             <>
               <div style={{ fontSize: 12, color: C.sub, fontWeight: 600, marginBottom: 16 }}>제일 많이 한 운동 최대 2가지를 골라주세요</div>
-              {EXERCISE_CATS.map(cat => (
+              {EXERCISE_CATS.filter(cat => cat.name !== "BMTI").map(cat => (
                 <div key={cat.name} style={{ marginBottom: 18 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 800, color: C.ink, marginBottom: 10 }}>{cat.name}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 14, justifyItems: "center" }}>
@@ -1123,6 +1126,19 @@ function AccordionTitle({ question, answerIcon, answerText, muted }) {
 }
 
 function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, done, children }) {
+  // 펼친 높이는 내용에 맞춘다. 예전엔 700px로 못 박아 두어, 내용이 그보다 길면 아래가 잘렸다.
+  const inRef = useRef(null);
+  const [h, setH] = useState(0);
+  useEffect(() => {
+    const el = inRef.current;
+    if (!el) return undefined;
+    const read = () => setH(el.offsetHeight);
+    read();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
     // flexShrink:0 필수 — 부모가 flex-direction:column인데 이 div에 overflow:hidden이 걸려 있으면
     // 플렉스 아이템의 자동 최소 높이가 auto 대신 0이 되어 버려서, 브라우저가 이 카드를 통째로
@@ -1134,8 +1150,8 @@ function AccordionCard({ question, answerIcon, answerText, expanded, onToggle, d
           {done && !expanded ? "✓" : "▾"}
         </span>
       </button>
-      <div style={{ overflow: "hidden", maxHeight: expanded ? 700 : 0, transition: "max-height 0.35s ease" }}>
-        <div style={{ padding: "0 24px 20px" }}>
+      <div style={{ overflow: "hidden", maxHeight: expanded ? (h || 2000) : 0, transition: "max-height 0.35s ease" }}>
+        <div ref={inRef} style={{ padding: "0 24px 20px" }}>
           {children}
         </div>
       </div>
