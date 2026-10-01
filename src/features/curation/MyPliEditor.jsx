@@ -227,7 +227,7 @@ function CardPicker({ allCards, chosen, onToggle }) {
                 <button key={c.id} type="button" onClick={() => onToggle(c)}
                   style={{ position: 'relative', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>
                   <CurationThumb item={c} radius={2} ratio="4 / 5" showRead={false}
-                    clip={Math.abs(pi - page) <= 1 ? (c.video_url || '') : ''} emptyText="" />
+                    clip={Math.abs(pi - page) <= 1 ? (c.video_url || '') : ''} still={c.poster_url || ''} emptyText="" />
                   {sec > 0 && (
                     <span style={{ position: 'absolute', right: 5, bottom: 5, fontSize: 9.5, fontWeight: 800, color: INK, background: '#fff',
                       borderRadius: 6, padding: '2px 5px', lineHeight: 1.2 }}>{mmss(sec)}</span>

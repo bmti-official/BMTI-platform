@@ -13,6 +13,7 @@ import { toneOf } from '../curation/format';
 import { axisOf } from '../curation/typeTint';
 import { loadSaved, setSaved } from '../../lib/savedItems';
 import { loadMyPlis, saveMyPli, deleteMyPli } from '../../lib/myPli';
+import { viewOnce } from '../../lib/counters';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
@@ -67,6 +68,13 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     return () => clearTimeout(t);
   }, [note]);
 
+  // 서버 숫자는 서버가 올리고, 화면에 보이는 숫자는 여기서 바로 맞춰 준다(새로고침 없이 보이게)
+  const LIST = { card: 'cards', routine: 'plis', curation: 'reads' };
+  const bumpLocal = useCallback((type, id, field, d) => setPub((p) => (p && LIST[type] ? {
+    ...p, [LIST[type]]: p[LIST[type]].map((x) => (x.id === id ? { ...x, [field]: Math.max(0, (Number(x[field]) || 0) + d) } : x)),
+  } : p)), []);   // eslint-disable-line react-hooks/exhaustive-deps
+  const view = useCallback((type, id) => { if (viewOnce(type, id)) bumpLocal(type, id, 'view_count', 1); }, [bumpLocal]);
+
   const savedSet = useMemo(() => new Set(saved.map((s) => key(s.item_type, s.item_id))), [saved]);
   const toggle = useCallback(async (type, id) => {
     if (!userId) { if (onRequireLogin) onRequireLogin(); return; }
@@ -75,12 +83,13 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     setSavedList((p) => (on ? [{ item_type: type, item_id: id }, ...p] : p.filter((s) => key(s.item_type, s.item_id) !== key(type, id))));
     setNote(on ? '내 보관함에 담았어요' : '보관함에서 뺐어요');
     const ok = await setSaved(userId, type, id, on);
+    if (ok) bumpLocal(type, id, 'save_count', on ? 1 : -1);
     if (!ok) {
       setSavedList((p) => (on ? p.filter((s) => key(s.item_type, s.item_id) !== key(type, id)) : [{ item_type: type, item_id: id }, ...p]));
       setNote('담지 못했어요. 다시 해 주세요.');
     }
-  }, [userId, savedSet, onRequireLogin]);
-  const keep = useMemo(() => ({ has: (type, id) => savedSet.has(key(type, id)), toggle }), [savedSet, toggle]);
+  }, [userId, savedSet, onRequireLogin, bumpLocal]);
+  const keep = useMemo(() => ({ has: (type, id) => savedSet.has(key(type, id)), toggle, view }), [savedSet, toggle, view]);
 
   // 보관함에 보일 것 — 보관한 차례대로
   const box = useMemo(() => {
@@ -112,7 +121,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     <KeepContext.Provider value={keep}>
       <div style={{ paddingBottom: 20 }}>
         {tab === 'browse' && (
-          <BrowseView cards={pub.cards} reads={pub.reads} tone={tone} bmtiCode={bmtiCode} onOpenRead={setOpenRead} />
+          <BrowseView cards={pub.cards} reads={pub.reads} tone={tone} bmtiCode={bmtiCode} onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }} />
         )}
         {tab === 'baro' && <BaroPliView routines={pub.plis} tone={tone} bmtiCode={bmtiCode} />}
         {tab === 'box' && (userId ? (

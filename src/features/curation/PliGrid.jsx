@@ -33,7 +33,7 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
             style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
             <div style={{ position: 'relative' }}>
               <CurationThumb item={{ ...cover, thumb_text: r.thumb_text || cover.thumb_text }}
-                radius={12} ratio="4 / 5" showRead={false} clip={clip} emptyText="표지 없음" />
+                radius={12} ratio="4 / 5" showRead={false} clip={clip} still={r.cover_url ? '' : ((cards[0] || {}).poster_url || '')} emptyText="표지 없음" />
               {/* 오른쪽 아래 — 다 하면 걸리는 시간 */}
               <span style={{ position: 'absolute', right: 6, bottom: 6, fontSize: 10, fontWeight: 800,
                 color: GOLD_INK, background: YELLOW, borderRadius: 7, padding: '3px 7px', lineHeight: 1.2 }}>

@@ -7,7 +7,7 @@ import CardPeek from './CardPeek';
 import { CharRow, CurationThumb } from './CurationCard';
 import { isClip } from './media';
 import { plMaker } from './plMaker';
-import { useKeep } from './keep';
+import { useKeep, useViewMark } from './keep';
 import { pickRoutineTone, pickCardTone, routineSummary, fmtCount, mmss, finishRate, KIND_LABEL } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
@@ -28,6 +28,7 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
   const { title } = pickRoutineTone(routine, tone);
   const who = plMaker(routine);
   const keep = useKeep('routine', routine?.mine ? null : routine?.id);
+  const seenRef = useViewMark('routine', routine?.mine ? null : routine?.id);
   const s = routineSummary(cards);
   const rate = finishRate(routine);
   // 구경하기 — 표지는 그대로 두고 그 위에 창만 띄워, 옆으로 넘겨 가며 훑어본다.
@@ -45,7 +46,7 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
   };
 
   return (
-    <article style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
+    <article ref={seenRef} style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       {/* 표지 — 없으면 담긴 첫 동작의 것을 빌려 쓴다 */}
       <div style={{ position: 'relative' }}>
       {/* 문구·자리·색은 플리에 적어 둔 것만 쓴다. 담긴 바로카드의 문구는 따라오지 않는다. */}

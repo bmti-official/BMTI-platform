@@ -5,7 +5,7 @@
 // 사진은 가만히 두고 글만 바꾼다.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flatten } from './newsSlides';
-import { useKeep } from './keep';
+import { useKeep, useViewMark } from './keep';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 
@@ -14,6 +14,7 @@ const KEY = (id) => `bmti_news_at_${id}`;
 export default function NewsCard({ item, slides = [], tone = 'z', onClose, tail = null }) {
   const cards = useMemo(() => flatten(slides), [slides]);
   const keep = useKeep('curation', item?.id);
+  const seenRef = useViewMark('curation', item?.id);
   const [at, setAt] = useState(() => {
     // 읽다 나갔으면 그 자리부터. 다 읽었으면 처음부터.
     try {
@@ -54,7 +55,7 @@ export default function NewsCard({ item, slides = [], tone = 'z', onClose, tail 
   const last = at >= cards.length - 1;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 72, background: '#fff', contain: 'paint',
+    <div ref={seenRef} style={{ position: 'fixed', inset: 0, zIndex: 72, background: '#fff', contain: 'paint',
       display: 'flex', flexDirection: 'column', fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}
       onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={() => { swipe.current.on = false; }}>
 

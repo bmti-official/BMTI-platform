@@ -116,7 +116,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
                 onClick={() => (read ? onOpenRead && onOpenRead(item) : setOpenId(item.id))}
                 style={{ position: 'relative', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
                 <CurationThumb item={item} radius={2} ratio="4 / 5" showRead={false}
-                  clip={read ? '' : (item.video_url || '')} emptyText="" />
+                  clip={read ? '' : (item.video_url || '')} still={read ? '' : (item.poster_url || '')} emptyText="" />
                 {mark && (
                   <span style={{ position: 'absolute', right: 5, bottom: 5, fontSize: 9.5, fontWeight: 800,
                     color: read ? GOLD_INK : INK, background: read ? YELLOW : '#fff',

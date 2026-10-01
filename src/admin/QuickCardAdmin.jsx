@@ -20,6 +20,7 @@ import { CHARACTERS } from '../data';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
 import QuickCardView from '../features/curation/QuickCardView';
+import { makePoster } from './makePoster';
 import { kindSetup, REST_LIST } from '../features/curation/cardDefaults';
 import { AudioSlot } from './AudioInput';
 import { KIND_LABEL, finishRate } from '../features/curation/format';
@@ -304,10 +305,22 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
     ['view_count', 'save_count', 'finish_count', 'start_count', 'created_at'].forEach((k) => delete payload[k]);
     // 음성 대본은 걷어냈다. 예전 행을 열면 f 안에 남아 있으므로 여기서 떨군다.
     ['script_z', 'script_m'].forEach((k) => delete payload[k]);
-    const q = f.id
-      ? supabase.from('quick_cards').update(payload).eq('id', f.id)
-      : supabase.from('quick_cards').insert(payload);
-    const { error } = await q;
+    // 격자용 그림 — 영상이 새로 바뀌었거나 아직 없으면 영상에서 한 장 뽑는다.
+    // 못 뽑아도 저장은 그대로 한다(격자에는 영상이 대신 깔린다).
+    if (!payload.video_url) payload.poster_url = null;
+    else if (!payload.poster_url || (row && row.video_url !== payload.video_url)) {
+      const pr = await makePoster(payload.video_url);
+      if (pr.url) payload.poster_url = pr.url;
+    }
+    const write = (pl) => (f.id
+      ? supabase.from('quick_cards').update(pl).eq('id', f.id)
+      : supabase.from('quick_cards').insert(pl));
+    let { error } = await write(payload);
+    // 57번 SQL(poster_url 칸) 전이면 그림 칸만 빼고 다시 저장한다
+    if (error && /poster_url/.test(error.message || '')) {
+      delete payload.poster_url;
+      ({ error } = await write(payload));
+    }
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
     dropDraft('card', row?.id);
@@ -675,6 +688,7 @@ export default function QuickCardAdmin() {
           </div>
         )}
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="동작 이름·제목으로 찾기" />
+        <PosterAll rows={rows} onDone={load} />
         <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
       </div>
 
@@ -751,5 +765,40 @@ export default function QuickCardAdmin() {
         </div>
       )}
     </div>
+  );
+}
+
+// 격자용 그림이 없는 카드에 한꺼번에 만들어 준다 — 둘러보기 격자가 영상 대신 이 그림을 깐다.
+// 카드를 저장할 때도 저절로 만들어지니, 이 버튼은 예전 카드에 한 번 쓰면 된다.
+function PosterAll({ rows, onDone }) {
+  const need = rows.filter((r) => r.video_url && !r.poster_url);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+  if (!need.length && !note) return null;
+  const run = async () => {
+    if (busy) return;
+    setBusy(true);
+    let ok = 0, bad = 0;
+    for (let i = 0; i < need.length; i += 1) {
+      const r = need[i];
+      setNote(`격자 그림 만드는 중 ${i + 1}/${need.length}`);
+      const pr = await makePoster(r.video_url);
+      if (!pr.url) { bad += 1; continue; }
+      const { error } = await supabase.from('quick_cards').update({ poster_url: pr.url }).eq('id', r.id);
+      if (error) { bad += 1; if (/poster_url/.test(error.message || '')) { setNote('57번 SQL을 먼저 실행해 주세요.'); setBusy(false); return; } } else ok += 1;
+    }
+    setBusy(false);
+    setNote(`격자 그림 ${ok}개 만들었어요${bad ? ` · ${bad}개는 못 만들었어요` : ''}`);
+    if (onDone) onDone();
+  };
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {need.length > 0 && (
+        <button type="button" onClick={run} disabled={busy} style={btn(false)}>
+          🖼 격자 그림 만들기 ({need.length}개)
+        </button>
+      )}
+      {note && <span style={{ fontSize: 12, fontWeight: 700, color: SUB }}>{note}</span>}
+    </span>
   );
 }

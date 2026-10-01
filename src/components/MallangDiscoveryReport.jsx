@@ -27,6 +27,8 @@ import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
 import { QuickFindings } from "./OctFindingCards";
 import StrainTrendCard from "./StrainTrendCard";
 import { DayAfterCard } from "./OctNewCards";
+import { strainTrend } from "../lib/strainTrend";
+import { dayAfterHeavy } from "../lib/octFindings";
 import { getSleepSetting, sleepWindow, sleepBaseIdx, SLEEP_HOURS, SLEEP_IRREGULAR_OPTS, HOTSPOTS } from "../lib/mallangProfile";
 import MallangInfoPopup, { habitConfirmedThisMonth } from "./MallangInfoPopup";
 import bodyFemaleFront from "../assets/3d_body/female_front.png";
@@ -2716,18 +2718,26 @@ function DiscoveryInsights({ report, entries, userData, nickname, bmtiCode, exIn
   // 10월 판 순서 — 부담이 몰린 주 > (무리한 날, 그 다음 날) > 기분과 불편함 추이 > 닉네임의 밤 >
   // 마법의 D-day > 기록을 남긴 정성 > 주로 기록을 남긴 시간대 > 날씨와 겹쳐 본 기록 > 편지.
   // 그 안에서도 내용이 있는(열린) 칸이 위, 잠긴 칸이 아래다.
+  // 기록이 모자라 아직 못 그리는 칸은 예시를 흐리게 깔고 '이렇게 채워질 거예요'를 띄운다(다른 칸과 같은 방식).
+  // 카드가 스스로 아무것도 안 그리는 조건과 똑같이 본다 — 그래야 빈칸이 생기지 않는다.
+  const lockEx = (key, node) => ({ locked: true, node: <Fragment key={key}>{lock(node)}</Fragment> });
   if (oct) {
-    items.push({ locked: false, node: <StrainTrendCard key="strain" entries={entries} /> });
-    items.push({ locked: false, node: <DayAfterCard key="dayafter" entries={entries} /> });
+    const strainOk = !!(strainTrend(entries, "weekly") || strainTrend(entries, "daily"));
+    items.push(strainOk ? { locked: false, node: <StrainTrendCard key="strain" entries={entries} /> }
+      : lockEx("strain", <StrainTrendCard entries={EXAMPLE_ENTRIES} />));
+    if (dayAfterHeavy(entries)) items.push({ locked: false, node: <DayAfterCard key="dayafter" entries={entries} /> });
+    else if (dayAfterHeavy(EXAMPLE_ENTRIES)) items.push(lockEx("dayafter", <DayAfterCard entries={EXAMPLE_ENTRIES} />));
   }
   const hasTrend = (entries || []).filter((e) => e && typeof e.mood === "number").length >= 2;
   items.push({ locked: !hasTrend, node: <TrendChartsCard key="trend" entries={entries} exampleEntries={EXAMPLE_ENTRIES} pdfMode={pdfMode} /> }); // 주간/일간/요일별(요일별 불편함 패턴 통합)
   // 기록이 하나도 없으면 예시를 흐리게 보여 주고 '아직 발견된 내용이 없어요'를 띄운다.
   const hasAny = (entries || []).length > 0;
   const maybeLock = (node, exNode, ok) => (ok ? node : <LockedPreview label={LK}>{exNode}</LockedPreview>);
-  items.push({ locked: !hasAny, node: <Fragment key="night">{maybeLock(
+  // 밤 — 잠 기록(잔 시간이나 잠든 시간대)이 있어야 그린다. 기분만 적은 날뿐이면 예시를 깐다.
+  const hasNight = (entries || []).some((e) => e && e.date && (typeof e.sleep === "number" || e.sleepTime));
+  items.push({ locked: !hasNight, node: <Fragment key="night">{maybeLock(
     <MallangNightCard entries={entries} nickname={nickname} pdfMode={pdfMode} />,
-    <MallangNightCard entries={EXAMPLE_ENTRIES} nickname={nickname} pdfMode={pdfMode} />, hasAny)}</Fragment> }); // {닉네임}의 밤
+    <MallangNightCard entries={EXAMPLE_ENTRIES} nickname={nickname} pdfMode={pdfMode} />, hasNight)}</Fragment> }); // {닉네임}의 밤
   if (!oct) add("streak", ins.streak, <StreakCard data={ins.streak} />, exIns.streak && <StreakCard data={exIns.streak} />);
   if (oct && female) add("dday", ins.dday, <DdayCard data={ins.dday} />, exIns.dday && <DdayCard data={exIns.dday} />);
   add("effort", ins.effort, <EffortCard data={ins.effort} />, exIns.effort && <EffortCard data={exIns.effort} />);

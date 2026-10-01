@@ -147,7 +147,10 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
   }, []);
   const [more, setMore] = useState(false);        // 끝 화면 '자세히 보기'
   const sex = /female|여/.test(String(gender || '').toLowerCase()) ? 'female' : 'male';
-  const ref = (name) => refUrl(shots, name, sex);
+  // 참고 그림 파일이 없어졌거나 못 불러오면 깨진 그림 대신 그 칸을 감춘다
+  const [badRefs, setBadRefs] = useState(() => new Set());
+  const dropRef = (url) => setBadRefs((p) => (p.has(url) ? p : new Set([...p, url])));
+  const ref = (name) => { const u = refUrl(shots, name, sex); return u && !badRefs.has(u) ? u : null; };
   // 단계마다 보여 줄 자세 그림 — 앉아서 재면 앉은 그림
   const stancePic = (st) => (st ? ref(st.id === 'front' ? 'front' : st.sitting ? 'sit' : 'side') : null);
 
@@ -700,9 +703,9 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           {ref('phone') && (
             <div style={{ marginBottom: 14 }}>
               {isClip(ref('phone'))
-                ? <video src={ref('phone')} autoPlay loop muted playsInline aria-label="휴대폰을 세워 두고 물러서는 모습"
+                ? <video src={ref('phone')} autoPlay loop muted playsInline aria-label="휴대폰을 세워 두고 물러서는 모습" onError={() => dropRef(ref('phone'))}
                     style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'contain', borderRadius: 14, background: '#FAF7F0', display: 'block' }} />
-                : <img src={ref('phone')} alt="휴대폰을 세워 두고 물러선 모습"
+                : <img src={ref('phone')} alt="휴대폰을 세워 두고 물러선 모습" onError={() => dropRef(ref('phone'))}
                     style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'contain', borderRadius: 14, background: '#FAF7F0', display: 'block' }} />}
               <div style={{ fontSize: 12.5, color: INK, fontWeight: 600, lineHeight: 1.75, marginTop: 8, wordBreak: 'keep-all' }}>
                 휴대폰에서 <b>약 2m(큰 걸음 세 번)</b> 떨어져 서 주세요. 두 팔을 옆으로 벌려도 화면에 다 들어오는 거리예요.
@@ -772,7 +775,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
             이제 <b>{nxt.title}</b>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 20 }}>
-            {stancePic(nxt) && <RefPic url={stancePic(nxt)} alt={nxt.title} />}
+            {stancePic(nxt) && <RefPic url={stancePic(nxt)} alt={nxt.title} onBad={dropRef} />}
             <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.85, whiteSpace: 'pre-line' }}>
               {nxt.how}
               {nxt.id === 'front' && '\n팔이 잘 안 올라가는 쪽이 있어도 괜찮아요. 억지로 올리지 말고 올라가는 만큼만요 — 양쪽을 따로 담습니다.'}
@@ -1002,8 +1005,8 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
                   {sitting ? '이렇게 앉아 주세요' : '이렇게 서 주세요'}
                 </div>
                 {isClip(url)
-                  ? <video src={url} autoPlay loop muted playsInline style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }} />
-                  : <img src={url} alt={s.title} style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }} />}
+                  ? <video src={url} autoPlay loop muted playsInline onError={() => dropRef(url)} style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }} />
+                  : <img src={url} alt={s.title} onError={() => dropRef(url)} style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }} />}
               </div>
             );
           }
@@ -1011,7 +1014,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           const url = move && ref(move);
           if (!url) return null;
           return (
-            <video key={url} src={url} autoPlay loop muted playsInline aria-label="따라 할 동작"
+            <video key={url} src={url} autoPlay loop muted playsInline aria-label="따라 할 동작" onError={() => dropRef(url)}
               // 영상 비율 그대로(가로 영상이면 팔이 잘리지 않게)
               style={{ ...card, maxHeight: '42%', objectFit: 'contain' }} />
           );
@@ -1131,7 +1134,7 @@ export default function AngleCapture({ onDone, onClose, want = ['neck', 'trunk',
           );
         })()}
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
-          {stancePic(s) && <RefPic url={stancePic(s)} alt={s.title} />}
+          {stancePic(s) && <RefPic url={stancePic(s)} alt={s.title} onBad={dropRef} />}
           <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: SUB, fontWeight: 600, lineHeight: 1.8, whiteSpace: 'pre-line' }}>
             {s.how}
           </div>
@@ -1275,9 +1278,9 @@ function Shell({ children, onClose, title, voice, hasClips, onVoice }) {
 }
 
 // 참고 자세 그림 — 설명 글 옆에 작게
-function RefPic({ url, alt }) {
+function RefPic({ url, alt, onBad }) {
   return (
-    <img src={url} alt={alt}
+    <img src={url} alt={alt} onError={() => onBad && onBad(url)}
       style={{ flex: '0 0 76px', width: 76, height: 132, objectFit: 'contain', borderRadius: 12, background: '#FAF7F0' }} />
   );
 }

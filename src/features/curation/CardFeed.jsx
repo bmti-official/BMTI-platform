@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
+import { useViewMark } from './keep';
 
 const SUB = '#8A8378';
 
@@ -88,10 +89,10 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
       <div ref={boxRef} className="card-feed"
         style={{ height: '100%', overflowY: 'auto', scrollSnapType: 'y mandatory', WebkitOverflowScrolling: 'touch' }}>
         {shown.map((c) => (
-          <div key={c.id} style={{ scrollSnapAlign: 'start', minHeight: '100%', padding: '56px 14px 24px', boxSizing: 'border-box' }}>
+          <Seen key={c.id} id={c.id}>
             <QuickCardView card={withRoutineSetup(c)} tone={tone} bmtiCode={bmtiCode}
               flippable fullOnStart onStart={() => setSolo(c.id)} />
-          </div>
+          </Seen>
         ))}
         {wide && !solo && (
           <div style={{ padding: '18px 14px 40px', textAlign: 'center', fontSize: 12.5, color: SUB, fontWeight: 700 }}>
@@ -100,6 +101,16 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
         )}
       </div>
       <style>{'.card-feed{scrollbar-width:none}.card-feed::-webkit-scrollbar{display:none}'}</style>
+    </div>
+  );
+}
+
+// 한 장 칸 — 화면에 들어오면 조회수를 센다(같은 창에서는 한 번)
+function Seen({ id, children }) {
+  const ref = useViewMark('card', id);
+  return (
+    <div ref={ref} style={{ scrollSnapAlign: 'start', minHeight: '100%', padding: '56px 14px 24px', boxSizing: 'border-box' }}>
+      {children}
     </div>
   );
 }

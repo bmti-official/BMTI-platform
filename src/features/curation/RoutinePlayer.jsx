@@ -11,6 +11,7 @@ import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
 import { markFinish } from '../../lib/cardFinish';
 import { track } from '../../lib/analytics';
+import { bump } from '../../lib/counters';
 import { loadVoiceAssets, voiceKey, bgmNoFor, BGM_GROUPS, BGM_PARTS, bgmN, bgmSet, bgmFade, XFADE_SEC, UNDER } from './voiceCommon';
 import { pickCardTone, pickRoutineTone, subLines } from './format';
 import PartnerStage from './PartnerStage';
@@ -140,6 +141,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
     const r = pliRun.current;
     r.at = Date.now();
     track('pli_start', { pli: routine?.id ?? null, cards: cards.length });
+    if (!routine?.mine) bump('routine', routine?.id, 'start_count');
     return () => {
       if (r.ended) return;
       track('pli_quit', { pli: routine?.id ?? null, at: r.idx + 1, of: cards.length, sec: Math.round((Date.now() - r.at) / 1000) });
@@ -233,6 +235,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
                 if (!pliRun.current.ended) {
                   pliRun.current.ended = true;
                   track('pli_done', { pli: routine?.id ?? null, cards: cards.length, sec: Math.round((Date.now() - pliRun.current.at) / 1000) });
+                  if (!routine?.mine) bump('routine', routine?.id, 'finish_count');
                 }
               }
               else { setGap(GAP_SEC); setQuiet(false); }
