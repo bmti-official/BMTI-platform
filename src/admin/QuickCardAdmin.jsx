@@ -15,7 +15,8 @@ import { HiliteBox, DraftMark } from './editorBits';
 import { parseCard } from './pasteCard';
 import ImageInput from './ImageInput';
 import { CurationThumb } from '../features/curation/CurationCard';
-import { clipY } from '../features/curation/format';
+import { clipY, introImgs } from '../features/curation/format';
+import IntroStills from '../features/curation/IntroStills';
 import { CHARACTERS } from '../data';
 import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
 import { ACCENT } from './theme';
@@ -31,7 +32,7 @@ const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label
 
 const EMPTY = {
   published: false, sort_order: 0, kind: 'stretch',
-  title_z: '', title_m: '', video_url: '', intro_url: '', duration_sec: 0, sub_y: 78,
+  title_z: '', title_m: '', video_url: '', intro_url: '', intro_imgs: [], duration_sec: 0, sub_y: 78,
   thumb_text: '',
   thumb_font: 'pretendard', thumb_pos: 'tl', thumb_color: '#FFFFFF', thumb_dx: 0, thumb_dy: 0, thumb_scale: 100,
   tools: [], body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
@@ -70,28 +71,30 @@ function ToolPicker({ value, onChange }) {
 }
 
 // 자막 자리 미리보기 — 손님이 보는 4:5 화면 그대로 줄여서 보여 준다.
-function SubSpot({ f, at }) {
+function SubSpot({ f, at, still = null }) {
   const ch = CHARACTERS.find((c) => c.id === 'ACDZ');
   const clip = f.video_url && /\.(mp4|webm|mov)(\?|$)/i.test(f.video_url) ? f.video_url : '';
   return (
     <div style={{ flex: '0 0 172px' }}>
       <div style={{ position: 'relative', width: 172, aspectRatio: '4 / 5', borderRadius: 10, overflow: 'hidden',
-        background: '#EDE9E2' }}>
+        background: '#EDE9E2', outline: `1px solid ${LINE}` }}>
         {clip
           ? <video src={clip} muted loop autoPlay playsInline
               style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(f)}%` }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 11, fontWeight: 700, color: SUB }}>동작 영상을 올리면 보여요</div>}
+        {/* 시작 전 그림 — 손님 화면과 같은 부품으로 얹는다 */}
+        {still && <IntroStills imgs={still} y={clipY(f)} />}
 
         {/* 위 알약 — 손님 화면과 같은 자리 */}
-        <div style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
+        <div style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)', zIndex: 2,
           background: 'rgba(255,255,255,0.94)', borderRadius: 999, padding: '3px 8px',
           fontSize: 8, fontWeight: 900, color: INK, whiteSpace: 'nowrap' }}>
           1 세트 중 · 1/15
         </div>
 
         {/* 자막 — 막대가 가리키는 자리 */}
-        <div style={{ position: 'absolute', left: 6, right: 6, bottom: `${100 - at}%`,
+        <div style={{ position: 'absolute', left: 6, right: 6, bottom: `${100 - at}%`, zIndex: 2,
           display: 'flex', alignItems: 'flex-end', gap: 4 }}>
           <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.95)', borderRadius: 7, padding: '5px 6px',
             boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
@@ -112,8 +115,79 @@ function SubSpot({ f, at }) {
 // 멘트가 나가는 자리와 길이 — 화면에 그대로 적어 준다.
 // 첫 칸은 '시작 전 설명', 그다음이 1세트·2세트… 한마디다.
 const SET_WHEN = (i) => (i === 0
-  ? { name: '시작 전', where: '멈춰 서서 · 설명 영상과 함께', len: '12~15초', what: '준비 자세 + 핵심 세 가지 + 아프면 멈추라는 말' }
+  ? { name: '시작 전', where: '멈춰 서서 · 시작 전 그림과 함께', len: '12~15초', what: '준비 자세 + 핵심 세 가지 + 아프면 멈추라는 말' }
   : { name: `${i}세트`, where: '한가운데 · 하면서', len: '3~5초', what: '놓치기 쉬운 것 하나만 되짚기' });
+
+// 시작 전 그림 — 두 장. 설명 음성이 흐르는 동안 절반씩 나온다.
+// 멈춰 있는 장면이라 영상보다 훨씬 가볍다. 한 장마다 좌우·높이·크기를 손님 화면에 맞게 옮긴다.
+const STILL0 = { url: '', x: 0, y: 0, s: 100 };
+const STILL_BARS = [
+  ['x', '좌우', '왼쪽', '오른쪽', -60, 60],
+  ['y', '높이', '위', '아래', -60, 60],
+  ['s', '크기', '작게', '크게', 40, 200],
+];
+function StillsBox({ f, set, subAt }) {
+  const [at, setAt] = useState(0);   // 미리보기에 띄운 장
+  const list = [0, 1].map((i) => ({ ...STILL0, ...((f.intro_imgs || [])[i] || {}) }));
+  const put = (i, patch) => { set('intro_imgs')(list.map((m, k) => (k === i ? { ...m, ...patch } : m))); setAt(i); };
+  const shown = introImgs({ intro_imgs: [list[at]] });
+  return (
+    <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+      <span style={label}>시작 전 그림 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 두 장 · 설명 음성의 절반씩</span></span>
+      <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 10, lineHeight: 1.6 }}>
+        <b>시작 전</b> 음성이 흐르는 동안 1번 그림이 앞 절반, 2번 그림이 뒤 절반에 나옵니다. 한 장만 올리면 그 한 장이 끝까지 나옵니다.
+        <br />그림을 옮겨 틀 밖으로 나간 자리는 <b>흰색</b>으로 채워집니다. 올리면 아래 <b>설명 영상 대신</b> 그림이 쓰입니다.
+        <br />jpg · webp 권장, 세로 720px 안팎이면 한 장에 100~200KB로 충분합니다.
+      </div>
+      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {list.map((m, i) => (
+            <div key={i} onClick={() => setAt(i)}
+              style={{ background: at === i ? '#FFFBF0' : BG, borderRadius: 9, padding: 9,
+                boxShadow: at === i ? `inset 0 0 0 1.5px ${ACCENT}` : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 900, color: INK }}>{i + 1}번 그림</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: SUB }}>{i === 0 ? '설명 앞 절반' : '설명 뒤 절반'}</span>
+                {(m.x !== 0 || m.y !== 0 || m.s !== 100) && (
+                  <button type="button" onClick={() => put(i, { x: 0, y: 0, s: 100 })}
+                    style={{ ...smallBtn, marginLeft: 'auto' }}>처음 자리로</button>
+                )}
+              </div>
+              <ImageInput value={m.url} onChange={(v) => put(i, { url: v })}
+                placeholder="그림을 끌어다 놓거나 주소를 붙여넣으세요" />
+              {m.url && STILL_BARS.map(([k, name, lo, hi, min, max]) => (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
+                  <span style={{ fontSize: 11, fontWeight: 900, color: INK, flex: '0 0 30px' }}>{name}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: SUB, flex: '0 0 34px', textAlign: 'right' }}>{lo}</span>
+                  <input type="range" min={min} max={max} step={1} style={{ flex: 1, minWidth: 0 }}
+                    value={m[k]} onChange={(e) => put(i, { [k]: Number(e.target.value) })} />
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: SUB, flex: '0 0 34px' }}>{hi}</span>
+                  <span style={{ fontSize: 11.5, fontWeight: 800, color: INK, width: 38, textAlign: 'right',
+                    fontVariantNumeric: 'tabular-nums' }}>{k === 's' ? `${m[k]}%` : m[k]}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ display: 'inline-flex', background: BG, borderRadius: 999, padding: 3, marginBottom: 6 }}>
+            {[0, 1].map((i) => (
+              <button key={i} type="button" onClick={() => setAt(i)}
+                style={{ padding: '4px 12px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 11, fontWeight: 800, background: at === i ? ACCENT : 'transparent', color: at === i ? '#fff' : SUB }}>
+                {i + 1}번
+              </button>
+            ))}
+          </div>
+          <SubSpot f={f} at={subAt} still={shown.length ? shown : null} />
+          <div style={{ fontSize: 10.5, color: SUB, fontWeight: 600, marginTop: 5, width: 172, lineHeight: 1.5 }}>
+            {shown.length ? '손님 화면 그대로입니다.' : '그림을 올리면 여기에 얹혀 보입니다.'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // 소리와 자막, 설명 영상을 한 상자에 모았다.
 // Z·M을 나란히 두면 안내가 두 번 적히고 칸이 좁아져, 위 알약으로 갈아 끼운다.
@@ -168,12 +242,14 @@ function VoiceBox({ f, set }) {
         </div>
       </div>
 
+      <StillsBox f={f} set={set} subAt={subAt} />
+
       {/* 설명 영상 — 말투를 가리지 않으니 위에 한 번만 */}
       <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
         <span style={label}>세트 전 설명 영상 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 화살표로 짚어 주는 4~6초 한 편</span></span>
         <ImageInput allowVideo value={f.intro_url} onChange={set('intro_url')}
           placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
-          hint="1세트를 시작할 때 멘트와 함께 되돌아 돕니다. 화살표 한 번이 한 바퀴 안에 끝나게 만들어 주세요. 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다." />
+          hint="위에 시작 전 그림을 올렸으면 이 영상은 쓰이지 않습니다. 그림이 없을 때만 1세트를 시작할 때 멘트와 함께 되돌아 돕니다. 둘 다 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다." />
       </div>
 
       {/* 말투 고르기 */}
@@ -305,6 +381,8 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
     ['view_count', 'save_count', 'finish_count', 'start_count', 'created_at'].forEach((k) => delete payload[k]);
     // 음성 대본은 걷어냈다. 예전 행을 열면 f 안에 남아 있으므로 여기서 떨군다.
     ['script_z', 'script_m'].forEach((k) => delete payload[k]);
+    // 시작 전 그림 — 올리지 않은 빈 칸은 담지 않는다
+    payload.intro_imgs = introImgs(payload);
     // 격자용 그림 — 영상이 새로 바뀌었거나 아직 없으면 영상에서 한 장 뽑는다.
     // 못 뽑아도 저장은 그대로 한다(격자에는 영상이 대신 깔린다).
     if (!payload.video_url) payload.poster_url = null;
@@ -319,6 +397,16 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
     // 57번 SQL(poster_url 칸) 전이면 그림 칸만 빼고 다시 저장한다
     if (error && /poster_url/.test(error.message || '')) {
       delete payload.poster_url;
+      ({ error } = await write(payload));
+    }
+    // 63번 SQL(intro_imgs 칸) 전 — 그림을 안 올렸으면 그 칸만 빼고 저장하고, 올렸으면 알려 준다
+    if (error && /intro_imgs/.test(error.message || '')) {
+      if (payload.intro_imgs.length) {
+        setSaving(false);
+        setErr('시작 전 그림을 담을 칸이 아직 없습니다. 63번 SQL을 한 번 실행한 뒤 다시 저장해 주세요.');
+        return;
+      }
+      delete payload.intro_imgs;
       ({ error } = await write(payload));
     }
     setSaving(false);

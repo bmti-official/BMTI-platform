@@ -19,7 +19,8 @@ import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY } from './format';
+import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY, introImgs } from './format';
+import IntroStills from './IntroStills';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
@@ -239,6 +240,11 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 첫 자리는 '시작 전 설명', 그 뒤가 1세트·2세트… 한마디다.
   const introClip = setClips[0] || '';
   const introSub = subSets[0] || '';
+  // 음성 없이 자막만 있는 시작 전 설명을 세워 두는 시간 — 읽을 참
+  const introReadMs = Math.min(20000, 2200 + subLines(introSub).length * 110);
+  // 시작 전 그림(최대 두 장) — 있으면 설명 영상 대신 이 그림이 선다
+  const stills = introImgs(card);
+  const [stillAt, setStillAt] = useState(0);
   // 올리지 않은 세트는 바로 앞 세트의 것을 이어서 쓴다. 시작 전 설명까지 내려가지는 않는다.
   const back = (list, i) => { for (let k = Math.min(i, list.length - 1); k >= 1; k -= 1) if (list[k]) return list[k]; return ''; };
   const mentClip = back(setClips, done + 1);
@@ -364,8 +370,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 음성 없이 자막만 올린 세트 멘트 — 읽을 참을 주고 스스로 끝낸다.
   useEffect(() => {
     if (introOn && !introClip) {
-      const ms = Math.min(20000, 2200 + subLines(introSub).length * 110);
-      const t = setTimeout(() => setIntroDone(true), ms);
+      const t = setTimeout(() => setIntroDone(true), introReadMs);
       return () => clearTimeout(t);
     }
     if (mentOn && !mentClip) {
@@ -374,7 +379,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [introOn, introClip, introSub, mentOn, mentClip, mentSub, setKey]);
+  }, [introOn, introClip, introReadMs, mentOn, mentClip, mentSub, setKey]);
 
   // 소리가 없는 오프닝 — 글자 수에 맞춰 읽을 참을 주고 넘어간다.
   // 소리가 있어도 브라우저가 막아 버리면 영영 멈춰 있으므로, 넉넉한 끝 시각을 함께 둔다.
@@ -473,6 +478,34 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     const t = setTimeout(() => setStage('move'), 20000);
     return () => clearTimeout(t);
   }, [stage]);
+  // 시작 전 그림 두 장 — 설명 길이의 정확히 절반에서 바꾼다.
+  // 소리의 지금 자리를 화면이 그려질 때마다 읽는다(소리가 알려 주는 간격은 0.25초라 그걸 기다리면 늦는다).
+  // 음성 없이 자막만 있으면 세워 두는 시간의 절반에서 바꾼다.
+  const stillCount = stills.length;
+  useEffect(() => {
+    if (!introOn || stillCount < 2) return undefined;
+    let raf = 0;
+    const t0 = performance.now();
+    const pastHalf = () => {
+      if (!introClip) return performance.now() - t0 >= introReadMs / 2;
+      const a = audioRef.current;
+      const d = a ? Number(a.duration) : 0;
+      return d > 0 && Number.isFinite(d) && a.currentTime >= d / 2;
+    };
+    const tick = () => {
+      setStillAt(pastHalf() ? 1 : 0);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [introOn, stillCount, introClip, introReadMs]);
+  // 따라하기를 시작하면 그림을 미리 받아 둔다 — 설명이 시작될 때 빈 화면이 보이지 않게
+  const stillUrls = stills.map((m) => m.url).join('|');
+  useEffect(() => {
+    if (!started || !stillUrls) return;
+    stillUrls.split('|').forEach((u) => { const im = new Image(); im.src = u; });
+  }, [started, stillUrls]);
+
   const hasPlay = !!card.video_url;
   const core = partLabels(card.core_parts);
   const related = partLabels(card.related_parts);
@@ -644,9 +677,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`,
               // 영상은 늘 오른쪽으로 찍는다. 왼쪽 차례엔 화면에서 좌우를 뒤집어 보여 준다.
               transform: mirrored ? 'scaleX(-1)' : 'none' }} />
-          {/* 세트 전 설명 영상 — 멘트가 흐르는 동안 동작 영상 위에서 되돈다.
-              화살표로 어디를 어떻게 움직이는지 짚어 주는 자리다. */}
-          {holding && introOn && card.intro_url && (
+          {/* 시작 전 설명 — 멘트가 흐르는 동안 동작 영상 위를 덮는다.
+              그림 두 장을 올렸으면 그림이(반반씩), 없으면 예전의 설명 영상이 되돈다. */}
+          {stills.length > 0 && !introDone && (
+            <IntroStills imgs={stills} at={stillAt} y={clipY(card)} mirrored={mirrored} hidden={!introOn} />
+          )}
+          {stills.length === 0 && holding && introOn && card.intro_url && (
             <video src={card.intro_url} muted playsInline autoPlay loop preload="auto"
               style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%',
                 objectFit: 'cover', objectPosition: `50% ${clipY(card)}%`, background: '#F3F1EC',

@@ -64,6 +64,15 @@ export const clipY = (item) => {
   return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 50;
 };
 
+/** 시작 전 그림 — 주소가 있는 것만, 두 장까지. 좌우(x)·높이(y)는 틀 크기의 %, 크기(s)는 100이 그대로. */
+export function introImgs(card = {}) {
+  const num = (v, d, lo, hi) => (Number.isFinite(Number(v)) && v !== '' && v != null ? Math.min(hi, Math.max(lo, Number(v))) : d);
+  return (Array.isArray(card.intro_imgs) ? card.intro_imgs : [])
+    .filter((m) => m && typeof m.url === 'string' && m.url)
+    .slice(0, 2)
+    .map((m) => ({ url: m.url, x: num(m.x, 0, -100, 100), y: num(m.y, 0, -100, 100), s: num(m.s, 100, 30, 300) }));
+}
+
 /** 자막을 한 문장씩 끊어 준다 — 한 줄로 길게 흐르면 눈으로 따라가기 어렵다. */
 export function subLines(text) {
   return String(text || '')
