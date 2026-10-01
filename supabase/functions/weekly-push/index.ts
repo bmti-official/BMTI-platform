@@ -3,6 +3,9 @@
 // Supabase Edge Function. 매주 한 번 pg_cron이 부른다.
 // 필요한 값(Settings → Edge Functions → Secrets):
 //   VAPID_PUBLIC · VAPID_PRIVATE · VAPID_SUBJECT
+//   CRON_SECRET — 부르는 쪽이 'x-cron-secret' 머리말로 같은 값을 대야 보낸다.
+//     예약 작업(pg_cron)만 이 값을 안다. 값이 없으면(등록 전) 예전처럼 누구 호출이든 받는다.
+//     사이트의 공개 키만으로 알림을 되풀이해 보내게 하는 것을 막는다.
 //
 // web-push 는 Node용이라 esm.sh 로 받으면 Deno에서 터진다.
 // npm: 로 받아야 Supabase가 Node 흉내를 내 준다.
@@ -22,10 +25,16 @@ function thisSunday(): string {
   return d.toISOString().slice(0, 10);
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   // 무슨 일이 있어도 까닭을 글로 돌려준다. 그래야 밖에서 원인을 알 수 있다.
   const out = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+  // 부르는 쪽 확인 — 암호가 등록돼 있으면 같은 값을 댄 호출만 받는다
+  const need = (Deno.env.get('CRON_SECRET') ?? '').trim();
+  if (need && (req.headers.get('x-cron-secret') ?? '').trim() !== need) {
+    return out({ error: '권한이 없습니다' }, 401);
+  }
 
   try {
     const pub = tidy(Deno.env.get('VAPID_PUBLIC'));
