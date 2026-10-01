@@ -6,6 +6,9 @@ import { withRoutineSetup } from './routineSetup';
 import { useViewMark } from './keep';
 
 const SUB = '#8A8378';
+// 격자와 같은 너비 — 넓은 화면(노트북)에서도 카드가 격자 폭을 넘지 않게 가운데 기둥에 담는다.
+// 자기점검 화면이 560 안에서 양옆 16을 비우므로 내용은 528이다.
+const COL = 528, PAD = 16;
 
 export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, origin, onClose }) {
   const boxRef = useRef(null);
@@ -36,8 +39,10 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
       return () => clearTimeout(t);
     }
     const box = root.getBoundingClientRect();
-    const s0 = origin.width / box.width;
-    const tx = origin.left - box.left, ty = origin.top - box.top;
+    // 넓은 화면에서는 가운데 기둥만큼만 커진다 — 기둥의 왼쪽 끝이 누른 칸에 맞도록 옮긴다
+    const colW = Math.min(box.width, COL + PAD * 2);
+    const s0 = origin.width / colW;
+    const tx = origin.left - box.left - ((box.width - colW) / 2) * s0, ty = origin.top - box.top;
     root.style.transformOrigin = 'top left';
     root.style.willChange = 'transform, opacity';
     root.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${s0})`;
@@ -79,7 +84,7 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
 
       {/* 닫기 — 늘 같은 자리에 */}
       <button type="button" onClick={onClose} aria-label="닫기"
-        style={{ position: 'absolute', top: 12, left: 12, zIndex: 3, width: 38, height: 38, borderRadius: '50%',
+        style={{ position: 'absolute', top: 12, left: `max(12px, calc(50% - ${COL / 2 + 4}px))`, zIndex: 3, width: 38, height: 38, borderRadius: '50%',
           border: 'none', background: 'rgba(255,255,255,0.94)', boxShadow: '0 2px 10px rgba(0,0,0,0.14)',
           fontSize: 20, fontWeight: 800, color: '#1C1A17', cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>
         ‹
@@ -95,7 +100,7 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
           </Seen>
         ))}
         {wide && !solo && (
-          <div style={{ padding: '18px 14px 40px', textAlign: 'center', fontSize: 12.5, color: SUB, fontWeight: 700 }}>
+          <div style={{ padding: `18px ${PAD}px 40px`, textAlign: 'center', fontSize: 12.5, color: SUB, fontWeight: 700 }}>
             마지막이에요. 위로 밀면 다시 볼 수 있어요.
           </div>
         )}
@@ -109,8 +114,8 @@ export default function CardFeed({ cards = [], startId, tone = 'z', bmtiCode, or
 function Seen({ id, children }) {
   const ref = useViewMark('card', id);
   return (
-    <div ref={ref} style={{ scrollSnapAlign: 'start', minHeight: '100%', padding: '56px 14px 24px', boxSizing: 'border-box' }}>
-      {children}
+    <div ref={ref} style={{ scrollSnapAlign: 'start', minHeight: '100%', padding: `56px ${PAD}px 24px`, boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: COL, margin: '0 auto' }}>{children}</div>
     </div>
   );
 }

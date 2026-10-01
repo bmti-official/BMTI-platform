@@ -6,8 +6,7 @@
 //   · **인과로 말하지 않는다.** 각도가 나아져서 덜 아팠다고는 못 쓴다. 나란히만 둔다.
 //   · **지금 바로 보이는 것을 앞에 둔다.** 큰 숫자 하나, 그다음에 줄들.
 import { josa } from '../lib/josa';
-import { useEffect, useState } from 'react';
-import { recentChecks } from '../lib/angleRecord';
+import { useAngleRows } from '../lib/useAngleRows';
 import { bestAngles, firstVsNow, oneThing, lightDays, lightestWeek,
   sideBySide, weekdayLoad, monthOverMonth } from '../lib/octFindings';
 import { getTypeAccent } from '../lib/typeAccent';
@@ -279,7 +278,7 @@ export function MonthOverMonthCard({ rows, entries }) {
  *  흩어져 있던 넷(이번 달 움직임·최고 기록·가장 많이 달라진 곳·옆모습 견주기)을
  *  여기 하나로 합쳤다. 같은 숫자를 네 번 돌려 말하고 있었다. */
 export function QuickFindings({ rows: given = null, gender = null }) {
-  const rows = useAngleRows(given);
+  const { rows } = useAngleRows(given);
   return <AngleBoxCard rows={rows} gender={gender} />;
 }
 
@@ -291,16 +290,4 @@ export function SlowFindings({ entries }) {
       <StrainTrendCard entries={entries} />
     </>
   );
-}
-
-/** 각도 판 읽어 오기 — 밖에서 넘겨주면 그걸 쓰고, 아니면 직접 가져온다. */
-function useAngleRows(given) {
-  const [fetched, setFetched] = useState(null);
-  useEffect(() => {
-    if (given) return undefined;              // 미리보기는 지어낸 판을 그대로 넘겨 준다
-    let alive = true;
-    recentChecks(20).then((r) => { if (alive) setFetched(r || []); });
-    return () => { alive = false; };
-  }, [given]);
-  return given || fetched || [];
 }

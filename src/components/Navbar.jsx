@@ -246,6 +246,31 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box') },
     ],
   };
+  // ── 오른쪽 위 마이페이지 알약 ──
+  // 다이어리·자기점검에서는 가운데 방 이름과 겹치지 않게 사람 아이콘만 남기고 줄인다.
+  // 한 번 누르면 (구독·관리자)닉네임이 펼쳐지고, 펼친 채로 다시 누르면 마이페이지로 간다.
+  // 펼쳐 둔 채 다른 곳을 누르거나 화면을 밀면(하던 일을 이어 가면) 다시 줄어든다.
+  const pillRef = useRef(null);
+  const [openAt, setOpenAt] = useState(null);          // 어느 방에서 펼쳤는지 — 방이 바뀌면 저절로 접힌다
+  const pillOpen = openAt === layer;
+  const pillSmall = layer !== 'root' && !pillOpen;
+  useEffect(() => {
+    if (!pillOpen) return undefined;
+    const close = (e) => { if (pillRef.current && e && pillRef.current.contains(e.target)) return; setOpenAt(null); };
+    const t = setTimeout(() => setOpenAt(null), 6000);
+    window.addEventListener('pointerdown', close, true);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('wheel', close, true);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('pointerdown', close, true);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('wheel', close, true);
+    };
+  }, [pillOpen]);
+  const tier = ['plus', 'pro'].includes(String(userProfile?.subscription_tier || '').toLowerCase())
+    ? String(userProfile.subscription_tier).toUpperCase() : '';
+
   const TITLE = { diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink /> }, self: { text: '자기점검', icon: <BoltMark size={21} /> } };
   // 홈·결과지·파트너 팝업의 '이번달 기록·발견 알아보기' CTA(DiaryCta)가 발행하는 이벤트로 기록·발견을 연다.
   useEffect(() => {
@@ -306,10 +331,16 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
         </button>
       </div>
 
+      {layer === 'self' && currentView === 'self' && (
+        <div aria-hidden="true" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 64, zIndex: 34, pointerEvents: 'none',
+          background: 'linear-gradient(#FFFFFF, rgba(255,255,255,0))', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
+      )}
+
       {/* 상단 가운데: 지금 어느 방인지 — 하단 줄이 통째로 바뀌니 여기가 길잡이다 */}
       {layer !== 'root' && currentView !== 'quiz' && (
         <div className="fixed top-3 z-40 pointer-events-none flex items-center justify-center gap-1.5"
-          style={{ left: 64, right: isLoggedIn ? 170 : 150, height: 44 }}>
+          style={{ left: 64, right: isLoggedIn ? 64 : 150, height: 44,
+            opacity: isLoggedIn && pillOpen ? 0 : 1, transition: 'opacity .25s ease' }}>
           <span className="w-6 h-6 flex items-center justify-center text-black">{TITLE[layer].icon}</span>
           <span style={{ fontFamily: ROUND, fontSize: 21, color: '#111', lineHeight: 1, whiteSpace: 'nowrap' }}>{TITLE[layer].text}</span>
         </div>
@@ -318,13 +349,22 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       {/* 상단: 닉네임 + 마이페이지(사람) 알약 / 미로그인 시 카카오 로그인 — 항상 떠 있음 */}
       <div id="login-button" className="fixed top-3 right-3 z-40">
         {isLoggedIn ? (
-          <button
-            onClick={() => { setShowDiscovery(false); setView('mypage'); }}
-            className={`flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border transition-colors active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
+          <button ref={pillRef}
+            onClick={() => {
+              if (pillSmall) { setOpenAt(layer); return; }     // 줄어 있을 땐 먼저 펼친다
+              setOpenAt(null); setShowDiscovery(false); setView('mypage');
+            }}
+            aria-label={pillSmall ? '내 정보 펼치기' : '마이페이지'} aria-expanded={!pillSmall}
+            className={`flex items-center py-1.5 pr-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
+            style={{ paddingLeft: pillSmall ? 6 : 14, transition: 'padding-left .38s cubic-bezier(.3,.7,.2,1), border-color .2s' }}
           >
             {userProfile && (
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5"
+                style={{ maxWidth: pillSmall ? 0 : 260, opacity: pillSmall ? 0 : 1, marginRight: pillSmall ? 0 : 8,
+                  overflow: 'hidden', whiteSpace: 'nowrap',
+                  transition: 'max-width .38s cubic-bezier(.3,.7,.2,1), opacity .25s ease, margin-right .38s cubic-bezier(.3,.7,.2,1)' }}>
                 {userProfile.nickname === 'BMTI' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-md">관리자</span>}
+                {tier && <span className="text-[10px] font-black text-white px-1.5 py-0.5 rounded-md" style={{ background: '#C9975A' }}>{tier}</span>}
                 {axisCode && <span className="text-[11px] font-black text-white px-2 py-0.5 rounded-lg" style={{ background: '#8B7BD8' }}>{axisCode}</span>}
                 <span className="font-bold text-gray-800 text-sm max-w-[90px] truncate">{userProfile.nickname}</span>
               </span>

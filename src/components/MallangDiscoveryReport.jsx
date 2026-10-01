@@ -25,6 +25,7 @@ import {
 } from "../lib/mallangReportEngine";
 import { getTypeAccent, YELLOW, YELLOW_LINE, GOLD } from "../lib/typeAccent";
 import { QuickFindings } from "./OctFindingCards";
+import { useAngleRows, hasUsableAngle, ANGLE_EXAMPLE } from "../lib/useAngleRows";
 import StrainTrendCard from "./StrainTrendCard";
 import { DayAfterCard } from "./OctNewCards";
 import { strainTrend } from "../lib/strainTrend";
@@ -291,6 +292,7 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
   //   letterPeek  편지를 달이 끝나기 전에도 열어 볼지 — 관리자 미리보기에서만 켠다
   letterPeek = false }) {
   usePanelTime('discover');   // 행동 기록 — 이 창에 머문 시간
+  const angle = useAngleRows(angleRows, !oct);   // 각도기록 — 잰 판이 없으면 예시를 잠긴 채로 보여 준다
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-indexed
@@ -562,10 +564,13 @@ export default function MallangDiscoveryReport({ onClose, bmtiCode, userData, is
               // 그 안에서도 내용이 있는(열린) 칸이 위, 잠긴 칸이 아래다.
               const RANK = { sore_map: 1, tags: 2, mood_calendar: 3, notes: 4 };
               if (oct) items.sort((a, b) => (RANK[a.id] || 9) - (RANK[b.id] || 9));
-              const sorted = [...items.filter((i) => !i.locked), ...items.filter((i) => i.locked)];
-              // 바로 보이는 것 — 오늘 열어서 오늘 쓸 수 있는 것들을 맨 앞에 세운다
-              if (oct) sorted.unshift({ locked: false, node: <Fragment key="quickFind"><QuickFindings rows={angleRows} gender={gender} /></Fragment> });
-              return sorted.map((i) => i.node);
+              const opened = items.filter((i) => !i.locked), closed = items.filter((i) => i.locked);
+              // 각도기록 — 잰 판이 있으면 맨 앞에, 아직 없으면 잠긴 칸들의 맨 앞에 예시로 세운다
+              if (oct && angle.ready) {
+                if (hasUsableAngle(angle.rows)) opened.unshift({ node: <QuickFindings key="quickFind" rows={angle.rows} gender={gender} /> });
+                else closed.unshift({ node: <LockedPreview key="quickFind" label={LOCK_HINT}><QuickFindings rows={ANGLE_EXAMPLE} gender={gender} /></LockedPreview> });
+              }
+              return [...opened, ...closed].map((i) => i.node);
             })()}
           </div>
         ) : (

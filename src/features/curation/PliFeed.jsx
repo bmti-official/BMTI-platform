@@ -6,6 +6,8 @@ import RoutinePlayer from './RoutinePlayer';
 import { CHARACTERS } from '../../data';
 
 const SUB = '#8A8378';
+// 격자와 같은 너비 — 넓은 화면에서도 격자 폭(560 안쪽 528)을 넘지 않게 가운데에 둔다
+const COL = 528, PAD = 16;
 
 function charProps(r, tone) {
   const codes = ((tone === 'm' ? r?.chars_m : r?.chars_z) || []).filter(Boolean);
@@ -27,7 +29,8 @@ export default function PliFeed({ plis = [], startId, tone = 'z', bmtiCode, onCl
     // 글은 한 겹 안쪽에 있다. 스크롤 칸의 자식이 아니라 목록의 자식을 찾아야 한다.
     const i = Math.max(0, plis.findIndex((r) => r.id === startId));
     const el = list.children[i];
-    if (el) box.scrollTop = el.offsetTop - 8;
+    // 닫기 버튼(위 56) 아래에서 시작하게 — 버튼이 카드 왼쪽 위 글씨를 가리지 않도록
+    if (el) box.scrollTop = el.offsetTop - 56;
   }, [plis, startId]);
 
   // 뒤로 가기로 닫히게 — 창이 떠 있는 동안 바깥은 스크롤되지 않는다.
@@ -43,15 +46,15 @@ export default function PliFeed({ plis = [], startId, tone = 'z', bmtiCode, onCl
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: '#fff', contain: 'paint',
       fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
       <button type="button" onClick={onClose} aria-label="닫기"
-        style={{ position: 'absolute', top: 12, left: 12, zIndex: 3, width: 38, height: 38, borderRadius: '50%',
+        style={{ position: 'absolute', top: 12, left: `max(12px, calc(50% - ${COL / 2 + 4}px))`, zIndex: 3, width: 38, height: 38, borderRadius: '50%',
           border: 'none', background: 'rgba(255,255,255,0.94)', boxShadow: '0 2px 10px rgba(0,0,0,0.14)',
           fontSize: 20, fontWeight: 800, color: '#1C1A17', cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>
         ‹
       </button>
 
       <div ref={boxRef} className="pli-feed"
-        style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '56px 14px 24px' }}>
-        <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: `56px ${PAD}px 24px`, boxSizing: 'border-box' }}>
+        <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: COL, margin: '0 auto' }}>
           {plis.map((r) => (
             <RoutineView key={r.id} routine={r} cards={r.cards || []} tone={tone} bmtiCode={bmtiCode}
               onStart={() => setPlaying(r)} {...charProps(r, tone)} />
