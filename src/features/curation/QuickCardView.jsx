@@ -21,6 +21,7 @@ import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY, introImgs } from './format';
 import IntroStills from './IntroStills';
+import CardBgm from './CardBgm';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
@@ -137,7 +138,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const restTotal = twoPhase ? restSec * (sets - 1) * 2 + sideRest : restSec * Math.max(0, sets - 1);
   const totalSec = perSet > 0 ? perSet * rounds + restTotal + Math.round(mentSec) * rounds : 0;
 
-  const restart = () => { pendingRef.current = null; clearTimeout(pendingTimer.current); setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); };
+  const [runNo, setRunNo] = useState(0);   // 몇 번째 판인가 — 다시 시작하면 배경음악도 도입부부터 다시 흐른다
+  const restart = () => { setRunNo((n) => n + 1); pendingRef.current = null; clearTimeout(pendingTimer.current); setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); };
 
   // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
   const togglePause = () => {
@@ -904,6 +906,14 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             {stage === 'open' ? (voiceRole === 'hello' ? '파트너 인사' : '준비 멘트') : rest > 0 ? '쉬는 멘트' : cueOn ? '방향 알림' : mentOn ? '동작 멘트' : '숫자 세기'}
           </span>
         </div>
+      )}
+
+      {/* 배경음악 — 바로플리 안에서는 플리가 음악을 쥐고 있으니, 카드 혼자 따라 할 때만 튼다.
+          파트너가 말하는 동안(오프닝·마무리)과 멈춰 둔 동안에는 쉰다. */}
+      {started && !onQuiet && (
+        <CardBgm key={runNo} common={common} bmtiCode={bmtiCode} quiet={quiet || paused}
+          // 마무리 도막은 마지막 세트에 들어설 때. 한 세트짜리면 시작하자마자 마무리가 나오니, 절반쯤 했을 때로 미룬다.
+          last={finalStretch && (sets > 1 || rep + 1 >= midRep)} />
       )}
 
       <div style={{ padding: '12px 15px 15px' }}>

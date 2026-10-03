@@ -125,6 +125,10 @@ function indexOf(item, tone) {
   return ix;
 }
 
+// '맨몸'으로 찾을 때 — 따로 사야 하는 운동 기구(공·폼롤러·밴드…)가 없는 동작을 보여 준다.
+// 매트·의자·벽·문틀·수건처럼 집에 늘 있는 것만 쓰는 동작도 맨몸으로 친다.
+const AT_HOME = new Set(['운동 매트', '요가매트', '요가 매트', '매트', '의자', '벽', '문틀', '수건'].map(squash));
+
 const strip = (text, nots) => (nots || []).reduce((s, n) => s.split(squash(n)).join(' '), text);
 
 /** 낱말 하나가 이 콘텐츠에 얼마나 걸리는가 — { s: 점수(0이면 안 걸림), why: 걸린 자리들 }.
@@ -149,7 +153,7 @@ function termHit(ix, term) {
     if (d.parts.some((p) => ix.core.includes(p))) up(W.core, '핵심 부위');
     if (d.kinds.includes(ix.kind)) up(W.kind, '종류');
     if (d.tools.some((tl) => ix.tools.includes(squash(tl)))) up(W.tool, '도구');
-    if (d.bare && (ix.tools.length === 0 || ix.tools.every((tl) => /매트$/.test(tl)))) up(W.tool, '도구 없이');
+    if (d.bare && ix.tools.every((tl) => AT_HOME.has(tl))) up(W.tool, '기구 없이');
     if (wordHit) up(W.word, '제목 속 이어진 말');
     if (d.groups.some((g) => ix.groups.includes(g))) up(W.group, '부위 묶음');
     if (d.parts.some((p) => ix.related.includes(p))) up(W.related, '연관 부위');

@@ -34,7 +34,7 @@ function meaningOf(e) {
   if ((e.groups || []).length) out.push(`묶음 ${e.groups.map((g) => GROUP_LABEL[g] || g).join('·')}`);
   if ((e.kinds || []).length) out.push(`종류 ${e.kinds.map((k) => KIND_LABEL[k] || k).join('·')}`);
   if ((e.tools || []).length) out.push(`도구 ${e.tools.join('·')}`);
-  if (e.bare) out.push('도구 없이 하는 동작');
+  if (e.bare) out.push('운동 기구 없이 하는 동작');
   if ((e.words || []).length) out.push(`이어진 말 ${e.words.join('·')}`);
   return out.join(' / ');
 }
