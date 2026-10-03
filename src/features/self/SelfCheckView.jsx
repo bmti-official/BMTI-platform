@@ -14,6 +14,8 @@ import { axisOf } from '../curation/typeTint';
 import { loadSaved, setSaved } from '../../lib/savedItems';
 import { loadMyPlis, saveMyPli, deleteMyPli } from '../../lib/myPli';
 import { viewOnce } from '../../lib/counters';
+import { loadExtraWords } from '../../lib/searchDict';
+import { setExtraWords } from '../curation/search';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
@@ -38,13 +40,15 @@ async function loadShared(byId) {
 
 // 공개된 것만 — 바로카드, 바로플리(공식 + 회원이 공개한 것), 읽을거리
 async function loadPublic() {
-  const [cards, rts, links, reads] = await Promise.all([
+  const [cards, rts, links, reads, words] = await Promise.all([
     supabase.from('quick_cards').select('*').eq('published', true).order('sort_order', { ascending: true }),
     supabase.from('routines').select('*').is('owner_id', null).eq('published', true)
       .order('sort_order', { ascending: true }).order('id', { ascending: false }),
     supabase.from('routine_cards').select('*').order('position', { ascending: true }),
     supabase.from('curation_items').select('*').eq('published', true).order('sort_order', { ascending: true }),
+    loadExtraWords(),
   ]);
+  setExtraWords(words);   // 관리자가 직접 더한 검색 말 — 화면이 뜨기 전에 사전에 붙여 둔다
   const cardRows = cards.data || [];
   const byId = Object.fromEntries(cardRows.map((c) => [c.id, c]));
   // 공식 플리가 먼저, 그 뒤에 회원이 올린 플리

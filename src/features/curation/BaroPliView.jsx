@@ -11,6 +11,7 @@ import { routineSummary } from './format';
 import { searchList, inGroup, suggest, GROUP_PILLS } from './search';
 import { useSearchLog, logSearchOpen, logSearchGroup } from './useSearchLog';
 import NoResult from './NoResult';
+import SlideNote from './SlideNote';
 import { usePanelTime } from '../../lib/usePanelTime';
 
 const INK = '#1C1A17';
@@ -54,11 +55,7 @@ export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
     <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
       <PickRow tabs={TABS} value={tab} onPick={setTab} q={q} onQ={setQ} findHint="거북목, 폼롤러, 어깨…"
         groups={GROUP_PILLS} group={group} onGroup={(g) => { setGroup(g); logSearchGroup('pli', g); }} />
-      {found.loose && shown.length > 0 && (
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8A8378', margin: '0 2px 8px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
-          ‘{asked}’에 꼭 맞는 것은 없어, 비슷한 것을 보여 드려요.
-        </div>
-      )}
+      <SlideNote show={found.loose && shown.length > 0} text={`‘${asked}’에 꼭 맞는 것은 없어, 비슷한 것을 보여 드려요.`} />
       {filtered && shown.length === 0 ? (
         <NoResult
           text={asked ? `‘${asked}’(으)로 찾은 플리가 없어요.` : '이 부위가 담긴 플리가 아직 없어요.'}

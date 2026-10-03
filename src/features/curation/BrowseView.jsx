@@ -15,6 +15,7 @@ import { mixGrid, readMin } from './browseOrder';
 import { searchList, inGroup, suggest, GROUP_PILLS } from './search';
 import { useSearchLog, logSearchOpen, logSearchGroup } from './useSearchLog';
 import NoResult from './NoResult';
+import SlideNote from './SlideNote';
 import { usePanelTime } from '../../lib/usePanelTime';
 
 const SUB = '#8A8378';
@@ -100,11 +101,7 @@ export default function BrowseView({ cards = [], reads = [], tone = 'z', bmtiCod
   return (
     <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
       {head}
-      {found.loose && (
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, margin: '0 2px 8px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
-          ‘{asked}’에 꼭 맞는 것은 없어, 비슷한 것을 보여 드려요.
-        </div>
-      )}
+      <SlideNote show={found.loose} text={`‘${asked}’에 꼭 맞는 것은 없어, 비슷한 것을 보여 드려요.`} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
         {grid.map(({ kind, item }) => {
           const read = kind === 'read';

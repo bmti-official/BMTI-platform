@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 import { PART_KEY } from '../lib/diaryEntryLabels';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
-import { PillPicker, OnePicker, PublishBadge } from './ui';
+import { PillPicker, OnePicker, PublishBadge, TagsInput } from './ui';
 import PreviewModal from './PreviewModal';
 import SlideEditor from './SlideEditor';
 import { slidesToBody } from '../features/curation/newsSlides';
@@ -42,7 +42,7 @@ const EMPTY = {
     [`s${n}_tipq_z`, ''], [`s${n}_tipq_m`, ''],
   ])),
   card_ids: [], routine_ids: [],
-  body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all',
+  body_groups: [], core_parts: [], related_parts: [], tool_mode: 'all', keywords: [],
 };
 
 // 본문 네 마디 — 기획한 순서 그대로.
@@ -165,10 +165,20 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
       const g = f[`slides_${t}`] || [];
       if (g.length) payload[`body_${t}`] = slidesToBody(g);
     });
-    const q = f.id
-      ? supabase.from('curation_items').update(payload).eq('id', f.id)
-      : supabase.from('curation_items').insert(payload);
-    const { error } = await q;
+    const write = (pl) => (f.id
+      ? supabase.from('curation_items').update(pl).eq('id', f.id)
+      : supabase.from('curation_items').insert(pl));
+    let { error } = await write(payload);
+    // 64번 SQL(keywords 칸) 전 — 검색어를 안 적었으면 그 칸만 빼고 저장하고, 적었으면 알려 준다
+    if (error && /keywords/.test(error.message || '')) {
+      if ((payload.keywords || []).length) {
+        setSaving(false);
+        setErr('검색어를 담을 칸이 아직 없습니다. 64번 SQL을 한 번 실행한 뒤 다시 저장해 주세요.');
+        return;
+      }
+      delete payload.keywords;
+      ({ error } = await write(payload));
+    }
     setSaving(false);
     if (error) { setErr('저장 실패: ' + error.message); return; }
     dropDraft('curation', row?.id);
@@ -451,7 +461,15 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <span style={label}>부위 묶음 <span style={{ fontWeight: 600 }}>— 검색 분류에 쓰입니다</span></span>
+        <span style={label}>검색어 <span style={{ fontWeight: 600 }}>— 손님이 이 말로 찾으면 나오게 · 쉼표로 구분</span></span>
+        <TagsInput value={f.keywords || []} onChange={set('keywords')} placeholder="예: 거북목, 일자목, 뒷목 뻐근" />
+        <div style={{ fontSize: 11.5, color: SUB, fontWeight: 600, marginTop: 5, lineHeight: 1.55 }}>
+          제목·부위·도구·'좋은 상황' 글은 이미 검색됩니다. 거기에 없는 말만 적어 주세요. 여러 콘텐츠에 두루 통하는 말은 🔎 검색 분류의 <b>말 사전</b>에 넣는 편이 낫습니다.
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <span style={label}>부위 묶음 <span style={{ fontWeight: 600 }}>— 찾기를 열면 나오는 부위 버튼에 쓰입니다</span></span>
         <PillPicker options={BODY_GROUPS.map((g) => ({ key: g.id, label: g.label }))} value={f.body_groups} onChange={set('body_groups')} />
       </div>
 

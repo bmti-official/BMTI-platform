@@ -32,7 +32,26 @@ export default function PickRow({ tabs, value, onPick, q, onQ, findHint = '거�
     return () => clearTimeout(t);
   }, [open]);
 
+  // 찾기를 연 채로 화면을 아래로 내리면 검색창을 접고 갈래 줄로 돌아간다.
+  // 찾던 말과 고른 부위는 그대로 둔다 — 내리던 목록이 갑자기 바뀌면 안 된다. 돋보기가 노랗게 남아 '찾는 중'임을 알린다.
+  useEffect(() => {
+    if (!open) return undefined;
+    const base = new Map();   // 스크롤되는 칸마다 처음 자리
+    const topOf = (t) => (t === document || t === window || !t ? (window.scrollY || 0) : (t.scrollTop || 0));
+    base.set(document, window.scrollY || 0);
+    const onScroll = (e) => {
+      const t = e.target || document;
+      const now = topOf(t);
+      if (!base.has(t)) { base.set(t, now); return; }
+      if (now - base.get(t) > 40) { setOpen(false); try { inputRef.current?.blur(); } catch { /* 무시 */ } }
+      else if (now < base.get(t)) base.set(t, now);   // 위로 올라간 만큼은 기준을 따라 올린다
+    };
+    window.addEventListener('scroll', onScroll, true);
+    return () => window.removeEventListener('scroll', onScroll, true);
+  }, [open]);
+
   const close = () => { setOpen(false); onQ(''); if (onGroup) onGroup('all'); };
+  const groupAt = hasPills ? Math.max(0, groups.findIndex(([id]) => id === group)) : 0;
 
   return (
     <div style={{ marginBottom: 8 }}>
@@ -89,19 +108,22 @@ export default function PickRow({ tabs, value, onPick, q, onQ, findHint = '거�
       {/* 부위 묶음 알약 — 찾기를 열면 아래로 천천히 내려온다 */}
       {hasPills && (
         <div aria-hidden={!open}
-          style={{ overflow: 'hidden', maxHeight: open ? 32 : 0, opacity: open ? 1 : 0, marginTop: open ? 7 : 0,
+          style={{ overflow: 'hidden', maxHeight: open ? 32 : 0, opacity: open ? 1 : 0, marginTop: open ? 6 : 0,
             transition: 'max-height .95s cubic-bezier(.5,.05,.3,1), opacity .8s ease .12s, margin-top .95s cubic-bezier(.5,.05,.3,1)' }}>
-          <div style={{ display: 'flex', gap: 4, transform: open ? 'none' : 'translateY(-8px)',
+          <div style={{ position: 'relative', display: 'flex', transform: open ? 'none' : 'translateY(-8px)',
             transition: 'transform .95s cubic-bezier(.5,.05,.3,1)' }}>
+            {/* 위 갈래 줄과 같은 모양 — 고른 자리로 연한 옐로우 판이 미끄러진다 */}
+            <span aria-hidden="true" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${100 / groups.length}%`,
+              transform: `translateX(${groupAt * 100}%)`, background: YELLOW, borderRadius: 9,
+              transition: 'transform .26s cubic-bezier(.34,1.4,.5,1)' }} />
             {groups.map(([id, lb]) => {
               const on = group === id;
               return (
                 <button key={id} type="button" onClick={() => onGroup(on && id !== 'all' ? 'all' : id)} tabIndex={open ? 0 : -1}
                   aria-pressed={on}
-                  style={{ flex: lb.length > 2 ? 1.25 : 1, minWidth: 0, padding: '6px 0', borderRadius: 999, border: 'none', cursor: 'pointer',
-                    fontFamily: 'inherit', fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap', letterSpacing: '-0.02em',
-                    background: on ? '#C9975A' : '#fff', color: on ? '#fff' : SUB,
-                    boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}`, transition: 'background-color .18s, color .18s' }}>
+                  style={{ position: 'relative', zIndex: 1, flex: 1, minWidth: 0, padding: '6px 0', borderRadius: 9, border: 'none',
+                    background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800,
+                    whiteSpace: 'nowrap', letterSpacing: '-0.02em', color: on ? GOLD_INK : SUB, transition: 'color .2s' }}>
                   {lb}
                 </button>
               );

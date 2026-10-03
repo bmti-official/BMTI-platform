@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // 관리자 화면 공용 부품 — 큐레이션·바로카드 등록 화면이 함께 쓴다.
 import { SUB, LINE, ACCENT, input } from './theme';
 
@@ -32,10 +33,16 @@ export function OnePicker({ options, value, onChange }) {
 }
 
 // 쉼표로 여러 값을 적는 칸 (도구 목록 등)
+const splitWords = (t) => String(t || '').split(',').map((s) => s.trim()).filter(Boolean);
 export function TagsInput({ value, onChange, placeholder }) {
+  // 치는 글은 따로 쥐고 있는다. 목록에서 바로 되살려 쓰면 쉼표를 치는 순간 지워져 둘째 말을 적을 수 없다.
+  const joined = (value || []).join(', ');
+  const [text, setText] = useState(joined);
+  // 밖에서 값이 바뀌면(원고 붙여넣기 등) 글도 따라간다
+  if (splitWords(text).join(', ') !== joined) setText(joined);
   return (
-    <input style={input} value={(value || []).join(', ')} placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))} />
+    <input style={input} value={text} placeholder={placeholder}
+      onChange={(e) => { setText(e.target.value); onChange(splitWords(e.target.value)); }} />
   );
 }
 

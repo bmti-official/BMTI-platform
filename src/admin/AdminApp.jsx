@@ -4,7 +4,7 @@ import CurationAdmin from './CurationAdmin';
 import DiaryPreview from './DiaryPreview';
 import QuickCardAdmin from './QuickCardAdmin';
 import RoutineAdmin from './RoutineAdmin';
-import SearchPreview from './SearchPreview';
+import SearchAdmin from './SearchAdmin';
 import FlowStudio from './FlowStudio';
 import VoiceCommon from './VoiceCommon';
 import StorageClean from './StorageClean';
@@ -194,7 +194,7 @@ function Dashboard({ session }) {
         {tab === 'curation' && <CurationAdmin />}
         {tab === 'cards' && <QuickCardAdmin />}
         {tab === 'routines' && <RoutineAdmin />}
-        {tab === 'search' && <SearchPreview />}
+        {tab === 'search' && <SearchAdmin />}
         {tab === 'flow' && <FlowStudio />}
         {tab === 'voice' && <VoiceCommon />}
         {tab === 'clean' && <StorageClean />}

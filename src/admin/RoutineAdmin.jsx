@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { CHARACTER_NAMES } from '../lib/bmtiTypes';
 import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
-import { PublishBadge } from './ui';
+import { PublishBadge, TagsInput } from './ui';
 import CharPicker from './CharPicker';
 import ImageInput from './ImageInput';
 import { CurationThumb } from '../features/curation/CurationCard';
@@ -28,7 +28,7 @@ const EMPTY = {
   published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true,
   chars_z: [], chars_m: [],
   cover_url: '', thumb_text: '', thumb_font: 'pretendard', thumb_pos: 'bc',
-  thumb_color: '#FFFFFF', thumb_scale: 100, thumb_dx: 0, thumb_dy: 0,
+  thumb_color: '#FFFFFF', thumb_scale: 100, thumb_dx: 0, thumb_dy: 0, keywords: [],
 };
 
 const BMTI_OPTIONS = Object.keys(CHARACTER_NAMES);
@@ -152,18 +152,27 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
       thumb_font: f.thumb_font || 'pretendard', thumb_pos: f.thumb_pos || 'bc',
       thumb_color: f.thumb_color || '#FFFFFF', thumb_scale: Number(f.thumb_scale) || 100,
       thumb_dx: Number(f.thumb_dx) || 0, thumb_dy: Number(f.thumb_dy) || 0,
+      keywords: f.keywords || [],
       owner_id: null,                        // 관리자가 만드는 공식 추천 루틴
       updated_at: new Date().toISOString(),
     };
     let id = f.id;
-    if (id) {
-      const { error } = await supabase.from('routines').update(payload).eq('id', id);
-      if (error) { setSaving(false); setErr('저장 실패: ' + error.message); return; }
-    } else {
-      const { data, error } = await supabase.from('routines').insert(payload).select('id').single();
-      if (error) { setSaving(false); setErr('저장 실패: ' + error.message); return; }
-      id = data.id;
+    const write = () => (id
+      ? supabase.from('routines').update(payload).eq('id', id).select('id').single()
+      : supabase.from('routines').insert(payload).select('id').single());
+    let { data, error } = await write();
+    // 64번 SQL(keywords 칸) 전 — 검색어를 안 적었으면 그 칸만 빼고 저장하고, 적었으면 알려 준다
+    if (error && /keywords/.test(error.message || '')) {
+      if ((payload.keywords || []).length) {
+        setSaving(false);
+        setErr('검색어를 담을 칸이 아직 없습니다. 64번 SQL을 한 번 실행한 뒤 다시 저장해 주세요.');
+        return;
+      }
+      delete payload.keywords;
+      ({ data, error } = await write());
     }
+    if (error) { setSaving(false); setErr('저장 실패: ' + error.message); return; }
+    id = data.id;
     // 담긴 동작은 통째로 갈아끼운다 — 순서까지 그대로 맞추는 가장 단순한 방법.
     await supabase.from('routine_cards').delete().eq('routine_id', id);
     if (chosen.length) {
@@ -245,6 +254,9 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
             <textarea style={{ ...area, fontSize: 16, fontWeight: 800, padding: '12px 14px', minHeight: 58, lineHeight: 1.4 }}
               value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)}
               placeholder="자기 전 10분" />
+            <div style={{ height: 12 }} />
+            <span style={label}>검색어 <span style={{ fontWeight: 600 }}>— 손님이 이 말로 찾으면 나오게 · 쉼표로 구분</span></span>
+            <TagsInput value={f.keywords || []} onChange={set('keywords')} placeholder="예: 아침, 출근 전, 자기 전" />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 132px', gap: 12, marginTop: 12 }}>
               <div>
                 <span style={label}>글씨체</span>
