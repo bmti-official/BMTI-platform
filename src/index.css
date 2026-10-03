@@ -179,3 +179,19 @@ body.chat-mode-fixed {
 .animate-loading-bar {
   animation: loading-bar 2s ease-in-out forwards;
 }
+
+/* --- 형광펜 버튼(다른 유형 구경하기 · 빙고판 · 기록·발견 알아보기) --- */
+/* 커서를 올리면 형광펜을 한 번 더 긋고, 화살표 알약이 앞으로 나가며 색이 찬다. */
+/* 손가락으로 누르는 화면에서는 눌린 채 남지 않게, 커서가 있는 기기에서만 켠다. */
+.hl-cta .hl-cta-arrow { transition: transform .22s cubic-bezier(.3,1.5,.5,1), background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.hl-cta .hl-cta-ico { transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+.hl-cta .hl-cta-text { transition: filter .2s ease; }
+@keyframes hlCtaSwipe { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+@media (hover: hover) and (pointer: fine) {
+  .hl-cta:hover .hl-cta-text, .hl-cta:focus-visible .hl-cta-text { animation: hlCtaSwipe .38s cubic-bezier(.3,.7,.2,1); filter: saturate(1.7) brightness(.97); }
+  .hl-cta:hover .hl-cta-arrow, .hl-cta:focus-visible .hl-cta-arrow { transform: translateX(5px); background-color: #1C1A17; border-color: #1C1A17; color: #fff; box-shadow: 0 4px 12px rgba(28,26,23,.28); }
+  .hl-cta:hover .hl-cta-ico, .hl-cta:focus-visible .hl-cta-ico { transform: scale(1.16) rotate(-8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hl-cta:hover .hl-cta-text, .hl-cta:focus-visible .hl-cta-text { animation: none; }
+}

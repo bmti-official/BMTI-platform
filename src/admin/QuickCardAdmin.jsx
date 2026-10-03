@@ -118,9 +118,10 @@ const SET_WHEN = (i) => (i === 0
   ? { name: '시작 전', where: '멈춰 서서 · 시작 전 그림과 함께', len: '12~15초', what: '준비 자세 + 핵심 세 가지 + 아프면 멈추라는 말' }
   : { name: `${i}세트`, where: '한가운데 · 하면서', len: '3~5초', what: '놓치기 쉬운 것 하나만 되짚기' });
 
-// 시작 전 그림 — 두 장. 설명 음성이 흐르는 동안 절반씩 나온다.
+// 시작 전 그림 — 세 장까지. 설명 음성이 흐르는 동안 올린 장수로 똑같이 나눠 차례로 나온다.
 // 멈춰 있는 장면이라 영상보다 훨씬 가볍다. 한 장마다 좌우·높이·크기를 손님 화면에 맞게 옮긴다.
 const STILL0 = { url: '', x: 0, y: 0, s: 100 };
+const STILL_SLOTS = [0, 1, 2];
 const STILL_BARS = [
   ['x', '좌우', '왼쪽', '오른쪽', -60, 60],
   ['y', '높이', '위', '아래', -60, 60],
@@ -128,14 +129,19 @@ const STILL_BARS = [
 ];
 function StillsBox({ f, set, subAt }) {
   const [at, setAt] = useState(0);   // 미리보기에 띄운 장
-  const list = [0, 1].map((i) => ({ ...STILL0, ...((f.intro_imgs || [])[i] || {}) }));
+  const list = STILL_SLOTS.map((i) => ({ ...STILL0, ...((f.intro_imgs || [])[i] || {}) }));
+  // 올린 장수 — 빈 칸은 건너뛰고 앞에서부터 차례로 나온다
+  const filled = list.filter((m) => m.url);
+  const share = ['', '끝까지', '절반씩', '1/3씩'][filled.length];
+  const turnOf = (m) => (m.url ? `${filled.indexOf(m) + 1}번째 · ${share}` : '비어 있음');
   const put = (i, patch) => { set('intro_imgs')(list.map((m, k) => (k === i ? { ...m, ...patch } : m))); setAt(i); };
   const shown = introImgs({ intro_imgs: [list[at]] });
   return (
     <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-      <span style={label}>시작 전 그림 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 두 장 · 설명 음성의 절반씩</span></span>
+      <span style={label}>시작 전 그림 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 세 장까지 · 설명 음성을 똑같이 나눠서</span></span>
       <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 10, lineHeight: 1.6 }}>
-        <b>시작 전</b> 음성이 흐르는 동안 1번 그림이 앞 절반, 2번 그림이 뒤 절반에 나옵니다. 한 장만 올리면 그 한 장이 끝까지 나옵니다.
+        <b>시작 전</b> 음성이 흐르는 동안 올린 그림이 차례로 나옵니다. <b>두 장이면 절반씩, 세 장이면 1/3씩</b>, 한 장이면 그 한 장이 끝까지 나옵니다.
+        <br />빈 칸은 건너뜁니다(1번·3번만 올리면 그 둘이 절반씩).
         <br />그림을 옮겨 틀 밖으로 나간 자리는 <b>흰색</b>으로 채워집니다. 올리면 아래 <b>설명 영상 대신</b> 그림이 쓰입니다.
         <br />jpg · webp 권장, 세로 720px 안팎이면 한 장에 100~200KB로 충분합니다.
       </div>
@@ -147,7 +153,7 @@ function StillsBox({ f, set, subAt }) {
                 boxShadow: at === i ? `inset 0 0 0 1.5px ${ACCENT}` : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: INK }}>{i + 1}번 그림</span>
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: SUB }}>{i === 0 ? '설명 앞 절반' : '설명 뒤 절반'}</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: SUB }}>{turnOf(m)}</span>
                 {(m.x !== 0 || m.y !== 0 || m.s !== 100) && (
                   <button type="button" onClick={() => put(i, { x: 0, y: 0, s: 100 })}
                     style={{ ...smallBtn, marginLeft: 'auto' }}>처음 자리로</button>
@@ -171,7 +177,7 @@ function StillsBox({ f, set, subAt }) {
         </div>
         <div>
           <div style={{ display: 'inline-flex', background: BG, borderRadius: 999, padding: 3, marginBottom: 6 }}>
-            {[0, 1].map((i) => (
+            {STILL_SLOTS.map((i) => (
               <button key={i} type="button" onClick={() => setAt(i)}
                 style={{ padding: '4px 12px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   fontSize: 11, fontWeight: 800, background: at === i ? ACCENT : 'transparent', color: at === i ? '#fff' : SUB }}>

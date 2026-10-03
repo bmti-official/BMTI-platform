@@ -88,8 +88,33 @@ const OpenBookIcon = ({ active }) => (
 // 다이어리: 이전 · 오늘 쓰기 · [캐릭터] · 이번달 기록 · 이번달 발견
 // 자기점검: 이전 · 둘러보기 · [캐릭터] · 바로플리 · 내 보관함
 // 모양은 관리자 미리보기(admin/PreviewModal.jsx)와 같다.
-const BoltMark = ({ size = 22 }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none"><path d="M13.4 2.5 5.2 13.4h5.6l-.9 8.1 8.5-11.2h-5.8l.8-7.8Z" fill="currentColor" /></svg>
+// 자기점검 — 두께가 있는 노란 번개. 가끔 번쩍 친다(nav-bolt).
+// 같은 화면에 두 번(하단 네비·상단 제목) 설 수 있어 그러데이션 이름을 자리마다 달리 받는다.
+const BOLT_D = 'M13.2 1.8 4.6 13.1h5.5l-1 8.6 8.9-11.6h-5.8l1-8.3Z';
+const Bolt3D = ({ size = 24, id = 'nav' }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" className="nav-bolt" style={{ overflow: 'visible' }} aria-hidden="true">
+    <defs>
+      <linearGradient id={`bolt-face-${id}`} x1="6" y1="2" x2="16" y2="22" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#FFF3A3" /><stop offset="0.45" stopColor="#FFD233" /><stop offset="1" stopColor="#FF9F0A" />
+      </linearGradient>
+      <linearGradient id={`bolt-side-${id}`} x1="6" y1="2" x2="18" y2="22" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#D98A0B" /><stop offset="1" stopColor="#A85F05" />
+      </linearGradient>
+    </defs>
+    {/* 옆면 — 같은 모양을 조금씩 밀어 겹쳐 두께를 만든다 */}
+    {[1.5, 1.1, 0.7, 0.35].map((k) => (
+      <path key={k} d={BOLT_D} transform={`translate(${k} ${k * 0.85})`} fill={`url(#bolt-side-${id})`} stroke={`url(#bolt-side-${id})`} strokeWidth="0.9" strokeLinejoin="round" />
+    ))}
+    {/* 앞면 */}
+    <path d={BOLT_D} fill={`url(#bolt-face-${id})`} stroke="#E9A40F" strokeWidth="0.7" strokeLinejoin="round" />
+    {/* 빛 받은 모서리 */}
+    <path d="M12.3 3.6 6.4 11.9" stroke="#fff" strokeOpacity="0.85" strokeWidth="1.1" strokeLinecap="round" />
+    <path d="M11.2 14.2 10.6 18.6" stroke="#fff" strokeOpacity="0.55" strokeWidth="0.9" strokeLinecap="round" />
+    {/* 번쩍일 때 튀는 불꽃 */}
+    <g className="nav-bolt-spark" stroke="#FFD233" strokeWidth="1.3" strokeLinecap="round">
+      <path d="M2.2 6.2 4 7.4" /><path d="M20.4 4.2 19 5.8" /><path d="M21.6 16.2 19.8 15.6" /><path d="M3 19.4 4.6 18.2" />
+    </g>
+  </svg>
 );
 const GlassMark = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>
@@ -115,12 +140,13 @@ const BackMark = () => (
 const ROUND = "'Jua','Pretendard',-apple-system,sans-serif";
 
 // 알약 안의 한 칸(아이콘 + 라벨). 여러 칸을 묶어 화면 가로를 꽉 채우는 알약을 만든다.
-const PillTab = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className="flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl active:scale-95 transition-transform"
+// color: 루트 칸(다이어리·자기점검)은 고른 칸이 없으므로 회색으로 죽이지 않고 제 색 그대로 둔다.
+const PillTab = ({ active, onClick, icon, label, color = false }) => (
+  <button onClick={onClick} className="nav-tab flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl active:scale-95"
     style={active ? { background: '#F3F1EC' } : undefined}>
     {/* 고른 칸은 예전 '나의 유형'처럼 세 번 내려갔다 올라오며 색이 바뀐다 */}
-    <span className={`w-6 h-6 flex items-center justify-center ${active ? 'nav-check-anim' : 'opacity-45 grayscale'}`}>{icon}</span>
-    <span className={`${label.length > 4 ? 'text-[8.5px]' : 'text-[9.5px]'} font-bold whitespace-nowrap ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
+    <span className={`nav-tab-ico w-6 h-6 flex items-center justify-center ${active ? 'nav-check-anim' : color ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
+    <span className={`nav-tab-lb ${label.length > 4 ? 'text-[8.5px]' : 'text-[9.5px]'} font-bold whitespace-nowrap ${active ? 'text-black' : color ? 'text-gray-600' : 'text-gray-400'}`}>{label}</span>
   </button>
 );
 
@@ -228,9 +254,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
   const tabOn = (k) => (layer === 'diary' ? (showDiscovery ? discTab === k : k === 'today') : layer === 'self' ? selfTab === k : false);
   const ROWS = {
     root: [
-      { key: 'diary', label: '다이어리', icon: <Mallang v={diaryMoodTick} size={24} noBlink />, on: goDiary },
+      { key: 'diary', label: '다이어리', icon: <Mallang v={diaryMoodTick} size={24} noBlink />, on: goDiary, color: true },
       { key: 'char' },
-      { key: 'self', label: '자기점검', icon: <BoltMark />, on: () => goSelf('browse') },
+      { key: 'self', label: '자기점검', icon: <Bolt3D size={24} id="tab" />, on: () => goSelf('browse'), color: true },
     ],
     diary: [
       { key: 'back', label: '이전', icon: <BackMark />, on: goBack },
@@ -272,7 +298,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
   const tier = ['plus', 'pro'].includes(String(userProfile?.subscription_tier || '').toLowerCase())
     ? String(userProfile.subscription_tier).toUpperCase() : '';
 
-  const TITLE = { diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink /> }, self: { text: '자기점검', icon: <BoltMark size={21} /> } };
+  const TITLE = { diary: { text: '다이어리', icon: <Mallang v={4} size={22} noBlink /> }, self: { text: '자기점검', icon: <Bolt3D size={23} id="title" /> } };
   // 홈·결과지·파트너 팝업의 '이번달 기록·발견 알아보기' CTA(DiaryCta)가 발행하는 이벤트로 기록·발견을 연다.
   useEffect(() => {
     const open = () => openDiscovery('records');
@@ -317,6 +343,31 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
         @keyframes navPageFlip { 0%{transform:scaleX(1);} 50%{transform:scaleX(0.06);} 100%{transform:scaleX(1);} }
         .nav-book-anim { animation: navBookColor 2.7s steps(1) infinite; }
         .nav-book-anim .book-page { transform-box: fill-box; transform-origin: left center; animation: navPageFlip 0.9s ease-in-out infinite; }
+        /* 번개 — 대부분은 가만히 있다가 가끔 두 번 번쩍인다 */
+        @keyframes navBoltStrike {
+          0%, 83%, 100% { filter: none; transform: none; }
+          85% { filter: brightness(1.7) drop-shadow(0 0 5px #FFE25A); transform: scale(1.16) rotate(-5deg); }
+          87% { filter: none; transform: scale(1); }
+          89.5% { filter: brightness(1.9) drop-shadow(0 0 8px #FFF0A0); transform: scale(1.2) rotate(4deg); }
+          93% { filter: brightness(1.15) drop-shadow(0 0 3px #FFE25A); transform: scale(1.04); }
+        }
+        @keyframes navBoltSpark { 0%, 84%, 92%, 100% { opacity: 0; } 85.5%, 90% { opacity: 1; } 87.5% { opacity: 0; } }
+        .nav-bolt { animation: navBoltStrike 4.8s ease-out infinite; transform-origin: 50% 55%; }
+        .nav-bolt-spark { opacity: 0; animation: navBoltSpark 4.8s linear infinite; }
+        /* 커서를 올리면 반응 — 손가락 화면에서는 눌린 채 남지 않게 커서가 있는 기기에서만 */
+        .nav-tab { transition: background-color .18s ease, transform .15s ease; }
+        .nav-tab .nav-tab-ico { transition: transform .22s cubic-bezier(.3,1.6,.5,1), opacity .18s ease, filter .18s ease; }
+        .nav-tab .nav-tab-lb { transition: color .18s ease; }
+        .nav-top { transition: transform .2s cubic-bezier(.3,1.5,.5,1), box-shadow .2s ease, background-color .18s ease; }
+        .nav-char-in { transition: transform .26s cubic-bezier(.3,1.7,.5,1); }
+        @media (hover: hover) and (pointer: fine) {
+          .nav-tab:hover { background-color: #F7F4EC; }
+          .nav-tab:hover .nav-tab-ico { transform: translateY(-2px) scale(1.14); opacity: 1; filter: none; }
+          .nav-tab:hover .nav-tab-lb { color: #1C1A17; }
+          .nav-top:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+          .nav-char:hover .nav-char-in { transform: translateY(-5px) scale(1.09) rotate(-5deg); }
+        }
+        @media (prefers-reduced-motion: reduce) { .nav-bolt, .nav-bolt-spark { animation: none !important; } }
       `}</style>
       {/* 모든 페이지: 위로 한번에 올리기 버튼 */}
       <AppScrollTop />
@@ -326,7 +377,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
         <button
           onClick={() => { if (layer !== 'root') goBack(); else { setShowDiscovery(false); setView('home'); } }}
           aria-label="홈"
-          className="w-11 h-11 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border border-gray-100 flex items-center justify-center active:scale-95 transition-transform"
+          className="nav-top w-11 h-11 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border border-gray-100 flex items-center justify-center active:scale-95"
         >
           <HomeIcon className={`w-6 h-6 ${currentView === 'home' ? 'text-black' : 'text-gray-500'}`} />
         </button>
@@ -357,8 +408,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
               setOpenAt(null); setShowDiscovery(false); setView('mypage');
             }}
             aria-label={pillSmall ? '내 정보 펼치기' : '마이페이지'} aria-expanded={!pillSmall}
-            className={`flex items-center py-1.5 pr-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
-            style={{ paddingLeft: pillSmall ? 6 : 14, transition: 'padding-left .38s cubic-bezier(.3,.7,.2,1), border-color .2s' }}
+            className={`nav-top flex items-center py-1.5 pr-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.12)] border active:scale-95 ${currentView === 'mypage' ? 'border-black' : 'border-gray-100'}`}
+            style={{ paddingLeft: pillSmall ? 6 : 14, transition: 'padding-left .38s cubic-bezier(.3,.7,.2,1), border-color .2s, transform .2s cubic-bezier(.3,1.5,.5,1), box-shadow .2s ease' }}
           >
             {userProfile && (
               <span className="flex items-center gap-1.5"
@@ -379,7 +430,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
           <button
             onClick={() => setIsLoggedIn(true)}
             aria-label="카카오 로그인"
-            className="flex items-center gap-1.5 bg-[#FEE500] rounded-full pl-2.5 pr-3.5 h-11 shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:bg-[#F4DC00] transition-colors active:scale-95"
+            className="nav-top flex items-center gap-1.5 bg-[#FEE500] rounded-full pl-2.5 pr-3.5 h-11 shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:bg-[#F4DC00] active:scale-95"
           >
             <KakaoIcon className="w-5 h-5 fill-black" />
             <span className="text-[13px] font-bold text-[#3C1E1E] whitespace-nowrap">3초 로그인/회원가입</span>
@@ -403,7 +454,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
                 <span key="char" className="w-14 shrink-0" aria-hidden="true" />
               ) : (
                 <span key={t.key} className="flex-1 min-w-0 flex" style={{ animation: grow ? `navTabIn .34s ease-out ${0.08 + i * 0.045}s both` : 'none' }}>
-                  <PillTab active={tabOn(t.key)} onClick={t.on} icon={t.icon} label={t.label} />
+                  <PillTab active={tabOn(t.key)} onClick={t.on} icon={t.icon} label={t.label} color={!!t.color} />
                 </span>
               )))}
             </div>
@@ -413,9 +464,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
           <button
             onClick={() => setShowPartner(true)}
             aria-label="내 BMTI 유형"
-            className="fixed left-1/2 -translate-x-1/2 bottom-5 z-40 active:scale-95 transition-transform"
+            className="nav-char fixed left-1/2 -translate-x-1/2 bottom-5 z-40 active:scale-95 transition-transform"
           >
-            <div className="relative w-14 h-14 flex items-center justify-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
+            <div className="nav-char-in relative w-14 h-14 flex items-center justify-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
               {aiAvatar}
               {showAiChatDot && (
                 <span className="absolute top-0.5 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>

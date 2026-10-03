@@ -5,6 +5,7 @@ import { Mallang } from './Mallang';
 export const YELLOW_HL = {
   background: 'linear-gradient(104deg, rgba(246,222,110,0) 0.9%, rgba(246,222,110,0.92) 2.4%, rgba(246,222,110,0.55) 6%, rgba(246,222,110,0.5) 92%, rgba(246,222,110,0.92) 96%, rgba(246,222,110,0) 98.5%)',
   padding: '0.08em 0.32em',
+  backgroundRepeat: 'no-repeat',   // 커서를 올렸을 때 다시 긋는 효과(hl-cta)가 줄무늬로 깨지지 않게
   WebkitBoxDecorationBreak: 'clone',
   boxDecorationBreak: 'clone',
 };
@@ -27,20 +28,20 @@ export default function DiaryCta({ loggedToday, onGoDiary, onGoDiscovery, classN
   // filled: 팝업용 — 버튼 배경 없음, 글자에만 검은 형광펜(흰 글자), 크게
   if (filled) {
     return (
-      <button onClick={onClick} className={`w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform ${className}`}>
-        <span className="w-9 h-9 flex items-center justify-center shrink-0"><Mallang v={mood} size={34} noBlink /></span>
-        <span className="text-[17px] font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>{label}</span>
-        <span className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+      <button onClick={onClick} className={`hl-cta w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform ${className}`}>
+        <span className="hl-cta-ico w-9 h-9 flex items-center justify-center shrink-0"><Mallang v={mood} size={34} noBlink /></span>
+        <span className="hl-cta-text text-[17px] font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>{label}</span>
+        <span className="hl-cta-arrow w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
       </button>
     );
   }
 
   return (
     <span className={`relative inline-block ${className}`}>
-      <button onClick={onClick} className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
-        <span className="w-8 h-8 flex items-center justify-center shrink-0"><Mallang v={mood} size={31} noBlink /></span>
-        <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>{label}</span>
-        <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+      <button onClick={onClick} className="hl-cta inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
+        <span className="hl-cta-ico w-8 h-8 flex items-center justify-center shrink-0"><Mallang v={mood} size={31} noBlink /></span>
+        <span className="hl-cta-text text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>{label}</span>
+        <span className="hl-cta-arrow w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
       </button>
       {!loggedToday && (
         <span className="absolute -top-1 right-7 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />

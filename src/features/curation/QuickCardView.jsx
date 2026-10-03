@@ -242,7 +242,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const introSub = subSets[0] || '';
   // 음성 없이 자막만 있는 시작 전 설명을 세워 두는 시간 — 읽을 참
   const introReadMs = Math.min(20000, 2200 + subLines(introSub).length * 110);
-  // 시작 전 그림(최대 두 장) — 있으면 설명 영상 대신 이 그림이 선다
+  // 시작 전 그림(최대 세 장) — 있으면 설명 영상 대신 이 그림이 선다
   const stills = introImgs(card);
   const [stillAt, setStillAt] = useState(0);
   // 올리지 않은 세트는 바로 앞 세트의 것을 이어서 쓴다. 시작 전 설명까지 내려가지는 않는다.
@@ -478,22 +478,23 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     const t = setTimeout(() => setStage('move'), 20000);
     return () => clearTimeout(t);
   }, [stage]);
-  // 시작 전 그림 두 장 — 설명 길이의 정확히 절반에서 바꾼다.
+  // 시작 전 그림 — 설명 길이를 올린 장수로 똑같이 나눠 차례로 보여 준다(두 장이면 절반씩, 세 장이면 1/3씩).
   // 소리의 지금 자리를 화면이 그려질 때마다 읽는다(소리가 알려 주는 간격은 0.25초라 그걸 기다리면 늦는다).
-  // 음성 없이 자막만 있으면 세워 두는 시간의 절반에서 바꾼다.
+  // 음성 없이 자막만 있으면 세워 두는 시간을 같은 식으로 나눈다.
   const stillCount = stills.length;
   useEffect(() => {
     if (!introOn || stillCount < 2) return undefined;
     let raf = 0;
     const t0 = performance.now();
-    const pastHalf = () => {
-      if (!introClip) return performance.now() - t0 >= introReadMs / 2;
+    // 지금까지 흐른 비율(0~1)
+    const passed = () => {
+      if (!introClip) return (performance.now() - t0) / introReadMs;
       const a = audioRef.current;
       const d = a ? Number(a.duration) : 0;
-      return d > 0 && Number.isFinite(d) && a.currentTime >= d / 2;
+      return d > 0 && Number.isFinite(d) ? a.currentTime / d : 0;
     };
     const tick = () => {
-      setStillAt(pastHalf() ? 1 : 0);
+      setStillAt(Math.min(stillCount - 1, Math.max(0, Math.floor(passed() * stillCount))));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

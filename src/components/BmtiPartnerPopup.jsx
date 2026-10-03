@@ -31,10 +31,10 @@ export default function BmtiPartnerPopup({ bmtiCode, isLoggedIn, hasLoggedToday,
             </div>
 
             {/* 다른 유형 구경하기 — 버튼 배경 없음, 글자에만 검은 형광펜(흰 글자), 크게 */}
-            <button onClick={() => { onClose(); onExploreTypes && onExploreTypes(); }} className="w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
-              <span className="w-9 h-9 flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#374151" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>
-              <span className="text-[17px] font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
-              <span className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+            <button onClick={() => { onClose(); onExploreTypes && onExploreTypes(); }} className="hl-cta w-full flex items-center justify-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform">
+              <span className="hl-cta-ico w-9 h-9 flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#374151" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>
+              <span className="hl-cta-text text-[17px] font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
+              <span className="hl-cta-arrow w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-lg font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
             </button>
 
             {/* 오늘 기록 전이면 '건강 다이어리 10초 기록하기', 기록을 마쳤으면 '이번달 기록·발견 알아보기' CTA (골드 채운 버튼) */}

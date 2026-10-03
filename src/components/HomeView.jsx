@@ -291,21 +291,21 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
       <div className="w-full flex flex-wrap justify-center items-center gap-x-6 gap-y-3 mb-6">
         <button
           onClick={() => setShowGallery(true)}
-          className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
+          className="hl-cta inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
         >
-          <span className="w-8 h-8 flex items-center justify-center shrink-0">
+          <span className="hl-cta-ico w-8 h-8 flex items-center justify-center shrink-0">
             <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
           </span>
-          <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
-          <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+          <span className="hl-cta-text text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>다른 유형 구경하기</span>
+          <span className="hl-cta-arrow w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>
         <button
           onClick={() => setShowBingo(true)}
-          className="inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
+          className="hl-cta inline-flex items-center gap-2 bg-transparent border-none active:scale-[0.98] transition-transform"
         >
-          <span className="w-8 h-8 flex items-center justify-center shrink-0 text-lg">⭐️</span>
-          <span className="text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>BMTI 빙고판 하러가기</span>
-          <span className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
+          <span className="hl-cta-ico w-8 h-8 flex items-center justify-center shrink-0 text-lg">⭐️</span>
+          <span className="hl-cta-text text-[13px] md:text-base font-extrabold text-gray-900 whitespace-nowrap" style={YELLOW_HL}>BMTI 빙고판 하러가기</span>
+          <span className="hl-cta-arrow w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-900 flex items-center justify-center text-base font-bold shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">→</span>
         </button>
       </div>
       {showGallery && <TypeGallery hasBmti={!!bmtiCode} onStartTest={() => { setShowGallery(false); setView('quiz'); }} onClose={() => setShowGallery(false)} />}
