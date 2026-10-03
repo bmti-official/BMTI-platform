@@ -293,7 +293,8 @@ export default function MetricsView() {
       setStaffIds(staff);
       setDiary((d.data || []).filter((r) => !staff.has(r.user_id)));
       setUsers((u.data || []).filter((x) => !staff.has(x.id)));
-      if (e.error) setEvErr(e.error.message); else setEvents((e.data || []).filter((x) => !x.user_id || !staff.has(x.user_id)));
+      // 검색어 기록은 익명 번호 없이('none') 남긴다 — 방문자·재방문 셈에 가짜 한 명으로 끼지 않게 뺀다
+      if (e.error) setEvErr(e.error.message); else setEvents((e.data || []).filter((x) => x.anon_id !== 'none' && (!x.user_id || !staff.has(x.user_id))));
     })();
     return () => { alive = false; };
   }, []);

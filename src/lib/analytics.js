@@ -61,6 +61,19 @@ export function track(name, meta = {}) {
   } catch { /* 기록 실패는 무시 */ }
 }
 
+/**
+ * 누가 했는지 남기지 않는 기록 — 검색어처럼 건강 정보에 가까운 말에 쓴다.
+ * 회원 번호도, 브라우저 익명 번호도 붙이지 않는다. 그래서 다른 기록과 이어 볼 수 없다.
+ */
+export const NO_ONE = "none";
+export function trackAnon(name, meta = {}) {
+  if (!name || PREVIEW) return;
+  try {
+    queue.push({ anon_id: NO_ONE, user_id: null, name: String(name).slice(0, 40), meta });
+    if (queue.length >= QUEUE_MAX) flush(); else scheduleFlush();
+  } catch { /* 기록 실패는 무시 */ }
+}
+
 // ── 화면 체류 시간 ────────────────────────────────────────────
 // 화면이 바뀌거나 탭을 벗어나면 그 화면에 머문 초를 남긴다.
 let curScreen = null;

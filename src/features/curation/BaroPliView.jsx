@@ -8,7 +8,9 @@ import PliGrid from './PliGrid';
 import PickRow from './PickRow';
 import PliFeed from './PliFeed';
 import { routineSummary } from './format';
-import { matches } from './browseOrder';
+import { searchList, inGroup, suggest, GROUP_PILLS } from './search';
+import { useSearchLog, logSearchOpen, logSearchGroup } from './useSearchLog';
+import NoResult from './NoResult';
 import { usePanelTime } from '../../lib/usePanelTime';
 
 const INK = '#1C1A17';
@@ -22,26 +24,48 @@ export default function BaroPliView({ routines = [], tone = 'z', bmtiCode }) {
   const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
   const [tab, setTab] = useState('all');
   const [q, setQ] = useState('');
+  const [group, setGroup] = useState('all');      // 찾기를 열면 나오는 부위 묶음 알약
 
-  const shown = useMemo(() => {
+  // 시간 → 부위 묶음 → 찾는 말 차례로 거른다
+  const pool = useMemo(() => {
     const byTime = tab === 'all' ? routines
       : routines.filter((r) => {
         const sec = routineSummary(r.cards || []).durationSec;
         if (tab === 'long') return sec >= LONG_FROM;
         return sec > 0 && sec <= CAP[tab];
       });
-    if (!q.trim()) return byTime;
-    // 플리 자체의 이름뿐 아니라 담긴 동작의 부위·도구로도 걸리게 한다
-    return byTime.filter((r) => matches(r, q, tone) || (r.cards || []).some((c) => matches(c, q, tone)));
-  }, [routines, tab, q, tone]);
+    return group === 'all' ? byTime : byTime.filter((r) => inGroup(r, group));
+  }, [routines, tab, group]);
+  // 플리 이름뿐 아니라 담긴 동작의 부위·도구·종류로도 걸린다. 잘 맞는 것부터 선다.
+  const found = useMemo(() => searchList(pool, q, tone), [pool, q, tone]);
+  const shown = found.rows;
+  const asked = q.trim();
+  useSearchLog('pli', q, shown.length, { tab, g: group });
+  const hint = useMemo(() => {
+    if (!asked || shown.length > 0) return '';
+    const w = suggest(asked);
+    return w && searchList(pool, w, tone).rows.length > 0 ? w : '';
+  }, [asked, shown.length, pool, tone]);
 
-  const none = q.trim() ? `'${q.trim()}'로 찾은 플리가 없어요.`
-    : tab === 'all' ? '아직 담긴 플리가 없어요.' : '그 시간 안에 끝나는 플리가 아직 없어요.';
+  const filtered = !!asked || group !== 'all';
+  const none = tab === 'all' ? '아직 담긴 플리가 없어요.' : '그 시간 안에 끝나는 플리가 아직 없어요.';
 
   return (
     <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
-      <PickRow tabs={TABS} value={tab} onPick={setTab} q={q} onQ={setQ} findHint="목, 폼롤러, 아침…" />
-      <PliGrid plis={shown} tone={tone} onOpen={(r) => setOpenPli(r)} empty={none} />
+      <PickRow tabs={TABS} value={tab} onPick={setTab} q={q} onQ={setQ} findHint="거북목, 폼롤러, 어깨…"
+        groups={GROUP_PILLS} group={group} onGroup={(g) => { setGroup(g); logSearchGroup('pli', g); }} />
+      {found.loose && shown.length > 0 && (
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8A8378', margin: '0 2px 8px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          ‘{asked}’에 꼭 맞는 것은 없어, 비슷한 것을 보여 드려요.
+        </div>
+      )}
+      {filtered && shown.length === 0 ? (
+        <NoResult
+          text={asked ? `‘${asked}’(으)로 찾은 플리가 없어요.` : '이 부위가 담긴 플리가 아직 없어요.'}
+          hint={hint} onPick={setQ} tip="다른 말로 찾거나, 위의 부위 알약을 눌러 보세요." />
+      ) : (
+        <PliGrid plis={shown} tone={tone} onOpen={(r) => { logSearchOpen('pli', q, 'pli', r.id); setOpenPli(r); }} empty={none} />
+      )}
 
       {openPli && (
         <PliFeed plis={shown} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
