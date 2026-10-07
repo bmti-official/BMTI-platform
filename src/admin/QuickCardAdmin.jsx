@@ -142,7 +142,7 @@ function StillsBox({ f, set, subAt }) {
       <div style={{ fontSize: 11, color: SUB, fontWeight: 600, marginBottom: 10, lineHeight: 1.6 }}>
         <b>시작 전</b> 음성이 흐르는 동안 올린 그림이 차례로 나옵니다. <b>두 장이면 절반씩, 세 장이면 1/3씩</b>, 한 장이면 그 한 장이 끝까지 나옵니다.
         <br />빈 칸은 건너뜁니다(1번·3번만 올리면 그 둘이 절반씩).
-        <br />그림을 옮겨 틀 밖으로 나간 자리는 <b>흰색</b>으로 채워집니다. 올리면 아래 <b>설명 영상 대신</b> 그림이 쓰입니다.
+        <br />그림을 옮겨 틀 밖으로 나간 자리는 <b>흰색</b>으로 채워집니다. 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다.
         <br />jpg · webp 권장, 세로 720px 안팎이면 한 장에 100~200KB로 충분합니다.
       </div>
       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -195,7 +195,8 @@ function StillsBox({ f, set, subAt }) {
   );
 }
 
-// 소리와 자막, 설명 영상을 한 상자에 모았다.
+// 소리와 자막, 시작 전 그림을 한 상자에 모았다. (세트 전 설명 영상 칸은 그림으로 모두 옮겨져 2026-10-07에 걷어 냈다.
+// 예전 영상 주소(intro_url)가 남은 카드는 그림이 없을 때만 그대로 재생된다.)
 // Z·M을 나란히 두면 안내가 두 번 적히고 칸이 좁아져, 위 알약으로 갈아 끼운다.
 function VoiceBox({ f, set }) {
   const [t, setT] = useState('z');
@@ -249,14 +250,6 @@ function VoiceBox({ f, set }) {
       </div>
 
       <StillsBox f={f} set={set} subAt={subAt} />
-
-      {/* 설명 영상 — 말투를 가리지 않으니 위에 한 번만 */}
-      <div style={{ background: '#fff', borderRadius: 10, padding: 11, marginBottom: 12, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-        <span style={label}>세트 전 설명 영상 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 화살표로 짚어 주는 4~6초 한 편</span></span>
-        <ImageInput allowVideo value={f.intro_url} onChange={set('intro_url')}
-          placeholder="영상을 끌어다 놓거나 주소를 붙여넣으세요"
-          hint="위에 시작 전 그림을 올렸으면 이 영상은 쓰이지 않습니다. 그림이 없을 때만 1세트를 시작할 때 멘트와 함께 되돌아 돕니다. 둘 다 비워 두면 동작 영상의 첫 장면에 멈춰 섭니다." />
-      </div>
 
       {/* 말투 고르기 */}
       <div style={{ display: 'inline-flex', background: '#fff', borderRadius: 999, padding: 3, marginBottom: 12,
@@ -623,7 +616,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         </div>
       </div>
 
-      {/* 들리는 것과 보이는 것 — 소리·자막·설명 영상을 한 자리에 모았다 */}
+      {/* 들리는 것과 보이는 것 — 소리·자막·시작 전 그림을 한 자리에 모았다 */}
       <VoiceBox f={f} set={set} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
