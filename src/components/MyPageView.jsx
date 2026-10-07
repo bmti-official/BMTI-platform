@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { badNameReason, badNameMessage } from '../lib/nameFilter';
 import { CHARACTERS, calculateBMTIPercentages, isReservedNickname } from '../data';
 import { supabase } from '../lib/supabaseClient';
-import BodySelector3D from './BodySelector3D';
+import MallangInfoPopup from './MallangInfoPopup';
 import { canRetakeTest, archiveBeforeRetake } from '../lib/bmtiSystem';
 import TypeGallery from './TypeGallery';
 import { Mallang } from './Mallang';
@@ -26,11 +26,11 @@ const ChartIcon = ({ className = 'w-6 h-6', style }) => (
   </svg>
 );
 import {
-  POSTURE_OPTS, POSTURE_LABELS, POSTURE_KNOWN_IDS,
+  POSTURE_LABELS, SINCE_LABELS,
   FREQ_LABELS as EXERCISE_FREQ_LABELS, GOAL_LABELS as EXERCISE_GOAL_LABELS,
   soreSummary,
   editsThisMonth,
-  setGuestMallang, getGuestMallangHistory, pushGuestMallangHistory,
+  getGuestMallangHistory, readMallangProfile,
 } from '../lib/mallangProfile';
 
 // 사이트 색상 토큰 — 배경 화이트 / 기본 버튼 연보라 / 중요 버튼 골드 / 중요 박스 그림자 연옐로우
@@ -95,11 +95,8 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   });
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isEditingExercise, setIsEditingExercise] = useState(false);
-  const [savingExercise, setSavingExercise] = useState(false);
-  const [posturePick, setPosturePick] = useState(null);
-  const [postureOther, setPostureOther] = useState('');
-  const [soreEdit, setSoreEdit] = useState([]); // 수정 모드 불편한 부위 [{part, when, whenOther}]
+  const [sheetOpen, setSheetOpen] = useState(false);   // 건강 정보 한 장 창
+  const [sheetVer, setSheetVer] = useState(0);         // 저장할 때마다 올려 히스토리를 다시 읽는다
   const [mallangHistory, setMallangHistory] = useState([]); // 일상 정보 스냅샷 박스
   const [showGallery, setShowGallery] = useState(false); // '다른 유형 구경' 갤러리
 
@@ -219,64 +216,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     setIsEditing(false);
   };
 
-  const toggleExerciseGoal = (id) => {
-    setUserData(prev => {
-      const goals = prev.exercise_goals || [];
-      const nextGoals = goals.includes(id)
-        ? goals.filter(g => g !== id)
-        : (goals.length >= 2 ? goals : [...goals, id]);
-      return { ...prev, exercise_goals: nextGoals };
-    });
-  };
-
-  const handleSaveMallangInfo = async () => {
-    const finalPosture = posturePick === 'other' ? postureOther.trim() : posturePick;
-    const soreClean = soreEdit.map(s => {
-      const whens = Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []);
-      return {
-        part: s.part, when: whens,
-        whenOther: whens.includes('기타') ? (s.whenOther || '').trim() : '',
-        // '기타' 부위는 직접 적은 이름을 함께 남긴다.
-        ...(s.part === '기타' && String(s.partOther || '').trim() ? { partOther: String(s.partOther).trim() } : {}),
-      };
-    });
-    const freq = userData.exercise_frequency || null;
-    const goals = userData.exercise_goals || [];
-    setSavingExercise(true);
-    const snapshot = { sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture || null, source: 'edit', created_at: new Date().toISOString() };
-    try {
-      if (userData?.id) {
-        const { error } = await supabase
-          .from('users')
-          .update({
-            exercise_frequency: freq,
-            exercise_goals: goals,
-            common_posture: finalPosture || null,
-            mallang_sore: soreClean,
-            mallang_info_updated_at: new Date().toISOString(),
-          })
-          .eq('id', userData.id);
-        if (error) throw error;
-        await supabase.from('mallang_info_history').insert({ user_id: userData.id, sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture || null, source: 'edit' });
-      } else {
-        // 게스트 — 로컬에만 저장
-        setGuestMallang({ mallang_sore: soreClean, exercise_frequency: freq, exercise_goals: goals, common_posture: finalPosture || null });
-        pushGuestMallangHistory(snapshot);
-      }
-      const updated = { ...userData, common_posture: finalPosture, mallang_sore: soreClean };
-      setUserData(updated);
-      localStorage.setItem('bmti_user', JSON.stringify(updated));
-      setMallangHistory(prev => [snapshot, ...prev]);
-    } catch (e) {
-      console.error('일상 정보 저장 오류:', e);
-      alert('일상 정보 저장 중 오류가 발생했습니다.');
-      setSavingExercise(false);
-      return;
-    }
-    setSavingExercise(false);
-    setIsEditingExercise(false);
-  };
-
   const axisCode = bmtiCode ? String(bmtiCode).split('-')[0] : '';
   const charInfo = axisCode ? CHARACTERS.find(c => c.id === axisCode) : null;
 
@@ -312,17 +251,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
     } else {
       setMallangHistory(getGuestMallangHistory());
     }
-  }, [userData?.id]);
-
-  const startEditMallang = () => {
-    if (userData.common_posture && POSTURE_KNOWN_IDS.includes(userData.common_posture)) {
-      setPosturePick(userData.common_posture); setPostureOther('');
-    } else if (userData.common_posture) {
-      setPosturePick('other'); setPostureOther(userData.common_posture);
-    } else { setPosturePick(null); setPostureOther(''); }
-    setSoreEdit(Array.isArray(userData.mallang_sore) ? userData.mallang_sore.map(s => ({ part: s.part, when: Array.isArray(s.when) ? s.when : (s.when ? [s.when] : []), whenOther: s.whenOther || '' })) : []);
-    setIsEditingExercise(true);
-  };
+  }, [userData?.id, sheetVer]);
 
   const handleNewTest = async () => {
     const { canRetake, message, isLastForMonth } = await canRetakeTest(userData);
@@ -347,7 +276,6 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
   ];
 
   // 수정 모드 칩 스타일 — 선택 시 연보라(기본 버튼 색)
-  const chipOn = { background: PURPLE, color: '#fff', borderColor: PURPLE };
 
   return (
     <div className="pt-20 pb-32 px-4 md:px-6 max-w-3xl mx-auto fade-in bg-white">
@@ -561,84 +489,23 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
         })()}
       </div>
 
-      {/* 3. 일상 정보 — 온보딩에서 자동으로 채워지고, 여기서 언제든 수정 가능 */}
-      <SectionHeader emoji="📋" title="현재 일상 정보">
-        <PillButton gold={isEditingExercise} disabled={savingExercise} onClick={() => { if (isEditingExercise) handleSaveMallangInfo(); else startEditMallang(); }}>
-          {savingExercise ? '저장 중...' : isEditingExercise ? '저장하기' : '수정하기'}
+      {/* 3. 건강 정보 한 장 — 예전의 '현재 일상 정보'. 한 번 적어 두면 추천과 강사 연결에 쓰인다.
+          고치는 일은 창(MallangInfoPopup, mode 'all')이 맡는다 — 둘러보기와 같은 창이라 한 곳에만 저장된다. */}
+      <SectionHeader emoji="📋" title="건강 정보 한 장">
+        <PillButton onClick={() => setSheetOpen(true)}>
+          {(userData.mallang_sore?.length || userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? '수정하기' : '적어 두기'}
         </PillButton>
       </SectionHeader>
       <div className="bg-white rounded-3xl p-5 md:p-7 border border-[#F3EFE6] mb-2" style={{ boxShadow: YELLOW_SHADOW }}>
-        {isEditingExercise ? (
-          <div className="space-y-5">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-xs font-bold">불편한 부위 (최대 3곳)</span>
-                <button onClick={() => setSoreEdit([])}
-                  className="text-[11px] py-1 px-2.5 rounded-full border font-bold transition-colors"
-                  style={soreEdit.length === 0 ? chipOn : {}}>
-                  <span className={soreEdit.length === 0 ? '' : 'text-gray-500'}>불편한 곳 없음</span>
-                </button>
-              </div>
-              {/* 다이어리와 같은 캐릭터 부위 선택 — 부위·'언제 그러셨어요'·기타 입력까지 이 컴포넌트가 함께 처리한다 */}
-              <BodySelector3D
-                gender={userData.kakaoGender}
-                value={soreEdit}
-                onChange={setSoreEdit}
-              />
-            </div>
-            <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">평소 운동, 어떻게 하세요?</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {Object.entries(EXERCISE_FREQ_LABELS).map(([id, label]) => (
-                  <button key={id} onClick={() => setUserData({ ...userData, exercise_frequency: id })}
-                    className={`text-xs py-1.5 px-2 rounded-lg border font-bold transition-colors text-center ${userData.exercise_frequency === id ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
-                    style={userData.exercise_frequency === id ? chipOn : undefined}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">몸 관리에서 제일 신경 쓰는 건? (최대 2개)</span>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.entries(EXERCISE_GOAL_LABELS).map(([id, label]) => {
-                  const on = (userData.exercise_goals || []).includes(id);
-                  const disabled = !on && (userData.exercise_goals || []).length >= 2;
-                  return (
-                    <button key={id} onClick={() => toggleExerciseGoal(id)} disabled={disabled}
-                      className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors ${on ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'} ${disabled ? 'opacity-40' : ''}`}
-                      style={on ? chipOn : undefined}>
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-400 text-xs font-bold block mb-2">요즘 하루 대부분 어떻게 지내요?</span>
-              <div className="flex flex-wrap gap-1.5">
-                {POSTURE_OPTS.map(({ id, label, sub }) => (
-                  <button key={id} onClick={() => setPosturePick(id)}
-                    className={`text-xs py-1.5 px-2.5 rounded-lg border font-bold transition-colors flex flex-col items-start gap-0.5 ${posturePick === id ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
-                    style={posturePick === id ? chipOn : undefined}>
-                    <span>{label}</span>
-                    {sub && <span className={`text-[10px] font-semibold ${posturePick === id ? 'text-white/75' : 'text-gray-400'}`}>{sub}</span>}
-                  </button>
-                ))}
-              </div>
-              {posturePick === 'other' && (
-                <input type="text" value={postureOther} onChange={(e) => setPostureOther(e.target.value.slice(0, 20))}
-                  placeholder="짧게 적어주세요 (예: 운전을 오래 해요)" className="mt-2 w-full text-xs px-3 py-2 rounded-lg border border-gray-200 outline-none focus:border-gray-400" />
-              )}
-            </div>
-            <p className="text-[11px] text-gray-400 font-medium">이번 달 수정 {editsThisMonth(mallangHistory)}회</p>
-          </div>
-        ) : (userData.mallang_sore?.length || userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
+        {(userData.mallang_sore?.length || userData.exercise_frequency || (userData.exercise_goals && userData.exercise_goals.length > 0) || userData.common_posture) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* 불편한 부위 */}
             <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
               <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold mb-2">🩹 불편한 부위</div>
-              <div className="text-base font-bold text-gray-800 break-keep">{soreSummary(userData.mallang_sore) || '아직 입력 전이에요'}</div>
+              <div className="text-base font-bold text-gray-800 break-keep">{soreSummary(userData.mallang_sore) || '불편한 곳 없음'}</div>
+              {userData.mallang_sore?.length > 0 && SINCE_LABELS[userData.sore_since] && (
+                <div className="text-xs font-bold text-gray-400 mt-1">{SINCE_LABELS[userData.sore_since]} 됐어요</div>
+              )}
             </div>
             {/* 운동 빈도 */}
             <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-4">
@@ -661,12 +528,26 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-400 text-sm py-2">건강 다이어리를 처음 시작할 때 물어보는 질문에 답하면 여기에 자동으로 채워져요.</p>
+          <p className="text-center text-gray-400 text-sm py-2 break-keep">불편한 곳과 평소 생활을 한 번만 적어 두면, 내 몸에 맞는 것부터 보여 드려요. 1~2분이면 끝나요.</p>
         )}
+        {mallangHistory.length > 0 && <p className="text-[11px] text-gray-400 font-medium mt-3">이번 달 수정 {editsThisMonth(mallangHistory)}회</p>}
       </div>
+      {sheetOpen && (
+        <MallangInfoPopup mode="all" userInfo={userData?.id ? userData : null} isLoggedIn={!!userData?.id}
+          gender={userData.kakaoGender || userData.kakao_gender} setUserProfile={setUserData}
+          onClose={() => setSheetOpen(false)}
+          onSaved={() => {
+            // 게스트는 이 기기에 저장되므로, 화면에 보이는 값도 거기서 다시 읽는다
+            if (!userData?.id) {
+              const g = readMallangProfile(null);
+              setUserData((prev) => ({ ...prev, mallang_sore: g.sore || [], exercise_frequency: g.exercise_frequency, exercise_goals: g.exercise_goals, common_posture: g.common_posture, sore_since: g.sore_since }));
+            }
+            setSheetVer((v) => v + 1);
+          }} />
+      )}
 
-      {/* 4. 일상 정보 히스토리 — 수정할 때마다 스냅샷을 BMTI 히스토리와 같은 박스로 남긴다 */}
-      <SectionHeader emoji="🗂️" title="일상 정보 히스토리" />
+      {/* 4. 건강 정보 히스토리 — 수정할 때마다 스냅샷을 BMTI 히스토리와 같은 박스로 남긴다 */}
+      <SectionHeader emoji="🗂️" title="건강 정보 히스토리" />
       <div className="fade-in flex overflow-x-auto gap-3 md:gap-4 pb-4 snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {mallangHistory.length > 0 ? (
           mallangHistory.map((item, idx) => {
@@ -687,7 +568,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
                   <span className="text-[10px] text-gray-400 font-medium">{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <HRow label="불편한 부위" value={soreSummary(item.sore) || '없음'} />
+                  <HRow label="불편한 부위" value={(soreSummary(item.sore) || '없음') + (SINCE_LABELS[item.sore_since] ? ` · ${SINCE_LABELS[item.sore_since]}` : '')} />
                   <HRow label="운동 빈도" value={EXERCISE_FREQ_LABELS[item.exercise_frequency] || '미입력'} />
                   <HRow label="운동 목적" value={goals || '미입력'} />
                   <HRow label="자주 하는 자세" value={postureLabel || '미입력'} />
@@ -696,7 +577,7 @@ const MyPageView = ({ setView, userInfo, bmtiCode, setBmtiCode, bmtiAnswers, onL
             );
           })
         ) : (
-          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 일상 정보가 없습니다.</div>
+          <div className="w-full text-center py-8 text-gray-400 text-sm font-medium">아직 적어 둔 건강 정보가 없습니다.</div>
         )}
       </div>
 

@@ -438,7 +438,7 @@ function App() {
         {currentView === 'self' && (
           <div style={{ maxWidth: 560, margin: '0 auto', padding: '76px 16px 110px' }}>
             <SelfCheckView tab={selfTab} bmtiCode={bmtiCode} userProfile={userProfile} isLoggedIn={isLoggedIn}
-              onRequireLogin={() => setShowSignup(true)} />
+              setUserProfile={setUserProfile} onRequireLogin={() => setShowSignup(true)} />
           </div>
         )}
         {currentView === 'mypage' && (

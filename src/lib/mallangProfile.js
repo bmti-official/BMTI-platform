@@ -25,6 +25,15 @@ export const POSTURE_OPTS = [
   { id: "heavy", label: "📦 무거운 물건을 자주 들어요", sub: "물류, 현장직 등" },
   { id: "other", label: "기타" },
 ];
+// 불편이 얼마나 됐는지 — 강사가 처음 파악할 때 가장 먼저 묻는 것
+export const SINCE_OPTS = [
+  { id: "w1", label: "1주 안쪽" },
+  { id: "m1", label: "한 달쯤" },
+  { id: "m3", label: "석 달쯤" },
+  { id: "y1", label: "1년쯤" },
+  { id: "long", label: "그보다 오래" },
+];
+export const SINCE_LABELS = Object.fromEntries(SINCE_OPTS.map(o => [o.id, o.label]));
 export const POSTURE_KNOWN_IDS = ["sitting", "standing", "moving", "mixed", "heavy"];
 
 export const FREQ_LABELS = Object.fromEntries(FREQ_OPTS.map(o => [o.id, o.label]));
@@ -126,7 +135,27 @@ export function readMallangProfile(userInfo) {
     exercise_frequency: userInfo?.exercise_frequency ?? guest?.exercise_frequency ?? null,
     exercise_goals: userInfo?.exercise_goals ?? guest?.exercise_goals ?? [],
     common_posture: userInfo?.common_posture ?? guest?.common_posture ?? null,
+    sore_since: userInfo?.sore_since ?? guest?.sore_since ?? null,
+    coach_note: userInfo?.coach_note ?? guest?.coach_note ?? "",
   };
+}
+
+/** 건강 정보 한 장을 한 번이라도 채웠는가 */
+export function hasHealthSheet(userInfo) {
+  const p = readMallangProfile(userInfo);
+  return !!((p.sore && p.sore.length) || p.exercise_frequency || (p.exercise_goals || []).length || p.common_posture);
+}
+
+/** 마지막으로 채우거나 확인한 때(ms). 없으면 0 — 석 달마다 '바뀐 게 있나요?'를 묻는 데 쓴다. */
+const CHECKED_KEY = "bmti_health_sheet_checked_at";
+export function healthSheetCheckedAt(userInfo) {
+  let local = 0;
+  try { local = Number(localStorage.getItem(CHECKED_KEY) || 0); } catch { /* 무시 */ }
+  const server = userInfo?.mallang_info_updated_at ? Date.parse(userInfo.mallang_info_updated_at) : 0;
+  return Math.max(local || 0, Number.isFinite(server) ? server : 0);
+}
+export function markHealthSheetChecked() {
+  try { localStorage.setItem(CHECKED_KEY, String(Date.now())); } catch { /* 무시 */ }
 }
 
 // 이번 달 '수정(edit)' 횟수 — 표시용. 수정 자체에는 제한을 두지 않는다.

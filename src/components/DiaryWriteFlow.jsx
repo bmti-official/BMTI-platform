@@ -244,7 +244,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
   // 오늘 바디카드·바디플리를 몇 번 했는지. **있으면 저절로 담는다.**
   // 우리가 이미 아는 것을 손님에게 다시 고르게 하는 건 두 번 일을 시키는 셈이다.
   // 대신 옆의 '바디카드' 버튼으로 손님이 언제든 빼고 다시 담을 수 있다(담겼는지는 고른 종목으로 안다).
-  const [baro, setBaro] = useState({ count: 0, full: 0 });
+  const [baro, setBaro] = useState({ count: 0, full: 0, names: [] });
 
   const [exerciseReason, setExerciseReason] = useState(() => (
     initialEntry?.exercise?.did === false ? (REASON_TO_EXERCISE_LABEL[initialEntry.exercise.reason] || null) : null
@@ -726,6 +726,12 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                       {baro.count > 0
                         ? <>오늘 바디카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}</>
                         : "오늘 바디카드를 했다면 오른쪽을 눌러 주세요"}
+                      {/* 무엇을 했는지 — 이미 남아 있는 기록에서 이름을 가져와 보여 준다(다시 적게 하지 않는다) */}
+                      {baro.count > 0 && (baro.names || []).length > 0 && (
+                        <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: C.ink, marginTop: 3, lineHeight: 1.5 }}>
+                          {baro.names.slice(0, 4).join(" · ")}{baro.names.length > 4 ? ` 외 ${baro.names.length - 4}개` : ""}
+                        </span>
+                      )}
                       {baro.count > 0 && (
                         <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>
                           {baroOn ? "따로 고르지 않아도 담아 뒀어요." : "빼 두었어요. 오른쪽을 누르면 다시 담겨요."}

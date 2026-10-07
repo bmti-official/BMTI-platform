@@ -34,7 +34,16 @@ const MARK = {
   card: { color: '#1C1A17', background: '#fff' },
 };
 
-export default function BrowseView({ cards = [], reads = [], routines = [], tone = 'z', bmtiCode, onOpenRead, initialTab = 'all' }) {
+// 내 몸에 맞는 것부터 — 건강 정보 한 장에 적은 불편한 부위를 다루는 것이 앞에 선다.
+// 0: 그 부위가 핵심인 것 · 1: 연관으로 걸린 것 · 2: 나머지. 플리는 담긴 동작 가운데 가장 가까운 것으로 본다.
+function fitRank(item, parts) {
+  const one = (x) => ((x.core_parts || []).some((p) => parts.includes(p)) ? 0
+    : (x.related_parts || []).some((p) => parts.includes(p)) ? 1 : 2);
+  return Array.isArray(item.cards) && item.cards.length ? Math.min(...item.cards.map(one)) : one(item);
+}
+
+// fit: { on, parts(부위 열쇠들), label(버튼에 적을 부위 이름), onToggle } — 자기점검 화면이 넘겨 준다. 없으면 버튼을 두지 않는다.
+export default function BrowseView({ cards = [], reads = [], routines = [], tone = 'z', bmtiCode, onOpenRead, initialTab = 'all', fit = null, top = null }) {
   usePanelTime('browse');   // 행동 기록 — 이 창에 머문 시간
   const [openRead, setOpenRead] = useState(null);   // 펼쳐 본 읽을거리
   const [seed] = useState(() => Math.floor(Math.random() * 2000000) + 1);
@@ -54,8 +63,13 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
     return group === 'all' ? byTab : byTab.filter((x) => inGroup(x.item, group));
   }, [all, tab, group]);
   const found = useMemo(() => searchList(pool, q, tone, (x) => x.item), [pool, q, tone]);
-  const grid = found.rows;
   const asked = q.trim();
+  // 찾는 말이 없을 때만 '내 몸에 맞는 것부터' 차례로 세운다 — 찾는 중에는 잘 맞는 차례가 먼저다
+  const fitParts = fit && fit.on ? fit.parts : null;
+  const grid = useMemo(() => {
+    if (asked || !fitParts || !fitParts.length) return found.rows;
+    return found.rows.map((x, i) => ({ x, i, r: fitRank(x.item, fitParts) })).sort((a, b) => a.r - b.r || a.i - b.i).map((o) => o.x);
+  }, [found.rows, asked, fitParts]);
   useSearchLog('browse', q, grid.length, { tab, g: group });
   // 못 찾았을 때 권할 말 — 그 말로 찾으면 실제로 나오는 것만 권한다
   const hint = useMemo(() => {
@@ -69,8 +83,22 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
   const shownPlis = useMemo(() => grid.filter((x) => x.kind === 'pli').map((x) => x.item), [grid]);
 
   const head = (
-    <PickRow tabs={TABS} value={tab} onPick={setTab} q={q} onQ={setQ}
-      groups={GROUP_PILLS} group={group} onGroup={(g) => { setGroup(g); logSearchGroup('browse', g); }} />
+    <>
+      <PickRow tabs={TABS} value={tab} onPick={setTab} q={q} onQ={setQ}
+        groups={GROUP_PILLS} group={group} onGroup={(g) => { setGroup(g); logSearchGroup('browse', g); }} />
+      {top}
+      {fit && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '-2px 0 8px' }}>
+          <button type="button" onClick={fit.onToggle} aria-pressed={!!fit.on}
+            style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 9, padding: '5px 10px',
+              fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis',
+              background: fit.on ? '#FDF6DC' : 'transparent', color: fit.on ? '#8A6A3A' : SUB,
+              boxShadow: fit.on ? 'none' : 'inset 0 0 0 1px #EDE9E2', transition: 'background-color .2s, color .2s' }}>
+            {fit.on ? `✓ 내 몸에 맞는 것부터${fit.label ? ` · ${fit.label}` : ''}` : '내 몸에 맞는 것부터 보기'}
+          </button>
+        </div>
+      )}
+    </>
   );
   const feeds = (
     <>

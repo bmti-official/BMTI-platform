@@ -42,12 +42,32 @@ export async function markFinish({ kind = 'card', cardId = null, routineId = nul
   } catch { /* 기록이 안 남아도 따라하는 데는 지장이 없다 */ }
 }
 
-/** 오늘 몇 번 했는지 — 일기를 열 때 '오늘 두 번 하셨네요'로 쓴다. */
+/** 오늘 몇 번, 무엇을 했는지 — 일기를 열 때 '오늘 두 번 하셨네요 · 뒷목 스트레칭, 턱 당기기'로 쓴다.
+ *  손님이 다시 적게 하지 않는다. 우리가 이미 아는 것은 우리가 채운다. */
 export async function todayFinishes() {
   const userId = me();
-  if (!userId) return { count: 0, full: 0 };
+  if (!userId) return { count: 0, full: 0, names: [] };
   const { data, error } = await supabase.from('card_finishes')
-    .select('done').eq('user_id', userId).eq('date', todayISO());
-  if (error || !data) return { count: 0, full: 0 };
-  return { count: data.length, full: data.filter((r) => r.done).length };
+    .select('done,kind,card_id,routine_id').eq('user_id', userId).eq('date', todayISO());
+  if (error || !data) return { count: 0, full: 0, names: [] };
+  const out = { count: data.length, full: data.filter((r) => r.done).length, names: [] };
+  // 이름은 따로 읽는다 — 못 읽어도 횟수는 그대로 보여 준다
+  try {
+    const cardIds = [...new Set(data.map((r) => r.card_id).filter(Boolean))];
+    const pliIds = [...new Set(data.map((r) => r.routine_id).filter(Boolean))];
+    const one = (t) => String(t || '').replace(/\s*\n\s*/g, ' ').trim();
+    const [cards, plis] = await Promise.all([
+      cardIds.length ? supabase.from('quick_cards').select('id,thumb_text,title_z').in('id', cardIds) : { data: [] },
+      pliIds.length ? supabase.from('routines').select('id,thumb_text,title_z').in('id', pliIds) : { data: [] },
+    ]);
+    const cardName = Object.fromEntries((cards.data || []).map((c) => [c.id, one(c.thumb_text || c.title_z)]));
+    const pliName = Object.fromEntries((plis.data || []).map((c) => [c.id, one(c.title_z || c.thumb_text)]));
+    // 한 차례대로, 같은 이름은 한 번만. 플리는 '플리'라고 붙여 동작과 가른다.
+    const seen = new Set();
+    data.forEach((r) => {
+      const nm = r.card_id ? cardName[r.card_id] : (pliName[r.routine_id] ? `${pliName[r.routine_id]}(플리)` : '');
+      if (nm && !seen.has(nm)) { seen.add(nm); out.names.push(nm); }
+    });
+  } catch { /* 이름 없이 횟수만 */ }
+  return out;
 }

@@ -15,9 +15,15 @@ import { loadMyPlis, saveMyPli, deleteMyPli } from '../../lib/myPli';
 import { viewOnce } from '../../lib/counters';
 import { loadExtraWords } from '../../lib/searchDict';
 import { setExtraWords } from '../curation/search';
+import MallangInfoPopup from '../../components/MallangInfoPopup';
+import { readMallangProfile, hasHealthSheet, healthSheetCheckedAt, markHealthSheetChecked } from '../../lib/mallangProfile';
+import { PART_KEY } from '../../lib/diaryEntryLabels';
+import { track } from '../../lib/analytics';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
+const FIT_KEY = 'bmti_fit_first';            // '내 몸에 맞는 것부터'를 켜 뒀는지 — 이 기기에 기억한다
+const RECHECK_MS = 90 * 864e5;               // 석 달에 한 번 '바뀐 게 있나요?'
 
 // 플리에 담긴 동작을 붙인다(동작별 설정까지). 공개된 바디카드만 남고, 동작이 하나도 없으면 뺀다.
 const withCards = (rows, links, byId) => (rows || []).map((r) => ({
@@ -55,7 +61,7 @@ async function loadPublic() {
   return { cards: cardRows, byId, plis, reads: reads.data || [] };
 }
 
-export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin }) {
+export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin, setUserProfile }) {
   const tone = toneOf(axisOf(bmtiCode));
   const userId = isLoggedIn ? userProfile?.id || null : null;
   const [pub, setPub] = useState(null);           // 공개 콘텐츠
@@ -63,6 +69,27 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   const [mine, setMine] = useState([]);           // 내 마이플리
   const [openRead, setOpenRead] = useState(null); // 긴 글 읽을거리
   const [note, setNote] = useState('');
+
+  // ── 건강 정보 한 장 — 적어 두면 내 불편한 부위를 다루는 것부터 보여 준다 ──
+  const me = isLoggedIn ? userProfile : null;   // 게스트는 이 기기에 적어 둔 것을 읽는다
+  const [sheet, setSheet] = useState(null);     // null | 'edit'(처음 적기·고치기)
+  const [sheetVer, setSheetVer] = useState(0);  // 저장하면 올려 다시 읽는다
+  const [fitOn, setFitOn] = useState(() => { try { return localStorage.getItem(FIT_KEY) === '1'; } catch { return false; } });
+  const [openedAt] = useState(() => Date.now());
+  const health = useMemo(() => {
+    const p = readMallangProfile(me);
+    const labels = (p.sore || []).map((s) => s.part).filter((x) => x && x !== '기타');
+    return { has: hasHealthSheet(me), labels, parts: labels.map((l) => PART_KEY[l]).filter(Boolean),
+      stale: openedAt - healthSheetCheckedAt(me) > RECHECK_MS };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, sheetVer, openedAt]);
+  const setFit = (on) => { setFitOn(on); try { localStorage.setItem(FIT_KEY, on ? '1' : '0'); } catch { /* 무시 */ } };
+  const toggleFit = () => {
+    if (fitOn) { setFit(false); return; }
+    track('fit_first', { has: health.has });
+    if (!health.has) { setSheet('edit'); return; }   // 아직 안 적었으면 지금 묻는다 — 적을 이유가 생긴 때
+    setFit(true);
+  };
 
   useEffect(() => {
     let alive = true;
@@ -150,7 +177,21 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         {/* 바디플리는 둘러보기 안의 한 갈래다(예전에는 하단 네비에 따로 있었다) */}
         {tab !== 'box' && (
           <BrowseView cards={pub.cards} reads={pub.reads} routines={baroList} tone={tone} bmtiCode={bmtiCode}
-            onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }} />
+            onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }}
+            fit={{ on: fitOn && health.has, parts: health.parts, label: health.labels.join('·') || '불편한 곳 없음', onToggle: toggleFit }}
+            top={fitOn && health.has && health.stale ? (
+              // 석 달에 한 번 — 적어 둔 건강 정보가 아직 맞는지 묻는다
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#FBF7EC', borderRadius: 12,
+                padding: '10px 12px', margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: INK, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                <span style={{ flex: 1, minWidth: 160 }}>건강 정보를 적은 지 석 달이 지났어요. 바뀐 게 있나요?</span>
+                <button type="button" onClick={() => { markHealthSheetChecked(); setSheetVer((v) => v + 1); }}
+                  style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999, padding: '6px 11px', background: '#fff',
+                    color: SUB, fontSize: 11.5, fontWeight: 800, boxShadow: `inset 0 0 0 1px ${LINE}` }}>그대로예요</button>
+                <button type="button" onClick={() => setSheet('edit')}
+                  style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999, padding: '6px 11px', background: '#C9975A',
+                    color: '#fff', fontSize: 11.5, fontWeight: 800 }}>고칠게요</button>
+              </div>
+            ) : null} />
         )}
         {tab === 'box' && (userId ? (
           <BoxView nickname={userProfile?.nickname || '회원'} bmtiCode={bmtiCode} tone={tone}
@@ -177,6 +218,13 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
               fontSize: 18, fontWeight: 800, color: INK, cursor: 'pointer', marginBottom: 10 }}>‹</button>
           <CurationDetail item={openRead} tone={tone} onSave={() => keep.toggle('curation', openRead.id)} />
         </div>
+      )}
+
+      {sheet && (
+        <MallangInfoPopup mode="all" userInfo={me} isLoggedIn={!!me} setUserProfile={setUserProfile}
+          gender={userProfile?.kakaoGender || userProfile?.kakao_gender}
+          onClose={() => setSheet(null)}
+          onSaved={() => { setSheetVer((v) => v + 1); setFit(true); setNote('내 몸에 맞는 것부터 보여 드려요'); }} />
       )}
 
       {note && (
