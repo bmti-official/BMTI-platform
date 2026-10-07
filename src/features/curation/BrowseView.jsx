@@ -16,7 +16,7 @@ import PickRow from './PickRow';
 import { cardTotalSec } from './cardDefaults';
 import { cardCount } from './newsSlides';
 import { mixGrid, readMin } from './browseOrder';
-import { pliCover } from './pliCover';
+import PliCover from './PliCover';
 import { searchList, inGroup, suggest, GROUP_PILLS } from './search';
 import { useSearchLog, logSearchOpen, logSearchGroup } from './useSearchLog';
 import NoResult from './NoResult';
@@ -163,8 +163,7 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
           {grid.map(({ kind, item }) => {
-            const cover = kind === 'pli' ? pliCover(item)
-              : { item, clip: kind === 'read' ? '' : (item.video_url || ''), still: kind === 'read' ? '' : (item.poster_url || '') };
+            const cover = { item, clip: kind === 'read' ? '' : (item.video_url || ''), still: kind === 'read' ? '' : (item.poster_url || '') };
             // 카드뉴스로 만든 글이면 장수를, 아직 긴 글이면 읽는 시간을 적는다
             const slides = cardCount((tone === 'm' ? item.slides_m : item.slides_z) || []);
             const mark = kind === 'read' ? (slides > 0 ? `${slides}장` : `${readMin(item, tone)}분`)
@@ -173,8 +172,11 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
             return (
               <button key={`${kind}-${item.id}`} type="button" onClick={() => open(kind, item)}
                 style={{ position: 'relative', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
-                <CurationThumb item={cover.item} radius={2} ratio="4 / 5" showRead={false}
-                  clip={cover.clip} still={cover.still} emptyText="" />
+                {kind === 'pli'
+                  // 플리 — 담긴 동작의 그림이 차례로. 이 칸엔 제목이 따로 없으니, 표지 문구를 안 적었으면 제목을 얹는다
+                  ? <PliCover pli={item} radius={2} titleIfEmpty lift={16} />
+                  : <CurationThumb item={cover.item} radius={2} ratio="4 / 5" showRead={false}
+                    clip={cover.clip} still={cover.still} emptyText="" />}
                 {/* 오른쪽 아래 — 읽을거리는 장수(또는 시간), 플리는 담긴 동작 수, 동작은 걸리는 시간 */}
                 {mark && (
                   <span style={{ position: 'absolute', right: 5, bottom: 5, fontSize: 9.5, fontWeight: 800,

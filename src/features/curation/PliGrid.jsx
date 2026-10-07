@@ -1,8 +1,7 @@
 // 바디플리 격자 — 가로 둘씩. 표지가 커서 무엇이 담겼는지 눈에 들어온다.
 //
 // 시간은 담긴 동작을 기본 설정대로 다 했을 때 걸리는 값이다.
-import { CurationThumb } from './CurationCard';
-import { pliCover } from './pliCover';
+import PliCover from './PliCover';
 import { routineSummary, mmss, pickRoutineTone } from './format';
 import { plMaker } from './plMaker';
 
@@ -24,15 +23,14 @@ export default function PliGrid({ plis = [], tone = 'z', onOpen, empty = '아직
       {plis.map((r) => {
         const cards = r.cards || [];
         const s = routineSummary(cards);
-        const cover = pliCover(r);
         const who = maker ? plMaker(r) : null;
         return (
           <div key={r.id}>
           <button type="button" onClick={() => onOpen && onOpen(r)}
             style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
             <div style={{ position: 'relative' }}>
-              <CurationThumb item={cover.item}
-                radius={12} ratio="4 / 5" showRead={false} clip={cover.clip} still={cover.still} emptyText="표지 없음" />
+              {/* 담긴 동작의 그림이 3초마다 넘어간다. 제목은 바로 아래 있으니, 문구를 안 적었으면 그림만 보인다 */}
+              <PliCover pli={r} radius={12} lift={20} emptyText="표지 없음" />
               {/* 오른쪽 아래 — 다 하면 걸리는 시간 */}
               <span style={{ position: 'absolute', right: 6, bottom: 6, fontSize: 10, fontWeight: 800,
                 color: GOLD_INK, background: YELLOW, borderRadius: 7, padding: '3px 7px', lineHeight: 1.2 }}>

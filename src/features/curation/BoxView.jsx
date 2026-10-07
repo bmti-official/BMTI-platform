@@ -93,7 +93,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
           )}
           <PliGrid plis={myPlis} tone={tone} empty={EMPTY_WORD.mine} editMode={editMode} maker={false}
             onOpen={(r) => (editMode
-              ? setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], showNick: !!r.show_nick, share: r.share_state || 'private' })
+              ? setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], coverText: r.thumb_text || '', showNick: !!r.show_nick, share: r.share_state || 'private' })
               : setOpenPli(r))} />
         </>
       ) : tab === 'pli' ? (
@@ -101,7 +101,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
           action={{ label: '가져와 고치기', onClick: (r) => {
             const t = tone === 'm' ? (r.title_m || r.title_z) : (r.title_z || r.title_m);
             if (window.confirm(`'${t}'을 마이플리로 가져와 고칠까요?\n원래 바디플리는 그대로 두고, 고친 것은 마이플리에 새로 저장돼요.`)) {
-              setEditing({ title: t, cards: [...(r.cards || [])], from: t, sourceId: r.id });
+              setEditing({ title: t, cards: [...(r.cards || [])], coverText: r.thumb_text || '', from: t, sourceId: r.id });
             }
           } }} />
       ) : grid.length === 0 ? <Empty text={EMPTY_WORD[tab]} /> : (

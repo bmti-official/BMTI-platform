@@ -13,6 +13,10 @@ export const pickCardTone = (c, tone) => ({
   title: (tone === 'm' ? c.title_m : c.title_z) || c.title_z || c.title_m || '',
 });
 
+// 동작의 짧은 이름 — 썸네일에 적어 둔 이름(줄바꿈은 띄어쓰기로). 없으면 제목.
+export const cardShortName = (c, tone) =>
+  String(c?.thumb_text || '').replace(/\s*\n\s*/g, ' ').trim() || pickCardTone(c || {}, tone).title;
+
 export const fmtCount = (n) => (Number(n) || 0).toLocaleString('ko-KR');
 export const mmss = (sec) => {
   const s = Math.max(0, Number(sec) || 0);

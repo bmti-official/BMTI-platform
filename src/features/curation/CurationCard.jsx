@@ -8,6 +8,8 @@ import { F, fontStack, thumbPos, thumbShadow, readMinutes, timeAgo } from './fon
 import { charBox } from '../../lib/charBox';
 import { isClip } from './media';
 import { clipY } from './format';
+import { useCoverTick } from './coverTick';
+import { pliFrames, pliCoverItem } from './pliFrames';
 import AiNote from './AiNote';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', KEY_BAR = '#D9B96A';
@@ -17,7 +19,7 @@ const PURPLE = '#7E6FC9';   // 답변에서 짚어 주는 연보라 글씨
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
 // 바디카드 종류마다 표지 문구에 그어 주는 형광펜 색
-const KIND_MARK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#7FB77E' };
+const KIND_MARK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#7FB77E', pli: '#4F7FD0' };   // pli: 플리 표지 문구 — 세 종류와 겹치지 않는 파랑
 // 손으로 대충 그은 형광펜 — 글자 아래쪽만 덮되, 양 끝은 붓이 삐져나간 것처럼 지저분하게.
 // 몸통 한 겹 위에 붓 자국 세 겹을 얹었다. 자국은 타원으로 번지게 해 네모나 보이지 않는다.
 const markPaint = (c) => ({
@@ -48,8 +50,12 @@ export function CharPic({ src, code, h = 38 }) {
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
 // still: 격자용 작은 그림(바디카드 poster_url). 있으면 영상(clip) 대신 이것만 깐다 — 격자가 가벼워진다.
-export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip: clipIn = '', still = '', emptyText = '대표 이미지 없음', onClipEnd }) {
-  const clip = still ? '' : clipIn;
+// frames·frameAt: 플리 표지 — 담긴 동작의 그림 [{ url, y }]을 차례로 보여 준다. frameAt이 오르면 다음 그림이 위로 번져 올라온다.
+// textLift: 아래쪽 문구를 그만큼(px) 올린다 — 칸 아래 모서리에 표(시간·동작 수)를 따로 얹는 곳에서 쓴다.
+export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip: clipIn = '', still = '', emptyText = '대표 이미지 없음', onClipEnd,
+  frames = null, frameAt = 0, textLift = 0 }) {
+  const slide = Array.isArray(frames) && frames.length > 0;
+  const clip = still || slide ? '' : clipIn;
   // 표지에 영상을 깔면, 화면에 들어올 때 소리 없이 처음부터 끝까지 돌려 준다.
   const boxRef = useRef(null);
   const vidRef = useRef(null);
@@ -79,9 +85,21 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
     return () => io.disconnect();
   }, [clip]);
   return (
-    <div ref={boxRef} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
+    <div ref={boxRef} style={{ position: 'relative', isolation: 'isolate', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: '#EDE9E2' }}>
       {/* 4:5 틀에 세로로 긴 영상을 담으면 위아래가 잘린다. 어디를 살릴지 정해 둔 자리를 쓴다. */}
-      {still ? (
+      {slide ? (
+        // 지금 그림·바로 앞 그림·다음 그림 세 장만 올려 둔다. 다음 그림은 미리 받아 두었다가, 차례가 오면 앞 그림 위로 번져 올라온다.
+        (() => {
+          const n = frames.length;
+          const cur = ((frameAt % n) + n) % n;
+          const show = n === 1 ? [[cur, 2]] : [[(cur - 1 + n) % n, 1], [cur, 2], ...(n > 2 ? [[(cur + 1) % n, 0]] : [])];
+          return show.map(([i, z]) => (
+            <img key={`${i}-${frames[i].url}`} src={frames[i].url} alt="" decoding="async"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${frames[i].y}%`,
+                background: '#fff', zIndex: z, opacity: z === 0 ? 0 : 1, transition: z === 2 ? 'opacity .7s ease' : 'none' }} />
+          ));
+        })()
+      ) : still ? (
         <img src={still} alt="" loading="lazy" decoding="async"
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
       ) : clip ? (
@@ -90,7 +108,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
       ) : item.cover_url
         ? <img src={item.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${clipY(item)}%`, display: 'block', background: '#fff' }} />
-        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 13, fontWeight: 700 }}>{emptyText}</div>}
+        : <div style={{ width: '100%', height: '100%', boxSizing: 'border-box', padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', wordBreak: 'keep-all', color: SUB, fontSize: 13, fontWeight: 700 }}>{emptyText}</div>}
 
       {item.thumb_text && (() => {
         const pos = thumbPos(item.thumb_pos);
@@ -100,11 +118,11 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         // 가독시간표는 오른쪽 아래에 있다. 문구가 아래쪽에 놓일 땐 그만큼 자리를 비워 둔다.
         const pad = big ? 18 : 12;
         // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
-        const bottomPad = pos.align === 'flex-end' && (badge || showRead) ? pad + 30 : pad;
+        const bottomPad = pos.align === 'flex-end' ? ((badge || showRead) ? pad + 30 : pad + textLift) : pad;
         // 바디카드는 종류마다 다른 형광펜이 문구 아래에 대충 그어진다.
         const mark = KIND_MARK[item.kind];
         return (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
+          <div style={{ position: 'absolute', inset: 0, zIndex: 3, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
             padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
             <span style={{ fontSize: Math.max(9, Math.round((boxW || 360) * (big ? 0.077 : 0.058) * scale)), fontWeight: 900, color, lineHeight: 1.25, letterSpacing: '-0.02em', wordBreak: 'keep-all', whiteSpace: 'pre-line',
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
@@ -118,13 +136,25 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
 
       {/* 우측 하단 표 — 큐레이션은 가독시간, 바디카드는 소요 시간 */}
       {(badge || (showRead && !big)) && (
-        <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+        <span style={{ position: 'absolute', zIndex: 3, right: 7, bottom: 7, background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
           color: '#fff', borderRadius: 6, padding: '4px 7px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05, whiteSpace: 'nowrap' }}>
           <span style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: '0.04em', opacity: 0.92 }}>{badge ? badge.label : '가독시간'}</span>
           <span style={{ fontSize: 12.5, fontWeight: 800 }}>{badge ? badge.value : `${readMinutes(item)}분`}</span>
         </span>
       )}
     </div>
+  );
+}
+
+// 글 아래 '함께 해보면 좋아요'에 놓는 플리 표지 — 다른 곳의 플리 표지(PliCover.jsx)와 같은 그림·문구다.
+// PliCover가 이 파일의 CurationThumb를 쓰므로, 여기서 PliCover를 부르면 두 파일이 서로를 부르게 된다. 그래서 같은 재료로 여기서 그린다.
+function LinkedPliCover({ pli }) {
+  const tick = useCoverTick();
+  const cards = pli.cards || [];
+  const frames = pliFrames(pli, cards);
+  return (
+    <CurationThumb item={pliCoverItem(pli)} radius={12} ratio="4 / 5" showRead={false}
+      frames={frames} frameAt={tick} clip={frames.length ? '' : (cards[0]?.video_url || '')} emptyText="동작 없음" />
   );
 }
 
@@ -406,9 +436,8 @@ export function CurationDetail({ item, tone = 'z', routines = [], onStartPli, on
                   style={{ flex: '0 0 48%', scrollSnapAlign: 'start', border: 'none', background: 'transparent', padding: 0,
                     cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
                   <span style={{ position: 'relative', display: 'block' }}>
-                    {/* 표지는 담긴 첫 동작의 것을 빌려 쓴다 */}
-                    <CurationThumb item={rc[0] || {}} radius={12} ratio="4 / 5" showRead={false}
-                      clip={rc[0]?.video_url || ''} emptyText="동작 없음" />
+                    {/* 표지 — 담긴 동작의 그림이 차례로 넘어간다 */}
+                    <LinkedPliCover pli={r} />
                     <span style={{ position: 'absolute', top: 7, left: 7, fontSize: 10, fontWeight: 900, color: KEEP_INK,
                       background: KEEP_BG, borderRadius: 7, padding: '3px 7px' }}>플리</span>
                   </span>

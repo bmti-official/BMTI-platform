@@ -4,10 +4,9 @@
 // 요일마다 했는지를 표시한다. 따라 하면 저절로 표시되고, 영상 없이 한 날은 '했어요'를 누른다.
 // 강사와 연결하는 기능이 붙으면, 강사가 보낸 과제가 이 위에 선다.
 import { useEffect, useMemo, useState } from 'react';
-import { CurationThumb } from '../curation/CurationCard';
 import PliFeed from '../curation/PliFeed';
 import RoutinePlayer from '../curation/RoutinePlayer';
-import { pliCover } from '../curation/pliCover';
+import PliCover from '../curation/PliCover';
 import { routineSummary, mmss, pickRoutineTone } from '../curation/format';
 import { recommend, weekDays, isoOf } from './recommend';
 import { pliFinishesSince, setPliChecked } from '../../lib/cardFinish';
@@ -108,7 +107,6 @@ export default function RecoView({ plis = [], userId = null, health, tone = 'z',
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {picks.map(({ pli, hits }) => {
-          const cover = pliCover(pli);
           const sum = routineSummary(pli.cards || []);
           const todayState = stateOf(pli.id, today);
           const checked = mine.some((r) => r.routine_id === pli.id && r.date === today && r.manual);
@@ -117,7 +115,7 @@ export default function RecoView({ plis = [], userId = null, health, tone = 'z',
               <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
                 <button type="button" onClick={() => setOpenPli(pli)} aria-label="무엇이 담겼는지 보기"
                   style={{ flex: '0 0 86px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <CurationThumb item={cover.item} radius={12} ratio="4 / 5" showRead={false} clip="" still={cover.still || cover.item.poster_url || ''} emptyText="" />
+                  <PliCover pli={pli} radius={12} />
                 </button>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <button type="button" onClick={() => setOpenPli(pli)}

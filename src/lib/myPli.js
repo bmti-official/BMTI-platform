@@ -5,7 +5,8 @@
 // 동작마다 고른 설정(rc_*)은 routine_cards 의 reps·sets·rest·side·guide 에 담는다.
 import { supabase } from './supabaseClient';
 
-const toRow = (c, i, routineId) => ({
+/** 플리에 담긴 동작 한 줄 — 관리자의 공식 플리 저장도 이 모양을 쓴다 */
+export const pliCardRow = (c, i, routineId) => ({
   routine_id: routineId, card_id: c.id, position: i,
   reps: Number(c.rc_reps) > 0 ? Number(c.rc_reps) : null,
   sets: Number(c.rc_sets) > 0 ? Number(c.rc_sets) : null,
@@ -34,11 +35,13 @@ export async function loadMyPlis(userId, cardsById = {}) {
   }));
 }
 
-/** 새로 만들거나 고친다. p: { id?, title, cards, showNick }. 돌려주는 값: { ok, id, why } */
+/** 새로 만들거나 고친다. p: { id?, title, cards, coverText, showNick }. 돌려주는 값: { ok, id, why } */
 export async function saveMyPli(userId, p) {
   if (!userId) return { ok: false, why: '로그인한 뒤에 만들 수 있어요.' };
   const title = String(p.title || '').trim();
-  const base = { title_z: title, title_m: title, show_nick: !!p.showNick, updated_at: new Date().toISOString() };
+  // 표지 문구 — 적지 않았으면 비운다(표지에 동작 그림만 보인다)
+  const base = { title_z: title, title_m: title, thumb_text: String(p.coverText || '').trim() || null,
+    show_nick: !!p.showNick, updated_at: new Date().toISOString() };
   // 공개(public)로 저장하면 바디플리에 올라간다. 올린 때·만든 사람(닉네임·유형)은 서버가 적는다(52_my_pli.sql).
   // 관리자가 숨긴 플리(hidden)는 상태를 건드리지 않는다.
   if (p.share === 'public' || p.share === 'private') base.share_state = p.share;
@@ -56,7 +59,7 @@ export async function saveMyPli(userId, p) {
     id = data.id;
   }
   if ((p.cards || []).length) {
-    const { error } = await supabase.from('routine_cards').insert(p.cards.map((c, i) => toRow(c, i, id)));
+    const { error } = await supabase.from('routine_cards').insert(p.cards.map((c, i) => pliCardRow(c, i, id)));
     if (error) return { ok: false, id, why: whyOf(error) };
   }
   return { ok: true, id };

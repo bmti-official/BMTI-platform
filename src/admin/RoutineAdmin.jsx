@@ -1,162 +1,58 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { CHARACTER_NAMES } from '../lib/bmtiTypes';
-import { INK, SUB, LINE, BG, ACCENT, box, input, area, label, btn, smallBtn } from './theme';
+import { INK, SUB, LINE, BG, box, label, btn, smallBtn } from './theme';
 import { PublishBadge, TagsInput } from './ui';
-import CharPicker from './CharPicker';
-import ImageInput from './ImageInput';
-import { CurationThumb } from '../features/curation/CurationCard';
-import { fontStack, THUMB_FONTS, THUMB_POS } from '../features/curation/fonts';
-import { CHARACTERS } from '../data';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { SearchBox, MoveButtons } from './listTools';
 import { useSearch } from './useSearch';
 import { moveRow, duplicateRow } from './listActions';
-import { withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
-import { DraftMark } from './editorBits';
+import { missingForPublish, useSavedNote } from './editorState';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
 import BrowseView from '../features/curation/BrowseView';
 import BoxView from '../features/curation/BoxView';
-import { KIND_LABEL, routineSummary, mmss } from '../features/curation/format';
-import { RC_SIDES } from '../features/curation/routineSetup';
-import { cardSetup, REST_LIST } from '../features/curation/cardDefaults';
+import MyPliEditor from '../features/curation/MyPliEditor';
+import { routineSummary, mmss } from '../features/curation/format';
+import { pliCardRow } from '../lib/myPli';
 
 // 플레이리스트(루틴) 등록 화면 — 바디카드를 골라 순서를 정하면 하나의 루틴이 된다.
+// 만드는 창은 이용자의 '마이플리 만들기'와 같은 것이다(MyPliEditor). 이용자가 만드는 방식을 그대로 겪으며 만든다.
+// 제목은 하나(Z·M 공통), 표지는 담긴 동작의 그림이 차례로 나오고 문구만 적는다.
 // 총 소요시간·도구·타겟 부위는 담긴 카드에서 자동으로 계산되므로 따로 입력하지 않는다.
-const EMPTY = {
-  published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true,
-  chars_z: [], chars_m: [],
-  cover_url: '', thumb_text: '', thumb_font: 'pretendard', thumb_pos: 'bc',
-  thumb_color: '#FFFFFF', thumb_scale: 100, thumb_dx: 0, thumb_dy: 0, keywords: [],
-};
 
-const BMTI_OPTIONS = Object.keys(CHARACTER_NAMES);
-
-// 골라 둔 누끼 캐릭터를 그림 주소로 바꿔 넘긴다.
-function charProps(r, tone) {
-  const codes = ((tone === 'm' ? r?.chars_m : r?.chars_z) || []).filter(Boolean);
-  return { charCodes: codes, charImages: codes.map((id) => CHARACTERS.find((c) => c.id === id)?.image).filter(Boolean) };
-}
-
-function CardPicker({ all, chosen, onChange }) {
-  const chosenIds = chosen.map((c) => c.id);
-  const rest = all.filter((c) => !chosenIds.includes(c.id));
-
-  const move = (i, d) => {
-    const next = [...chosen];
-    const j = i + d;
-    if (j < 0 || j >= next.length) return;
-    [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
-  };
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-      <div>
-        <span style={label}>담긴 동작 <span style={{ fontWeight: 600 }}>— 위에서부터 순서대로</span></span>
-        <div style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 8, minHeight: 120, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {chosen.length === 0 && <div style={{ fontSize: 12.5, color: SUB, padding: 10 }}>오른쪽에서 동작을 눌러 담아주세요.</div>}
-          {chosen.map((c, i) => (
-            <div key={c.id} style={{ background: BG, borderRadius: 8, padding: '7px 9px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ width: 18, fontSize: 12, fontWeight: 800, color: SUB, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {c.title_z}
-                </span>
-                <span style={{ fontSize: 11, color: SUB, whiteSpace: 'nowrap' }}>{c.duration_sec > 0 ? mmss(c.duration_sec) : '—'}</span>
-                <button onClick={() => move(i, -1)} disabled={i === 0} style={{ ...smallBtn, padding: '3px 7px', opacity: i === 0 ? 0.35 : 1 }}>↑</button>
-                <button onClick={() => move(i, 1)} disabled={i === chosen.length - 1} style={{ ...smallBtn, padding: '3px 7px', opacity: i === chosen.length - 1 ? 0.35 : 1 }}>↓</button>
-                <button onClick={() => onChange(chosen.filter((x) => x.id !== c.id))} style={{ ...smallBtn, padding: '3px 7px', color: '#B23B36' }}>✕</button>
-              </div>
-              <CardSetup card={c} onChange={(patch) => onChange(chosen.map((x) => (x.id === c.id ? { ...x, ...patch } : x)))} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <span style={label}>담을 수 있는 바디카드</span>
-        <div style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 8, maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {rest.length === 0 && <div style={{ fontSize: 12.5, color: SUB, padding: 10 }}>담을 수 있는 카드가 없습니다. 먼저 ⚡ 바디카드에서 만들어 주세요.</div>}
-          {rest.map((c) => (
-            <button key={c.id} onClick={() => onChange([...chosen, c])}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 8, padding: '7px 9px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
-              <span style={{ fontSize: 10.5, fontWeight: 800, color: '#8A6A3A', background: '#F3EAD8', borderRadius: 999, padding: '2px 7px', whiteSpace: 'nowrap' }}>
-                {KIND_LABEL[c.kind] || c.kind}
-              </span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title_z}</span>
-              <span style={{ fontSize: 11, color: SUB, whiteSpace: 'nowrap' }}>{c.duration_sec > 0 ? mmss(c.duration_sec) : '—'}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// 이 묶음 안에서만 쓰는 설정 — 비워 두면 바디카드에 적어 둔 값을 그대로 쓴다.
-function CardSetup({ card, onChange }) {
-  const base = cardSetup({ kind: card.kind, default_reps: card.default_reps, default_sets: card.default_sets, default_rest: card.default_rest });
-  const pick = (key, list, unit, now) => (
-    <select value={card[key] ?? ''} onChange={(e) => onChange({ [key]: e.target.value === '' ? null : Number(e.target.value) })}
-      style={{ ...tinyPick }}>
-      <option value="">기본 {now}{unit}</option>
-      {list.map((v) => <option key={v} value={v}>{v}{unit}</option>)}
-    </select>
-  );
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, paddingLeft: 25, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 10.5, color: SUB, fontWeight: 700 }}>이 플리에서만</span>
-      {pick('rc_reps', base.repList, '회', base.reps)}
-      {pick('rc_sets', base.setList, '세트', base.sets)}
-      {pick('rc_rest', REST_LIST, '초 쉬기', base.rest)}
-      <select value={card.rc_side || ''} onChange={(e) => onChange({ rc_side: e.target.value || null })} style={{ ...tinyPick }}>
-        {RC_SIDES.map(([v, ko]) => <option key={v} value={v}>{ko}</option>)}
-      </select>
-    </div>
-  );
-}
-
-const tinyPick = { fontSize: 11, fontWeight: 700, color: INK, background: '#fff', border: `1px solid ${LINE}`,
-  borderRadius: 6, padding: '3px 5px', fontFamily: 'inherit', cursor: 'pointer' };
+// 저장 안 한 내용이 있는지 가리는 지문 — 제목·표지 문구·공개 여부·담긴 동작과 그 설정
+const sigOf = (d) => JSON.stringify([d.title, d.coverText, d.share,
+  (d.cards || []).map((c) => [c.id, c.rc_reps ?? null, c.rc_sets ?? null, c.rc_rest ?? null, c.rc_side || '', c.rc_guide || ''])]);
 
 function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
-  // 저장 안 하고 나간 내용이 있으면 물어보고 이어 쓴다 — 담아 둔 동작 목록까지 함께.
-  const [start] = useState(() => withDraft({ ...(row.routine || EMPTY), cards: row.cards || [] }, 'routine', row.routine));
-  const [f, setF] = useState(() => { const rest = { ...start }; delete rest.cards; ['chars_z', 'chars_m'].forEach((k) => { if (!Array.isArray(rest[k])) rest[k] = []; }); return rest; });
-  const [chosen, setChosen] = useState(() => start.cards || []);
+  const r = row.routine || {};
+  const [initial] = useState(() => ({ id: r.id, title: r.title_z || r.title_m || '', cards: row.cards || [],
+    coverText: r.thumb_text || '', share: r.published ? 'public' : 'private' }));
+  const [keywords, setKeywords] = useState(() => r.keywords || []);
+  const [sig, setSig] = useState(() => sigOf(initial));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
-  const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
-  useUnsavedGuard(f, chosen);
-  const draftAt = useAutoDraft('routine', row.routine, { ...f, cards: chosen });
-  const s = routineSummary(chosen);
+  useUnsavedGuard(sig, keywords);
+  const onDraft = useCallback((d) => setSig(sigOf(d)), []);
 
-  const save = async () => {
-    if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
+  const save = async (p) => {
+    const published = p.share === 'public';
     // 빈 플레이리스트가 손님에게 보이지 않게 한다.
-    const missing = f.published ? missingForPublish('routine', { cardCount: chosen.length }) : [];
+    const missing = published ? missingForPublish('routine', { cardCount: p.cards.length }) : [];
     if (missing.length) {
       setErr(`${missing.join(' · ')}이(가) 비어 있어 공개할 수 없습니다. 채운 뒤 다시 눌러 주세요.`);
       return;
     }
     setSaving(true); setErr('');
     const payload = {
-      published: f.published, sort_order: f.sort_order,
-      title_z: f.title_z, title_m: f.title_m,
-      bmti_code: f.bmti_code || null,
-      skip_opening: f.skip_opening !== false,
-      chars_z: f.chars_z || [], chars_m: f.chars_m || [],
-      cover_url: f.cover_url || null, thumb_text: f.thumb_text || null,
-      thumb_font: f.thumb_font || 'pretendard', thumb_pos: f.thumb_pos || 'bc',
-      thumb_color: f.thumb_color || '#FFFFFF', thumb_scale: Number(f.thumb_scale) || 100,
-      thumb_dx: Number(f.thumb_dx) || 0, thumb_dy: Number(f.thumb_dy) || 0,
-      keywords: f.keywords || [],
+      published, title_z: p.title, title_m: p.title,     // 제목은 하나 — 두 칸에 같은 글을 넣는다
+      thumb_text: p.coverText || null,
+      keywords,
       owner_id: null,                        // 관리자가 만드는 공식 추천 루틴
       updated_at: new Date().toISOString(),
     };
-    let id = f.id;
+    if (!p.id) payload.skip_opening = true;
+    let id = p.id;
     const write = () => (id
       ? supabase.from('routines').update(payload).eq('id', id).select('id').single()
       : supabase.from('routines').insert(payload).select('id').single());
@@ -175,153 +71,33 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
     id = data.id;
     // 담긴 동작은 통째로 갈아끼운다 — 순서까지 그대로 맞추는 가장 단순한 방법.
     await supabase.from('routine_cards').delete().eq('routine_id', id);
-    if (chosen.length) {
-      const rows = chosen.map((c, i) => ({
-        routine_id: id, card_id: c.id, position: i,
-        reps: c.rc_reps ?? null, sets: c.rc_sets ?? null, rest: c.rc_rest ?? null, side: c.rc_side || null,
-      }));
-      const { error } = await supabase.from('routine_cards').insert(rows);
-      if (error) { setSaving(false); setErr('동작 저장 실패: ' + error.message); return; }
+    if (p.cards.length) {
+      const { error: e2 } = await supabase.from('routine_cards').insert(p.cards.map((c, i) => pliCardRow(c, i, id)));
+      if (e2) { setSaving(false); setErr('동작 저장 실패: ' + e2.message); return; }
     }
     setSaving(false);
-    dropDraft('routine', row.routine?.id);
-    onSaved(f.published ? '공개로 저장했습니다.' : '비공개로 저장했습니다.');
+    onSaved(published ? '공개로 저장했습니다.' : '비공개로 저장했습니다.');
   };
 
   return (
     <div style={{ ...box, marginBottom: 16 }}>
-      <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 14 }}>
-        {f.id ? `루틴 #${f.id} 수정` : '새 루틴'}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div>
-          <span style={label}>제목 · Z 유형 <span style={{ color: '#B23B36' }}>담백하게</span></span>
-          <input style={input} value={f.title_z} onChange={(e) => set('title_z')(e.target.value)}
-            placeholder="퇴근 후 굳은 몸 녹이는 침대-폼롤러 이완 루틴" />
-        </div>
-        <div>
-          <span style={label}>제목 · M 유형 <span style={{ color: '#B23B36' }}>다정하게</span></span>
-          <input style={input} value={f.title_m} onChange={(e) => set('title_m')(e.target.value)}
-            placeholder="오늘 하루 수고한 몸, 침대에서 천천히 풀어봐요" />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 14 }}>
-        <CardPicker all={allCards} chosen={chosen} onChange={setChosen} />
-      </div>
-
-      {/* 담긴 카드에서 자동으로 계산되는 값들 — 관리자가 따로 입력하지 않는다 */}
-      <div style={{ ...box, background: BG, padding: '11px 14px', marginBottom: 14, fontSize: 12.5, color: SUB, fontWeight: 600 }}>
-        총 <b style={{ color: INK }}>{s.durationSec > 0 ? mmss(s.durationSec) : '—'}</b> · 동작 {s.count}개
-        {s.tools.length > 0 && <> · 도구 {s.tools.join(', ')}</>}
-        {s.coreParts.length > 0 && <> · 타겟 {s.coreParts.length}곳</>}
-      </div>
-
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
-        <div>
-          <span style={label}>BEST 루틴 배너용 유형 <span style={{ fontWeight: 600 }}>— 비워두면 배너에 안 씀</span></span>
-          <select value={f.bmti_code || ''} onChange={(e) => set('bmti_code')(e.target.value)}
-            style={{ ...input, width: 220, cursor: 'pointer' }}>
-            <option value="">지정 안 함</option>
-            {BMTI_OPTIONS.map((c) => <option key={c} value={c}>{c} · {CHARACTER_NAMES[c]}</option>)}
-          </select>
-        </div>
-        <div>
-          <span style={label}>정렬 순서</span>
-          <input style={{ ...input, width: 90 }} type="number" value={f.sort_order}
-            onChange={(e) => set('sort_order')(Number(e.target.value) || 0)} />
-        </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 800, color: INK, cursor: 'pointer', paddingBottom: 9 }}>
-          <input type="checkbox" checked={f.published} onChange={(e) => set('published')(e.target.checked)} />
-          공개 <span style={{ fontWeight: 600, color: SUB }}>(체크해야 이용자에게 보입니다)</span>
-        </label>
-      </div>
-
-      {/* 표지 — 목록에서 플리마다 얼굴이 되는 자리 */}
-      <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>표지 <span style={{ fontWeight: 600, color: SUB }}>— 세로 4:5</span></div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>
-          비워 두면 담긴 첫 동작의 표지를 빌려 씁니다. 사진이나 영상을 올리면 그것이 얼굴이 됩니다.
-        </div>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 300px', minWidth: 260 }}>
-            <span style={label}>사진 또는 영상</span>
-            <ImageInput allowVideo value={f.cover_url} onChange={set('cover_url')}
-              hint="세로로 긴 4:5를 권합니다. mp4·webm도 됩니다." />
-            <div style={{ height: 12 }} />
-            <span style={label}>표지 문구 <span style={{ fontWeight: 600 }}>— Z·M 공통 · 엔터로 줄을 바꿉니다</span></span>
-            <textarea style={{ ...area, fontSize: 16, fontWeight: 800, padding: '12px 14px', minHeight: 58, lineHeight: 1.4 }}
-              value={f.thumb_text || ''} onChange={(e) => set('thumb_text')(e.target.value)}
-              placeholder="자기 전 10분" />
-            <div style={{ height: 12 }} />
-            <span style={label}>검색어 <span style={{ fontWeight: 600 }}>— 손님이 이 말로 찾으면 나오게 · 쉼표로 구분</span></span>
-            <TagsInput value={f.keywords || []} onChange={set('keywords')} placeholder="예: 아침, 출근 전, 자기 전" />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 132px', gap: 12, marginTop: 12 }}>
-              <div>
-                <span style={label}>글씨체</span>
-                <select value={f.thumb_font || 'pretendard'} onChange={(e) => set('thumb_font')(e.target.value)}
-                  style={{ ...input, cursor: 'pointer', fontFamily: fontStack(f.thumb_font) }}>
-                  {THUMB_FONTS.map((ft) => <option key={ft.key} value={ft.key}>{ft.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <span style={label}>문구 색</span>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <input type="color" value={f.thumb_color || '#FFFFFF'} onChange={(e) => set('thumb_color')(e.target.value)}
-                    style={{ width: 38, height: 38, padding: 2, border: `1px solid ${LINE}`, borderRadius: 8, background: '#fff', cursor: 'pointer', flexShrink: 0 }} />
-                  <input style={{ ...input, flex: 1, minWidth: 0, padding: '10px 8px', fontSize: 12.5 }} value={f.thumb_color || '#FFFFFF'}
-                    onChange={(e) => set('thumb_color')(e.target.value)} />
-                </div>
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <span style={label}>문구 자리 <span style={{ fontWeight: 600 }}>— 아홉 칸 중 하나</span></span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 4 }}>
-                  {THUMB_POS.map((tp) => {
-                    const on = (f.thumb_pos || 'bc') === tp.key;
-                    return (
-                      <button key={tp.key} type="button" title={tp.label} onClick={() => set('thumb_pos')(tp.key)}
-                        style={{ height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0,
-                          background: on ? ACCENT : '#fff', boxShadow: on ? 'none' : `inset 0 0 0 1px ${LINE}` }} />
-                    );
-                  })}
-                </div>
-              </div>
+      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+        {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 10 }}>{err}</div>}
+        <MyPliEditor official inline initial={initial} allCards={allCards} saving={saving}
+          heading={r.id ? `루틴 #${r.id} 수정` : '새 루틴'}
+          onDraft={onDraft}
+          onSave={save}
+          onCancel={() => { if (confirmLeave()) onCancel(); }}
+          onDelete={r.id ? () => onDelete(r.id) : null}
+          // 미리보기 — 아직 저장 안 한 지금 내용 그대로
+          onPeek={(d) => onPreview({ routine: { ...r, title_z: d.title, title_m: d.title, thumb_text: d.coverText }, cards: d.cards })}
+          // 이용자 창에는 없는 칸 — 찾기에 걸릴 말
+          extra={(
+            <div style={{ marginBottom: 16 }}>
+              <span style={label}>검색어 <span style={{ fontWeight: 600 }}>— 손님이 이 말로 찾으면 나오게 · 쉼표로 구분</span></span>
+              <TagsInput value={keywords} onChange={setKeywords} placeholder="예: 아침, 출근 전, 자기 전" />
             </div>
-          </div>
-          <div style={{ flex: '0 0 200px', maxWidth: '100%' }}>
-            <span style={label}>미리보기 <span style={{ fontWeight: 600 }}>— 4:5</span></span>
-            <CurationThumb item={f} ratio="4 / 5" showRead={false} clip={f.cover_url && /\.(mp4|webm|mov)(\?|$)/i.test(f.cover_url) ? f.cover_url : ''}
-              emptyText="표지를 올리면 보여요" />
-          </div>
-        </div>
-      </div>
-
-      {/* 묶음을 고르는 이유가 유형이므로, 추천 유형은 여기에만 둔다 */}
-      <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>추천 유형 누끼 캐릭터</div>
-        <div style={{ fontSize: 11.5, color: SUB, marginBottom: 10 }}>제목 위에 &lsquo;추천 유형&rsquo;으로 놓입니다 · 유형마다 최대 4개</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          {[['chars_z', 'Z 유형', 'Z'], ['chars_m', 'M 유형', 'M']].map(([key, lb, suffix]) => (
-            <div key={key}>
-              <span style={label}>{lb} <span style={{ color: SUB, fontWeight: 700 }}>({(f[key] || []).length}/4)</span></span>
-              <CharPicker suffix={suffix} value={f[key] || []} onChange={set(key)} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {err && <div style={{ fontSize: 13, color: '#B23B36', fontWeight: 700, marginBottom: 12 }}>{err}</div>}
-      <div style={{ position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
-        background: '#fff', margin: '4px -18px -18px', padding: '12px 18px', borderTop: `1px solid ${LINE}`,
-        borderRadius: '0 0 13px 13px', boxShadow: '0 -6px 14px rgba(23,21,15,0.06)' }}>
-        <button onClick={save} disabled={saving} style={btn(true)}>{saving ? '저장 중…' : '저장'}</button>
-        <button onClick={() => onPreview({ routine: f, cards: chosen })} style={btn(false)}>미리보기</button>
-        <button onClick={() => { if (confirmLeave()) onCancel(); }} style={btn(false)}>취소</button>
-        <DraftMark at={draftAt} />
-        {f.id && (
-          <button onClick={() => onDelete(f.id)} style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36' }}>삭제</button>
-        )}
+          )} />
       </div>
     </div>
   );
@@ -355,10 +131,7 @@ export default function RoutineAdmin() {
     setBusy(true);
     const r = await duplicateRow('routines', row, ['cards']);
     if (!r.err && (row.cards || []).length) {
-      await supabase.from('routine_cards').insert(row.cards.map((c, i) => ({
-        routine_id: r.id, card_id: c.id, position: i,
-        reps: c.rc_reps ?? null, sets: c.rc_sets ?? null, rest: c.rc_rest ?? null, side: c.rc_side || null,
-      })));
+      await supabase.from('routine_cards').insert(row.cards.map((c, i) => pliCardRow(c, i, r.id)));
     }
     setBusy(false);
     if (r.err) { alert('복제 실패: ' + r.err); return; }
@@ -386,15 +159,16 @@ export default function RoutineAdmin() {
       setRows((rt.data || []).map((r) => ({
         ...r,
         cards: (links.data || []).filter((l) => l.routine_id === r.id)
-          .map((l) => (byId[l.card_id] ? { ...byId[l.card_id], rc_reps: l.reps, rc_sets: l.sets, rc_rest: l.rest, rc_side: l.side || '' } : null))
+          .map((l) => (byId[l.card_id] ? { ...byId[l.card_id], rc_reps: l.reps, rc_sets: l.sets, rc_rest: l.rest, rc_side: l.side || '', rc_guide: l.guide || '' } : null))
           .filter(Boolean),
       })));
     })();
     return () => { alive = false; };
   }, [tick]);
 
-  const remove = async (id) => {
-    if (!window.confirm(`루틴 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
+  // asked: 편집 창의 '이 플리 지우기'에서 이미 물어봤으면 다시 묻지 않는다
+  const remove = async (id, asked = false) => {
+    if (!asked && !window.confirm(`루틴 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
     const { error } = await supabase.from('routines').delete().eq('id', id);
     if (error) { alert('삭제 실패: ' + error.message); return; }
     load();
@@ -420,7 +194,7 @@ export default function RoutineAdmin() {
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목으로 찾기" />
         <button onClick={() => setScreen(true)} style={{ ...btn(false), marginLeft: 'auto' }}>📱 바디플리 화면</button>
         <button onClick={() => setBox(true)} style={btn(false)}>📦 내 보관함 화면</button>
-        <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={btn(true)}>+ 새 루틴</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ routine: null, cards: [] }); }} style={btn(true)}>+ 새 루틴</button>
       </div>
 
       {err && (
@@ -433,9 +207,10 @@ export default function RoutineAdmin() {
       )}
 
       {editing && (
-        <Editor row={editing} allCards={allCards} onCancel={() => setEditing(null)}
+        // key: 다른 루틴을 고치러 넘어가면 창을 새로 연다(앞 루틴에 적던 내용이 따라오지 않게)
+        <Editor key={editing.routine?.id || 'new'} row={editing} allCards={allCards} onCancel={() => setEditing(null)}
           onSaved={(msg) => { setEditing(null); load(); setSaved(msg || '저장했습니다.'); }}
-          onDelete={(id) => { remove(id); setEditing(null); }} onPreview={(d) => setPreview(d)} />
+          onDelete={(id) => { remove(id, true); setEditing(null); }} onPreview={(d) => setPreview(d)} />
       )}
 
       {screen && (
@@ -455,7 +230,7 @@ export default function RoutineAdmin() {
               // 마이플리 — 미리보기에선 서버에 쓰지 않고 이 창 안에서만 담는다
               myPlis={myPlis} allCards={allCards.filter((c) => c.published)}
               onSaveMine={(p) => setMyPlis((prev) => {
-                const row = { id: p.id || `mine-${Date.now()}`, title_z: p.title, title_m: p.title, cards: p.cards, mine: true, show_nick: !!p.showNick };
+                const row = { id: p.id || `mine-${Date.now()}`, title_z: p.title, title_m: p.title, thumb_text: p.coverText || '', cards: p.cards, mine: true, show_nick: !!p.showNick };
                 return p.id ? prev.map((x) => (x.id === p.id ? row : x)) : [row, ...prev];
               })} />
           )}
@@ -469,11 +244,11 @@ export default function RoutineAdmin() {
               <div>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 8 }}>목록에서</div>
                 <RoutineView routine={preview.routine} cards={preview.cards} tone={tone}
-                  bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} {...charProps(preview.routine, tone)} />
+                  bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} />
               </div>
               <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: SUB, marginBottom: 10 }}>담긴 동작 한눈에 — ‘일단 구경하기’는 위 표지에서 바로 눌러 보세요</div>
-                <RoutineDetail routine={preview.routine} cards={preview.cards} tone={tone} {...charProps(preview.routine, tone)} />
+                <RoutineDetail routine={preview.routine} cards={preview.cards} tone={tone} />
               </div>
             </div>
           )}
@@ -486,7 +261,7 @@ export default function RoutineAdmin() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 780 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['차례', '상태', '#', '제목(Z)', '동작', '총 시간', 'BEST 유형', '조회', '저장', ''].map((h) => (
+              {['차례', '상태', '#', '제목', '표지 문구', '동작', '총 시간', '조회', '저장', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -505,9 +280,9 @@ export default function RoutineAdmin() {
                   <td style={{ ...td }}><PublishBadge published={r.published} onClick={() => togglePublish(r)} /></td>
                   <td style={td}>{r.id}</td>
                   <td style={{ ...td, fontSize: 13, fontWeight: 700, color: INK }}>{r.title_z}</td>
+                  <td style={td}>{String(r.thumb_text || '').replace(/\n/g, ' ') || '—'}</td>
                   <td style={td}>{s.count}개</td>
                   <td style={td}>{s.durationSec > 0 ? mmss(s.durationSec) : '—'}</td>
-                  <td style={td}>{r.bmti_code || '—'}</td>
                   <td style={td}>{r.view_count ?? 0}</td>
                   <td style={td}>{r.save_count ?? 0}</td>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
