@@ -52,8 +52,9 @@ export function CharPic({ src, code, h = 38 }) {
 // still: 격자용 작은 그림(바디카드 poster_url). 있으면 영상(clip) 대신 이것만 깐다 — 격자가 가벼워진다.
 // frames·frameAt: 플리 표지 — 담긴 동작의 그림 [{ url, y }]을 차례로 보여 준다. frameAt이 오르면 다음 그림이 위로 번져 올라온다.
 // textLift: 아래쪽 문구를 그만큼(px) 올린다 — 칸 아래 모서리에 표(시간·동작 수)를 따로 얹는 곳에서 쓴다.
+// textDrop: 위쪽 문구를 그만큼(px) 내린다 — 칸 위 모서리에 이름표(카드·플리·읽을거리)를 얹는 곳에서 쓴다.
 export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip: clipIn = '', still = '', emptyText = '대표 이미지 없음', onClipEnd,
-  frames = null, frameAt = 0, textLift = 0 }) {
+  frames = null, frameAt = 0, textLift = 0, textDrop = 0 }) {
   const slide = Array.isArray(frames) && frames.length > 0;
   const clip = still || slide ? '' : clipIn;
   // 표지에 영상을 깔면, 화면에 들어올 때 소리 없이 처음부터 끝까지 돌려 준다.
@@ -119,11 +120,12 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         const pad = big ? 18 : 12;
         // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
         const bottomPad = pos.align === 'flex-end' ? ((badge || showRead) ? pad + 30 : pad + textLift) : pad;
+        const topPad = pos.align === 'flex-start' ? pad + textDrop : pad;
         // 바디카드는 종류마다 다른 형광펜이 문구 아래에 대충 그어진다.
         const mark = KIND_MARK[item.kind];
         return (
           <div style={{ position: 'absolute', inset: 0, zIndex: 3, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
-            padding: `${pad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
+            padding: `${topPad}px ${pad}px ${bottomPad}px`, pointerEvents: 'none' }}>
             <span style={{ fontSize: Math.max(9, Math.round((boxW || 360) * (big ? 0.077 : 0.058) * scale)), fontWeight: 900, color, lineHeight: 1.25, letterSpacing: '-0.02em', wordBreak: 'keep-all', whiteSpace: 'pre-line',
               textAlign: pos.text, fontFamily: fontStack(item.thumb_font), textShadow: thumbShadow(color),
               // 아홉 칸 자리에서 가로·세로로 조금씩 더 민다

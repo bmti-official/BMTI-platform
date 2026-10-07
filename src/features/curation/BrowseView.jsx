@@ -11,7 +11,7 @@ import CardFeed from './CardFeed';
 import NewsCard from './NewsCard';
 import PliGrid from './PliGrid';
 import PliFeed from './PliFeed';
-import { mmss } from './format';
+import { mmss, routineSummary } from './format';
 import PickRow from './PickRow';
 import { cardTotalSec } from './cardDefaults';
 import { cardCount } from './newsSlides';
@@ -32,6 +32,14 @@ const MARK = {
   read: { color: '#8A6A3A', background: '#FDF6DC' },
   pli: { color: '#5B4BA8', background: '#ECE7FA' },
   card: { color: '#1C1A17', background: '#fff' },
+};
+// '전체'에서는 세 갈래가 섞여 나온다 — 왼쪽 위에 아주 작게 무엇인지 적어 준다
+const KIND_NAME = { read: '읽을거리', pli: '플리', card: '카드' };
+const NAME_DROP = 7;   // 이름표에 가리지 않게 위쪽 문구를 내리는 높이
+// 플리 칸의 오른쪽 아래 — 동작 수와 다 하면 걸리는 시간. 예: 3개 8분 48초
+const pliMark = (r) => {
+  const s = routineSummary(r.cards || []);
+  return s.durationSec > 0 ? `${s.count}개 ${mmss(s.durationSec)}` : `${s.count}개`;
 };
 
 // 내 몸에 맞는 것부터 — 건강 정보 한 장에 적은 불편한 부위를 다루는 것이 앞에 선다.
@@ -167,8 +175,9 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
             // 카드뉴스로 만든 글이면 장수를, 아직 긴 글이면 읽는 시간을 적는다
             const slides = cardCount((tone === 'm' ? item.slides_m : item.slides_z) || []);
             const mark = kind === 'read' ? (slides > 0 ? `${slides}장` : `${readMin(item, tone)}분`)
-              : kind === 'pli' ? `플리 · 동작 ${(item.cards || []).length}개`
+              : kind === 'pli' ? pliMark(item)
                 : (cardTotalSec(item) > 0 ? mmss(cardTotalSec(item)) : '');
+            const named = tab === 'all';
             return (
               <button key={`${kind}-${item.id}`} type="button" onClick={() => open(kind, item)}
                 style={{ position: 'relative', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -176,8 +185,16 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
                   // 플리 — 담긴 동작의 그림이 차례로. 이 칸엔 제목이 따로 없으니, 표지 문구를 안 적었으면 제목을 얹는다
                   ? <PliCover pli={item} radius={2} titleIfEmpty lift={16} />
                   : <CurationThumb item={cover.item} radius={2} ratio="4 / 5" showRead={false}
-                    clip={cover.clip} still={cover.still} emptyText="" />}
-                {/* 오른쪽 아래 — 읽을거리는 장수(또는 시간), 플리는 담긴 동작 수, 동작은 걸리는 시간 */}
+                    clip={cover.clip} still={cover.still} emptyText="" textDrop={named ? NAME_DROP : 0} />}
+                {/* 왼쪽 위 — '전체'에서만, 무엇인지(카드·플리·읽을거리) */}
+                {named && (
+                  <span style={{ position: 'absolute', left: 4, top: 4, fontSize: 8, fontWeight: 800, letterSpacing: '-0.01em',
+                    ...MARK[kind], boxShadow: 'inset 0 0 0 0.5px rgba(28,26,23,0.10)',
+                    borderRadius: 5, padding: '1.5px 4px', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                    {KIND_NAME[kind]}
+                  </span>
+                )}
+                {/* 오른쪽 아래 — 읽을거리는 장수(또는 시간), 플리는 동작 수와 다 하면 걸리는 시간, 동작은 걸리는 시간 */}
                 {mark && (
                   <span style={{ position: 'absolute', right: 5, bottom: 5, fontSize: 9.5, fontWeight: 800,
                     ...MARK[kind], borderRadius: 6, padding: '2px 5px', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
