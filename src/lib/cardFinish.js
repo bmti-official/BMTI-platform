@@ -71,3 +71,32 @@ export async function todayFinishes() {
   } catch { /* 이름 없이 횟수만 */ }
   return out;
 }
+
+// ── 추천 루틴(플리)의 수행 표시 ─────────────────────────────────
+// 따라 하면 저절로 남는 기록에 더해, 영상 없이 한 날은 손님이 '했어요'를 눌러 남긴다.
+// 직접 누른 것은 '끝까지 함(done) + 마친 동작 0(sets_done 0)'으로 담아, 저절로 남은 것과 가른다.
+
+// 자동 기록을 꺼 둔 사람도 지난 기록은 보고, 직접 누른 것은 남길 수 있어야 한다
+const myId = () => { try { return JSON.parse(localStorage.getItem('bmti_user') || 'null')?.id || null; } catch { return null; } };
+
+/** from(날짜)부터 지금까지 플리를 한 기록 — [{ date, routine_id, done, manual }] */
+export async function pliFinishesSince(fromISO) {
+  const userId = myId();
+  if (!userId) return [];
+  const { data, error } = await supabase.from('card_finishes')
+    .select('date,routine_id,done,sets_done').eq('user_id', userId).eq('kind', 'routine').gte('date', fromISO);
+  if (error || !data) return [];
+  return data.filter((r) => r.routine_id != null)
+    .map((r) => ({ date: r.date, routine_id: r.routine_id, done: !!r.done, manual: !!r.done && Number(r.sets_done) === 0 }));
+}
+
+/** 오늘 이 플리를 '했어요'로 표시하거나 푼다. 되면 true */
+export async function setPliChecked(routineId, on) {
+  const userId = myId();
+  if (!userId) return false;
+  const q = supabase.from('card_finishes');
+  const { error } = on
+    ? await q.insert({ user_id: userId, date: todayISO(), kind: 'routine', routine_id: routineId, card_id: null, done: true, sets_done: 0 })
+    : await q.delete().eq('user_id', userId).eq('date', todayISO()).eq('kind', 'routine').eq('routine_id', routineId).eq('done', true).eq('sets_done', 0);
+  return !error;
+}

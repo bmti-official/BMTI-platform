@@ -10,6 +10,7 @@ import { CHARACTERS } from '../data';
 import { Mallang } from './Mallang';
 import { todayISO, getEntryForDate } from '../lib/diaryHistory';
 import MallangDiscoveryReport from './MallangDiscoveryReport';
+import { RECO_TAB } from '../lib/tabNames';
 import BmtiPartnerPopup from './BmtiPartnerPopup';
 import TypeGallery from './TypeGallery';
 import DiscoveryConsentPrompt from './DiscoveryConsentPrompt';
@@ -116,6 +117,10 @@ const Bolt3D = ({ size = 24, id = 'nav' }) => (
     </g>
   </svg>
 );
+// 추천루틴 — 체크가 찍힌 목록(이번 주에 할 것)
+const RecoMark = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3.5" width="16" height="17.5" rx="3" /><path d="M8 9.5l1.6 1.6L12.6 8M8 15.5l1.6 1.6 3-3.1M15.5 10h1M15.5 16h1" /></svg>
+);
 const GlassMark = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>
 );
@@ -178,7 +183,7 @@ const AppScrollTop = () => {
   );
 };
 
-const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode, selfTab = 'browse', setSelfTab }) => {
+const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode, selfTab = 'browse', setSelfTab, hasReco = false }) => {
 
   const [lastChatDate, setLastChatDate] = useState(localStorage.getItem('last_chat_date'));
 
@@ -269,9 +274,10 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       { key: 'back', label: '이전', icon: <BackMark />, on: goBack },
       { key: 'browse', label: '둘러보기', icon: <GlassMark />, on: () => setSelfTab && setSelfTab('browse') },
       { key: 'char' },
-      // 바디플리는 둘러보기 안으로 들어갔다. 비운 자리에는 강사·회원을 잇는 칸이 들어올 예정이라,
-      // 그때까지는 내 보관함이 두 칸 너비를 써서 가운데 캐릭터 자리가 틀어지지 않게 한다.
-      { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box'), wide: true },
+      // 바디플리가 둘러보기 안으로 들어가며 비운 자리 — 추천할 공식 플리가 있으면 '추천루틴' 칸이 선다.
+      // 없을 때는 내 보관함이 두 칸 너비를 써서 가운데 캐릭터 자리가 틀어지지 않게 한다.
+      ...(hasReco ? [{ key: 'reco', label: RECO_TAB, icon: <RecoMark />, on: () => setSelfTab && setSelfTab('reco') }] : []),
+      { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box'), wide: !hasReco },
     ],
   };
   // ── 오른쪽 위 마이페이지 알약 ──

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import BrowseView from '../curation/BrowseView';
 import BoxView from '../curation/BoxView';
+import RecoView from '../reco/RecoView';
 import { CurationDetail } from '../curation/CurationCard';
 import { KeepContext } from '../curation/keep';
 import { toneOf } from '../curation/format';
@@ -175,7 +176,12 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     <KeepContext.Provider value={keep}>
       <div style={{ paddingBottom: 20 }}>
         {/* 바디플리는 둘러보기 안의 한 갈래다(예전에는 하단 네비에 따로 있었다) */}
-        {tab !== 'box' && (
+        {/* 추천루틴 — 공식 바디플리 가운데 내 불편한 부위에 맞는 것을 골라 준다(회원이 올린 플리는 넣지 않는다) */}
+        {tab === 'reco' && (
+          <RecoView plis={pub.plis.filter((r) => !r.owner_id)} userId={userId} health={health} tone={tone} bmtiCode={bmtiCode}
+            onOpenSheet={() => setSheet('edit')} onRequireLogin={onRequireLogin} />
+        )}
+        {tab !== 'box' && tab !== 'reco' && (
           <BrowseView cards={pub.cards} reads={pub.reads} routines={baroList} tone={tone} bmtiCode={bmtiCode}
             onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }}
             fit={{ on: fitOn && health.has, parts: health.parts, label: health.labels.join('·') || '불편한 곳 없음', onToggle: toggleFit }}
@@ -224,7 +230,11 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         <MallangInfoPopup mode="all" userInfo={me} isLoggedIn={!!me} setUserProfile={setUserProfile}
           gender={userProfile?.kakaoGender || userProfile?.kakao_gender}
           onClose={() => setSheet(null)}
-          onSaved={() => { setSheetVer((v) => v + 1); setFit(true); setNote('내 몸에 맞는 것부터 보여 드려요'); }} />
+          onSaved={() => {
+            setSheetVer((v) => v + 1);
+            if (tab === 'reco') { setNote('적어 주신 곳에 맞춰 다시 골랐어요'); return; }
+            setFit(true); setNote('내 몸에 맞는 것부터 보여 드려요');
+          }} />
       )}
 
       {note && (

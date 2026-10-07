@@ -54,6 +54,20 @@ function App() {
   );
   // 자기점검 층 — 둘러보기 · 바디플리 · 내 보관함
   const [selfTab, setSelfTab] = useState('browse');
+  // 추천루틴 칸 — 추천할 공식 바디플리가 하나라도 공개돼 있을 때만 하단 네비에 세운다.
+  // 지난번에 본 값을 기억해 두어, 다시 들어올 때 칸이 뒤늦게 생기며 자리가 흔들리지 않게 한다.
+  const [hasReco, setHasReco] = useState(() => { try { return localStorage.getItem('bmti_reco_tab') === '1'; } catch { return false; } });
+  useEffect(() => {
+    let alive = true;
+    supabase.from('routines').select('id', { count: 'exact', head: true }).is('owner_id', null).eq('published', true)
+      .then(({ count, error }) => {
+        if (!alive || error) return;
+        const on = (count || 0) > 0;
+        setHasReco(on);
+        try { localStorage.setItem('bmti_reco_tab', on ? '1' : '0'); } catch { /* 무시 */ }
+      });
+    return () => { alive = false; };
+  }, []);
   // 지난달 편지 — 한 달이 지나 처음 들어왔을 때 한 번 띄운다
   const [letter, setLetter] = useState(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -386,6 +400,7 @@ function App() {
         bmtiCode={bmtiCode}
         selfTab={selfTab}
         setSelfTab={setSelfTab}
+        hasReco={hasReco}
       />
 
       <main>
