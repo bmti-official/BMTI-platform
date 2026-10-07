@@ -8,15 +8,11 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "gen:magazine": "node scripts/gen-magazine.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "build:domain": "BUILD_TARGET=domain vite build",
     "deploy:domain": "npm run build:domain && echo bmti-official.co.kr > dist/CNAME && gh-pages -d dist",
-    "gen:types": "node scripts/gen-type-pages.mjs",
-    "gen:info": "node scripts/gen-info-pages.mjs",
-    "gen:sitemap": "node scripts/gen-sitemap.mjs",
-    "gen:pages": "npm run gen:types && npm run gen:info && npm run gen:magazine && npm run gen:sitemap"
+    "gen:sitemap": "node scripts/gen-sitemap.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",

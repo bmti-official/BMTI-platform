@@ -1,8 +1,8 @@
 // sitemap.xml을 실제 존재하는 페이지에서 만들어낸다.
 //   node scripts/gen-sitemap.mjs
 // 손으로 관리하다 보면 내용 없는 주소가 남거나 새 페이지가 빠지기 쉬워서 자동 생성한다.
-import { writeFileSync, readFileSync, existsSync, readdirSync } from 'fs';
-import { SITE } from './lib/shell.mjs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+const SITE = 'https://bmti-official.co.kr';
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -23,18 +23,7 @@ const add = (loc, priority, changefreq, file) => {
 };
 
 add(`${SITE}/`, '1.0', 'weekly');
-add(`${SITE}/t/`, '0.9', 'monthly', 'public/t/index.html');
-for (const f of readdirSync('public/t').filter((f) => f.endsWith('.html') && f !== 'index.html').sort()) {
-  add(`${SITE}/t/${f}`, '0.8', 'monthly', `public/t/${f}`);
-}
-add(`${SITE}/magazine.html`, '0.9', 'weekly', 'public/magazine.html');
-if (existsSync('public/magazine')) {
-  for (const f of readdirSync('public/magazine').filter((f) => f.endsWith('.html')).sort()) {
-    add(`${SITE}/magazine/${f}`, '0.7', 'monthly', `public/magazine/${f}`);
-  }
-}
-add(`${SITE}/about.html`, '0.6', 'yearly', 'public/about.html');
-add(`${SITE}/contact.html`, '0.5', 'yearly', 'public/contact.html');
+// 유형 설명·건강 매거진·서비스 소개·문의 정적 페이지는 걷어 냈다(2026-10-07). 남은 것은 앱과 약관 두 장이다.
 add(`${SITE}/privacy.html`, '0.3', 'yearly', 'public/privacy.html');
 add(`${SITE}/terms.html`, '0.3', 'yearly', 'public/terms.html');
 
