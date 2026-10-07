@@ -1,7 +1,7 @@
-// 마이플리 만들기·고치기 — 이용자가 바로카드를 골라 자기 플리로 묶는다.
+// 마이플리 만들기·고치기 — 이용자가 바디카드를 골라 자기 플리로 묶는다.
 //
-// 처음부터 만들 때도, 보관한 바로플리를 가져와 고칠 때도 이 창을 쓴다.
-// 가져와 고칠 땐 복사본을 고친다 — 원래 바로플리는 그대로 둔다.
+// 처음부터 만들 때도, 보관한 바디플리를 가져와 고칠 때도 이 창을 쓴다.
+// 가져와 고칠 땐 복사본을 고친다 — 원래 바디플리는 그대로 둔다.
 import { useRef, useState } from 'react';
 import { CurationThumb } from './CurationCard';
 import { pickCardTone, routineSummary, mmss } from './format';
@@ -13,19 +13,19 @@ const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#C9975A', YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A';
 const MAX_CARDS = 12;
 const PER_PAGE = 4;
-// 바로카드와 같은 고르개 — 좌우는 카드가 좌우를 나누는 동작일 때만
+// 바디카드와 같은 고르개 — 좌우는 카드가 좌우를 나누는 동작일 때만
 const SIDE_OPTS = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'], ['alt', '좌우 번갈아']];
 const GUIDE_OPTS = [['talk', '설명 들으며'], ['count', '숫자만']];
 
-/** initial: { id?, title, cards: [...] } · allCards: 고를 수 있는 바로카드 */
+/** initial: { id?, title, cards: [...] } · allCards: 고를 수 있는 바디카드 */
 export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave, onCancel, onDelete = null }) {
   const [title, setTitle] = useState(initial?.title || '');
   const [cards, setCards] = useState(initial?.cards || []);
   const [picking, setPicking] = useState(false);
   const [openSet, setOpenSet] = useState(null);      // 설정을 펼친 동작(id)
-  // 바로플리에 올릴 때 만든 사람을 어떻게 보일지 — 기본은 유형 캐릭터만
+  // 바디플리에 올릴 때 만든 사람을 어떻게 보일지 — 기본은 유형 캐릭터만
   const [showNick, setShowNick] = useState(!!initial?.showNick);
-  // 공개하면 바로플리에 올라가 다른 사람도 본다. 기본은 비공개.
+  // 공개하면 바디플리에 올라가 다른 사람도 본다. 기본은 비공개.
   // 관리자가 숨긴 플리(hidden)는 다시 올릴 수 없다 — 고르개를 잠가 둔다.
   const hidden = initial?.share === 'hidden';
   const [share, setShare] = useState(initial?.share === 'public' ? 'public' : 'private');
@@ -78,7 +78,7 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
         {initial?.from && (
           <div style={{ fontSize: 11.5, fontWeight: 700, color: GOLD_INK, background: YELLOW, borderRadius: 10, padding: '8px 11px',
             marginBottom: 12, lineHeight: 1.6 }}>
-            &lsquo;{initial.from}&rsquo;을 가져왔어요. 고친 것은 마이플리에 새로 저장되고, 원래 바로플리는 그대로예요.
+            &lsquo;{initial.from}&rsquo;을 가져왔어요. 고친 것은 마이플리에 새로 저장되고, 원래 바디플리는 그대로예요.
           </div>
         )}
         <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: SUB, marginBottom: 6 }}>플리 이름</label>
@@ -94,7 +94,7 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
 
         {cards.length === 0 && (
           <div style={{ border: `1px dashed ${LINE}`, borderRadius: 12, padding: '22px 12px', textAlign: 'center', fontSize: 12.5,
-            color: SUB, fontWeight: 600, marginBottom: 10 }}>아래 &lsquo;동작 더하기&rsquo;로 바로카드를 골라 담아 보세요.</div>
+            color: SUB, fontWeight: 600, marginBottom: 10 }}>아래 &lsquo;동작 더하기&rsquo;로 바디카드를 골라 담아 보세요.</div>
         )}
         <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
           {cards.map((c, i) => {
@@ -123,7 +123,7 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
                 style={{ ...chip, opacity: i === cards.length - 1 ? 0.35 : 1 }}>↓</button>
               <button type="button" onClick={() => drop(i)} aria-label="빼기" style={{ ...chip, color: '#B23B36' }}>✕</button>
             </div>
-            {/* 동작마다 바로카드와 같은 설정 — 횟수·세트·쉬는 시간·안내·좌우. 비워 두면 카드 기본값 */}
+            {/* 동작마다 바디카드와 같은 설정 — 횟수·세트·쉬는 시간·안내·좌우. 비워 두면 카드 기본값 */}
             <div style={{ display: 'grid', gridTemplateRows: on ? '1fr' : '0fr', transition: 'grid-template-rows .25s ease, visibility .25s', visibility: on ? 'visible' : 'hidden' }}>
               <div style={{ overflow: 'hidden', minHeight: 0 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '2px 10px 10px 38px', fontSize: 11.5, fontWeight: 800, color: SUB }}>
@@ -169,19 +169,19 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
           {picking ? '동작 고르기 닫기 ▴' : '＋ 동작 더하기'}
         </button>
 
-        {/* 바로카드 고르기 — 둘러보기와 같은 칸(영상·표지 문구·시간), 두 줄 둘씩 넷, 옆으로 넘긴다. 누르면 담기·빼기 */}
+        {/* 바디카드 고르기 — 둘러보기와 같은 칸(영상·표지 문구·시간), 두 줄 둘씩 넷, 옆으로 넘긴다. 누르면 담기·빼기 */}
         {picking && <CardPicker allCards={allCards} chosen={cards} onToggle={toggle} />}
-        {/* 공개·비공개 — 공개하면 바로플리에 바로 올라간다 */}
+        {/* 공개·비공개 — 공개하면 바디플리에 바로 올라간다 */}
         <div style={{ marginTop: 16, padding: '11px 12px', borderRadius: 12, background: '#FAF7F0' }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 8 }}>이 플리를 어떻게 저장할까요?</div>
           {hidden ? (
             <div style={{ fontSize: 12, fontWeight: 700, color: '#B23B36', lineHeight: 1.6 }}>
-              운영 기준에 맞지 않아 바로플리에서 내려간 플리예요. 내 보관함에서는 그대로 쓸 수 있어요.
+              운영 기준에 맞지 않아 바디플리에서 내려간 플리예요. 내 보관함에서는 그대로 쓸 수 있어요.
             </div>
           ) : (
             <>
               <div role="radiogroup" aria-label="공개 여부" style={{ display: 'flex', gap: 6 }}>
-                {[['private', '🔒 비공개', '나만 봐요'], ['public', '🌐 공개', '바로플리에 올려요']].map(([k, lb, sub]) => (
+                {[['private', '🔒 비공개', '나만 봐요'], ['public', '🌐 공개', '바디플리에 올려요']].map(([k, lb, sub]) => (
                   <button key={k} type="button" role="radio" aria-checked={share === k} onClick={() => setShare(k)}
                     style={{ flex: 1, border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 11, padding: '10px 8px',
                       background: share === k ? YELLOW : '#fff', color: share === k ? GOLD_INK : SUB,
@@ -200,9 +200,9 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
           )}
         </div>
 
-        {/* 바로플리에 올릴 때 만든 사람 표시 — 공개일 때만. 기본은 유형 캐릭터만 */}
+        {/* 바디플리에 올릴 때 만든 사람 표시 — 공개일 때만. 기본은 유형 캐릭터만 */}
         <div style={{ marginTop: 10, padding: '11px 12px', borderRadius: 12, background: '#FAF7F0', display: share === 'public' && !hidden ? 'block' : 'none' }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 7 }}>바로플리에 올릴 때 만든 사람 표시</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: INK, marginBottom: 7 }}>바디플리에 올릴 때 만든 사람 표시</div>
           {[[false, '유형 캐릭터만'], [true, '닉네임 + 유형 캐릭터']].map(([v, lb]) => (
             <label key={lb} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 700, color: INK, padding: '3px 0', cursor: 'pointer' }}>
               <input type="radio" checked={showNick === v} onChange={() => setShowNick(v)} style={{ accentColor: GOLD }} />
@@ -224,7 +224,7 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
   );
 }
 
-// 바로카드 고르개 — 한 쪽에 둘씩 두 줄(넷). 옆으로 밀거나 ‹ ›를 누르면 다음 넷으로 부드럽게 넘어간다.
+// 바디카드 고르개 — 한 쪽에 둘씩 두 줄(넷). 옆으로 밀거나 ‹ ›를 누르면 다음 넷으로 부드럽게 넘어간다.
 // 영상은 보이는 쪽과 그 옆 쪽만 튼다(한꺼번에 다 틀면 무겁다).
 function CardPicker({ allCards, chosen, onToggle }) {
   const trackRef = useRef(null);
@@ -242,7 +242,7 @@ function CardPicker({ allCards, chosen, onToggle }) {
     if (t && t.clientWidth) setPage(Math.round(t.scrollLeft / t.clientWidth));
   };
   if (allCards.length === 0) {
-    return <div style={{ marginTop: 12, fontSize: 12, color: SUB, fontWeight: 700, textAlign: 'center' }}>고를 수 있는 바로카드가 없어요.</div>;
+    return <div style={{ marginTop: 12, fontSize: 12, color: SUB, fontWeight: 700, textAlign: 'center' }}>고를 수 있는 바디카드가 없어요.</div>;
   }
   const arrow = (dis) => ({ border: 'none', cursor: dis ? 'default' : 'pointer', fontFamily: 'inherit', width: 30, height: 30, borderRadius: '50%',
     background: '#fff', boxShadow: `inset 0 0 0 1px ${LINE}`, color: dis ? '#D8D2C8' : INK, fontSize: 16, fontWeight: 900 });

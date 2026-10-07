@@ -1,5 +1,5 @@
 // 유형별 누끼 캐릭터 고르기 — Z 칸에는 Z로 끝나는 유형만, M 칸에는 M으로 끝나는 유형만 나온다.
-// 큐레이션과 바로카드가 같은 칸을 쓴다.
+// 큐레이션과 바디카드가 같은 칸을 쓴다.
 import { CHARACTERS, CHARACTER_NAMES } from '../data';
 import { INK, SUB, LINE, ACCENT } from './theme';
 

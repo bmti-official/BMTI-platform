@@ -52,7 +52,7 @@ function App() {
   const [currentView, setCurrentView] = useState(
     initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (goAngle || isReturningDiaryUser ? 'aichat' : 'home')))
   );
-  // 자기점검 층 — 둘러보기 · 바로플리 · 내 보관함
+  // 자기점검 층 — 둘러보기 · 바디플리 · 내 보관함
   const [selfTab, setSelfTab] = useState('browse');
   // 지난달 편지 — 한 달이 지나 처음 들어왔을 때 한 번 띄운다
   const [letter, setLetter] = useState(null);

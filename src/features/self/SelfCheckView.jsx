@@ -1,11 +1,10 @@
-// 자기점검 — 손님 화면. 둘러보기 · 바로플리 · 내 보관함 세 갈래를 한자리에서 돌린다.
+// 자기점검 — 손님 화면. 둘러보기(읽을거리·바디플리·바디카드) · 내 보관함을 한자리에서 돌린다.
 //
-// 관리자 미리보기에서 쓰던 부품(BrowseView·BaroPliView·BoxView)을 그대로 쓰고,
+// 관리자 미리보기에서 쓰던 부품(BrowseView·BoxView)을 그대로 쓰고,
 // 여기서는 공개된 콘텐츠를 읽어 오고 보관함·마이플리를 서버와 잇는 일만 한다.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import BrowseView from '../curation/BrowseView';
-import BaroPliView from '../curation/BaroPliView';
 import BoxView from '../curation/BoxView';
 import { CurationDetail } from '../curation/CurationCard';
 import { KeepContext } from '../curation/keep';
@@ -20,7 +19,7 @@ import { setExtraWords } from '../curation/search';
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
 
-// 플리에 담긴 동작을 붙인다(동작별 설정까지). 공개된 바로카드만 남고, 동작이 하나도 없으면 뺀다.
+// 플리에 담긴 동작을 붙인다(동작별 설정까지). 공개된 바디카드만 남고, 동작이 하나도 없으면 뺀다.
 const withCards = (rows, links, byId) => (rows || []).map((r) => ({
   ...r,
   cards: (links || []).filter((l) => l.routine_id === r.id)
@@ -38,7 +37,7 @@ async function loadShared(byId) {
   return withCards(rts.data, links.data, byId);
 }
 
-// 공개된 것만 — 바로카드, 바로플리(공식 + 회원이 공개한 것), 읽을거리
+// 공개된 것만 — 바디카드, 바디플리(공식 + 회원이 공개한 것), 읽을거리
 async function loadPublic() {
   const [cards, rts, links, reads, words] = await Promise.all([
     supabase.from('quick_cards').select('*').eq('published', true).order('sort_order', { ascending: true }),
@@ -117,19 +116,19 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     return { plis: pick('routine', pub.plis), cards: pick('card', pub.cards), reads: pick('curation', pub.reads) };
   }, [pub, saved]);
 
-  // 회원이 올린 플리 목록을 다시 읽는다 — 공개·비공개를 바꾸거나 지운 뒤 바로플리에 바로 반영되게
+  // 회원이 올린 플리 목록을 다시 읽는다 — 공개·비공개를 바꾸거나 지운 뒤 바디플리에 바로 반영되게
   const reloadShared = async () => {
     const shared = await loadShared(pub.byId);
     setPub((p) => (p ? { ...p, plis: [...p.plis.filter((r) => !r.owner_id), ...shared] } : p));
   };
-  // 바로플리 목록 — 내가 올린 것은 '내 것'으로 표시해 보관 버튼을 두지 않는다
+  // 바디플리 목록 — 내가 올린 것은 '내 것'으로 표시해 보관 버튼을 두지 않는다
   const baroList = useMemo(() => (pub ? pub.plis.map((r) => (r.owner_id && r.owner_id === userId ? { ...r, mine: true } : r)) : []), [pub, userId]);
 
   const onSaveMine = async (p) => {
     if (!userId) { if (onRequireLogin) onRequireLogin(); return; }
     const r = await saveMyPli(userId, p);
     if (!r.ok) { window.alert(r.why); return; }
-    setNote(p.share === 'public' ? '바로플리에 올렸어요' : p.id ? '마이플리를 고쳤어요' : '마이플리를 만들었어요');
+    setNote(p.share === 'public' ? '바디플리에 올렸어요' : p.id ? '마이플리를 고쳤어요' : '마이플리를 만들었어요');
     setMine(await loadMyPlis(userId, pub.byId));
     reloadShared();
   };
@@ -148,10 +147,11 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   return (
     <KeepContext.Provider value={keep}>
       <div style={{ paddingBottom: 20 }}>
-        {tab === 'browse' && (
-          <BrowseView cards={pub.cards} reads={pub.reads} tone={tone} bmtiCode={bmtiCode} onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }} />
+        {/* 바디플리는 둘러보기 안의 한 갈래다(예전에는 하단 네비에 따로 있었다) */}
+        {tab !== 'box' && (
+          <BrowseView cards={pub.cards} reads={pub.reads} routines={baroList} tone={tone} bmtiCode={bmtiCode}
+            onOpenRead={(r) => { view('curation', r.id); setOpenRead(r); }} />
         )}
-        {tab === 'baro' && <BaroPliView routines={baroList} tone={tone} bmtiCode={bmtiCode} />}
         {tab === 'box' && (userId ? (
           <BoxView nickname={userProfile?.nickname || '회원'} bmtiCode={bmtiCode} tone={tone}
             plis={box.plis} cards={box.cards} reads={box.reads} myPlis={mine} allCards={pub.cards}
@@ -159,7 +159,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         ) : (
           <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '34px 16px', textAlign: 'center', color: SUB,
             fontSize: 13, fontWeight: 700, lineHeight: 1.7 }}>
-            로그인하면 마음에 드는 바로카드·플리·읽을거리를<br />보관하고, 나만의 마이플리를 만들 수 있어요.
+            로그인하면 마음에 드는 바디카드·플리·읽을거리를<br />보관하고, 나만의 마이플리를 만들 수 있어요.
             <div>
               <button type="button" onClick={onRequireLogin}
                 style={{ marginTop: 14, border: 'none', borderRadius: 999, padding: '10px 18px', background: '#FEE500', color: '#3C1E1E',

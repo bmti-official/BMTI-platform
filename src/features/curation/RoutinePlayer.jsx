@@ -1,6 +1,6 @@
-// 바로플리 재생 — 담긴 동작을 차례로 이어서 한다.
+// 바디플리 재생 — 담긴 동작을 차례로 이어서 한다.
 //
-// 배경음악은 useBgm이 맡는다(바로카드와 함께 쓴다). 여기서는 언제 쉬고 언제 마무리로 넘어갈지만 알려 준다.
+// 배경음악은 useBgm이 맡는다(바디카드와 함께 쓴다). 여기서는 언제 쉬고 언제 마무리로 넘어갈지만 알려 준다.
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';
 import { withRoutineSetup } from './routineSetup';
@@ -25,7 +25,7 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
   const [at, setAt] = useState(0);            // 몇 번째 동작인가
   const [common, setCommon] = useState({});
   // 전체 화면은 동작이 바뀌어도 그대로 — 그래서 카드가 아니라 여기가 쥐고 있는다.
-  // 바로플리는 처음부터 전체 화면으로 연다. 손을 대지 않고 끝까지 갈 수 있게.
+  // 바디플리는 처음부터 전체 화면으로 연다. 손을 대지 않고 끝까지 갈 수 있게.
   const [full, setFull] = useState(true);
   // 파트너가 오프닝·마무리를 말하는 동안에는 음악을 쉬게 둔다.
   const [quiet, setQuiet] = useState(false);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-// 관리자 화면 공용 부품 — 큐레이션·바로카드 등록 화면이 함께 쓴다.
+// 관리자 화면 공용 부품 — 큐레이션·바디카드 등록 화면이 함께 쓴다.
 import { SUB, LINE, ACCENT, input } from './theme';
 
 // 여러 개 고르는 알약 버튼 묶음. max를 주면 그만큼만 고를 수 있다.

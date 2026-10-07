@@ -1,4 +1,4 @@
-// 큐레이션·바로카드·플레이리스트가 함께 쓰는 '부위 묶음' 정의.
+// 큐레이션·바디카드·플레이리스트가 함께 쓰는 '부위 묶음' 정의.
 // 다이어리는 부위를 잘게 기록하고(목·어깨·팔꿈치…), 콘텐츠는 묶음으로 분류한다(목-머리·팔-손…).
 // 그 사이를 잇는 유일한 기준표라, 부위를 늘리거나 묶음을 바꿀 땐 여기만 고치면 된다.
 //
@@ -30,7 +30,7 @@ const PART_TO_GROUPS = (() => {
 export const groupsOfPart = (partKey) => PART_TO_GROUPS[partKey] || [];
 
 // 다이어리 기록(soreness 배열들)에서 많이 기록한 순으로 묶음을 뽑는다.
-// 큐레이션·바로카드의 '불편 부위 기본 설정'이 이 결과를 쓴다.
+// 큐레이션·바디카드의 '불편 부위 기본 설정'이 이 결과를 쓴다.
 export function topGroupsFromSoreness(entries, limit = 3) {
   const count = {};
   for (const e of entries || []) {

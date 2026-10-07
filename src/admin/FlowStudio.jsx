@@ -476,7 +476,7 @@ export default function FlowStudio() {
           <li><b>0~5초 안에 동작이 한눈에 보이는지</b> 봅니다. 그 구간이 그대로 표지가 됩니다.</li>
           <li>머리나 발이 잘리지 않았는지 봅니다. 잘리면 <code>CROP-SAFE FRAMING</code>을 프롬프트 맨 앞으로 옮기고 다시 뽑으세요.</li>
           <li><b>소리는 지웁니다.</b> 손님 화면에서 영상 소리는 늘 꺼집니다.</li>
-          <li>9:16 그대로 <b>⚡ 바로카드 → 동작 영상</b> 칸에 올립니다(mp4 · webm, 20MB 이하).</li>
+          <li>9:16 그대로 <b>⚡ 바디카드 → 동작 영상</b> 칸에 올립니다(mp4 · webm, 20MB 이하).</li>
         </ol>
         <div style={{ fontSize: 11.5, color: SUB, marginTop: 12, lineHeight: 1.8, background: BG, borderRadius: 10, padding: '11px 13px' }}>
           <b>잘 안 나올 때</b>

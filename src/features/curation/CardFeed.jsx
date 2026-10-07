@@ -1,4 +1,4 @@
-// 바로카드 한 장을 눌렀을 때 — 인스타처럼 화면이 커지며 펼쳐지고,
+// 바디카드 한 장을 눌렀을 때 — 인스타처럼 화면이 커지며 펼쳐지고,
 // 아래로 밀면 다음 동작이 이어진다.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';

@@ -74,7 +74,7 @@ const TAG_CATEGORIES = [
 
 // ── 운동 카테고리 (개인 집중형에 스트레칭 포함) ──
 const EXERCISE_CATS = [
-  { name: "BMTI", items: ["바로카드"] },
+  { name: "BMTI", items: ["바디카드"] },
   { name: "개인 집중형 (실내)", items: ["헬스·PT", "요가", "필라테스", "스트레칭", "명상·호흡", "수영"] },
   { name: "야외 활동형 (실외)", items: ["걷기/산책", "러닝·조깅", "자전거", "등산"] },
   { name: "그룹 및 파트너형", items: ["축구", "농구", "배드민턴", "테니스", "크로스핏", "댄스"] },
@@ -241,9 +241,9 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
 
   // 운동
   const [exerciseDidIt, setExerciseDidIt] = useState(() => (initialEntry?.exercise ? (initialEntry.exercise.did ? "yes" : "no") : null));
-  // 오늘 바로카드·바로플리를 몇 번 했는지. **있으면 저절로 담는다.**
+  // 오늘 바디카드·바디플리를 몇 번 했는지. **있으면 저절로 담는다.**
   // 우리가 이미 아는 것을 손님에게 다시 고르게 하는 건 두 번 일을 시키는 셈이다.
-  // 대신 옆의 '바로카드' 버튼으로 손님이 언제든 빼고 다시 담을 수 있다(담겼는지는 고른 종목으로 안다).
+  // 대신 옆의 '바디카드' 버튼으로 손님이 언제든 빼고 다시 담을 수 있다(담겼는지는 고른 종목으로 안다).
   const [baro, setBaro] = useState({ count: 0, full: 0 });
 
   const [exerciseReason, setExerciseReason] = useState(() => (
@@ -260,7 +260,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       // 이미 쓴 기록을 고치러 들어온 경우엔 그때 고른 것을 건드리지 않는다
       if (initialEntry?.exercise) return;
       setExerciseDidIt((v) => v || "yes");
-      setExerciseTypes((prev) => (prev.includes("바로카드") || prev.length >= 2 ? prev : ["바로카드", ...prev]));
+      setExerciseTypes((prev) => (prev.includes("바디카드") || prev.length >= 2 ? prev : ["바디카드", ...prev]));
     });
     return () => { alive = false; };
   }, [initialEntry]);
@@ -703,19 +703,19 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
       return (
         <AccordionCard question="오늘 운동·스트레칭·산책 했나요?" answerIcon={exerciseAnswerIcon} answerText={exerciseAnswerText}
           expanded={expanded.exercise} onToggle={() => toggle("exercise")} done={exerciseComplete}>
-          {/* 오늘 바로카드를 한 기록이 있으면 저절로 담아 두고, 틀렸으면 손님이 되돌린다.
-              오른쪽에 '바로카드' 버튼을 나란히 둔다 — 종목 목록에 'BMTI' 줄을 따로 두면 창이 길어진다. */}
+          {/* 오늘 바디카드를 한 기록이 있으면 저절로 담아 두고, 틀렸으면 손님이 되돌린다.
+              오른쪽에 '바디카드' 버튼을 나란히 둔다 — 종목 목록에 'BMTI' 줄을 따로 두면 창이 길어진다. */}
           {(baro.count > 0 || exerciseDidIt === "yes") && (() => {
-            const baroOn = exerciseTypes.includes("바로카드");
+            const baroOn = exerciseTypes.includes("바디카드");
             // 기록이 있는 날은 '담기·빼기'로, 없는 날은 여느 종목처럼 고른다
             const flipBaro = () => {
               if (baro.count > 0) {
-                if (baroOn) setExerciseTypes(prev => prev.filter(x => x !== "바로카드"));
+                if (baroOn) setExerciseTypes(prev => prev.filter(x => x !== "바디카드"));
                 else {
                   setExerciseDidIt("yes");
-                  setExerciseTypes(prev => (prev.includes("바로카드") || prev.length >= 2 ? prev : ["바로카드", ...prev]));
+                  setExerciseTypes(prev => (prev.includes("바디카드") || prev.length >= 2 ? prev : ["바디카드", ...prev]));
                 }
-              } else toggleExerciseType("바로카드");
+              } else toggleExerciseType("바디카드");
             };
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -724,8 +724,8 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     <DiaryIcon name="flex" size={22} />
                     <span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5, wordBreak: "keep-all" }}>
                       {baro.count > 0
-                        ? <>오늘 바로카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}</>
-                        : "오늘 바로카드를 했다면 오른쪽을 눌러 주세요"}
+                        ? <>오늘 바디카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}</>
+                        : "오늘 바디카드를 했다면 오른쪽을 눌러 주세요"}
                       {baro.count > 0 && (
                         <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.sub, marginTop: 2 }}>
                           {baroOn ? "따로 고르지 않아도 담아 뒀어요." : "빼 두었어요. 오른쪽을 누르면 다시 담겨요."}
@@ -734,7 +734,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     </span>
                   </div>
                 </div>
-                <Tile content="바로카드" on={baroOn} onClick={flipBaro}
+                <Tile content="바디카드" on={baroOn} onClick={flipBaro}
                   disabled={!baroOn && exerciseTypes.length >= 2} size={62} tint={C.yellow} />
               </div>
             );

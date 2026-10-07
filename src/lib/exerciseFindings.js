@@ -26,7 +26,7 @@ export function exerciseMonth(entries) {
     [...new Set((e.exercise.types || []).map(labelOf))].forEach((lb) => { count[lb] = (count[lb] || 0) + 1; });
   });
   const rows = Object.entries(count)
-    .map(([label, days]) => ({ label, days, baro: label === '바로카드', pct: Math.round((days / moved.length) * 100) }))
+    .map(([label, days]) => ({ label, days, baro: label === '바디카드', pct: Math.round((days / moved.length) * 100) }))
     .sort((a, b) => b.days - a.days || a.label.localeCompare(b.label, 'ko'));
   const why = {};
   rested.forEach((e) => { const k = e.exercise.reason || 'forgot'; why[k] = (why[k] || 0) + 1; });

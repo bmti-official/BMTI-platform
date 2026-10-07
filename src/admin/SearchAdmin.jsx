@@ -95,7 +95,7 @@ export default function SearchAdmin() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>검색 분류</div>
-        <div style={{ fontSize: 12.5, color: SUB }}>둘러보기·바로플리의 찾기가 어떻게 도는지 보고 고칩니다</div>
+        <div style={{ fontSize: 12.5, color: SUB }}>둘러보기·바디플리의 찾기가 어떻게 도는지 보고 고칩니다</div>
       </div>
       <div style={{ display: 'flex', gap: 6, margin: '12px 0 16px', flexWrap: 'wrap' }}>
         {tabBtn('test', '검색 시험')}
@@ -142,7 +142,7 @@ function TestTab({ data, dictVer, onAdd }) {
           placeholder="거북목, 어깨 마사지, 폼 롤러…" />
         <div style={{ display: 'flex', gap: 18, alignItems: 'flex-end', marginTop: 12, flexWrap: 'wrap' }}>
           <div><span style={label}>어디서</span>
-            <OnePicker options={[{ key: 'browse', label: '둘러보기' }, { key: 'pli', label: '바로플리' }]} value={where} onChange={setWhere} /></div>
+            <OnePicker options={[{ key: 'browse', label: '둘러보기' }, { key: 'pli', label: '바디플리' }]} value={where} onChange={setWhere} /></div>
           <div><span style={label}>말투</span>
             <OnePicker options={[{ key: 'z', label: 'Z' }, { key: 'm', label: 'M' }]} value={tone} onChange={setTone} /></div>
           <div><span style={label}>부위 버튼</span>
@@ -332,7 +332,7 @@ function DictTab({ list, setList, dirty, onSaved, data }) {
 }
 
 // ── 검색 기록 ─────────────────────────────────────────────────
-const AT_LABEL = { browse: '둘러보기', pli: '바로플리' };
+const AT_LABEL = { browse: '둘러보기', pli: '바디플리' };
 function LogTab({ data, dictVer, onAdd }) {
   const [days, setDays] = useState(30);
   const [rows, setRows] = useState(null);
@@ -469,7 +469,7 @@ function AuditTab({ data }) {
       if (!(c.core_parts || []).length) m.push('핵심 부위');
       if (!KIND_LABEL[c.kind]) m.push('종류');
       if (!String(c.good_when || '').trim()) m.push('좋은 상황 글');
-      if (m.length) missing.push({ key: `card-${c.id}`, name: nameOf(c), type: '바로카드', pub: c.published !== false, m });
+      if (m.length) missing.push({ key: `card-${c.id}`, name: nameOf(c), type: '바디카드', pub: c.published !== false, m });
     });
     data.reads.forEach((c) => {
       const m = [];
@@ -496,7 +496,7 @@ function AuditTab({ data }) {
       <div style={{ ...box, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>부위 묶음별 편수 <span style={{ fontWeight: 600, color: SUB }}>· 공개된 것 기준 · 손님이 부위 버튼을 눌렀을 때 나오는 수</span></div>
         <table style={{ width: '100%', borderCollapse: 'collapse', maxWidth: 560 }}>
-          <thead><tr><th style={th}>부위 묶음</th><th style={th}>바로카드</th><th style={th}>읽을거리</th><th style={th}>바로플리</th></tr></thead>
+          <thead><tr><th style={th}>부위 묶음</th><th style={th}>바디카드</th><th style={th}>읽을거리</th><th style={th}>바디플리</th></tr></thead>
           <tbody>
             {a.groups.map((g) => (
               <tr key={g.id}>
@@ -509,7 +509,7 @@ function AuditTab({ data }) {
           </tbody>
         </table>
         <div style={{ ...note, marginTop: 10 }}>
-          공개된 바로카드 {a.pubCards}편({a.kinds.map((k) => `${k.label} ${k.n}`).join(' · ')}) · 읽을거리 {a.pubReads}편 · 검색어 칸을 채운 콘텐츠 {a.withKw}개
+          공개된 바디카드 {a.pubCards}편({a.kinds.map((k) => `${k.label} ${k.n}`).join(' · ')}) · 읽을거리 {a.pubReads}편 · 검색어 칸을 채운 콘텐츠 {a.withKw}개
         </div>
       </div>
 
@@ -517,7 +517,7 @@ function AuditTab({ data }) {
         <div style={{ fontSize: 13, fontWeight: 900, color: INK, marginBottom: 4 }}>도구 표기</div>
         <div style={{ ...note, marginBottom: 8 }}>
           같은 도구가 다른 이름으로 적혀 있으면 손님 화면의 글자가 제각각으로 보입니다(검색은 사전이 같은 말로 묶어 줍니다).
-          ⚡ 바로카드에서 해당 카드를 열어 이름을 맞춰 주세요.
+          ⚡ 바디카드에서 해당 카드를 열어 이름을 맞춰 주세요.
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr><th style={th}>도구 이름</th><th style={th}>편수</th><th style={th}>살펴볼 것</th><th style={th}>적힌 카드</th></tr></thead>

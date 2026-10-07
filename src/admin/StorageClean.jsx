@@ -8,7 +8,7 @@ import { BUCKET } from './upload';
 // 파일 주소가 담기는 표 — 새 표를 만들면 여기에 꼭 더해야 한다.
 //   curation_items  큐레이션 사진·영상
 //   quick_cards     동작 영상 · 세트 전 설명 영상 · 세트 멘트 음성
-//   routines        바로플리 표지
+//   routines        바디플리 표지
 //   voice_assets    공통 음성 (숫자·쉼·마무리·배경음악…)
 //   voice_hello     캐릭터 인사 열여섯 편
 //   app_assets      각도별 그림 모음·팔 영상·각도 재는 화면 참고 그림 (★ 빠져 있어 이 파일들이 통째로 지워진 적이 있다)
@@ -119,7 +119,7 @@ export default function StorageClean() {
           <br /><b>올린 지 {KEEP_DAYS}일이 안 된 파일은 지우지 않습니다.</b>
           <br />어느 글에서도 쓰지 않는 파일만 골라 보여 드립니다. <b>쓰이고 있는 파일은 절대 건드리지 않습니다.</b>
           <br />복제한 카드가 같은 파일을 함께 쓰는 경우도 &lsquo;쓰는 중&rsquo;으로 셉니다.
-          <br />훑는 곳: 큐레이션 · 바로카드 · 바로플리 표지 · <b>공통 음성</b> · <b>캐릭터 인사</b>.
+          <br />훑는 곳: 큐레이션 · 바디카드 · 바디플리 표지 · <b>공통 음성</b> · <b>캐릭터 인사</b>.
           <br /><b style={{ color: '#B23B36' }}>관리자로 로그인한 상태에서만</b> 훑습니다. 그래야 모든 글이 보여서 쓰는 파일을 빠뜨리지 않습니다.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>

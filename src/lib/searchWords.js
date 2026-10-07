@@ -7,7 +7,7 @@
 //   say    손님이 치는 말들. 띄어쓰기·대소문자는 무시하고 견준다('폼 롤러' = '폼롤러').
 //   parts  다이어리 부위 열쇠(neck·shoulder…) — 그 부위를 핵심·연관으로 둔 콘텐츠가 걸린다
 //   groups 부위 묶음(neck_head…)
-//   kinds  바로카드 종류(massage·stretch·exercise)
+//   kinds  바디카드 종류(massage·stretch·exercise)
 //   tools  도구 이름(카드에 적힌 그대로)
 //   words  제목·문구·설명 글에서 대신 찾아볼 말
 //   not    글자가 겹쳐 잘못 걸리는 말('목'으로 '손목'이 걸리지 않게)

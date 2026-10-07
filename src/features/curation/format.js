@@ -1,5 +1,5 @@
 import { cardTotalSec } from './cardDefaults';
-// 큐레이션·바로카드 표시용 계산 — 컴포넌트 파일과 분리해 Fast Refresh를 살린다.
+// 큐레이션·바디카드 표시용 계산 — 컴포넌트 파일과 분리해 Fast Refresh를 살린다.
 export const KIND_LABEL = { massage: '마사지', stretch: '스트레칭', exercise: '운동' };
 
 // Z 유형은 담백한 글, M 유형은 다정한 글을 본다.
@@ -22,7 +22,7 @@ export const pickRoutineTone = (r, tone) => ({
   title: (tone === 'm' ? r.title_m : r.title_z) || r.title_z || r.title_m || '',
 });
 
-// 루틴에 담긴 바로카드들에서 총 소요시간·도구·타겟 부위를 모아준다.
+// 루틴에 담긴 바디카드들에서 총 소요시간·도구·타겟 부위를 모아준다.
 // 관리자가 따로 적지 않아도 카드만 고르면 자동으로 채워지는 값들이다.
 export function routineSummary(cards) {
   const list = cards || [];

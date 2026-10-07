@@ -1,4 +1,4 @@
-// 배경음악 고르는 칸 — 켬·끔, 크기, 곡. 바로플리와 바로카드가 함께 쓴다.
+// 배경음악 고르는 칸 — 켬·끔, 크기, 곡. 바디플리와 바디카드가 함께 쓴다.
 import { BGM_GROUPS } from './voiceCommon';
 import { VOL_STEPS, hasSong } from './bgmBits';
 

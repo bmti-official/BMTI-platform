@@ -431,12 +431,12 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
       </div>
       )}
 
-      {/* 추천 바로플리 3~4개 */}
+      {/* 추천 바디플리 3~4개 */}
       <div style={{ ...box, background: BG, marginBottom: 14 }}>
-        <span style={label}>추천 바로플리 <span style={{ fontWeight: 600 }}>— 글 맨 끝 &lsquo;이 글과 함께 해보면 좋아요&rsquo;에 붙습니다. 3~4개 권장</span></span>
+        <span style={label}>추천 바디플리 <span style={{ fontWeight: 600 }}>— 글 맨 끝 &lsquo;이 글과 함께 해보면 좋아요&rsquo;에 붙습니다. 3~4개 권장</span></span>
         {allPlis.length === 0 ? (
           <div style={{ fontSize: 12.5, color: SUB, lineHeight: 1.7, background: '#fff', borderRadius: 9, padding: '12px 14px', boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-            아직 만들어 둔 바로플리가 없어서 고를 게 없습니다.<br />
+            아직 만들어 둔 바디플리가 없어서 고를 게 없습니다.<br />
             위쪽 <b style={{ color: INK }}>🎵 플레이리스트</b> 탭에서 하나라도 만들고 오시면 여기에 목록이 뜹니다.
           </div>
         ) : (
@@ -527,7 +527,7 @@ export default function CurationAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null); // null=안 열림, {}=새로, {…}=수정
   const [preview, setPreview] = useState(null);
-  const [allCards, setAllCards] = useState([]);   // 둘러보기 격자에 함께 깔 바로카드
+  const [allCards, setAllCards] = useState([]);   // 둘러보기 격자에 함께 깔 바디카드
   const [screen, setScreen] = useState(false);    // 손님이 보는 둘러보기 화면 통째로
   const [saved, setSaved] = useSavedNote();
   const [shown, q, setQ] = useSearch(rows, ['thumb_text', 'title_z', 'title_m']);
@@ -553,7 +553,7 @@ export default function CurationAdmin() {
     load();
     setSaved('복제했습니다. 비공개로 들어갔어요.');
   };
-  const [allPlis, setAllPlis] = useState([]);   // 추천에 붙일 바로플리
+  const [allPlis, setAllPlis] = useState([]);   // 추천에 붙일 바디플리
 
   // 목록 읽기 — tick을 올리면 다시 읽는다.
   // 결과 처리를 .then 안에서 해야 effect 본문에서 동기로 setState 하지 않게 되고,
@@ -637,7 +637,7 @@ export default function CurationAdmin() {
           onPreview={(draft) => setPreview(draft)} onDelete={(id) => remove(id, () => setEditing(null))} />
       )}
 
-      {/* 손님이 보는 둘러보기 격자 — 읽을거리와 바로카드가 한 자리에 */}
+      {/* 손님이 보는 둘러보기 격자 — 읽을거리와 바디카드가 한 자리에 */}
       {screen && (
         <PreviewModal navActive="browse"
           title={`둘러보기 화면 — 읽을거리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`}

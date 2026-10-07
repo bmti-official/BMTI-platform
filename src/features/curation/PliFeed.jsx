@@ -1,4 +1,4 @@
-// 바로플리 한 칸을 눌렀을 때 — 한 편씩 넘겨 보며 고른다.
+// 바디플리 한 칸을 눌렀을 때 — 한 편씩 넘겨 보며 고른다.
 // 썸네일을 누르자마자 재생이 시작되면 무엇이 담겼는지 볼 새가 없다.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import RoutineView from './RoutineView';

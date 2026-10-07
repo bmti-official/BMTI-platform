@@ -180,7 +180,7 @@ function Dashboard({ session }) {
           {tabBtn('metrics', '📊 통계·지표')}
           {tabBtn('users', '👤 사용자')}
           {tabBtn('curation', '📚 큐레이션')}
-          {tabBtn('cards', '⚡ 바로카드')}
+          {tabBtn('cards', '⚡ 바디카드')}
           {tabBtn('routines', '🎵 플레이리스트')}
           {tabBtn('search', '🔎 검색 분류')}
           {tabBtn('flow', '🎬 동작 영상')}

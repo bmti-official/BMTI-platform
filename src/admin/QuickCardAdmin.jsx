@@ -26,7 +26,7 @@ import { kindSetup, REST_LIST } from '../features/curation/cardDefaults';
 import { AudioSlot } from './AudioInput';
 import { KIND_LABEL } from '../features/curation/format';
 
-// 바로카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
+// 바디카드 등록·수정 화면 — 관리자 페이지에서만 쓴다.
 const PART_OPTIONS = Object.entries(PART_KEY).map(([ko, key]) => ({ key, label: ko }));
 const KIND_OPTIONS = Object.entries(KIND_LABEL).map(([key, lb]) => ({ key, label: lb }));
 
@@ -220,7 +220,7 @@ function VoiceBox({ f, set }) {
         <br /><b>자막</b>은 소리를 못 켜는 자리(지하철·사무실)에서 대신 읽힙니다. 음성과 <b>같은 글</b>을 넣어 주세요.
         음성이 아직 없어도 자막만으로 먼저 나갑니다.
         <br />mp3 · m4a · wav, 한 편에 8MB까지. 칸에 파일을 <b>끌어다 놓아도</b> 올라갑니다.
-        <br />바로플리 첫 동작의 <b>오프닝 인사</b>는 카드마다 넣지 않습니다 —
+        <br />바디플리 첫 동작의 <b>오프닝 인사</b>는 카드마다 넣지 않습니다 —
         <b>🔊 공통 음성</b>의 캐릭터 인사(유형마다 한 편)가 대신 흐릅니다.
       </div>
 
@@ -435,7 +435,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
     <div style={{ ...box, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ fontSize: 15, fontWeight: 900, color: INK }}>
-          {f.id ? `바로카드 #${f.id} 수정` : '새 바로카드'}
+          {f.id ? `바디카드 #${f.id} 수정` : '새 바디카드'}
         </div>
         <button onClick={() => { setPasteNote(''); setPasteOpen(true); }} style={{ ...btn(false), marginLeft: 'auto' }}>
           📋 원고 붙여넣기
@@ -716,7 +716,7 @@ function Editor({ row, onSaved, onCancel, onPreview, onDelete }) {
         {f.id && (
           <button onClick={() => onDelete(f.id)}
             style={{ ...btn(false), marginLeft: 'auto', color: '#B23B36', boxShadow: 'inset 0 0 0 1px #E7C3C0' }}>
-            이 바로카드 삭제
+            이 바디카드 삭제
           </button>
         )}
       </div>
@@ -772,7 +772,7 @@ export default function QuickCardAdmin() {
   }, [tick, take]);
 
   const remove = async (id, after) => {
-    if (!window.confirm(`바로카드 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    if (!window.confirm(`바디카드 #${id}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
     // select()를 붙여야 정말 지워졌는지 알 수 있다.
     const { data, error } = await supabase.from('quick_cards').delete().eq('id', id).select('id');
     if (error) { alert('삭제 실패: ' + error.message); return; }
@@ -792,7 +792,7 @@ export default function QuickCardAdmin() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>바로카드</div>
+        <div style={{ fontSize: 16, fontWeight: 900, color: INK }}>바디카드</div>
         <div style={{ fontSize: 12.5, color: SUB }}>공개 {rows.filter((r) => r.published).length} · 전체 {rows.length}</div>
         {saved && (
           <div style={{ fontSize: 12.5, fontWeight: 800, color: '#2F7A4F', background: '#E8F3EC', borderRadius: 999, padding: '5px 12px' }}>
@@ -801,7 +801,7 @@ export default function QuickCardAdmin() {
         )}
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="동작 이름·제목으로 찾기" />
         <PosterAll rows={rows} onDone={load} />
-        <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바로카드</button>
+        <button onClick={() => { if (confirmLeave()) setEditing({ ...EMPTY }); }} style={{ ...btn(true), marginLeft: 'auto' }}>+ 새 바디카드</button>
       </div>
 
       {err && (
@@ -820,7 +820,7 @@ export default function QuickCardAdmin() {
       )}
 
       {preview && (
-        <PreviewModal navActive="browse" title="바로카드 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="browse" title="바디카드 미리보기" onClose={() => setPreview(null)}>
           {(tone) => <QuickCardView card={preview} tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} />}
         </PreviewModal>
       )}
@@ -836,7 +836,7 @@ export default function QuickCardAdmin() {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 바로카드가 없습니다.</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 등록된 바디카드가 없습니다.</td></tr>}
             {shown.map((r, i) => {
               return (
                 <tr key={r.id}>

@@ -16,13 +16,13 @@ import { moveRow, duplicateRow } from './listActions';
 import { withDraft, useAutoDraft, dropDraft, missingForPublish, useSavedNote } from './editorState';
 import { DraftMark } from './editorBits';
 import RoutineView, { RoutineDetail } from '../features/curation/RoutineView';
-import BaroPliView from '../features/curation/BaroPliView';
+import BrowseView from '../features/curation/BrowseView';
 import BoxView from '../features/curation/BoxView';
 import { KIND_LABEL, routineSummary, mmss } from '../features/curation/format';
 import { RC_SIDES } from '../features/curation/routineSetup';
 import { cardSetup, REST_LIST } from '../features/curation/cardDefaults';
 
-// 플레이리스트(루틴) 등록 화면 — 바로카드를 골라 순서를 정하면 하나의 루틴이 된다.
+// 플레이리스트(루틴) 등록 화면 — 바디카드를 골라 순서를 정하면 하나의 루틴이 된다.
 // 총 소요시간·도구·타겟 부위는 담긴 카드에서 자동으로 계산되므로 따로 입력하지 않는다.
 const EMPTY = {
   published: false, sort_order: 0, title_z: '', title_m: '', bmti_code: '', skip_opening: true,
@@ -76,9 +76,9 @@ function CardPicker({ all, chosen, onChange }) {
       </div>
 
       <div>
-        <span style={label}>담을 수 있는 바로카드</span>
+        <span style={label}>담을 수 있는 바디카드</span>
         <div style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 8, maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {rest.length === 0 && <div style={{ fontSize: 12.5, color: SUB, padding: 10 }}>담을 수 있는 카드가 없습니다. 먼저 ⚡ 바로카드에서 만들어 주세요.</div>}
+          {rest.length === 0 && <div style={{ fontSize: 12.5, color: SUB, padding: 10 }}>담을 수 있는 카드가 없습니다. 먼저 ⚡ 바디카드에서 만들어 주세요.</div>}
           {rest.map((c) => (
             <button key={c.id} onClick={() => onChange([...chosen, c])}
               style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 8, padding: '7px 9px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
@@ -95,7 +95,7 @@ function CardPicker({ all, chosen, onChange }) {
   );
 }
 
-// 이 묶음 안에서만 쓰는 설정 — 비워 두면 바로카드에 적어 둔 값을 그대로 쓴다.
+// 이 묶음 안에서만 쓰는 설정 — 비워 두면 바디카드에 적어 둔 값을 그대로 쓴다.
 function CardSetup({ card, onChange }) {
   const base = cardSetup({ kind: card.kind, default_reps: card.default_reps, default_sets: card.default_sets, default_rest: card.default_rest });
   const pick = (key, list, unit, now) => (
@@ -334,7 +334,7 @@ export default function RoutineAdmin() {
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [screen, setScreen] = useState(false);   // 손님이 보는 바로플리 화면 통째로
+  const [screen, setScreen] = useState(false);   // 손님이 보는 바디플리 화면 통째로
   const [box, setBox] = useState(false);         // 손님이 보는 내 보관함 화면
   const [myPlis, setMyPlis] = useState([]);      // 미리보기용 마이플리 — 창 안에서만 산다
   const [saved, setSaved] = useSavedNote();
@@ -418,7 +418,7 @@ export default function RoutineAdmin() {
           </div>
         )}
         <SearchBox q={q} onChange={setQ} count={shown.length} total={0} placeholder="제목으로 찾기" />
-        <button onClick={() => setScreen(true)} style={{ ...btn(false), marginLeft: 'auto' }}>📱 바로플리 화면</button>
+        <button onClick={() => setScreen(true)} style={{ ...btn(false), marginLeft: 'auto' }}>📱 바디플리 화면</button>
         <button onClick={() => setBox(true)} style={btn(false)}>📦 내 보관함 화면</button>
         <button onClick={() => { if (confirmLeave()) setEditing({ routine: { ...EMPTY }, cards: [] }); }} style={btn(true)}>+ 새 루틴</button>
       </div>
@@ -439,9 +439,9 @@ export default function RoutineAdmin() {
       )}
 
       {screen && (
-        <PreviewModal navActive="baro" title={`바로플리 화면 — 플리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`} onClose={() => setScreen(false)}>
+        <PreviewModal navActive="browse" title={`둘러보기의 바디플리 — 플리 ${rows.length}개 · 동작 ${allCards.length}개 (비공개 포함)`} onClose={() => setScreen(false)}>
           {(tone) => (
-            <BaroPliView tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} routines={rows} />
+            <BrowseView tone={tone} bmtiCode={tone === 'm' ? 'OCDM' : 'ACDZ'} cards={allCards} routines={rows} initialTab="pli" />
           )}
         </PreviewModal>
       )}
@@ -463,7 +463,7 @@ export default function RoutineAdmin() {
       )}
 
       {preview && (
-        <PreviewModal navActive="baro" title="루틴 미리보기" onClose={() => setPreview(null)}>
+        <PreviewModal navActive="browse" title="루틴 미리보기" onClose={() => setPreview(null)}>
           {(tone) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div>
@@ -526,8 +526,8 @@ export default function RoutineAdmin() {
   );
 }
 
-// 회원이 바로플리에 공개한 마이플리 — 검토 없이 바로 올라가므로, 문제가 있으면 여기서 내린다.
-// 내리면(hidden) 바로플리에서 사라지고, 만든 사람의 보관함에는 그대로 남는다. 만든 사람은 스스로 다시 올릴 수 없다.
+// 회원이 바디플리에 공개한 마이플리 — 검토 없이 바로 올라가므로, 문제가 있으면 여기서 내린다.
+// 내리면(hidden) 바디플리에서 사라지고, 만든 사람의 보관함에는 그대로 남는다. 만든 사람은 스스로 다시 올릴 수 없다.
 function MemberPlis() {
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
@@ -542,7 +542,7 @@ function MemberPlis() {
   }, [tick]);
   const flip = async (r) => {
     const to = r.share_state === 'hidden' ? 'public' : 'hidden';
-    if (to === 'hidden' && !window.confirm(`'${r.title_z}'을(를) 바로플리에서 내릴까요?`)) return;
+    if (to === 'hidden' && !window.confirm(`'${r.title_z}'을(를) 바디플리에서 내릴까요?`)) return;
     const { error } = await supabase.from('routines').update({ share_state: to }).eq('id', r.id);
     if (error) { alert('바꾸지 못했습니다: ' + error.message); return; }
     setTick((n) => n + 1);

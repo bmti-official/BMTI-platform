@@ -86,7 +86,7 @@ const OpenBookIcon = ({ active }) => (
 // ── 10월 하단 네비 — 두 층 ─────────────────────────────────
 // 루트: 다이어리 · [캐릭터] · 자기점검
 // 다이어리: 이전 · 오늘 쓰기 · [캐릭터] · 이번달 기록 · 이번달 발견
-// 자기점검: 이전 · 둘러보기 · [캐릭터] · 바로플리 · 내 보관함
+// 자기점검: 이전 · 둘러보기 · [캐릭터] · 바디플리 · 내 보관함
 // 모양은 관리자 미리보기(admin/PreviewModal.jsx)와 같다.
 // 자기점검 — 두께가 있는 노란 번개. 가끔 번쩍 친다(nav-bolt).
 // 같은 화면에 두 번(하단 네비·상단 제목) 설 수 있어 그러데이션 이름을 자리마다 달리 받는다.
@@ -269,8 +269,9 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       { key: 'back', label: '이전', icon: <BackMark />, on: goBack },
       { key: 'browse', label: '둘러보기', icon: <GlassMark />, on: () => setSelfTab && setSelfTab('browse') },
       { key: 'char' },
-      { key: 'baro', label: '바로플리', icon: <PlayMark />, on: () => setSelfTab && setSelfTab('baro') },
-      { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box') },
+      // 바디플리는 둘러보기 안으로 들어갔다. 비운 자리에는 강사·회원을 잇는 칸이 들어올 예정이라,
+      // 그때까지는 내 보관함이 두 칸 너비를 써서 가운데 캐릭터 자리가 틀어지지 않게 한다.
+      { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box'), wide: true },
     ],
   };
   // ── 오른쪽 위 마이페이지 알약 ──
@@ -453,7 +454,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
               {ROWS[layer].map((t, i) => (t.key === 'char' ? (
                 <span key="char" className="w-14 shrink-0" aria-hidden="true" />
               ) : (
-                <span key={t.key} className="flex-1 min-w-0 flex" style={{ animation: grow ? `navTabIn .34s ease-out ${0.08 + i * 0.045}s both` : 'none' }}>
+                <span key={t.key} className="flex-1 min-w-0 flex" style={{ flex: t.wide ? '2 1 0%' : undefined, animation: grow ? `navTabIn .34s ease-out ${0.08 + i * 0.045}s both` : 'none' }}>
                   <PillTab active={tabOn(t.key)} onClick={t.on} icon={t.icon} label={t.label} color={!!t.color} />
                 </span>
               )))}

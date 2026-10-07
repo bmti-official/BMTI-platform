@@ -1,4 +1,4 @@
-// 손님에게 보이는 바로카드 — 인스타 게시물처럼.
+// 손님에게 보이는 바디카드 — 인스타 게시물처럼.
 //  ① 종류·시간·제목·완주율  ② 추천 유형 누끼 캐릭터  ③ 4:5 표지(부위·도구를 모서리에 얹는다)
 //  ④ 조회·저장 + 보관하기   ⑤ 바로 따라하기
 // 관리자 미리보기에서 먼저 쓰고, 공개할 때 사용자 화면에서 그대로 import한다.
@@ -67,19 +67,19 @@ const SIDES = [['right', '우'], ['left', '좌'], ['both', '한쪽씩 둘 다'],
 const SIDE_KO = Object.fromEntries(SIDES);
 // 배속 — 영상만 빨라지거나 느려진다. 설명·멘트 음성은 늘 원래 속도(빨리 틀면 알아듣기 어렵다).
 // 숫자 세기는 영상이 한 바퀴 돌 때마다 나오므로 저절로 박자를 따라간다.
-// 고른 속도는 기억해 두고 바로카드·바로플리 어디서나 같이 쓴다.
+// 고른 속도는 기억해 두고 바디카드·바디플리 어디서나 같이 쓴다.
 const SPEEDS = [0.75, 1, 1.25, 1.5];
 const SPEED_KEY = 'bmti_card_speed';
 const readSpeed = () => { try { const v = Number(localStorage.getItem(SPEED_KEY)); return SPEEDS.includes(v) ? v : 1; } catch { return 1; } };
 
 export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch, pliId = null,
   // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 카드를 뒤집어 뒷면에 알아 두기를 보여 주고,
-  // '바로 따라하기'를 누르면 곧장 전체 화면으로 간다(바로플리처럼).
+  // '바로 따라하기'를 누르면 곧장 전체 화면으로 간다(바디플리처럼).
   flippable = false, fullOnStart = false }) {
   const { title } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
-  // 전체 화면 — 바로플리는 동작이 바뀌어도 그대로여야 해서 바깥에서 쥐어 줄 수도 있다.
+  // 전체 화면 — 바디플리는 동작이 바뀌어도 그대로여야 해서 바깥에서 쥐어 줄 수도 있다.
   const [fullSelf, setFullSelf] = useState(false);
   const full = onFull ? !!fullProp : fullSelf;
   const setFull = (v) => (onFull ? onFull(v) : setFullSelf(v));
@@ -302,21 +302,21 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (onStart) onStart();
   };
 
-  // 마지막 세트에 들어섰다고 한 번 알린다 — 바로플리가 마무리 음악을 깔 시점이다.
+  // 마지막 세트에 들어섰다고 한 번 알린다 — 바디플리가 마무리 음악을 깔 시점이다.
   const finalStretch = started && !allDone && done + 1 >= sets && (!twoPhase || secondSide);
   useEffect(() => {
     if (finalStretch && onFinalStretch) onFinalStretch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalStretch]);
 
-  // 파트너가 말하는 동안에는 음악이 쉬어야 한다 — 바로플리에 알려 준다.
+  // 파트너가 말하는 동안에는 음악이 쉬어야 한다 — 바디플리에 알려 준다.
   const quiet = stage === 'open' || (started && allDone);
   useEffect(() => {
     if (onQuiet) onQuiet(quiet);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quiet]);
 
-  // 다 끝냈다고 한 번만 알린다 — 바로플리가 이어받아 다음 동작으로 넘긴다.
+  // 다 끝냈다고 한 번만 알린다 — 바디플리가 이어받아 다음 동작으로 넘긴다.
   useEffect(() => {
     if (allDone && onAllDone) onAllDone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -392,7 +392,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     return () => clearTimeout(t);
   }, [stage, nowVoice, openText]);
 
-  // 바로플리에서는 버튼을 누르지 않아도 바로 이어진다.
+  // 바디플리에서는 버튼을 누르지 않아도 바로 이어진다.
   useEffect(() => {
     if (!autoStart || stage !== 'cover') return undefined;
     // 한 박자 쉬었다 시작해야 소리와 영상이 함께 준비된 뒤에 출발한다.
@@ -908,7 +908,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         </div>
       )}
 
-      {/* 배경음악 — 바로플리 안에서는 플리가 음악을 쥐고 있으니, 카드 혼자 따라 할 때만 튼다.
+      {/* 배경음악 — 바디플리 안에서는 플리가 음악을 쥐고 있으니, 카드 혼자 따라 할 때만 튼다.
           파트너가 말하는 동안(오프닝·마무리)과 멈춰 둔 동안에는 쉰다. */}
       {started && !onQuiet && (
         <CardBgm key={runNo} common={common} bmtiCode={bmtiCode} quiet={quiet || paused}

@@ -1,5 +1,5 @@
-// 바로카드 원고를 통째로 붙여넣으면 칸마다 나눠 담는다 — 관리자 화면 전용.
-// 큐레이션 붙여넣기(pasteParse.js)와 같은 방식이되, 바로카드 칸에 맞춘다.
+// 바디카드 원고를 통째로 붙여넣으면 칸마다 나눠 담는다 — 관리자 화면 전용.
+// 큐레이션 붙여넣기(pasteParse.js)와 같은 방식이되, 바디카드 칸에 맞춘다.
 import { PART_KEY } from '../lib/diaryEntryLabels';
 import { BODY_GROUPS, TOOL_MODES } from '../lib/bodyGroups';
 

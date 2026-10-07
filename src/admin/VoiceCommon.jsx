@@ -1,4 +1,4 @@
-// 🔊 공통 음성 — 모든 바로카드가 함께 쓰는 소리.
+// 🔊 공통 음성 — 모든 바디카드가 함께 쓰는 소리.
 // 숫자 1~20, 쉬는 시간(5·10·15·20초), 마무리. 한 번 올려 두면 카드마다 다시 만들 필요가 없다.
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
@@ -143,7 +143,7 @@ export default function VoiceCommon() {
       <div style={{ ...box, marginBottom: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 4 }}>공통 음성</div>
         <div style={{ fontSize: 12, color: SUB, lineHeight: 1.8 }}>
-          모든 바로카드가 함께 쓰는 소리입니다. <b>한 번 올려 두면 카드마다 다시 만들지 않아도 됩니다.</b>
+          모든 바디카드가 함께 쓰는 소리입니다. <b>한 번 올려 두면 카드마다 다시 만들지 않아도 됩니다.</b>
           <br />숫자는 영상이 한 바퀴 돌 때마다 하나씩, 쉬는 시간 멘트는 세트 사이에 흐릅니다.
           <br />목소리는 <b>손님의 BMTI 파트너</b>입니다. 영상 속 사람이 아니라, 옆에서 같이 세어 주는 내 캐릭터예요.
           <br />파트너 16종은 도구라 성별이 없습니다. <b>여성 목소리 하나로 통일</b>하고, <b>말투(Z·M) 둘</b>로만 갈라 주세요.
@@ -299,7 +299,7 @@ export default function VoiceCommon() {
       <div style={{ ...box }}>
         <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>다음 동작 멘트</div>
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>
-          바로플리에서 한 동작을 마치고 다음으로 넘어갈 때 흐릅니다. 멘트가 끝나면 스무 셈을 세고 저절로 이어집니다.
+          바디플리에서 한 동작을 마치고 다음으로 넘어갈 때 흐릅니다. 멘트가 끝나면 스무 셈을 세고 저절로 이어집니다.
         </div>
         <div style={{ maxWidth: 320 }}>{slot('next', 0, '다음 동작')}</div>
       </div>
@@ -307,7 +307,7 @@ export default function VoiceCommon() {
       <div style={{ ...box }}>
         <div style={{ fontSize: 14, fontWeight: 900, color: INK, marginBottom: 4 }}>마무리 멘트</div>
         <div style={{ fontSize: 11.5, color: SUB, marginBottom: 12 }}>
-          모든 세트를 마쳤을 때 한 번 흐릅니다. 바로플리에서는 <b>맨 마지막 동작</b>에서만 나옵니다.
+          모든 세트를 마쳤을 때 한 번 흐릅니다. 바디플리에서는 <b>맨 마지막 동작</b>에서만 나옵니다.
         </div>
         <div style={{ maxWidth: 320 }}>{slot('finish', 0, '마무리')}</div>
       </div>

@@ -14,7 +14,7 @@ const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2', GOLD = '#C9975A';
 const partLabels = (keys) => (keys || []).map((k) => KEY_TO_PART_LABEL[k] || k);
 
 // 표지 모서리에 얹는 글씨 — 판 없이 글씨만 얹고,
-// 사진 위에서도 읽히게 흰 번짐을 둘러 준다. 바로카드 표지와 같은 방식이다.
+// 사진 위에서도 읽히게 흰 번짐을 둘러 준다. 바디카드 표지와 같은 방식이다.
 const SHADE = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.75)';
 const coverTag = (side) => ({
   position: 'absolute', top: 12, [side]: 12, zIndex: 2, pointerEvents: 'none',
@@ -48,12 +48,12 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
     <article ref={seenRef} style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK, border: `1px solid ${LINE}`, borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
       {/* 표지 — 없으면 담긴 첫 동작의 것을 빌려 쓴다 */}
       <div style={{ position: 'relative' }}>
-      {/* 문구·자리·색은 플리에 적어 둔 것만 쓴다. 담긴 바로카드의 문구는 따라오지 않는다. */}
+      {/* 문구·자리·색은 플리에 적어 둔 것만 쓴다. 담긴 바디카드의 문구는 따라오지 않는다. */}
       <CurationThumb item={routine} radius={0} ratio="4 / 5" showRead={false}
         clip={coverClip}
         onClipEnd={routine.cover_url || clips.length < 2 ? undefined : () => setClipAt((n) => n + 1)}
         emptyText="표지 없음" />
-      {/* 왼쪽 위 타겟 부위 · 오른쪽 위 도구 — 바로카드와 같은 자리에 둔다 */}
+      {/* 왼쪽 위 타겟 부위 · 오른쪽 위 도구 — 바디카드와 같은 자리에 둔다 */}
       {s.coreParts.length > 0 && (
         <div style={coverTag('left')}>{partLabels(s.coreParts).join(', ')}</div>
       )}
@@ -83,7 +83,7 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
         </div>
       )}
 
-      {/* 완주율·완주 수는 초기엔 숫자가 작아 뜻이 없어 보이지 않게 뺐다. 바로카드처럼 조회·저장만 적는다.
+      {/* 완주율·완주 수는 초기엔 숫자가 작아 뜻이 없어 보이지 않게 뺐다. 바디카드처럼 조회·저장만 적는다.
           내가 만든 마이플리는 세지 않으니 적지 않는다. */}
       {!routine.mine && (
         <div style={{ fontSize: 12, color: SUB, fontWeight: 600 }}>

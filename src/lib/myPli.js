@@ -14,7 +14,7 @@ const toRow = (c, i, routineId) => ({
   guide: c.rc_guide || null,
 });
 
-/** 내 마이플리 — 담긴 동작까지 붙여서. cardsById: 공개 바로카드 { id: card } */
+/** 내 마이플리 — 담긴 동작까지 붙여서. cardsById: 공개 바디카드 { id: card } */
 export async function loadMyPlis(userId, cardsById = {}) {
   if (!userId) return [];
   const rt = await supabase.from('routines').select('*').eq('owner_id', userId)
@@ -39,7 +39,7 @@ export async function saveMyPli(userId, p) {
   if (!userId) return { ok: false, why: '로그인한 뒤에 만들 수 있어요.' };
   const title = String(p.title || '').trim();
   const base = { title_z: title, title_m: title, show_nick: !!p.showNick, updated_at: new Date().toISOString() };
-  // 공개(public)로 저장하면 바로플리에 올라간다. 올린 때·만든 사람(닉네임·유형)은 서버가 적는다(52_my_pli.sql).
+  // 공개(public)로 저장하면 바디플리에 올라간다. 올린 때·만든 사람(닉네임·유형)은 서버가 적는다(52_my_pli.sql).
   // 관리자가 숨긴 플리(hidden)는 상태를 건드리지 않는다.
   if (p.share === 'public' || p.share === 'private') base.share_state = p.share;
   let id = p.id;

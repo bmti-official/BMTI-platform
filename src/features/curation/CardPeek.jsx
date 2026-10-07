@@ -1,4 +1,4 @@
-// '일단 구경하기' — 바로플리에 담긴 동작을 옆으로 넘겨 가며 훑어본다.
+// '일단 구경하기' — 바디플리에 담긴 동작을 옆으로 넘겨 가며 훑어본다.
 // 뒤에 있는 표지는 그대로 두고, 그 위에 창만 띄운다.
 import { useEffect, useRef, useState } from 'react';
 import QuickCardView from './QuickCardView';

@@ -10,7 +10,7 @@ import { DiaryIcon } from './DiaryIcons';
 
 const C = { ink: '#1C1A17', sub: '#9B9489', card: '#FFFFFF', track: '#F3F1EC' };
 const SHADOW = '0 2px 4px rgba(220,188,86,0.16), 0 10px 24px rgba(233,203,110,0.42)';
-const BARO = '#F4DB4A';   // 바로카드 막대 — 형광 노랑으로 다른 종목과 구분한다
+const BARO = '#F4DB4A';   // 바디카드 막대 — 형광 노랑으로 다른 종목과 구분한다
 
 function Card({ icon = 'walk', title, sub, children }) {
   const t = getTypeAccent();

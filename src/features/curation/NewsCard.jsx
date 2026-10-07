@@ -121,7 +121,7 @@ export default function NewsCard({ item, slides = [], tone = 'z', onClose, tail 
         </div>
       </div>
 
-      {/* 마지막 장 — 함께 해 볼 바로플리 자리 */}
+      {/* 마지막 장 — 함께 해 볼 바디플리 자리 */}
       {last && tail && <div style={{ padding: '0 14px 18px' }}>{tail}</div>}
     </div>
   );

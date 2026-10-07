@@ -146,7 +146,7 @@ function Tile({ label, value, sub, tone }) {
 }
 
 const PANEL_LABEL = {
-  browse: '둘러보기', baropli: '바로플리 목록', box: '내 보관함', discover: '기록·발견',
+  browse: '둘러보기', baropli: '바디플리 목록', box: '내 보관함', discover: '기록·발견',
   letter: '월간 편지', angle: '각도기록', write: '오늘 쓰기',
 };
 const FIELD_LABEL = { mood: '기분', sore: '아픈 부위', tags: '오늘의 태그', sleep: '수면', overwork: '무리했나요', exercise: '운동', note: '매일 한마디' };
@@ -612,9 +612,9 @@ export default function MetricsView() {
           자기점검·다이어리·각도기록 안쪽 <span style={{ fontWeight: 600, color: SUB, fontSize: 12 }}>· 2026-09-29부터 쌓임 · 관리자 미리보기에서 누른 것은 남지 않음</span>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-          <Tile label="바로카드 완주율" value={act.card.all ? `${pct(act.card.done, act.card.all)}%` : '—'} tone={GOLD}
+          <Tile label="바디카드 완주율" value={act.card.all ? `${pct(act.card.done, act.card.all)}%` : '—'} tone={GOLD}
             sub={`시작 ${act.cardStart} · 완주 ${act.card.done} · 중단 ${act.card.all - act.card.done}`} />
-          <Tile label="바로플리 완주율" value={act.pli.all ? `${pct(act.pli.done, act.pli.all)}%` : '—'} tone={GOLD}
+          <Tile label="바디플리 완주율" value={act.pli.all ? `${pct(act.pli.done, act.pli.all)}%` : '—'} tone={GOLD}
             sub={`시작 ${act.pliStart} · 완주 ${act.pli.done} · 중단 ${act.pli.all - act.pli.done}`} />
           <Tile label="오늘 쓰기 저장률" value={act.write.all ? `${pct(act.write.done, act.write.all)}%` : '—'} tone="#2F7A4F"
             sub={`저장 ${act.write.done} · 그만둠 ${act.write.all - act.write.done}`} />
@@ -639,8 +639,8 @@ export default function MetricsView() {
             </div>
           ))}
         </div>
-        <Bars title="바로카드를 그만둔 자리" note="몇 세트를 하고 나갔는지 — 0세트는 시작만 하고 나간 것" rows={act.cardQuitAt} total={act.card.all - act.card.done} />
-        <Bars title="바로플리를 그만둔 자리" note="몇 번째 동작에서 나갔는지" rows={act.pliQuitAt} total={act.pli.all - act.pli.done} />
+        <Bars title="바디카드를 그만둔 자리" note="몇 세트를 하고 나갔는지 — 0세트는 시작만 하고 나간 것" rows={act.cardQuitAt} total={act.card.all - act.card.done} />
+        <Bars title="바디플리를 그만둔 자리" note="몇 번째 동작에서 나갔는지" rows={act.pliQuitAt} total={act.pli.all - act.pli.done} />
         <Bars title="배속" note="따라 하기를 시작할 때 고른 빠르기" rows={act.speeds} total={act.cardStart} />
         <Bars title="안내" note="설명 들으며 / 숫자만 — 숫자만이면 세트 멘트가 나가지 않습니다" rows={act.guides} total={act.cardStart} />
         <Bars title="각도기록 도달한 판" note="판마다 여기까지 온 사람 수 — 뚝 떨어지는 판이 어려운 판입니다" rows={act.angleReach} />
@@ -669,7 +669,7 @@ export default function MetricsView() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
         <Bars title="연속 기록이 끊긴 지점" note="며칠째에 그만두는지 — 알림 시점을 정하는 근거" rows={streaks} />
-        <Bars title="부위 묶음별 기록" note="큐레이션·바로카드를 어느 부위부터 만들지" rows={parts.byGroup} />
+        <Bars title="부위 묶음별 기록" note="큐레이션·바디카드를 어느 부위부터 만들지" rows={parts.byGroup} />
         <Bars title="부위별 기록" rows={parts.byPart} />
       </div>
 

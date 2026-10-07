@@ -1,6 +1,6 @@
 // 손님에게 보이는 큐레이션 —
 //  목록 카드: 가로로 꽉 찬 썸네일(문구 + 우측 하단 가독시간) → 아래에 누끼 캐릭터 + 제목 → 지표 줄
-//  본문:     같은 썸네일 → 제목 → 초록 → 네 마디(이미지+글) → 추천 바로카드
+//  본문:     같은 썸네일 → 제목 → 초록 → 네 마디(이미지+글) → 추천 바디카드
 import { useEffect, useRef, useState } from 'react';
 import { GROUP_LABEL } from '../../lib/bodyGroups';
 import { pickCurationTone, fmtCount, mmss, routineSummary } from './format';
@@ -16,7 +16,7 @@ const MARKER = '#FBEFB6';   // 목차에 대충 그은 옐로우 형광펜
 const PURPLE = '#7E6FC9';   // 답변에서 짚어 주는 연보라 글씨
 const KEEP_BG = '#FDF2CE', KEEP_INK = '#6E5A1C';   // 보관 버튼 — 연한 옐로우
 const DOTS = 'repeating-linear-gradient(90deg, #DCD6CC 0 5px, transparent 5px 11px)';
-// 바로카드 종류마다 표지 문구에 그어 주는 형광펜 색
+// 바디카드 종류마다 표지 문구에 그어 주는 형광펜 색
 const KIND_MARK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#7FB77E' };
 // 손으로 대충 그은 형광펜 — 글자 아래쪽만 덮되, 양 끝은 붓이 삐져나간 것처럼 지저분하게.
 // 몸통 한 겹 위에 붓 자국 세 겹을 얹었다. 자국은 타원으로 번지게 해 네모나 보이지 않는다.
@@ -47,7 +47,7 @@ export function CharPic({ src, code, h = 38 }) {
 }
 
 // 가로로 꽉 찬 썸네일 — 문구는 Z/M 구분 없이 하나만 쓴다.
-// still: 격자용 작은 그림(바로카드 poster_url). 있으면 영상(clip) 대신 이것만 깐다 — 격자가 가벼워진다.
+// still: 격자용 작은 그림(바디카드 poster_url). 있으면 영상(clip) 대신 이것만 깐다 — 격자가 가벼워진다.
 export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9', badge, showRead = true, clip: clipIn = '', still = '', emptyText = '대표 이미지 없음', onClipEnd }) {
   const clip = still ? '' : clipIn;
   // 표지에 영상을 깔면, 화면에 들어올 때 소리 없이 처음부터 끝까지 돌려 준다.
@@ -101,7 +101,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         const pad = big ? 18 : 12;
         // 아래쪽에는 가독시간표(목록에서만)와 누끼 캐릭터가 있으니 그만큼 비켜 준다.
         const bottomPad = pos.align === 'flex-end' && (badge || showRead) ? pad + 30 : pad;
-        // 바로카드는 종류마다 다른 형광펜이 문구 아래에 대충 그어진다.
+        // 바디카드는 종류마다 다른 형광펜이 문구 아래에 대충 그어진다.
         const mark = KIND_MARK[item.kind];
         return (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: pos.align, justifyContent: pos.justify,
@@ -116,7 +116,7 @@ export function CurationThumb({ item, radius = 14, big = false, ratio = '16 / 9'
         );
       })()}
 
-      {/* 우측 하단 표 — 큐레이션은 가독시간, 바로카드는 소요 시간 */}
+      {/* 우측 하단 표 — 큐레이션은 가독시간, 바디카드는 소요 시간 */}
       {(badge || (showRead && !big)) && (
         <span style={{ position: 'absolute', right: 7, bottom: 7, background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
           color: '#fff', borderRadius: 6, padding: '4px 7px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05, whiteSpace: 'nowrap' }}>
@@ -282,7 +282,7 @@ const Paras = ({ text }) => String(text || '').trim().split(/\n{2,}/).filter(Boo
 
 // 본문
 export function CurationDetail({ item, tone = 'z', routines = [], onStartPli, onBrowsePli, charImage, charImages, charCodes, onSave }) {
-  const [askPli, setAskPli] = useState(null);   // 어떤 바로플리를 눌렀는지
+  const [askPli, setAskPli] = useState(null);   // 어떤 바디플리를 눌렀는지
   const { title, body } = pickCurationTone(item, tone);
   const chars = (charImages && charImages.length ? charImages : (charImage ? [charImage] : [])).slice(0, 4);
   const codes = charCodes || [];
@@ -426,7 +426,7 @@ export function CurationDetail({ item, tone = 'z', routines = [], onStartPli, on
         </section>
       )}
 
-      {/* 바로플리를 누르면 — 지금 할지, 먼저 볼지 */}
+      {/* 바디플리를 누르면 — 지금 할지, 먼저 볼지 */}
       {askPli && (
         <div onClick={() => setAskPli(null)}
           style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(23,21,15,0.5)',

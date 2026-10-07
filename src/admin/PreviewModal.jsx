@@ -40,12 +40,7 @@ const GlassMark = () => (
     <path d="M16 16l4.5 4.5" />
   </svg>
 );
-// 바로플리 — 재생 버튼
-const PlayMark = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-    <path d="M8 5.5l11 6.5-11 6.5z" fill="currentColor" />
-  </svg>
-);
+// 바디플리 — 재생 버튼
 // 내 보관함 — 담아 둔 상자
 const BoxMark = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -101,13 +96,12 @@ const SELF_NAV = [
   { key: 'back', label: '이전', icon: <BackMark /> },
   { key: 'browse', label: '둘러보기', icon: <GlassMark /> },
   { key: 'char' },
-  { key: 'baro', label: '바로플리', icon: <PlayMark /> },
   { key: 'box', label: '내 보관함', icon: <BoxMark /> },
 ];
 
 // 어느 칸을 보고 있느냐로 어느 층을 그릴지 정한다.
 const DIARY_KEYS = ['today', 'record', 'discover', 'angle'];
-const SELF_KEYS = ['browse', 'baro', 'box'];
+const SELF_KEYS = ['browse', 'box'];
 // 위쪽 제목 — 하단 줄이 통째로 바뀌니 여기가 길잡이다.
 // 아이콘을 앞에 세워 어느 방인지 한눈에 들어오게 한다.
 // 글씨체는 둘 다 둥근 고딕(주아)으로 맞춘다. 손글씨와 각진 글씨를 나눠 썼더니
