@@ -20,7 +20,8 @@ import MallangInfoPopup from '../../components/MallangInfoPopup';
 import { readMallangProfile, hasHealthSheet, healthSheetCheckedAt, markHealthSheetChecked } from '../../lib/mallangProfile';
 import { PART_KEY } from '../../lib/diaryEntryLabels';
 import { track } from '../../lib/analytics';
-import { coachRow, loadTasks, myCoach } from '../../lib/coach';
+import { coachRow, loadTasks, myCoach, termsAgreed, taskSeen } from '../../lib/coach';
+import CoachTerms from '../coach/CoachTerms';
 import CoachManage from '../coach/CoachManage';
 import CoachDesk from '../coach/CoachDesk';
 import { useMixerWake } from '../curation/useMixerWake';
@@ -67,8 +68,8 @@ async function loadPublic() {
   return { cards: cardRows, byId, plis, reads: reads.data || [] };
 }
 
-// coachVer: 과제 링크를 받으면 올라간다 — 과제를 다시 읽는다
-export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin, setUserProfile, coachVer = 0 }) {
+// coachVer: 과제 링크를 받으면 올라간다 — 과제를 다시 읽는다 · onTasksSeen: 받은 과제를 화면에서 봤다(새 과제 점을 끈다)
+export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin, setUserProfile, coachVer = 0, onTasksSeen }) {
   const tone = toneOf(axisOf(bmtiCode));
   const userId = isLoggedIn ? userProfile?.id || null : null;
   useMixerWake();   // 이 층에서 누르는 탭이 배경음악 믹서를 깨운다(아이폰에서 음악 크기를 조절하려면 필요하다)
@@ -79,6 +80,8 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   const [note, setNote] = useState('');
   // 강사–회원 연결 — 내가 강사인지(보내기 버튼), 연결된 강사와 받은 과제(추천루틴 맨 위)
   const [iCoach, setICoach] = useState(false);
+  const [coachOk, setCoachOk] = useState(true);       // 강사 약관에 동의했는가
+  const [termsOpen, setTermsOpen] = useState(false);  // 보관함에서 '회원에게 보내기'를 눌렀는데 아직 동의 전일 때
   const [coach, setCoach] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [manage, setManage] = useState(false);
@@ -125,7 +128,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   useEffect(() => {
     let alive = true;
     if (!userId || !pub) return undefined;
-    coachRow(userId).then((r) => { if (alive) setICoach(!!r); });
+    coachRow(userId).then((r) => { if (alive) { setICoach(!!r); setCoachOk(termsAgreed(r)); } });
     myCoach().then(async (c) => {
       if (!alive) return;
       setCoach(c);
@@ -138,6 +141,15 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   const myTasks = userId ? tasks : [];
   const myCoachNow = userId ? coach : null;
   const coachNow = !!userId && iCoach;
+  // 받은 과제가 화면에 보였으면 '봤다'고 적어 둔다 — 하단의 새 과제 점이 꺼진다
+  const showingTasks = tab === 'reco' && myTasks.length > 0 && !(coachNow && coachView === 'members');
+  const newestTask = myTasks.reduce((m, t) => (t.sentAt > m ? t.sentAt : m), '');
+  useEffect(() => {
+    if (!showingTasks || !newestTask) return;
+    taskSeen.set(newestTask);
+    if (onTasksSeen) onTasksSeen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showingTasks, newestTask]);
 
   // 잠깐 뜨는 알림
   useEffect(() => {
@@ -221,7 +233,9 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
             ))}
           </div>
         )}
-        {tab === 'reco' && coachNow && coachView === 'members' && <CoachDesk myPlis={mine} />}
+        {tab === 'reco' && coachNow && coachView === 'members' && (coachOk
+          ? <CoachDesk myPlis={mine} />
+          : <CoachTerms onAgreed={() => { setCoachOk(true); setNote('약관에 동의했어요'); }} />)}
         {tab === 'reco' && !(coachNow && coachView === 'members') && (
           <RecoView plis={pub.plis.filter((r) => !r.owner_id)} userId={userId} health={health} tone={tone} bmtiCode={bmtiCode}
             onOpenSheet={() => setSheet('edit')} onRequireLogin={onRequireLogin}
@@ -248,7 +262,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         {tab === 'box' && (userId ? (
           <BoxView nickname={userProfile?.nickname || '회원'} bmtiCode={bmtiCode} tone={tone}
             plis={box.plis} cards={box.cards} reads={box.reads} myPlis={mine} allCards={pub.cards}
-            isCoach={iCoach}
+            isCoach={iCoach} coachReady={coachOk} onCoachTerms={() => setTermsOpen(true)}
             onOpenRead={setOpenRead} onSaveMine={onSaveMine} onDeleteMine={onDeleteMine} />
         ) : (
           <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '34px 16px', textAlign: 'center', color: SUB,
@@ -271,6 +285,11 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
               fontSize: 18, fontWeight: 800, color: INK, cursor: 'pointer', marginBottom: 10 }}>‹</button>
           <CurationDetail item={openRead} tone={tone} onSave={() => keep.toggle('curation', openRead.id)} />
         </div>
+      )}
+
+      {termsOpen && (
+        <CoachTerms sheet onClose={() => setTermsOpen(false)}
+          onAgreed={() => { setCoachOk(true); setTermsOpen(false); setNote('약관에 동의했어요. 이제 보낼 수 있어요'); }} />
       )}
 
       {/* 연결 관리 — 강사와 무엇을 나누는지 보고, 바꾸거나 끊는다 */}

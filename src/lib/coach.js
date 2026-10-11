@@ -126,3 +126,31 @@ export async function sendTask(memberId, routineId, note, perWeek) {
 export const withdrawTask = async (taskId) => { const r = await rpc('withdraw_coach_task', { p_task_id: taskId }); return !r.error && r.data === true; };
 export const setAlias = async (memberId, alias) => { const r = await rpc('set_member_alias', { p_member: memberId, p_alias: alias || '' }); return !r.error && r.data === true; };
 export const dropMember = async (memberId) => { const r = await rpc('drop_member', { p_member: memberId }); return !r.error && r.data === true; };
+
+// ── 강사 약관 · 새 과제 알림(70_coach_terms_notice.sql) ──
+export const COACH_TERMS_VER = 't1';   // 강사 약관의 판 — 약관을 고치면 올린다(다시 동의받는다)
+/** 이 강사가 지금 판의 약관에 동의했는가. 약관 칸이 아직 없으면(70번 SQL 전) 묻지 않는다. */
+export const termsAgreed = (row) => !row || !('terms_ver' in row) || row.terms_ver === COACH_TERMS_VER;
+export const agreeCoachTerms = async () => { const r = await rpc('agree_coach_terms', { p_ver: COACH_TERMS_VER }); return !r.error && r.data === true; };
+
+/** 회원이 과제를 보러 들어오는 주소 — 알림과 카카오톡 메시지에 쓴다 */
+export const taskUrl = () => `${window.location.origin}${import.meta.env.BASE_URL}?go=task`;
+
+/** 강사: 방금 보낸 과제를, 알림을 켜 둔 회원 기기에 알린다. 실패해도 과제는 이미 갔으니 조용히 넘어간다. */
+export async function notifyTask(memberId, routineId) {
+  try { await supabase.functions.invoke('task-push', { body: { member: memberId, routine: routineId } }); } catch { /* 알림은 덤이다 */ }
+}
+
+// 새 과제 표시(빨간 점) — 마지막으로 본 과제의 보낸 때를 이 기기에 적어 두고, 그보다 새 과제가 있으면 점을 찍는다
+const SEEN_KEY = 'bmti_task_seen';
+/** 내가 받은 과제 가운데 가장 최근에 온 때(ISO). 없으면 '' */
+export async function latestTaskAt(userId) {
+  if (!userId) return '';
+  const { data, error } = await supabase.from('coach_tasks').select('sent_at').eq('member_id', userId)
+    .order('sent_at', { ascending: false }).limit(1);
+  return error ? '' : ((data || [])[0]?.sent_at || '');
+}
+export const taskSeen = {
+  get() { try { return localStorage.getItem(SEEN_KEY) || ''; } catch { return ''; } },
+  set(iso) { try { if (iso && iso > (localStorage.getItem(SEEN_KEY) || '')) localStorage.setItem(SEEN_KEY, iso); } catch { /* 무시 */ } },
+};

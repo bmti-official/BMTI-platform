@@ -286,7 +286,7 @@ export default function CoachDesk({ myPlis = [] }) {
       )}
       {send && (
         <SendToMember pli={send.pli} member={send.member} task={send.task} onClose={() => setSend(null)}
-          onSent={() => { setSend(null); setNote(send.task ? '과제를 고쳤어요' : '과제를 보냈어요'); setVer((v) => v + 1); }} />
+          onSent={() => { setNote(send.task ? '과제를 고쳤어요' : '과제를 보냈어요'); setVer((v) => v + 1); }} />
       )}
       {note && (
         <div role="status" style={{ position: 'fixed', left: '50%', bottom: 96, transform: 'translateX(-50%)', zIndex: 97, background: 'rgba(28,26,23,0.9)',

@@ -174,17 +174,17 @@ export default function CoachAdmin({ users = [] }) {
       {err && <div style={{ ...box, marginBottom: 14, color: RED, fontSize: 13, fontWeight: 700 }}>불러오지 못했습니다: {err}</div>}
 
       <div style={{ ...box, padding: 0, overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 840 }}>
           <thead>
             <tr style={{ background: BG }}>
-              {['상태', '표시 이름', '센터', '동네', '회원(닉네임)', '면허 확인한 날', '지정한 날', ''].map((h) => (
+              {['상태', '표시 이름', '센터', '동네', '회원(닉네임)', '면허 확인한 날', '약관 동의', '지정한 날', ''].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11.5, fontWeight: 800, color: SUB, borderBottom: `1px solid ${LINE}`, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={8} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 지정한 강사가 없습니다. 위에서 회원을 찾아 지정해 주세요.</td></tr>}
+            {loading && <tr><td colSpan={9} style={{ padding: 20, color: SUB, fontSize: 13 }}>불러오는 중…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={9} style={{ padding: 20, color: SUB, fontSize: 13 }}>아직 지정한 강사가 없습니다. 위에서 회원을 찾아 지정해 주세요.</td></tr>}
             {rows.map((r) => {
               const u = byId[r.user_id];
               const again = needsRecheck(r.license_checked_on);
@@ -201,6 +201,7 @@ export default function CoachAdmin({ users = [] }) {
                   <td style={{ ...td, color: again ? RED : SUB, fontWeight: again ? 800 : 400 }}>
                     {day(r.license_checked_on)}{again && ' · 다시 확인'}
                   </td>
+                  <td style={{ ...td, color: r.terms_at ? SUB : RED, fontWeight: r.terms_at ? 400 : 800 }}>{r.terms_at ? day(r.terms_at) : '아직'}</td>
                   <td style={td}>{day(r.created_at)}</td>
                   <td style={td}>
                     <button onClick={() => setForm({ user: u || { id: r.user_id, nickname: '' }, row: r })} style={smallBtn}>고치기</button>

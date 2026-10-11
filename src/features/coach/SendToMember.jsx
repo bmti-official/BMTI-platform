@@ -5,7 +5,7 @@
 //     회원이 링크를 열고 동의하면 연결되고, 그 회원의 추천루틴 칸 맨 위에 이 플리가 과제로 선다.
 //   · 바로 보내기 — 이미 연결된 회원(member)에게. 링크 없이 곧바로 과제가 된다.
 import { useEffect, useState } from 'react';
-import { makeLink, closeLink, liveLink, linkUrl, sendTask } from '../../lib/coach';
+import { makeLink, closeLink, liveLink, linkUrl, sendTask, notifyTask, taskUrl } from '../../lib/coach';
 import { avoidWord } from './coachWords';
 import { track } from '../../lib/analytics';
 
@@ -22,6 +22,8 @@ export default function SendToMember({ pli, member = null, task = null, onClose,
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState(false);        // 바로 보내기를 마쳤다 — 카카오톡으로 알릴지 묻는다
+  const [told, setTold] = useState('');           // 알리기 결과 한 줄
 
   // 이 플리로 만들어 둔 링크가 있으면 그것부터 보여 준다(바로 보낼 땐 링크를 쓰지 않는다)
   useEffect(() => {
@@ -44,7 +46,28 @@ export default function SendToMember({ pli, member = null, task = null, onClose,
     setBusy(false);
     if (!r.ok) { setErr(r.why); return; }
     track('coach_task_send', { week });
+    // 알림을 켜 둔 회원 기기에는 바로 알림이 간다(안 켠 회원이 많으니, 아래에서 카카오톡으로도 알릴 수 있게 한다)
+    notifyTask(member.member_id, pli.id);
+    setSent(true);
     if (onSent) onSent();
+  };
+  // 카카오톡으로 알리기 — 카카오톡 공유 창을 열어 강사가 그 회원과의 대화방을 고른다.
+  // 카카오톡을 쓸 수 없는 곳에서는 기기의 공유 창, 그것도 없으면 글을 복사해 준다.
+  const tell = async () => {
+    const text = `새 운동 과제를 보냈어요: ‘${pli.title_z}’\nBMTI의 추천루틴에서 확인해 주세요.`;
+    const to = taskUrl();
+    track('coach_task_tell');
+    try {
+      if (window.Kakao && window.Kakao.Share) {
+        window.Kakao.Share.sendDefault({ objectType: 'text', text, link: { webUrl: to, mobileWebUrl: to }, buttonTitle: '과제 보기' });
+        return;
+      }
+    } catch { /* 아래 길로 */ }
+    try {
+      if (navigator.share) { await navigator.share({ text, url: to }); return; }
+    } catch { return; }
+    try { await navigator.clipboard.writeText(`${text}\n${to}`); setTold('글을 복사했어요. 카카오톡에 붙여 넣어 주세요.'); }
+    catch { setTold('복사하지 못했어요. 회원에게 직접 알려 주세요.'); }
   };
   const make = async () => {
     if (busy || bad) return;
@@ -90,6 +113,30 @@ export default function SendToMember({ pli, member = null, task = null, onClose,
         <div style={{ fontSize: 13, fontWeight: 800, color: GOLD_INK, marginTop: 6, wordBreak: 'keep-all' }}>
           {pli.title_z} <span style={{ color: SUB, fontWeight: 700 }}>· 동작 {(pli.cards || []).length}개</span>
         </div>
+
+        {/* 바로 보내기를 마쳤을 때 — 회원에게 알릴 길 */}
+        {sent && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ background: YELLOW, borderRadius: 14, padding: '13px 14px', fontSize: 13.5, fontWeight: 800, lineHeight: 1.6, wordBreak: 'keep-all' }}>
+              {member.name} 님에게 과제를 보냈어요.
+              <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: SUB, marginTop: 3 }}>
+                회원이 앱을 열면 추천루틴 칸에 새 과제 표시가 떠요. 알림을 켜 둔 회원에게는 알림도 갔어요.
+              </span>
+            </div>
+            <button type="button" onClick={tell}
+              style={{ width: '100%', marginTop: 12, padding: 14, borderRadius: 14, border: 'none', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 800,
+                cursor: 'pointer', background: '#FEE500', color: '#3C1E1E' }}>
+              카카오톡으로 알리기
+            </button>
+            {told && <div role="status" style={{ fontSize: 12.5, fontWeight: 700, color: GOLD_INK, marginTop: 8, textAlign: 'center' }}>{told}</div>}
+            <button type="button" onClick={onClose}
+              style={{ width: '100%', marginTop: 8, padding: 13, borderRadius: 14, border: 'none', fontFamily: 'inherit', fontSize: 14, fontWeight: 800,
+                cursor: 'pointer', background: '#fff', color: SUB, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+              닫기
+            </button>
+          </div>
+        )}
+        {!sent && (<>
 
         <label htmlFor="coach-note" style={label}>한마디 <span style={{ fontWeight: 700, color: '#B5AEA2' }}>안 적어도 돼요 · {note.length}/{NOTE_MAX}</span></label>
         <input id="coach-note" value={note} onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))} placeholder="예: 자기 전에 한 번씩 해 주세요"
@@ -144,6 +191,7 @@ export default function SendToMember({ pli, member = null, task = null, onClose,
             ? '보내면 회원의 추천루틴 칸 맨 위에 과제로 떠요. 플리를 고치면 받은 회원에게도 바로 바뀌어 보여요.'
             : '회원이 이 주소를 열고 동의하면 연결돼요. 같은 주소를 여러 회원에게 보내도 돼요. 플리를 고치면 받은 회원에게도 바로 바뀌어 보여요. 이미 연결된 회원에게는 추천루틴 칸의 ‘내 회원’에서 링크 없이 보낼 수 있어요.'}
         </p>
+        </>)}
       </div>
     </div>
   );

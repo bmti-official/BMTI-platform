@@ -120,8 +120,8 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
   // (카카오 SDK 경로는 카카오 앱에 등록된 도메인/캐시에 따라 예전 주소로 갈 수 있어 폴백으로 둔다.)
   const shareToFriend = () => {
     const siteUrl = 'https://bmti-official.co.kr/';
-    // 받은 사람은 공유자 유형의 '예시 결과지'(다른 유형 구경하기)로 바로 들어온다.
-    const shareUrl = `${siteUrl}t/${axisCode}.html`;
+    // 받은 사람은 이 주소로 들어와 바로 검사를 시작한다(유형별 정적 페이지는 걷어 냈다 — 예전 주소 /t/….html은 없다).
+    const shareUrl = `${siteUrl}#example-${axisCode}`;
     const nick = (BMTI_RESULTS[axisCode]?.nickname || CHARACTER_NAMES[axisCode] || axisCode).replace(/\n/g, ' ');
     const title = `나의 BMTI는 ${nick} (${axisCode})!`;
     const description = `${(charInfo?.catchphrase || '내 몸이 원하는 움직임 성향, BMTI').replace(/\n/g, ' ')}\n나와 다른 유형도 구경해보세요!`;

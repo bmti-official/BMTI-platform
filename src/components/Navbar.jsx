@@ -146,11 +146,15 @@ const ROUND = "'Jua','Pretendard',-apple-system,sans-serif";
 
 // 알약 안의 한 칸(아이콘 + 라벨). 여러 칸을 묶어 화면 가로를 꽉 채우는 알약을 만든다.
 // color: 루트 칸(다이어리·자기점검)은 고른 칸이 없으므로 회색으로 죽이지 않고 제 색 그대로 둔다.
-const PillTab = ({ active, onClick, icon, label, color = false }) => (
+// dot: 새로 온 것이 있다는 빨간 점(강사가 보낸 새 과제)
+const PillTab = ({ active, onClick, icon, label, color = false, dot = false }) => (
   <button onClick={onClick} className="nav-tab flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl active:scale-95"
     style={active ? { background: '#F3F1EC' } : undefined}>
     {/* 고른 칸은 예전 '나의 유형'처럼 세 번 내려갔다 올라오며 색이 바뀐다 */}
-    <span className={`nav-tab-ico w-6 h-6 flex items-center justify-center ${active ? 'nav-check-anim' : color ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
+    <span className="relative">
+      <span className={`nav-tab-ico w-6 h-6 flex items-center justify-center ${active ? 'nav-check-anim' : color ? '' : 'opacity-45 grayscale'}`}>{icon}</span>
+      {dot && <span aria-label="새 과제" className="nav-dot" style={{ position: 'absolute', top: -2, right: -5, width: 8, height: 8, borderRadius: '50%', background: '#E5484D', boxShadow: '0 0 0 1.5px #fff' }} />}
+    </span>
     <span className={`nav-tab-lb ${label.length > 4 ? 'text-[8.5px]' : 'text-[9.5px]'} font-bold whitespace-nowrap ${active ? 'text-black' : color ? 'text-gray-600' : 'text-gray-400'}`}>{label}</span>
   </button>
 );
@@ -183,7 +187,7 @@ const AppScrollTop = () => {
   );
 };
 
-const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode, selfTab = 'browse', setSelfTab, hasReco = false }) => {
+const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogin, userProfile, bmtiCode, selfTab = 'browse', setSelfTab, hasReco = false, taskDot = false }) => {
 
   const [lastChatDate, setLastChatDate] = useState(localStorage.getItem('last_chat_date'));
 
@@ -261,7 +265,8 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
     root: [
       { key: 'diary', label: '다이어리', icon: <Mallang v={diaryMoodTick} size={24} noBlink />, on: goDiary, color: true },
       { key: 'char' },
-      { key: 'self', label: '자기점검', icon: <Bolt3D size={24} id="tab" />, on: () => goSelf('browse'), color: true },
+      // 새 과제가 와 있으면 점을 찍고, 누르면 추천루틴 칸으로 바로 간다
+      { key: 'self', label: '자기점검', icon: <Bolt3D size={24} id="tab" />, on: () => goSelf(taskDot ? 'reco' : 'browse'), color: true, dot: taskDot },
     ],
     diary: [
       { key: 'back', label: '이전', icon: <BackMark />, on: goBack },
@@ -276,7 +281,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
       { key: 'char' },
       // 바디플리가 둘러보기 안으로 들어가며 비운 자리 — 추천할 공식 플리가 있으면 '추천루틴' 칸이 선다.
       // 없을 때는 내 보관함이 두 칸 너비를 써서 가운데 캐릭터 자리가 틀어지지 않게 한다.
-      ...(hasReco ? [{ key: 'reco', label: RECO_TAB, icon: <RecoMark />, on: () => setSelfTab && setSelfTab('reco') }] : []),
+      ...(hasReco ? [{ key: 'reco', label: RECO_TAB, icon: <RecoMark />, on: () => setSelfTab && setSelfTab('reco'), dot: taskDot }] : []),
       { key: 'box', label: '내 보관함', icon: <BoxMark />, on: () => setSelfTab && setSelfTab('box'), wide: !hasReco },
     ],
   };
@@ -461,7 +466,7 @@ const Navbar = ({ currentView, setView, isLoggedIn, setIsLoggedIn, onRequireLogi
                 <span key="char" className="w-14 shrink-0" aria-hidden="true" />
               ) : (
                 <span key={t.key} className="flex-1 min-w-0 flex" style={{ flex: t.wide ? '2 1 0%' : undefined, animation: grow ? `navTabIn .34s ease-out ${0.08 + i * 0.045}s both` : 'none' }}>
-                  <PillTab active={tabOn(t.key)} onClick={t.on} icon={t.icon} label={t.label} color={!!t.color} />
+                  <PillTab active={tabOn(t.key)} onClick={t.on} icon={t.icon} label={t.label} color={!!t.color} dot={!!t.dot} />
                 </span>
               )))}
             </div>

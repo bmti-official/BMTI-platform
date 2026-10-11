@@ -8,6 +8,7 @@ import {
   setGuestMallang, pushGuestMallangHistory, readMallangProfile, markHealthSheetChecked,
 } from "../lib/mallangProfile";
 import { soreFromDiary } from "../lib/healthSheet";
+import { SHEET_CONSENT_VER, hasSheetConsent, markSheetConsent, clearSheetConsent } from "../lib/sheetConsent";
 
 // 건강 정보를 받는 창.
 //   mode "all"    건강 정보 한 장 — 불편한 부위·얼마나 됐는지·자세·운동 빈도·목적을 한 번에(마이페이지, 둘러보기, 강사 연결)
@@ -46,6 +47,11 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
   const [posture, setPosture] = useState(existing.common_posture ? (known ? existing.common_posture : "other") : null);
   const [postureCustom, setPostureCustom] = useState(existing.common_posture && !known ? existing.common_posture : "");
   const toggleGoal = (id) => setGoals((g) => (g.includes(id) ? g.filter((x) => x !== id) : (g.length >= 2 ? g : [...g, id])));
+  // 불편한 부위는 건강에 관한 정보라 따로 동의받는다 — 아직 동의한 적이 없을 때만 묻는다
+  const [needConsent] = useState(() => withSore && !hasSheetConsent(userInfo));
+  const [agreed, setAgreed] = useState(false);
+  const [detail, setDetail] = useState(false);
+  const canSave = !needConsent || agreed;
 
   const save = async () => {
     setSaving(true);
@@ -65,10 +71,16 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
     };
     // 한 장에서만 받는 것 — 불편한 곳이 없으면 기간도 비운다
     const extra = all ? { sore_since: soreClean.length ? since : null, ...(withCoachNote ? { coach_note: note.trim().slice(0, 200) } : {}) } : {};
+    // 방금 동의했으면 판과 때를 함께 남긴다
+    const consent = needConsent && agreed ? { sheet_consent_ver: SHEET_CONSENT_VER, sheet_consent_at: new Date().toISOString() } : {};
     try {
       if (isLoggedIn && userInfo?.id) {
         const stamp = { mallang_info_updated_at: new Date().toISOString() };
-        let { error } = await supabase.from("users").update({ ...payload, ...extra, ...stamp }).eq("id", userInfo.id);
+        let { error } = await supabase.from("users").update({ ...payload, ...extra, ...consent, ...stamp }).eq("id", userInfo.id);
+        // 70번 SQL(동의 기록 칸) 전이면 그 칸만 빼고 저장한다 — 동의는 이 기기에 남는다
+        if (error && /sheet_consent/.test(error.message || "")) {
+          ({ error } = await supabase.from("users").update({ ...payload, ...extra, ...stamp }).eq("id", userInfo.id));
+        }
         // 65번 SQL(sore_since·coach_note 칸) 전이면 그 칸만 빼고 저장한다
         if (error && /sore_since|coach_note/.test(error.message || "")) {
           ({ error } = await supabase.from("users").update({ ...payload, ...stamp }).eq("id", userInfo.id));
@@ -77,7 +89,7 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
         const hist = { user_id: userInfo.id, sore: payload.mallang_sore, exercise_frequency: payload.exercise_frequency, exercise_goals: payload.exercise_goals, common_posture: payload.common_posture, source: "edit" };
         const h = await supabase.from("mallang_info_history").insert({ ...hist, ...extra });
         if (h.error && /sore_since|coach_note/.test(h.error.message || "")) await supabase.from("mallang_info_history").insert(hist);
-        if (setUserProfile) setUserProfile((prev) => { const u = { ...prev, ...payload, ...extra, ...stamp }; try { localStorage.setItem("bmti_user", JSON.stringify(u)); } catch { /* 무시 */ } return u; });
+        if (setUserProfile) setUserProfile((prev) => { const u = { ...prev, ...payload, ...extra, ...consent, ...stamp }; try { localStorage.setItem("bmti_user", JSON.stringify(u)); } catch { /* 무시 */ } return u; });
       } else {
         setGuestMallang({ ...payload, ...extra, sore: soreClean });
         pushGuestMallangHistory({ ...payload, ...extra, sore: soreClean, source: "edit" });
@@ -88,7 +100,34 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
       window.alert("저장하지 못했어요. 잠시 후 다시 해 주세요.");
       return;
     }
+    if (needConsent && agreed) markSheetConsent();
     markMonth(mode);
+    setSaving(false);
+    onSaved && onSaved();
+    onClose && onClose();
+  };
+
+  // 적어 둔 건강 정보를 지운다 — 동의를 거두는 길. 불편한 부위·기간·미리 알릴 말을 비우고 동의 기록도 지운다.
+  const wipe = async () => {
+    if (!window.confirm("적어 둔 건강 정보(불편한 부위·기간·강사에게 미리 알릴 말)를 지울까요?\n강사에게 이미 보낸 사본은 추천루틴의 ‘연결 관리’에서 따로 거둘 수 있어요.")) return;
+    setSaving(true);
+    const blank = { mallang_sore: [], sore_since: null, coach_note: null };
+    try {
+      if (isLoggedIn && userInfo?.id) {
+        let { error } = await supabase.from("users").update({ ...blank, sheet_consent_ver: null, sheet_consent_at: null }).eq("id", userInfo.id);
+        if (error && /sheet_consent/.test(error.message || "")) ({ error } = await supabase.from("users").update(blank).eq("id", userInfo.id));
+        if (error) throw error;
+        if (setUserProfile) setUserProfile((prev) => { const u = { ...prev, ...blank, sheet_consent_ver: null, sheet_consent_at: null }; try { localStorage.setItem("bmti_user", JSON.stringify(u)); } catch { /* 무시 */ } return u; });
+      } else {
+        setGuestMallang({ ...existing, sore: [], mallang_sore: [], sore_since: null, coach_note: "" });
+      }
+    } catch (e) {
+      console.error("건강 정보 지우기 실패", e);
+      setSaving(false);
+      window.alert("지우지 못했어요. 잠시 후 다시 해 주세요.");
+      return;
+    }
+    clearSheetConsent();
     setSaving(false);
     onSaved && onSaved();
     onClose && onClose();
@@ -164,7 +203,39 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
                   </Q>
                 )}
               </div>
-              <button onClick={save} disabled={saving} style={{ width: "100%", marginTop: 20, padding: 15, borderRadius: 15, border: "none", background: GOLD, color: "#fff", fontSize: 15, fontWeight: 800, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "저장 중…" : "저장하기"}</button>
+              {/* 건강에 관한 정보 — 저장하기 전에 한 번, 따로 동의받는다 */}
+              {needConsent && (
+                <div style={{ marginTop: 20, background: "#FAF7F0", borderRadius: 14, padding: "12px 13px" }}>
+                  <button type="button" role="checkbox" aria-checked={agreed} onClick={() => setAgreed((v) => !v)}
+                    style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span aria-hidden="true" style={{ flexShrink: 0, width: 20, height: 20, borderRadius: 6, marginTop: 1, boxSizing: "border-box", background: agreed ? GOLD : "#fff", border: `1.5px solid ${agreed ? GOLD : "#CFC9BD"}`, color: "#fff", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{agreed ? "✓" : ""}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 800, color: C.ink, lineHeight: 1.5, wordBreak: "keep-all" }}>
+                      <span style={{ fontSize: 11, fontWeight: 900, color: "#B23B36", marginRight: 6 }}>필수</span>
+                      불편한 부위 같은 건강에 관한 정보를 저장하는 데 동의해요
+                    </span>
+                  </button>
+                  <button type="button" onClick={() => setDetail((v) => !v)} aria-expanded={detail}
+                    style={{ margin: "7px 0 0 30px", border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 800, color: C.sub, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                    {detail ? "접기" : "무엇을, 왜 저장하나요?"}
+                  </button>
+                  {detail && (
+                    <div style={{ margin: "8px 0 0 30px", fontSize: 11.5, fontWeight: 600, color: C.sub, lineHeight: 1.7, wordBreak: "keep-all" }}>
+                      <b style={{ color: C.ink }}>무엇을</b> 불편한 부위와 상황, 얼마나 됐는지{withCoachNote ? ", 강사에게 미리 알릴 말" : ""}<br />
+                      <b style={{ color: C.ink }}>왜</b> 내 몸에 맞는 동작과 루틴을 먼저 보여 드리고, 기록·발견에 쓰려고요<br />
+                      <b style={{ color: C.ink }}>언제까지</b> 직접 지우거나 탈퇴할 때까지<br />
+                      동의하지 않으면 저장되지 않아요. 다른 기능은 그대로 쓸 수 있어요.
+                    </div>
+                  )}
+                </div>
+              )}
+              <button onClick={save} disabled={saving || !canSave} style={{ width: "100%", marginTop: needConsent ? 12 : 20, padding: 15, borderRadius: 15, border: "none", background: canSave ? GOLD : "#F1EEE8", color: canSave ? "#fff" : "#B5AEA2", fontSize: 15, fontWeight: 800, cursor: saving || !canSave ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "저장 중…" : "저장하기"}</button>
+              {/* 적어 둔 것이 있으면 — 지우는 길(동의를 거두는 길) */}
+              {all && (existing.sore || []).length > 0 && (
+                <button type="button" onClick={wipe} disabled={saving}
+                  style={{ display: "block", margin: "14px auto 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, color: C.sub, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  적어 둔 건강 정보 지우기
+                </button>
+              )}
             </>
           )}
         </div>

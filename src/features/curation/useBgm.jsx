@@ -70,6 +70,8 @@ export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
   const [part, setPart] = useState('intro');
   // 마무리로 넘어간 때 — 겹치는 동안 크기를 얼마나 옮겼는지 재는 데 쓴다.
   const outroFrom = useRef(0);
+  // 마무리가 끝났는데 아직 하는 중이면 중간이 다시 흐른다 — 그 돌아온 때. 뚝 튀어나오지 않고 천천히 올라오게 한다.
+  const backFrom = useRef(0);
 
   // 도입부가 없는 곡이면 처음부터 중간으로 친다 — 따로 되돌릴 일이 없다.
   const live = part === 'intro' && !bgm.intro ? 'loop' : part;
@@ -102,10 +104,9 @@ export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
         play(oA);
         const t = (Date.now() - outroFrom.current) / (XFADE_SEC * 1000);
         gO = oA && oA.src ? fadeIn(t) : 0;
-        // 중간은 겹치는 동안 줄어들다 선다
+        // 중간(과, 아직 흐르고 있다면 도입부)은 겹치는 동안 줄어들다 선다
         const down = fadeOut(t);
-        if (t >= 1) loops.forEach(stop); else { gCur = down; gNxt = nxt && !nxt.paused ? down : 0; }
-        stop(iA);
+        if (t >= 1) { loops.forEach(stop); stop(iA); } else { gCur = down; gNxt = nxt && !nxt.paused ? down : 0; gI = iA && !iA.paused ? down : 0; }
       } else {
         stop(iA); stop(oA);
         play(cur);
@@ -119,6 +120,11 @@ export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
             gCur = fadeOut(t); gNxt = fadeIn(t);
           } else { gCur = 1; if (!nxt.paused) { stop(nxt); rewind(nxt); } }
         } else gCur = 1;
+        // 마무리가 끝나 다시 돌아온 참이면 1.5초에 걸쳐 올라온다
+        if (backFrom.current) {
+          const up = (Date.now() - backFrom.current) / (XFADE_SEC * 1000);
+          if (up >= 1) backFrom.current = 0; else { gCur *= fadeIn(up); gNxt *= fadeIn(up); }
+        }
       }
       setLevel(iA, base * gI);
       setLevel(oA, base * gO);
@@ -156,7 +162,7 @@ export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
       {bgm.loop && <audio ref={loopBRef} src={bgm.loop} crossOrigin="anonymous" preload="none" data-bgm="loop-b" style={{ display: 'none' }}
         onEnded={() => loopEnded(1)} />}
       {bgm.outro && <audio ref={outroRef} src={bgm.outro} crossOrigin="anonymous" preload="auto" data-bgm="outro" style={{ display: 'none' }}
-        onEnded={() => setPart((k) => (k === 'outro' ? 'loop' : k))} />}
+        onEnded={() => { backFrom.current = Date.now(); setPart((k) => (k === 'outro' ? 'loop' : k)); }} />}
     </>
   );
 
@@ -169,7 +175,7 @@ export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
         writePref({ no: n }); setPicked(n);
         // 처음부터 다시 — 같은 곡을 다시 골라도 도입부부터 흐르게 모두 되감는다
         [introRef, loopARef, loopBRef, outroRef].forEach((r) => { stop(r.current); rewind(r.current); });
-        setPart('intro'); outroFrom.current = 0; loopNo.current = 0;
+        setPart('intro'); outroFrom.current = 0; backFrom.current = 0; loopNo.current = 0;
       }} />
   ) : null;
 

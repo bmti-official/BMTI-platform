@@ -20,7 +20,7 @@ import { PARTS } from './lib/mallangReportEngine';
 import SavePromptModal from './components/SavePromptModal';
 import KakaoChannelPrompt from './components/KakaoChannelPrompt';
 import CoachInvite from './features/coach/CoachInvite';
-import { codeFromUrl, pendingCode } from './lib/coach';
+import { codeFromUrl, pendingCode, latestTaskAt, taskSeen } from './lib/coach';
 // 카카오 로그인에서 돌아오면 주소 끝에 #access_token=... 이 붙는다.
 // 여기서는 '못 본 척'만 한다 — 곧바로 지우면 Supabase가 읽기 전에 사라져
 // 로그인이 조용히 실패한다. 지우는 일은 세션이 자리잡은 뒤 watchAndCleanUrl이 맡는다.
@@ -46,9 +46,11 @@ function App() {
   // 주간 각도기록 알림(웹 푸시)은 '/?go=angle' 로 연다 — 다이어리에서 재는 화면을 바로 띄운다
   const goAngle = (() => { try { return new URLSearchParams(window.location.search).get('go') === 'angle'; } catch { return false; } })();
   const [openAngle, setOpenAngle] = useState(goAngle);
+  // 새 과제 알림(웹 푸시·카카오톡 메시지)은 '/?go=task' 로 연다 — 추천루틴 칸의 내 과제로 바로 간다
+  const goTask = (() => { try { return new URLSearchParams(window.location.search).get('go') === 'task'; } catch { return false; } })();
   // 한 번 읽었으면 주소에서 뗀다 — 새로고침할 때마다 카메라 화면이 다시 뜨지 않게
   useEffect(() => {
-    if (!goAngle) return;
+    if (!goAngle && !goTask) return;
     try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch { /* 무시 */ }
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   // 강사가 보낸 과제 링크('/?c=…') — 초대 화면을 띄운다. 카카오 로그인에 다녀오면 주소에서 사라지므로 이 기기에 쥐고 있는다.
@@ -64,10 +66,17 @@ function App() {
   }, []);
   const closeCoach = () => { pendingCode.clear(); setCoachCode(''); };
   const [currentView, setCurrentView] = useState(
-    initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (goAngle || isReturningDiaryUser ? 'aichat' : 'home')))
+    initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (goTask ? 'self' : (goAngle || isReturningDiaryUser ? 'aichat' : 'home'))))
   );
   // 자기점검 층 — 둘러보기 · 바디플리 · 내 보관함
-  const [selfTab, setSelfTab] = useState('browse');
+  const [selfTab, setSelfTab] = useState(() => {
+    if (!goTask) return 'browse';
+    // 강사인 회원도 받은 과제가 보이게 '내 과제' 쪽을 연다
+    try { localStorage.setItem('bmti_coach_view', 'mine'); localStorage.setItem('bmti_reco_tab', '1'); } catch { /* 무시 */ }
+    return 'reco';
+  });
+  // 새 과제 표시 — 마지막으로 본 것보다 새로 온 과제가 있으면 하단 네비에 빨간 점을 찍는다
+  const [taskDot, setTaskDot] = useState(false);
   // 추천루틴 칸 — 추천할 공식 바디플리가 하나라도 공개돼 있을 때만 하단 네비에 세운다.
   // 지난번에 본 값을 기억해 두어, 다시 들어올 때 칸이 뒤늦게 생기며 자리가 흔들리지 않게 한다.
   const [hasReco, setHasReco] = useState(() => { try { return localStorage.getItem('bmti_reco_tab') === '1'; } catch { return false; } });
@@ -101,6 +110,18 @@ function App() {
   }, [isLoggedIn]);
   const [showSignup, setShowSignup] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const myId = isLoggedIn ? userProfile?.id || null : null;
+  useEffect(() => {
+    let alive = true;
+    if (!myId) return undefined;
+    latestTaskAt(myId).then((at) => {
+      if (!alive || !at) return;
+      setTaskDot(at > taskSeen.get());
+      // 과제를 받은 회원에게는 추천할 공식 플리가 없어도 칸이 서야 한다
+      setHasReco(true);
+    });
+    return () => { alive = false; };
+  }, [myId, coachVer]);
   const [bmtiCode, setBmtiCode] = useState(() => {
     if (hashCode) return hashCode;
     const saved = localStorage.getItem('bmti_code');
@@ -415,6 +436,7 @@ function App() {
         selfTab={selfTab}
         setSelfTab={setSelfTab}
         hasReco={hasReco}
+        taskDot={!!myId && taskDot}
       />
 
       <main>
@@ -467,7 +489,8 @@ function App() {
         {currentView === 'self' && (
           <div style={{ maxWidth: 560, margin: '0 auto', padding: '76px 16px 110px' }}>
             <SelfCheckView tab={selfTab} bmtiCode={bmtiCode} userProfile={userProfile} isLoggedIn={isLoggedIn}
-              setUserProfile={setUserProfile} onRequireLogin={() => setShowSignup(true)} coachVer={coachVer} />
+              setUserProfile={setUserProfile} onRequireLogin={() => setShowSignup(true)} coachVer={coachVer}
+              onTasksSeen={() => setTaskDot(false)} />
           </div>
         )}
         {currentView === 'mypage' && (

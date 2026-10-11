@@ -43,8 +43,8 @@ export default function ShareBox({ bmtiCode, bmtiAnswers, isLoggedIn, onRequireL
       return;
     }
     const imageUrl = charData ? new URL(charData.originalImage, window.location.href).href : undefined;
-    // 받은 사람은 공유자 유형의 '예시 결과지'(다른 유형 구경하기)로 바로 들어온다.
-    const shareUrl = `${siteUrl}t/${axisCode}.html`;
+    // 받은 사람은 이 주소로 들어와 바로 검사를 시작한다(유형별 정적 페이지는 걷어 냈다 — 예전 주소 /t/….html은 없다).
+    const shareUrl = `${siteUrl}#example-${axisCode}`;
 
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
@@ -61,7 +61,7 @@ export default function ShareBox({ bmtiCode, bmtiAnswers, isLoggedIn, onRequireL
   };
 
   // ── 친구에게 공유하기 — 공용 헬퍼 ──────────────────────────────
-  const shareUrl = `${siteUrl}t/${axisCode}.html`;
+  const shareUrl = `${siteUrl}#example-${axisCode}`;
   // 공유 문구 — 닉네임은 대표 줄만 쓰고(윗줄 수식어는 붙이면 두 문장이 뭉개진다), 줄바꿈을 살려 읽기 쉽게.
   const shareText = (() => {
     const parts = (resultData.nickname || '').split('\n').map(s => s.trim()).filter(Boolean);

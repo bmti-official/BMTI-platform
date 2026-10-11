@@ -194,7 +194,7 @@ export default function CoachInvite({ code, isLoggedIn, userProfile, setUserProf
                 sub="닉네임 · 과제를 한 날짜 · 끝까지 했는지" />
               <Check tag="선택" on={share} onClick={() => setShare((v) => !v)}
                 label="건강 정보 한 장을 강사님에게 보내요"
-                sub="건강에 관한 정보예요. 불편한 부위와 상황 · 얼마나 됐는지 · 자주 하는 자세 · 운동 빈도와 목적 · 강사에게 미리 알릴 말" />
+                sub="건강에 관한 정보(민감정보)라 따로 여쭤요. 불편한 부위와 상황 · 얼마나 됐는지 · 자주 하는 자세 · 운동 빈도와 목적 · 강사에게 미리 알릴 말" />
             </div>
 
             {share && (

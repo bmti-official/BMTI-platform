@@ -36,8 +36,9 @@ const EMPTY_WORD = {
 
 export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
   plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine, onDeleteMine,
-  // 강사로 지정된 회원 — 마이플리를 회원에게 과제로 보낼 수 있다
-  isCoach = false }) {
+  // 강사로 지정된 회원 — 마이플리를 회원에게 과제로 보낼 수 있다.
+  // coachReady: 강사 약관에 동의했는가 — 아직이면 보내기를 누를 때 약관부터 받는다(onCoachTerms)
+  isCoach = false, coachReady = true, onCoachTerms }) {
   usePanelTime('box');   // 행동 기록 — 이 창에 머문 시간
   const [tab, setTab] = useState('mine');
   const [editing, setEditing] = useState(null);   // 마이플리 만들기·고치기 창 { id?, title, cards, from? }
@@ -101,7 +102,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
             </div>
           )}
           <PliGrid plis={myPlis} tone={tone} empty={EMPTY_WORD.mine} editMode={editMode} maker={false}
-            action={isCoach && !editMode ? { label: '회원에게 보내기', onClick: (r) => setSending(r) } : null}
+            action={isCoach && !editMode ? { label: '회원에게 보내기', onClick: (r) => (coachReady ? setSending(r) : onCoachTerms && onCoachTerms()) } : null}
             onOpen={(r) => (editMode
               ? setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], coverText: r.thumb_text || '', showNick: !!r.show_nick, share: r.share_state || 'private' })
               : setOpenPli(r))} />

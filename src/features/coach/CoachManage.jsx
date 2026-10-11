@@ -88,6 +88,7 @@ export default function CoachManage({ coach, onClose, onChanged, onEditSheet }) 
         <div style={{ ...row, borderBottom: `1px solid ${LINE}` }}>
           <div style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 600, color: SUB, lineHeight: 1.65, wordBreak: 'keep-all' }}>
             다이어리(기분·수면·메모), 각도 기록, BMTI 결과, 키·몸무게·연령대, 카카오 계정 정보는 나누지 않아요.
+            알림을 켜 둔 기기에는 강사님이 새 과제를 보내면 알림이 가요.
           </div>
         </div>
 
