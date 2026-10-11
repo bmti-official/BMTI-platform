@@ -30,3 +30,6 @@ supabase/.temp
 
 # 생성 스크립트 중간 산출물
 scripts/.magazine-urls.json
+
+# 새 배경음악 원본을 받아 자르는 자리 — 큰 소리 파일은 저장소에 올리지 않는다
+bgm-new/
