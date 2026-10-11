@@ -22,11 +22,13 @@ import { PART_KEY } from '../../lib/diaryEntryLabels';
 import { track } from '../../lib/analytics';
 import { coachRow, loadTasks, myCoach } from '../../lib/coach';
 import CoachManage from '../coach/CoachManage';
+import CoachDesk from '../coach/CoachDesk';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
 const FIT_KEY = 'bmti_fit_first';            // '내 몸에 맞는 것부터'를 켜 뒀는지 — 이 기기에 기억한다
 const RECHECK_MS = 90 * 864e5;               // 석 달에 한 번 '바뀐 게 있나요?'
+const COACH_VIEW_KEY = 'bmti_coach_view';    // 강사: 추천루틴 칸에서 마지막으로 본 쪽(내 회원 · 내 과제)
 
 // 플리에 담긴 동작을 붙인다(동작별 설정까지). 공개된 바디카드만 남고, 동작이 하나도 없으면 뺀다.
 const withCards = (rows, links, byId) => (rows || []).map((r) => ({
@@ -78,6 +80,9 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   const [coach, setCoach] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [manage, setManage] = useState(false);
+  // 강사는 추천루틴 칸에서 '내 회원'과 '내 과제'를 오간다 — 마지막으로 본 쪽을 기억한다(처음엔 내 회원)
+  const [coachView, setCoachView] = useState(() => { try { return localStorage.getItem(COACH_VIEW_KEY) === 'mine' ? 'mine' : 'members'; } catch { return 'members'; } });
+  const pickCoachView = (v) => { setCoachView(v); try { localStorage.setItem(COACH_VIEW_KEY, v); } catch { /* 무시 */ } };
   const [linkVer, setLinkVer] = useState(0);
 
   // ── 건강 정보 한 장 — 적어 두면 내 불편한 부위를 다루는 것부터 보여 준다 ──
@@ -130,6 +135,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   // 로그아웃하면 남의 화면에 과제가 남지 않게, 로그인한 사람 것만 쓴다
   const myTasks = userId ? tasks : [];
   const myCoachNow = userId ? coach : null;
+  const coachNow = !!userId && iCoach;
 
   // 잠깐 뜨는 알림
   useEffect(() => {
@@ -202,7 +208,19 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
       <div style={{ paddingBottom: 20 }}>
         {/* 바디플리는 둘러보기 안의 한 갈래다(예전에는 하단 네비에 따로 있었다) */}
         {/* 추천루틴 — 공식 바디플리 가운데 내 불편한 부위에 맞는 것을 골라 준다(회원이 올린 플리는 넣지 않는다) */}
-        {tab === 'reco' && (
+        {/* 강사에게만 — 같은 칸에서 내 회원과 내 과제를 오간다 */}
+        {tab === 'reco' && coachNow && (
+          <div role="tablist" aria-label="강사 화면" style={{ display: 'flex', gap: 4, background: '#F4F1EB', borderRadius: 13, padding: 4, margin: '0 0 14px' }}>
+            {[['members', '내 회원'], ['mine', '내 과제']].map(([k, lb]) => (
+              <button key={k} type="button" role="tab" aria-selected={coachView === k} onClick={() => pickCoachView(k)}
+                style={{ flex: 1, border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 10, padding: '9px 0', fontSize: 13, fontWeight: 800,
+                  background: coachView === k ? '#fff' : 'transparent', color: coachView === k ? INK : SUB,
+                  boxShadow: coachView === k ? '0 1px 4px rgba(28,26,23,0.10)' : 'none' }}>{lb}</button>
+            ))}
+          </div>
+        )}
+        {tab === 'reco' && coachNow && coachView === 'members' && <CoachDesk myPlis={mine} />}
+        {tab === 'reco' && !(coachNow && coachView === 'members') && (
           <RecoView plis={pub.plis.filter((r) => !r.owner_id)} userId={userId} health={health} tone={tone} bmtiCode={bmtiCode}
             onOpenSheet={() => setSheet('edit')} onRequireLogin={onRequireLogin}
             coach={myCoachNow} tasks={myTasks} onManage={() => setManage(true)} />

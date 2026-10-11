@@ -1,9 +1,11 @@
-// 강사: 내 플리를 회원에게 보낸다 — 링크를 만들어 카카오톡으로 건넨다.
+// 강사: 내 플리를 회원에게 보낸다.
 //
-// 링크 하나는 '강사 + 플리'다. 같은 링크를 여러 회원에게 보내도 되고, 14일 뒤 닫힌다.
-// 회원이 링크를 열고 동의하면 연결되고, 그 회원의 추천루틴 칸 맨 위에 이 플리가 과제로 선다.
+// 두 가지 길이 있다.
+//   · 링크 — 아직 연결되지 않은 회원에게. 링크 하나는 '강사 + 플리'이고, 여러 회원에게 보내도 되며 14일 뒤 닫힌다.
+//     회원이 링크를 열고 동의하면 연결되고, 그 회원의 추천루틴 칸 맨 위에 이 플리가 과제로 선다.
+//   · 바로 보내기 — 이미 연결된 회원(member)에게. 링크 없이 곧바로 과제가 된다.
 import { useEffect, useState } from 'react';
-import { makeLink, closeLink, liveLink, linkUrl } from '../../lib/coach';
+import { makeLink, closeLink, liveLink, linkUrl, sendTask } from '../../lib/coach';
 import { avoidWord } from './coachWords';
 import { track } from '../../lib/analytics';
 
@@ -12,27 +14,38 @@ const YELLOW = '#FDF6DC', GOLD_INK = '#8A6A3A', GOLD = '#C9975A', RED = '#B23B36
 const NOTE_MAX = 40;
 const day = (s) => { const d = new Date(s); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
 
-export default function SendToMember({ pli, onClose }) {
-  const [note, setNote] = useState('');
-  const [week, setWeek] = useState(0);            // 0 = 정하지 않음
+/** member: { member_id, name } 를 주면 그 회원에게 바로 보낸다 · task: 고쳐 보낼 때의 지금 값 { note, per_week } · onSent: 보낸 뒤 */
+export default function SendToMember({ pli, member = null, task = null, onClose, onSent }) {
+  const [note, setNote] = useState(task?.note || '');
+  const [week, setWeek] = useState(task?.per_week || 0);   // 0 = 정하지 않음
   const [link, setLink] = useState(null);         // 살아 있는 링크 { code, expires_at }
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // 이 플리로 만들어 둔 링크가 있으면 그것부터 보여 준다
+  // 이 플리로 만들어 둔 링크가 있으면 그것부터 보여 준다(바로 보낼 땐 링크를 쓰지 않는다)
   useEffect(() => {
     let alive = true;
+    if (member) return undefined;
     liveLink(pli.id).then((l) => {
       if (!alive || !l) return;
       setLink(l); setNote(l.note || ''); setWeek(l.per_week || 0);
     });
     return () => { alive = false; };
-  }, [pli.id]);
+  }, [pli.id, member]);
 
   const bad = avoidWord(note);
   const url = link ? linkUrl(link.code) : '';
 
+  const sendNow = async () => {
+    if (busy || bad) return;
+    setBusy(true); setErr('');
+    const r = await sendTask(member.member_id, pli.id, note.trim(), week);
+    setBusy(false);
+    if (!r.ok) { setErr(r.why); return; }
+    track('coach_task_send', { week });
+    if (onSent) onSent();
+  };
   const make = async () => {
     if (busy || bad) return;
     setBusy(true); setErr('');
@@ -70,7 +83,7 @@ export default function SendToMember({ pli, onClose }) {
         style={{ width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto', background: '#fff', borderRadius: '22px 22px 0 0',
           padding: '18px 18px 26px', color: INK, boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 900 }}>회원에게 보내기</div>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 900, wordBreak: 'keep-all' }}>{member ? `${member.name} 님에게 보내기` : '회원에게 보내기'}</div>
           <button type="button" onClick={onClose} aria-label="닫기"
             style={{ border: 'none', background: '#F4F1EB', width: 32, height: 32, borderRadius: '50%', fontSize: 15, fontWeight: 800, cursor: 'pointer', color: INK }}>✕</button>
         </div>
@@ -97,10 +110,11 @@ export default function SendToMember({ pli, onClose }) {
           ))}
         </div>
 
-        <button type="button" disabled={busy || !!bad} onClick={make}
+        <button type="button" disabled={busy || !!bad} onClick={member ? sendNow : make}
           style={{ width: '100%', marginTop: 18, padding: 14, borderRadius: 14, border: 'none', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 800,
             cursor: busy || bad ? 'default' : 'pointer', background: bad ? '#F1EEE8' : GOLD, color: bad ? '#B5AEA2' : '#fff', opacity: busy ? 0.6 : 1 }}>
-          {busy ? '만드는 중…' : link ? '이 내용으로 링크 고치기' : '링크 만들기'}
+          {member ? (busy ? '보내는 중…' : task ? '이 내용으로 고치기' : '과제로 보내기')
+            : (busy ? '만드는 중…' : link ? '이 내용으로 링크 고치기' : '링크 만들기')}
         </button>
 
         {link && (
@@ -126,8 +140,9 @@ export default function SendToMember({ pli, onClose }) {
         {err && <div role="alert" style={{ fontSize: 12.5, fontWeight: 700, color: RED, marginTop: 10 }}>{err}</div>}
 
         <p style={{ fontSize: 11.5, fontWeight: 600, color: SUB, lineHeight: 1.75, margin: '14px 0 0', wordBreak: 'keep-all' }}>
-          회원이 이 주소를 열고 동의하면 연결돼요. 같은 주소를 여러 회원에게 보내도 돼요.
-          플리를 고치면 받은 회원에게도 바로 바뀌어 보여요.
+          {member
+            ? '보내면 회원의 추천루틴 칸 맨 위에 과제로 떠요. 플리를 고치면 받은 회원에게도 바로 바뀌어 보여요.'
+            : '회원이 이 주소를 열고 동의하면 연결돼요. 같은 주소를 여러 회원에게 보내도 돼요. 플리를 고치면 받은 회원에게도 바로 바뀌어 보여요. 이미 연결된 회원에게는 추천루틴 칸의 ‘내 회원’에서 링크 없이 보낼 수 있어요.'}
         </p>
       </div>
     </div>

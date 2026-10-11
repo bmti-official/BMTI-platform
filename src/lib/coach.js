@@ -103,3 +103,26 @@ export async function loadTasks(userId, cardsById = {}) {
     return cards.length ? { id: t.id, note: t.note || '', perWeek: t.per_week || 0, sentAt: t.sent_at, pli: { ...r, cards, mine: true, task: true } } : null;
   }).filter(Boolean);
 }
+
+// ── 강사 화면(69_coach_desk.sql) — 함수마다 서버가 '활동 중인 강사인가'와 '내 회원인가'를 다시 본다 ──
+/**
+ * 내 회원 한눈에 — [{ member_id, nickname, alias, since, share_sheet, sheet, sheet_at,
+ *   tasks: [{ id, routine_id, title, note, per_week, sent_at }], done: [{ routine_id, date, all }], last }]
+ * 못 읽으면 null
+ */
+export async function coachOverview() {
+  const r = await rpc('coach_overview', {});
+  return r.error ? null : (r.data || []);
+}
+const why = (error, fallback) => {
+  const m = String(error?.message || '');
+  return /강사만|연결된 회원|내가 만든|동작이 담긴|쓸 수 없는 말/.test(m) ? m : fallback;
+};
+/** 링크 없이 바로 보내기 — { ok } 또는 { why } */
+export async function sendTask(memberId, routineId, note, perWeek) {
+  const r = await rpc('send_coach_task', { p_member: memberId, p_routine_id: routineId, p_note: note || '', p_per_week: perWeek || null });
+  return r.error ? { why: why(r.error, '보내지 못했어요. 잠시 후 다시 해 주세요.') } : { ok: true };
+}
+export const withdrawTask = async (taskId) => { const r = await rpc('withdraw_coach_task', { p_task_id: taskId }); return !r.error && r.data === true; };
+export const setAlias = async (memberId, alias) => { const r = await rpc('set_member_alias', { p_member: memberId, p_alias: alias || '' }); return !r.error && r.data === true; };
+export const dropMember = async (memberId) => { const r = await rpc('drop_member', { p_member: memberId }); return !r.error && r.data === true; };
