@@ -2,7 +2,7 @@
 //
 // 건강 정보 한 장에 적은 불편한 부위에 맞는 공식 바디플리를 두세 개 골라 보여 주고,
 // 요일마다 했는지를 표시한다. 따라 하면 저절로 표시되고, 영상 없이 한 날은 '했어요'를 누른다.
-// 강사와 연결하는 기능이 붙으면, 강사가 보낸 과제가 이 위에 선다.
+// 강사와 연결한 회원에게는, 강사가 보낸 과제가 이 위에 선다(같은 모양의 칸 — 요일 점, 바로 시작, 했어요).
 import { useEffect, useMemo, useState } from 'react';
 import PliFeed from '../curation/PliFeed';
 import RoutinePlayer from '../curation/RoutinePlayer';
@@ -23,14 +23,88 @@ const DAY = ['월', '화', '수', '목', '금', '토', '일'];
 // 씨앗에 쓸 '이 사람' — 회원 번호가 없으면 이 기기의 익명 번호
 const whoKey = (userId) => { try { return userId || localStorage.getItem('bmti_anon_id') || 'guest'; } catch { return userId || 'guest'; } };
 
-export default function RecoView({ plis = [], userId = null, health, tone = 'z', bmtiCode, onOpenSheet, onRequireLogin }) {
+// 플리 한 칸 — 추천 루틴과 강사 과제가 같은 모양을 쓴다.
+// chips: 제목 아래 작은 알약들 · note: 강사의 한마디 · goal: 일주일에 몇 번(0이면 없음)
+function PliRow({ pli, tone, days, today, stateOf, checked, chips = [], note = '', goal = 0, onOpen, onStart, onCheck }) {
+  const sum = routineSummary(pli.cards || []);
+  const todayState = stateOf(pli.id, today);
+  const did = days.filter((d) => stateOf(pli.id, d)).length;
+  return (
+    <div style={{ background: '#fff', borderRadius: 18, padding: 12, border: '1px solid #F1EEE8', boxShadow: SHADOW }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+        <button type="button" onClick={onOpen} aria-label="무엇이 담겼는지 보기"
+          style={{ flex: '0 0 86px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <PliCover pli={pli} radius={12} />
+        </button>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <button type="button" onClick={onOpen}
+            style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+            <div style={{ fontSize: 14.5, fontWeight: 900, color: INK, lineHeight: 1.35, wordBreak: 'keep-all' }}>{pickRoutineTone(pli, tone).title}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginTop: 3 }}>
+              동작 {(pli.cards || []).length}개{sum.durationSec > 0 ? ` · ${mmss(sum.durationSec)}` : ''}
+              {goal > 0 && <span style={{ color: did >= goal ? GOLD_INK : SUB }}> · 이번 주 {did}/{goal}번</span>}
+            </div>
+          </button>
+          {chips.length > 0 && (
+            <div style={{ marginTop: 6 }}>
+              {chips.map((h) => (
+                <span key={h} style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 800, color: GOLD_INK, background: YELLOW,
+                  borderRadius: 999, padding: '2px 8px', marginRight: 4 }}>{h}</span>
+              ))}
+            </div>
+          )}
+          {note && (
+            <div style={{ fontSize: 12, fontWeight: 700, color: INK, background: '#FAF7F0', borderRadius: 9, padding: '6px 9px', marginTop: 7,
+              lineHeight: 1.5, wordBreak: 'keep-all' }}>“{note}”</div>
+          )}
+          {/* 요일마다 했는지 — 끝까지 한 날은 꽉 찬 점, 조금 한 날은 테두리만 */}
+          <div style={{ display: 'flex', gap: 5, marginTop: 'auto', paddingTop: 9 }} aria-label="이번 주 한 날">
+            {days.map((d, i) => {
+              const st = stateOf(pli.id, d);
+              return (
+                <span key={d} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                  <span style={{ width: 16, height: 16, borderRadius: '50%', boxSizing: 'border-box',
+                    background: st === 'full' ? GOLD : '#fff', border: `2px solid ${st ? GOLD : (d === today ? '#D8D3C8' : LINE)}` }} />
+                  <span style={{ fontSize: 9, fontWeight: d === today ? 900 : 700, color: d === today ? INK : SUB }}>{DAY[i]}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
+        <button type="button" onClick={onStart}
+          style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: 'none', background: '#fff', color: INK, fontSize: 13.5, fontWeight: 800,
+            cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+          바로 시작하기 →
+        </button>
+        {todayState === 'full' && !checked ? (
+          <span style={{ flex: '0 0 96px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12,
+            background: YELLOW, color: GOLD_INK, fontSize: 12.5, fontWeight: 800 }}>오늘 했어요 ✓</span>
+        ) : (
+          <button type="button" onClick={() => onCheck(!checked)} aria-pressed={checked}
+            style={{ flex: '0 0 96px', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800,
+              background: checked ? YELLOW : '#fff', color: checked ? GOLD_INK : SUB, boxShadow: checked ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+            {checked ? '오늘 했어요 ✓' : '했어요'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * coach: 연결된 강사(my_coach) 또는 null · tasks: 강사가 보낸 과제 [{ id, note, perWeek, pli }] · onManage: 연결 관리 열기
+ */
+export default function RecoView({ plis = [], userId = null, health, tone = 'z', bmtiCode, onOpenSheet, onRequireLogin,
+  coach = null, tasks = [], onManage }) {
   usePanelTime('reco');   // 행동 기록 — 이 창에 머문 시간
   const [now] = useState(() => new Date());
   const days = useMemo(() => weekDays(now), [now]);
   const today = isoOf(now);
   const [rows, setRows] = useState([]);       // 지난주부터의 수행 기록
   const [ver, setVer] = useState(0);          // 따라 하고 돌아오면 올려 다시 읽는다
-  const [openPli, setOpenPli] = useState(null);
+  const [openPli, setOpenPli] = useState(null);   // { list: 넘겨 볼 플리들, id: 처음 보일 것 }
   const [playing, setPlaying] = useState(null);
 
   useEffect(() => {
@@ -65,16 +139,46 @@ export default function RecoView({ plis = [], userId = null, health, tone = 'z',
     if (!ok) setVer((v) => v + 1);
   };
 
-  if (plis.length === 0) {
-    return (
-      <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '30px 16px', textAlign: 'center', color: SUB,
-        fontSize: 13, fontWeight: 700, lineHeight: 1.7 }}>추천할 루틴을 준비하고 있어요.</div>
-    );
-  }
+  const isChecked = (id) => mine.some((r) => r.routine_id === id && r.date === today && r.manual);
+  // 강사가 보낸 과제 — 펼쳐 볼 때 만든 사람 자리에 강사 이름을 적는다
+  const taskPlis = tasks.map((t) => ({ ...t.pli, coach_name: coach?.coach_name || '' }));
 
   const labels = (health?.labels || []).join('·');
   return (
     <div style={{ fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
+      {/* 강사가 보낸 과제 — 자동 추천보다 위에 */}
+      {coach && (
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, margin: '2px 2px 10px' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.01em', wordBreak: 'keep-all' }}>{coach.coach_name} 강사님이 보낸 과제</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: SUB, marginTop: 3, lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                {tasks.length ? '한 날은 강사님도 볼 수 있어요' : '아직 받은 과제가 없어요. 강사님이 보내면 여기에 보여요.'}
+              </div>
+            </div>
+            <button type="button" onClick={onManage}
+              style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 9, padding: '6px 10px',
+                background: 'transparent', color: SUB, fontSize: 11, fontWeight: 800, boxShadow: `inset 0 0 0 1px ${LINE}` }}>
+              연결 관리
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tasks.map((t, i) => (
+              <PliRow key={t.id} pli={t.pli} tone={tone} days={days} today={today} stateOf={stateOf} checked={isChecked(t.pli.id)}
+                note={t.note} goal={t.perWeek}
+                onOpen={() => setOpenPli({ list: taskPlis, id: t.pli.id })}
+                onStart={() => { track('task_start', { pli: t.pli.id }); setPlaying(taskPlis[i]); }}
+                onCheck={(on) => check(t.pli.id, on)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {plis.length === 0 ? (
+        <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '30px 16px', textAlign: 'center', color: SUB,
+          fontSize: 13, fontWeight: 700, lineHeight: 1.7 }}>추천할 루틴을 준비하고 있어요.</div>
+      ) : (
+      <>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, margin: '2px 2px 10px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.01em' }}>이번 주 {RECO_TAB}</div>
@@ -106,69 +210,16 @@ export default function RecoView({ plis = [], userId = null, health, tone = 'z',
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {picks.map(({ pli, hits }) => {
-          const sum = routineSummary(pli.cards || []);
-          const todayState = stateOf(pli.id, today);
-          const checked = mine.some((r) => r.routine_id === pli.id && r.date === today && r.manual);
-          return (
-            <div key={pli.id} style={{ background: '#fff', borderRadius: 18, padding: 12, border: '1px solid #F1EEE8', boxShadow: SHADOW }}>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
-                <button type="button" onClick={() => setOpenPli(pli)} aria-label="무엇이 담겼는지 보기"
-                  style={{ flex: '0 0 86px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <PliCover pli={pli} radius={12} />
-                </button>
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                  <button type="button" onClick={() => setOpenPli(pli)}
-                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                    <div style={{ fontSize: 14.5, fontWeight: 900, color: INK, lineHeight: 1.35, wordBreak: 'keep-all' }}>{pickRoutineTone(pli, tone).title}</div>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, marginTop: 3 }}>
-                      동작 {(pli.cards || []).length}개{sum.durationSec > 0 ? ` · ${mmss(sum.durationSec)}` : ''}
-                    </div>
-                  </button>
-                  {hits.length > 0 && (
-                    <div style={{ marginTop: 6 }}>
-                      {hits.map((h) => (
-                        <span key={h} style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 800, color: GOLD_INK, background: YELLOW,
-                          borderRadius: 999, padding: '2px 8px', marginRight: 4 }}>{KEY_TO_PART_LABEL[h] || h}</span>
-                      ))}
-                    </div>
-                  )}
-                  {/* 요일마다 했는지 — 끝까지 한 날은 꽉 찬 점, 조금 한 날은 테두리만 */}
-                  <div style={{ display: 'flex', gap: 5, marginTop: 'auto', paddingTop: 9 }} aria-label="이번 주 한 날">
-                    {days.map((d, i) => {
-                      const st = stateOf(pli.id, d);
-                      return (
-                        <span key={d} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                          <span style={{ width: 16, height: 16, borderRadius: '50%', boxSizing: 'border-box',
-                            background: st === 'full' ? GOLD : '#fff', border: `2px solid ${st ? GOLD : (d === today ? '#D8D3C8' : LINE)}` }} />
-                          <span style={{ fontSize: 9, fontWeight: d === today ? 900 : 700, color: d === today ? INK : SUB }}>{DAY[i]}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
-                <button type="button" onClick={() => { track('reco_start', { pli: pli.id }); setPlaying(pli); }}
-                  style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: 'none', background: '#fff', color: INK, fontSize: 13.5, fontWeight: 800,
-                    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
-                  바로 시작하기 →
-                </button>
-                {todayState === 'full' && !checked ? (
-                  <span style={{ flex: '0 0 96px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12,
-                    background: YELLOW, color: GOLD_INK, fontSize: 12.5, fontWeight: 800 }}>오늘 했어요 ✓</span>
-                ) : (
-                  <button type="button" onClick={() => check(pli.id, !checked)} aria-pressed={checked}
-                    style={{ flex: '0 0 96px', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800,
-                      background: checked ? YELLOW : '#fff', color: checked ? GOLD_INK : SUB, boxShadow: checked ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
-                    {checked ? '오늘 했어요 ✓' : '했어요'}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {picks.map(({ pli, hits }) => (
+          <PliRow key={pli.id} pli={pli} tone={tone} days={days} today={today} stateOf={stateOf} checked={isChecked(pli.id)}
+            chips={hits.map((h) => KEY_TO_PART_LABEL[h] || h)}
+            onOpen={() => setOpenPli({ list: picks.map((x) => x.pli), id: pli.id })}
+            onStart={() => { track('reco_start', { pli: pli.id }); setPlaying(pli); }}
+            onCheck={(on) => check(pli.id, on)} />
+        ))}
       </div>
+      </>
+      )}
 
       {!userId && (
         <button type="button" onClick={onRequireLogin}
@@ -182,7 +233,7 @@ export default function RecoView({ plis = [], userId = null, health, tone = 'z',
       </p>
 
       {openPli && (
-        <PliFeed plis={picks.map((x) => x.pli)} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
+        <PliFeed plis={openPli.list} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
           onClose={() => { setOpenPli(null); setVer((v) => v + 1); }} />
       )}
       {playing && (

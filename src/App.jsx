@@ -19,6 +19,8 @@ import { getDiaryHistory, syncDiaryHistoryFromServer } from './lib/diaryHistory'
 import { PARTS } from './lib/mallangReportEngine';
 import SavePromptModal from './components/SavePromptModal';
 import KakaoChannelPrompt from './components/KakaoChannelPrompt';
+import CoachInvite from './features/coach/CoachInvite';
+import { codeFromUrl, pendingCode } from './lib/coach';
 // 카카오 로그인에서 돌아오면 주소 끝에 #access_token=... 이 붙는다.
 // 여기서는 '못 본 척'만 한다 — 곧바로 지우면 Supabase가 읽기 전에 사라져
 // 로그인이 조용히 실패한다. 지우는 일은 세션이 자리잡은 뒤 watchAndCleanUrl이 맡는다.
@@ -49,6 +51,18 @@ function App() {
     if (!goAngle) return;
     try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch { /* 무시 */ }
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // 강사가 보낸 과제 링크('/?c=…') — 초대 화면을 띄운다. 카카오 로그인에 다녀오면 주소에서 사라지므로 이 기기에 쥐고 있는다.
+  const [coachCode, setCoachCode] = useState(() => {
+    const c = codeFromUrl();
+    if (c) { pendingCode.set(c); return c; }
+    return pendingCode.get();
+  });
+  const [coachVer, setCoachVer] = useState(0);   // 과제를 받으면 올린다 — 자기점검이 과제를 다시 읽는다
+  useEffect(() => {
+    if (!codeFromUrl()) return;
+    try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch { /* 무시 */ }
+  }, []);
+  const closeCoach = () => { pendingCode.clear(); setCoachCode(''); };
   const [currentView, setCurrentView] = useState(
     initialHash === 'quiz' ? 'quiz' : (hashCode ? 'result' : (exampleCode ? 'quiz' : (goAngle || isReturningDiaryUser ? 'aichat' : 'home')))
   );
@@ -453,7 +467,7 @@ function App() {
         {currentView === 'self' && (
           <div style={{ maxWidth: 560, margin: '0 auto', padding: '76px 16px 110px' }}>
             <SelfCheckView tab={selfTab} bmtiCode={bmtiCode} userProfile={userProfile} isLoggedIn={isLoggedIn}
-              setUserProfile={setUserProfile} onRequireLogin={() => setShowSignup(true)} />
+              setUserProfile={setUserProfile} onRequireLogin={() => setShowSignup(true)} coachVer={coachVer} />
           </div>
         )}
         {currentView === 'mypage' && (
@@ -496,7 +510,22 @@ function App() {
         onComplete={handleSignupComplete}
       />
 
-      {currentView !== 'quiz' && <KakaoChannelPrompt />}
+      {currentView !== 'quiz' && !coachCode && <KakaoChannelPrompt />}
+
+      {/* 강사가 보낸 과제 링크 — 누가 무엇을 보냈는지, 로그인, 동의, 연결 */}
+      {coachCode && (
+        <CoachInvite code={coachCode} isLoggedIn={isLoggedIn} userProfile={userProfile} setUserProfile={setUserProfile}
+          onLogin={() => setShowSignup(true)} onClose={closeCoach}
+          onDone={() => {
+            closeCoach();
+            // 받은 과제는 추천루틴 칸 맨 위에 선다 — 칸을 세우고 그리로 데려간다
+            setHasReco(true);
+            try { localStorage.setItem('bmti_reco_tab', '1'); } catch { /* 무시 */ }
+            setCoachVer((v) => v + 1);
+            setSelfTab('reco');
+            setCurrentView('self');
+          }} />
+      )}
 
       {letter && currentView !== 'quiz' && (
         <LetterArrival entries={letter.entries} year={letter.year} month={letter.month}

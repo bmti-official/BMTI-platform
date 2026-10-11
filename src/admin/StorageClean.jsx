@@ -18,6 +18,7 @@ const TABLES = ['curation_items', 'quick_cards', 'routines', 'voice_assets', 'vo
 const KEEP_DAYS = 7;
 
 const mb = (n) => `${(Number(n || 0) / 1024 / 1024).toFixed(2)}MB`;
+const kindOf = (p) => (/\.(mp4|webm|mov)$/i.test(p) ? '영상' : /\.(mp3|m4a|wav|ogg|flac|opus|aac)$/i.test(p) ? '소리' : '그림');
 const fileName = (p) => p.split('/').pop();
 
 // 글 안의 모든 값에서 저장소 주소를 긁어모은다 — 칸 이름이 늘어나도 놓치지 않는다.
@@ -70,10 +71,17 @@ export default function StorageClean() {
 
       // 파일 주소가 담길 수 있는 표는 하나도 빠뜨리면 안 된다.
       // 빠진 표의 파일은 '안 쓰는 것'으로 잡혀 통째로 지워진다.
-      const reads = await Promise.all(TABLES.map((t) => supabase.from(t).select('*')));
+      const reads = await Promise.all(TABLES.map((t) => supabase.from(t).select('*', { count: 'exact' })));
       const files = await listAll();
       const bad = reads.map((r) => r.error).filter(Boolean);
       if (bad.length) { setBusy(''); setErr('글을 읽지 못했습니다: ' + bad[0].message + ' — 이 상태로는 지울 수 없습니다.'); return; }
+      // 서버는 한 번에 천 줄까지만 준다. 표가 그보다 길어 일부만 읽혔다면, 못 읽은 글의 파일이 '안 쓰는 것'으로 잡힌다.
+      const cut = reads.findIndex((r) => r.count != null && r.count > (r.data || []).length);
+      if (cut >= 0) {
+        setBusy('');
+        setErr(`'${TABLES[cut]}' 표가 ${reads[cut].count}줄인데 ${(reads[cut].data || []).length}줄만 읽혔습니다. 이 상태로 지우면 쓰는 파일이 지워질 수 있어 멈춥니다. 개발 쪽에 알려 주세요.`);
+        return;
+      }
 
       const rows = reads.flatMap((r) => r.data || []);
       const keep = new Set();
@@ -119,7 +127,7 @@ export default function StorageClean() {
           <br /><b>올린 지 {KEEP_DAYS}일이 안 된 파일은 지우지 않습니다.</b>
           <br />어느 글에서도 쓰지 않는 파일만 골라 보여 드립니다. <b>쓰이고 있는 파일은 절대 건드리지 않습니다.</b>
           <br />복제한 카드가 같은 파일을 함께 쓰는 경우도 &lsquo;쓰는 중&rsquo;으로 셉니다.
-          <br />훑는 곳: 큐레이션 · 바디카드 · 바디플리 표지 · <b>공통 음성</b> · <b>캐릭터 인사</b>.
+          <br />훑는 곳: 큐레이션 · 바디카드 · 바디플리 표지 · <b>공통 음성</b> · <b>캐릭터 인사</b> · <b>각도 그림</b>.
           <br /><b style={{ color: '#B23B36' }}>관리자로 로그인한 상태에서만</b> 훑습니다. 그래야 모든 글이 보여서 쓰는 파일을 빠뜨리지 않습니다.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
@@ -133,6 +141,12 @@ export default function StorageClean() {
             </button>
           )}
           {used != null && <span style={{ fontSize: 12, color: SUB }}>글 {rowCount}개에서 쓰는 중 {used}개</span>}
+          {orphans && orphans.length > 0 && (
+            // 지우기 전에 무엇이 얼마나 잡혔는지 — 종류별로
+            <span style={{ fontSize: 12, color: SUB }}>
+              안 쓰는 것: {['영상', '소리', '그림'].map((k) => `${k} ${orphans.filter((f) => kindOf(f.path) === k).length}`).join(' · ')}
+            </span>
+          )}
           {done && <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2F7A4F', background: '#E8F3EC', borderRadius: 999, padding: '5px 12px' }}>✓ {done}</span>}
         </div>
         {err && <div style={{ fontSize: 12.5, color: '#B23B36', fontWeight: 700, marginTop: 10 }}>{err}</div>}

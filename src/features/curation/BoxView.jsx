@@ -16,6 +16,7 @@ import { CHARACTERS } from '../../data';
 import { CHARACTER_NAMES } from '../../lib/bmtiTypes';
 import { axisOf } from './typeTint';
 import MyPliEditor from './MyPliEditor';
+import SendToMember from '../coach/SendToMember';
 import { usePanelTime } from '../../lib/usePanelTime';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
@@ -34,13 +35,16 @@ const EMPTY_WORD = {
 };
 
 export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
-  plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine, onDeleteMine }) {
+  plis = [], myPlis = [], cards = [], reads = [], allCards = [], onOpenRead, onSaveMine, onDeleteMine,
+  // 강사로 지정된 회원 — 마이플리를 회원에게 과제로 보낼 수 있다
+  isCoach = false }) {
   usePanelTime('box');   // 행동 기록 — 이 창에 머문 시간
   const [tab, setTab] = useState('mine');
   const [editing, setEditing] = useState(null);   // 마이플리 만들기·고치기 창 { id?, title, cards, from? }
   const [editMode, setEditMode] = useState(false);   // 마이플리 편집하기 — 켜면 플리를 눌러 고친다
   const [openId, setOpenId] = useState(null);
   const [openPli, setOpenPli] = useState(null);   // 한 편씩 넘겨 보는 창
+  const [sending, setSending] = useState(null);   // 강사: 회원에게 보낼 플리
 
   const myCode = axisOf(bmtiCode);
   const ch = CHARACTERS.find((c) => c.id === myCode);
@@ -91,7 +95,13 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
               고칠 플리를 눌러 주세요.
             </div>
           )}
+          {isCoach && myPlis.length > 0 && !editMode && (
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: SUB, margin: '0 2px 10px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+              플리 아래 &lsquo;회원에게 보내기&rsquo;를 누르면 과제로 보낼 링크가 만들어져요.
+            </div>
+          )}
           <PliGrid plis={myPlis} tone={tone} empty={EMPTY_WORD.mine} editMode={editMode} maker={false}
+            action={isCoach && !editMode ? { label: '회원에게 보내기', onClick: (r) => setSending(r) } : null}
             onOpen={(r) => (editMode
               ? setEditing({ id: r.id, title: r.title_z, cards: r.cards || [], coverText: r.thumb_text || '', showNick: !!r.show_nick, share: r.share_state || 'private' })
               : setOpenPli(r))} />
@@ -137,6 +147,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
         <PliFeed plis={tab === 'mine' ? myPlis : plis} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
           onClose={() => setOpenPli(null)} />
       )}
+      {sending && <SendToMember pli={sending} onClose={() => setSending(null)} />}
       {editing && (
         <MyPliEditor initial={editing} allCards={allCards} tone={tone} onCancel={() => setEditing(null)}
           onDelete={editing.id && onDeleteMine ? () => { onDeleteMine(editing.id); setEditing(null); setEditMode(false); } : null}

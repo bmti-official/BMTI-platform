@@ -64,6 +64,12 @@ export default function RoutineView({ routine, cards, tone = 'z', bmtiCode, onSt
         <h3 style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800, lineHeight: 1.4, margin: '0 0 7px', wordBreak: 'keep-all' }}>{title}</h3>
         {keep && <KeepToggle keep={keep} />}
       </div>
+      {/* 강사가 보낸 과제 */}
+      {routine.coach_name && (
+        <div style={{ margin: '-2px 0 8px', fontSize: 12.5, fontWeight: 700, color: SUB }}>
+          <b style={{ color: '#8A6A3A', fontWeight: 800 }}>{routine.coach_name}</b> 강사님이 보낸 과제
+        </div>
+      )}
       {/* 회원이 올린 플리 — 만든 사람 */}
       {who && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '-2px 0 8px', fontSize: 12.5, fontWeight: 700, color: SUB }}>

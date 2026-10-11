@@ -20,6 +20,8 @@ import MallangInfoPopup from '../../components/MallangInfoPopup';
 import { readMallangProfile, hasHealthSheet, healthSheetCheckedAt, markHealthSheetChecked } from '../../lib/mallangProfile';
 import { PART_KEY } from '../../lib/diaryEntryLabels';
 import { track } from '../../lib/analytics';
+import { coachRow, loadTasks, myCoach } from '../../lib/coach';
+import CoachManage from '../coach/CoachManage';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
@@ -62,7 +64,8 @@ async function loadPublic() {
   return { cards: cardRows, byId, plis, reads: reads.data || [] };
 }
 
-export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin, setUserProfile }) {
+// coachVer: 과제 링크를 받으면 올라간다 — 과제를 다시 읽는다
+export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin, setUserProfile, coachVer = 0 }) {
   const tone = toneOf(axisOf(bmtiCode));
   const userId = isLoggedIn ? userProfile?.id || null : null;
   const [pub, setPub] = useState(null);           // 공개 콘텐츠
@@ -70,6 +73,12 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
   const [mine, setMine] = useState([]);           // 내 마이플리
   const [openRead, setOpenRead] = useState(null); // 긴 글 읽을거리
   const [note, setNote] = useState('');
+  // 강사–회원 연결 — 내가 강사인지(보내기 버튼), 연결된 강사와 받은 과제(추천루틴 맨 위)
+  const [iCoach, setICoach] = useState(false);
+  const [coach, setCoach] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [manage, setManage] = useState(false);
+  const [linkVer, setLinkVer] = useState(0);
 
   // ── 건강 정보 한 장 — 적어 두면 내 불편한 부위를 다루는 것부터 보여 준다 ──
   const me = isLoggedIn ? userProfile : null;   // 게스트는 이 기기에 적어 둔 것을 읽는다
@@ -105,6 +114,22 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
     loadMyPlis(userId, pub.byId).then((rows) => { if (alive) setMine(rows); });
     return () => { alive = false; };
   }, [userId, pub]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!userId || !pub) return undefined;
+    coachRow(userId).then((r) => { if (alive) setICoach(!!r); });
+    myCoach().then(async (c) => {
+      if (!alive) return;
+      setCoach(c);
+      const list = c ? await loadTasks(userId, pub.byId) : [];
+      if (alive) setTasks(list);
+    });
+    return () => { alive = false; };
+  }, [userId, pub, coachVer, linkVer]);
+  // 로그아웃하면 남의 화면에 과제가 남지 않게, 로그인한 사람 것만 쓴다
+  const myTasks = userId ? tasks : [];
+  const myCoachNow = userId ? coach : null;
 
   // 잠깐 뜨는 알림
   useEffect(() => {
@@ -179,7 +204,8 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         {/* 추천루틴 — 공식 바디플리 가운데 내 불편한 부위에 맞는 것을 골라 준다(회원이 올린 플리는 넣지 않는다) */}
         {tab === 'reco' && (
           <RecoView plis={pub.plis.filter((r) => !r.owner_id)} userId={userId} health={health} tone={tone} bmtiCode={bmtiCode}
-            onOpenSheet={() => setSheet('edit')} onRequireLogin={onRequireLogin} />
+            onOpenSheet={() => setSheet('edit')} onRequireLogin={onRequireLogin}
+            coach={myCoachNow} tasks={myTasks} onManage={() => setManage(true)} />
         )}
         {tab !== 'box' && tab !== 'reco' && (
           <BrowseView cards={pub.cards} reads={pub.reads} routines={baroList} tone={tone} bmtiCode={bmtiCode}
@@ -202,6 +228,7 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         {tab === 'box' && (userId ? (
           <BoxView nickname={userProfile?.nickname || '회원'} bmtiCode={bmtiCode} tone={tone}
             plis={box.plis} cards={box.cards} reads={box.reads} myPlis={mine} allCards={pub.cards}
+            isCoach={iCoach}
             onOpenRead={setOpenRead} onSaveMine={onSaveMine} onDeleteMine={onDeleteMine} />
         ) : (
           <div style={{ border: `1px dashed ${LINE}`, borderRadius: 14, padding: '34px 16px', textAlign: 'center', color: SUB,
@@ -226,8 +253,19 @@ export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, i
         </div>
       )}
 
+      {/* 연결 관리 — 강사와 무엇을 나누는지 보고, 바꾸거나 끊는다 */}
+      {manage && myCoachNow && (
+        <CoachManage coach={myCoachNow} onClose={() => setManage(false)}
+          onEditSheet={() => setSheet('edit')}
+          onChanged={(left) => {
+            setLinkVer((v) => v + 1);
+            if (left) { setManage(false); setNote('연결을 끊었어요'); } else setNote('바꿨어요');
+          }} />
+      )}
+
       {sheet && (
-        <MallangInfoPopup mode="all" userInfo={me} isLoggedIn={!!me} setUserProfile={setUserProfile}
+        // 강사와 연결돼 있으면 '강사에게 미리 알릴 말'도 받는다
+        <MallangInfoPopup mode="all" withCoachNote={!!myCoachNow} userInfo={me} isLoggedIn={!!me} setUserProfile={setUserProfile}
           gender={userProfile?.kakaoGender || userProfile?.kakao_gender}
           onClose={() => setSheet(null)}
           onSaved={() => {
