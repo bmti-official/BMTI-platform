@@ -9,6 +9,7 @@ import FlowStudio from './FlowStudio';
 import VoiceCommon from './VoiceCommon';
 import StorageClean from './StorageClean';
 import MetricsView from './MetricsView';
+import CoachAdmin from './CoachAdmin';
 import { confirmLeave } from './dirty';
 
 // ─────────────────────────────────────────────
@@ -179,6 +180,7 @@ function Dashboard({ session }) {
         <div style={{ display: 'flex', gap: 9, marginBottom: 18, flexWrap: 'wrap' }}>
           {tabBtn('metrics', '📊 통계·지표')}
           {tabBtn('users', '👤 사용자')}
+          {tabBtn('coaches', '🧑‍🏫 강사')}
           {tabBtn('curation', '📚 큐레이션')}
           {tabBtn('cards', '⚡ 바디카드')}
           {tabBtn('routines', '🎵 플레이리스트')}
@@ -190,6 +192,7 @@ function Dashboard({ session }) {
         </div>
         {tab === 'metrics' && <MetricsView />}
         {tab === 'users' && <DataTable title="사용자" columns={userCols} rows={users} loading={loading} error={usrErr} />}
+        {tab === 'coaches' && <CoachAdmin users={users} />}
         {tab === 'diary' && <DiaryPreview />}
         {tab === 'curation' && <CurationAdmin />}
         {tab === 'cards' && <QuickCardAdmin />}

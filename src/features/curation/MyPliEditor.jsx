@@ -24,10 +24,10 @@ const GUIDE_OPTS = [['talk', '설명 들으며'], ['count', '숫자만']];
  * 관리자 화면에서 쓸 때만 넘기는 것 —
  *   official: 공식 바디플리(공개·비공개만 고르고, 만든 사람 표시는 없다)
  *   inline: 화면을 덮지 않고 그 자리에 놓는다 · heading: 머리글 · saving: 저장 중
- *   extra: 표지 문구 아래에 더 놓을 칸 · onPeek(지금 내용): 미리보기 · onDraft(지금 내용): 고칠 때마다 알림
+ *   onPeek(지금 내용): 미리보기 · onDraft(지금 내용): 고칠 때마다 알림
  */
 export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave, onCancel, onDelete = null,
-  official = false, inline = false, heading = '', saving = false, extra = null, onPeek = null, onDraft = null }) {
+  official = false, inline = false, heading = '', saving = false, onPeek = null, onDraft = null }) {
   const [title, setTitle] = useState(initial?.title || '');
   const [cards, setCards] = useState(initial?.cards || []);
   // 표지 문구 — 비워 두면 표지에 동작 그림만 보인다
@@ -136,7 +136,6 @@ export default function MyPliEditor({ initial, allCards = [], tone = 'z', onSave
             </div>
           </div>
         </div>
-        {extra}
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: SUB }}>담은 동작 {cards.length}개</span>

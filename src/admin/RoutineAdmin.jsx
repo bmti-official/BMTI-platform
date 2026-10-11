@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { INK, SUB, LINE, BG, box, label, btn, smallBtn } from './theme';
-import { PublishBadge, TagsInput } from './ui';
+import { INK, SUB, LINE, BG, box, btn, smallBtn } from './theme';
+import { PublishBadge } from './ui';
 import PreviewModal from './PreviewModal';
 import { useUnsavedGuard, confirmLeave } from './dirty';
 import { SearchBox, MoveButtons } from './listTools';
@@ -28,11 +28,10 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
   const r = row.routine || {};
   const [initial] = useState(() => ({ id: r.id, title: r.title_z || r.title_m || '', cards: row.cards || [],
     coverText: r.thumb_text || '', share: r.published ? 'public' : 'private' }));
-  const [keywords, setKeywords] = useState(() => r.keywords || []);
   const [sig, setSig] = useState(() => sigOf(initial));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
-  useUnsavedGuard(sig, keywords);
+  useUnsavedGuard(sig);
   const onDraft = useCallback((d) => setSig(sigOf(d)), []);
 
   const save = async (p) => {
@@ -47,7 +46,6 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
     const payload = {
       published, title_z: p.title, title_m: p.title,     // 제목은 하나 — 두 칸에 같은 글을 넣는다
       thumb_text: p.coverText || null,
-      keywords,
       owner_id: null,                        // 관리자가 만드는 공식 추천 루틴
       updated_at: new Date().toISOString(),
     };
@@ -56,17 +54,7 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
     const write = () => (id
       ? supabase.from('routines').update(payload).eq('id', id).select('id').single()
       : supabase.from('routines').insert(payload).select('id').single());
-    let { data, error } = await write();
-    // 64번 SQL(keywords 칸) 전 — 검색어를 안 적었으면 그 칸만 빼고 저장하고, 적었으면 알려 준다
-    if (error && /keywords/.test(error.message || '')) {
-      if ((payload.keywords || []).length) {
-        setSaving(false);
-        setErr('검색어를 담을 칸이 아직 없습니다. 64번 SQL을 한 번 실행한 뒤 다시 저장해 주세요.');
-        return;
-      }
-      delete payload.keywords;
-      ({ data, error } = await write());
-    }
+    const { data, error } = await write();
     if (error) { setSaving(false); setErr('저장 실패: ' + error.message); return; }
     id = data.id;
     // 담긴 동작은 통째로 갈아끼운다 — 순서까지 그대로 맞추는 가장 단순한 방법.
@@ -90,14 +78,7 @@ function Editor({ row, allCards, onSaved, onCancel, onDelete, onPreview }) {
           onCancel={() => { if (confirmLeave()) onCancel(); }}
           onDelete={r.id ? () => onDelete(r.id) : null}
           // 미리보기 — 아직 저장 안 한 지금 내용 그대로
-          onPeek={(d) => onPreview({ routine: { ...r, title_z: d.title, title_m: d.title, thumb_text: d.coverText }, cards: d.cards })}
-          // 이용자 창에는 없는 칸 — 찾기에 걸릴 말
-          extra={(
-            <div style={{ marginBottom: 16 }}>
-              <span style={label}>검색어 <span style={{ fontWeight: 600 }}>— 손님이 이 말로 찾으면 나오게 · 쉼표로 구분</span></span>
-              <TagsInput value={keywords} onChange={setKeywords} placeholder="예: 아침, 출근 전, 자기 전" />
-            </div>
-          )} />
+          onPeek={(d) => onPreview({ routine: { ...r, title_z: d.title, title_m: d.title, thumb_text: d.coverText }, cards: d.cards })} />
       </div>
     </div>
   );

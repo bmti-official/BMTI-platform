@@ -154,7 +154,7 @@ export default function MallangInfoPopup({ mode, userInfo, isLoggedIn, gender, s
                   </div>
                 )}
                 {all && sore.length > 0 && (
-                  <Q label="얼마나 됐나요?"><div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{SINCE_OPTS.map((o) => <Pill key={o.id} label={o.label} on={since === o.id} onClick={() => setSince(o.id)} t={t} />)}</div></Q>
+                  <Q label="불편한지 얼마나 됐나요?"><div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{SINCE_OPTS.map((o) => <Pill key={o.id} label={o.label} on={since === o.id} onClick={() => setSince(o.id)} t={t} />)}</div></Q>
                 )}
                 {withHabits && habits}
                 {all && withCoachNote && (
