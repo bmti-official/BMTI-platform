@@ -51,9 +51,10 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 한 동작이라도 끝냈으면 플리를 '했음'으로 남긴다. 끝까지 가면 위에서 '완주'로 덮는다.
+  // 담긴 동작의 절반 이상을 끝냈으면 플리를 '했음'으로 남긴다. 끝까지 가면 아래에서 '완주'로 남긴다.
+  // 절반에 못 미치면 남기지 않는다 — 열어만 보고 나간 플리가 '했다'로 적히지 않게.
   useEffect(() => {
-    if (at > 0) markFinish({ kind: 'routine', routineId: routine?.id, done: false, setsDone: at });
+    if (at > 0 && at * 2 >= cards.length) markFinish({ kind: 'routine', routineId: routine?.id, done: false, setsDone: at });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at]);
 

@@ -3,8 +3,11 @@
 // 일기를 저절로 만들지 않는다. 여기에만 쌓아 두고, 일기를 열 때
 // "오늘 두 번 하셨네요" 하고 채워 준다. 빈 일기가 생기면 연속·월간 집계가 오염된다.
 //
-//   done = false  한 세트 이상 했다 (했음)
+//   done = false  절반 이상 했다 (했음)
 //   done = true   끝까지 다 했다 (완주)
+// 절반에 못 미치면 아무것도 남기지 않는다 — 잠깐 열어 본 것이 '했다'로 적히지 않게.
+//   바디카드: 채운 세트(좌우를 나눠 하면 양쪽을 합쳐)가 전체의 절반 이상
+//   바디플리: 끝낸 동작이 담긴 동작의 절반 이상
 import { supabase } from './supabaseClient';
 
 const todayISO = () => {
@@ -25,7 +28,7 @@ function me() {
 // '했음'을 보낸 뒤 '완주'가 오면 그건 한 번 더 보낸다(더 나아간 기록이니까).
 const sent = new Set();
 
-/** 한 세트 이상 했거나 끝까지 다 했을 때 부른다. */
+/** 절반 이상 했거나 끝까지 다 했을 때 부른다. */
 export async function markFinish({ kind = 'card', cardId = null, routineId = null, done = false, setsDone = 0 }) {
   const userId = me();
   if (!userId) return;
@@ -48,9 +51,16 @@ export async function todayFinishes() {
   const userId = me();
   if (!userId) return { count: 0, full: 0, names: [] };
   const { data, error } = await supabase.from('card_finishes')
-    .select('done,kind,card_id,routine_id').eq('user_id', userId).eq('date', todayISO());
+    .select('done,kind,card_id,routine_id,sets_done').eq('user_id', userId).eq('date', todayISO());
   if (error || !data) return { count: 0, full: 0, names: [] };
-  const out = { count: data.length, full: data.filter((r) => r.done).length, names: [] };
+  // 줄 수가 아니라 '무엇을 했는가'를 센다. 한 동작을 끝까지 하면 '했음'과 '완주' 두 줄이 남고,
+  // 플리로 하면 동작 줄과 플리 줄이 함께 남아서, 줄 수로 세면 한 번 한 것이 여러 번으로 보인다.
+  //   · 동작(바디카드)마다 하나 — 플리 안에서 한 동작도 여기 들어 있다
+  //   · 영상 없이 '했어요'만 누른 플리는 동작 줄이 없으니 플리 하나로 센다
+  const cardFull = new Map();
+  data.forEach((r) => { if (r.card_id != null) cardFull.set(r.card_id, cardFull.get(r.card_id) || !!r.done); });
+  const checked = new Set(data.filter((r) => r.routine_id != null && r.done && Number(r.sets_done) === 0).map((r) => r.routine_id));
+  const out = { count: cardFull.size + checked.size, full: [...cardFull.values()].filter(Boolean).length + checked.size, names: [] };
   // 이름은 따로 읽는다 — 못 읽어도 횟수는 그대로 보여 준다
   try {
     const cardIds = [...new Set(data.map((r) => r.card_id).filter(Boolean))];

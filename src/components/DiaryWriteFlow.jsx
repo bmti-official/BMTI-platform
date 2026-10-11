@@ -724,7 +724,7 @@ export default function DiaryWriteFlow({ onClose, onFinish, initialPhase = "form
                     <DiaryIcon name="flex" size={22} />
                     <span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5, wordBreak: "keep-all" }}>
                       {baro.count > 0
-                        ? <>오늘 바디카드를 {baro.count}번 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}번)` : ""}</>
+                        ? <>오늘 바디카드 {baro.count}개를 하셨네요{baro.full > 0 ? ` (완주 ${baro.full}개)` : ""}</>
                         : "오늘 바디카드를 했다면 오른쪽을 눌러 주세요"}
                       {/* 무엇을 했는지 — 이미 남아 있는 기록에서 이름을 가져와 보여 준다(다시 적게 하지 않는다) */}
                       {baro.count > 0 && (baro.names || []).length > 0 && (

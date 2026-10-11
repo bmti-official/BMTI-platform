@@ -322,14 +322,16 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allDone]);
 
-  // 한 세트를 마치면 '했음', 다 채우면 '완주'로 남긴다.
-  // 일기를 열 때 '오늘 몇 번 하셨네요'로 채워 주는 데 쓴다.
+  // 절반 이상 채우면 '했음', 다 채우면 '완주'로 남긴다. 절반에 못 미치면 남기지 않는다(잠깐 해 본 것이 '했다'로 적히지 않게).
+  // 좌우를 나눠 하는 동작은 양쪽을 합쳐 센다 — 오른쪽을 다 하면 절반이다.
+  // 일기를 열 때 '오늘 몇 개 하셨네요'로 채워 주는 데 쓴다.
+  const roundsDone = (twoPhase && secondSide ? sets : 0) + done;
   useEffect(() => {
     if (stage !== 'move') return;
     if (allDone) markFinish({ kind: 'card', cardId: card.id, done: true, setsDone: sets });
-    else if (done >= 1) markFinish({ kind: 'card', cardId: card.id, done: false, setsDone: done });
+    else if (roundsDone >= 1 && roundsDone * 2 >= rounds) markFinish({ kind: 'card', cardId: card.id, done: false, setsDone: roundsDone });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done, allDone, stage]);
+  }, [roundsDone, allDone, stage]);
 
   // 행동 기록 — 시작·중단·완주. 몇 세트째에서 그만두는지, 배속·안내를 어떻게 두는지 본다.
   // 한 번 따라 하기가 한 판(run)이다. '한 번 더 하기'는 새 판으로 센다.

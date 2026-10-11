@@ -224,6 +224,10 @@ export default function CoachInvite({ code, isLoggedIn, userProfile, setUserProf
               <p style={small}><b style={{ color: INK }}>언제까지</b> 연결을 끊을 때까지예요. 끊으면 강사님은 바로 볼 수 없고, 보낸 건강 정보는 지워져요.</p>
               <p style={small}><b style={{ color: INK }}>바꾸기·끊기</b> {RECO_TAB} 칸의 &lsquo;연결 관리&rsquo;에서 언제든 할 수 있어요.</p>
               <p style={small}>동의하지 않아도 BMTI는 그대로 쓸 수 있어요. 다만 강사님의 과제는 받을 수 없어요. 건강 정보 한 장은 보내지 않아도 연결돼요.</p>
+              <p style={small}>
+                자세한 내용은 <a href={`${import.meta.env.BASE_URL}privacy.html`} target="_blank" rel="noreferrer"
+                  style={{ color: GOLD_INK, fontWeight: 800, textDecoration: 'underline', textUnderlineOffset: 3 }}>개인정보처리방침</a> 제4조에 있어요.
+              </p>
             </div>
 
             <button type="button" disabled={busy} onClick={() => accept(true)}

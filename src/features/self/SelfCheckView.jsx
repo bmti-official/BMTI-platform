@@ -23,6 +23,7 @@ import { track } from '../../lib/analytics';
 import { coachRow, loadTasks, myCoach } from '../../lib/coach';
 import CoachManage from '../coach/CoachManage';
 import CoachDesk from '../coach/CoachDesk';
+import { useMixerWake } from '../curation/useMixerWake';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const key = (type, id) => `${type}:${id}`;
@@ -70,6 +71,7 @@ async function loadPublic() {
 export default function SelfCheckView({ tab = 'browse', bmtiCode, userProfile, isLoggedIn, onRequireLogin, setUserProfile, coachVer = 0 }) {
   const tone = toneOf(axisOf(bmtiCode));
   const userId = isLoggedIn ? userProfile?.id || null : null;
+  useMixerWake();   // 이 층에서 누르는 탭이 배경음악 믹서를 깨운다(아이폰에서 음악 크기를 조절하려면 필요하다)
   const [pub, setPub] = useState(null);           // 공개 콘텐츠
   const [saved, setSavedList] = useState([]);     // [{item_type,item_id}] 새 것부터
   const [mine, setMine] = useState([]);           // 내 마이플리
