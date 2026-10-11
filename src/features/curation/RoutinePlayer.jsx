@@ -8,7 +8,7 @@ import { markFinish } from '../../lib/cardFinish';
 import { track } from '../../lib/analytics';
 import { loadVoiceAssets, voiceKey } from './voiceCommon';
 import { useBgm } from './useBgm';
-import { pickCardTone, pickRoutineTone, subLines } from './format';
+import { pickCardTone, pickRoutineTone, subLines, introImgs, clipY } from './format';
 import PartnerStage from './PartnerStage';
 import FullWrap from './FullWrap';
 import { partnerBtn } from './partnerBtn';
@@ -91,6 +91,12 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
 
   const last = at >= cards.length - 1;
   const { title: cardTitle } = pickCardTone(card, tone);
+  const nextCard = cards[at + 1] || null;
+  // 다음 동작으로 — 마지막이면 플리를 끝낸다. 아래 버튼과 전체 화면의 설정 창이 함께 쓴다.
+  const goNext = () => { if (last) { if (onDone) onDone(); if (onClose) onClose(); } else { setGap(0); setAt((n) => n + 1); } };
+  const goPrev = () => { setGap(0); setAt((n) => Math.max(0, n - 1)); };
+  // 전체 화면의 왼쪽 위 화살표 — 플리를 닫고 시작하기 전 화면으로. 쉬는 참에서는 여기서 묻는다(동작 중에는 카드가 묻는다).
+  const leave = () => { if (window.confirm('하던 플리를 그만하고 나갈까요?\n절반 넘게 했다면 한 것으로 남아요.') && onClose) onClose(); };
 
   return (
     <Shell onClose={onClose}>
@@ -117,14 +123,21 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
       <div style={{ padding: '10px 14px 0' }}>
         {gap > 0 ? (
           <GapStage code={myCode} img={partnerImg} name={partnerName} tone={tone} sec={gap} full={full}
-            nextTitle={(cards[at + 1] || {}).thumb_text || ''}
-            nextClip={(cards[at + 1] || {}).video_url || ''}
+            nextTitle={(nextCard || {}).thumb_text || ''}
+            nextClip={(nextCard || {}).video_url || ''}
+            // 뒤에는 다음 동작의 시작 전 그림 첫 장을 흐리게 깐다(그림이 없으면 예전처럼 영상)
+            nextStill={nextCard && introImgs(nextCard)[0] ? { url: introImgs(nextCard)[0].url, y: clipY(nextCard) } : null}
+            onBack={leave}
             voiceUrl={common[voiceKey('next', tone, 0)] || ''} audioRef={gapRef}
             onSkip={() => { setGap(0); setAt((n) => n + 1); }} />
         ) : (
           <QuickCardView key={card.id} card={withRoutineSetup(card)} tone={tone} bmtiCode={bmtiCode}
             autoStart skipOpening={at > 0} full={full} onFull={setFull} pliId={routine?.id ?? null}
             hideFinish={!last}
+            // 전체 화면의 설정 창·나가기 — 음악은 플리가 쥐고 있으니 고르개를 건네주고, 다음·이전 동작도 여기서 넘긴다
+            bgmPanel={music.barePanel} onExit={onClose}
+            onNext={goNext} nextLabel={last ? '플리 끝내기 ✓' : `다음 동작으로 → ${String((nextCard || {}).thumb_text || '').replace(/\s*\n\s*/g, ' ')}`}
+            onPrev={at > 0 ? goPrev : null}
             onQuiet={setQuiet}
             onFinalStretch={() => { if (last) music.toOutro(); }}
             onAllDone={() => {
@@ -142,10 +155,10 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
 
       {/* 다음 동작 · 음악 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px 22px' }}>
-        <button type="button" onClick={() => setAt((n) => Math.max(0, n - 1))} disabled={at === 0}
+        <button type="button" onClick={goPrev} disabled={at === 0}
           style={{ ...navBtn, opacity: at === 0 ? 0.35 : 1, cursor: at === 0 ? 'default' : 'pointer' }}>‹ 이전</button>
         <button type="button"
-          onClick={() => { if (last) { if (onDone) onDone(); if (onClose) onClose(); } else setAt((n) => n + 1); }}
+          onClick={goNext}
           style={{ flex: 1, padding: 13, borderRadius: 13, border: 'none', background: '#fff', color: INK,
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
           {last ? '플리 끝내기 ✓' : `다음 동작 → ${(cards[at + 1] || {}).thumb_text || ''}`}
@@ -160,11 +173,11 @@ export default function RoutinePlayer({ routine, cards = [], tone = 'z', bmtiCod
 }
 
 // 다음 동작으로 넘어가기 전 — 오프닝과 같은 자리에 파트너가 서서 한마디를 건넨다.
-function GapStage({ code, img, name, tone, sec, full, nextTitle, nextClip, voiceUrl, audioRef, onSkip }) {
+function GapStage({ code, img, name, tone, sec, full, nextTitle, nextClip, nextStill, voiceUrl, audioRef, onSkip, onBack }) {
   const stage = (
-    // 뒤에는 이제 갈 동작이 흐릿하게 돈다 — 무엇을 하러 가는지 말보다 먼저 보인다.
+    // 뒤에는 이제 갈 동작이 흐릿하게 깔린다 — 무엇을 하러 가는지 말보다 먼저 보인다.
     <PartnerStage code={code} img={img} name={name} say={subLines(nextLine(tone))}
-      at={GAP_SEC - sec} len={GAP_SEC} clip={nextClip}>
+      at={GAP_SEC - sec} len={GAP_SEC} clip={nextClip} still={nextStill}>
       <span style={{ fontSize: 12.5, fontWeight: 700, color: SUB, textAlign: 'center', wordBreak: 'keep-all' }}>
         다음은 <b style={{ color: INK }}>{nextTitle || '다음 동작'}</b> — <b style={{ color: SET_INK }}>{sec}</b>초 뒤에 이어져요
       </span>
@@ -172,7 +185,7 @@ function GapStage({ code, img, name, tone, sec, full, nextTitle, nextClip, voice
       <audio ref={audioRef} src={voiceUrl || undefined} preload="auto" style={{ display: 'none' }} />
     </PartnerStage>
   );
-  return <FullWrap on={full}>{stage}</FullWrap>;
+  return <FullWrap on={full} onBack={onBack}>{stage}</FullWrap>;
 }
 
 const navBtn = {

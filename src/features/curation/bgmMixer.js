@@ -40,6 +40,18 @@ export function volumeWorks() {
   return volOk;
 }
 
+/**
+ * 안내 음성의 크기를 정한다. 음성은 끊기면 안 되는 소리라, 되도록 믹서를 거치지 않는다.
+ *   · audio.volume이 듣는 기기(안드로이드·PC) — 그대로 audio.volume으로.
+ *   · 아이폰 — 손님이 음성 크기를 직접 바꿨을 때만(viaMixer) 믹서로 흘린다. 바꾸지 않았으면 예전처럼 그대로 튼다.
+ */
+export function setVoiceLevel(el, v, viaMixer = false) {
+  if (!el) return;
+  const level = Math.max(0, Math.min(1, Number(v) || 0));
+  if (volumeWorks()) { try { el.volume = level; } catch { /* 무시 */ } return; }
+  if (viaMixer) setLevel(el, level);
+}
+
 /** 이 기기에서 음악 크기를 조절할 길이 있는가 — 없으면 음악을 틀지 않는다 */
 export const canControl = () => mixerOn() || volumeWorks();
 

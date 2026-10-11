@@ -1,25 +1,31 @@
 // 오프닝·마무리·다음 동작에서 내 파트너가 말을 건네는 화면.
 // 세 자리가 같은 모양이라 한 조각으로 쓴다.
 //
-// 뒤로는 이제 할(또는 방금 한) 동작 영상이 흐릿하게 깔린다.
-// 무엇을 하러 가는지 말보다 먼저 눈에 들어온다.
+// 뒤로는 이제 할(또는 방금 한) 동작이 흐릿하게 깔린다. 무엇을 하러 가는지 말보다 먼저 눈에 들어온다.
+// still(시작 전 그림의 첫 장)을 주면 영상 대신 그 그림을 깐다 — 오프닝과 '다음 동작'에서 쓴다.
 import { CharPic } from './CurationCard';
 import { tintBg } from './typeTint';
 
 const INK = '#1C1A17';
 
-export default function PartnerStage({ code, img, name, say, at, len, clip, children }) {
+export default function PartnerStage({ code, img, name, say, at, len, clip, still = null, children }) {
   return (
     <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: tintBg(code),
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: 10, padding: '18px 20px 20px', boxSizing: 'border-box', overflow: 'hidden' }}>
 
-      {/* 뒤에 깔리는 동작 영상 — 흐릿하게 두어 글씨를 가리지 않는다 */}
-      {clip && (
+      {/* 뒤에 깔리는 동작 — 흐릿하게 두어 글씨를 가리지 않는다. 시작 전 그림이 있으면 그 첫 장을, 없으면 동작 영상을 깐다 */}
+      {(still?.url || clip) && (
         <>
+          {still?.url ? (
+            <img src={still.url} alt="" draggable={false}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${still.y ?? 50}%`,
+                filter: 'blur(17px) saturate(1.05)', transform: 'scale(1.14)', pointerEvents: 'none' }} />
+          ) : (
           <video src={clip} muted loop autoPlay playsInline preload="metadata"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
               filter: 'blur(17px) saturate(1.05)', transform: 'scale(1.14)', pointerEvents: 'none' }} />
+          )}
           {/* 유형 색을 한 겹 덮어 오프닝다운 바탕을 만든다 */}
           <span style={{ position: 'absolute', inset: 0, background: tintBg(code), opacity: 0.66, pointerEvents: 'none' }} />
         </>

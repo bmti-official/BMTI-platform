@@ -280,7 +280,7 @@ const SignupModal = ({ isOpen, onClose, onComplete }) => {
                 <KakaoIcon className="w-5 h-5 fill-[#3C1E1E]" />
                 카카오톡으로 계속하기
               </button>
-              <p className="text-xs text-gray-400 mt-4">소셜 로그인 시 서비스 이용약관에 동의합니다.</p>
+              <p className="text-xs text-gray-400 mt-4">소셜 로그인 시 서비스 이용약관에 동의합니다.<br />만 14세 이상만 가입할 수 있어요.</p>
             </div>
           )}
 

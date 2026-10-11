@@ -41,7 +41,7 @@ const leftOf = (a) => (a && a.duration > 0 ? a.duration - a.currentTime : 99);
 /**
  * quiet  파트너가 말하는 동안(오프닝·마무리)이나 멈춰 둔 동안 — 음악을 세운다
  * pad    곡 고르는 칸의 바깥 여백
- * 돌려주는 것 { hasMusic, audios(소리 태그), panel(켬·끔·크기·곡 고르기), toOutro(마무리 도막으로) }
+ * 돌려주는 것 { hasMusic, audios(소리 태그), panel(켬·끔·크기·곡 고르기), barePanel(여백 없는 고르개 — 설정 창 안에 놓는다), toOutro(마무리 도막으로) }
  */
 export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
   const [picked, setPicked] = useState(() => {
@@ -166,18 +166,20 @@ export function useBgm({ common, bmtiCode, quiet, pad = '0 14px 26px' }) {
     </>
   );
 
-  // 어떤 음악인지 · 바꾸기
-  const panel = hasMusic ? (
-    <BgmPanel pad={pad} common={common} musicOn={musicOn} volNo={volNo} bgmNo={bgmNo}
-      onToggle={() => { writePref({ on: !musicOn }); setMusicOn(!musicOn); }}
-      onVol={(i) => { writePref({ vol: i }); setVolNo(i); }}
-      onSong={(n) => {
-        writePref({ no: n }); setPicked(n);
-        // 처음부터 다시 — 같은 곡을 다시 골라도 도입부부터 흐르게 모두 되감는다
-        [introRef, loopARef, loopBRef, outroRef].forEach((r) => { stop(r.current); rewind(r.current); });
-        setPart('intro'); outroFrom.current = 0; backFrom.current = 0; loopNo.current = 0;
-      }} />
-  ) : null;
+  // 어떤 음악인지 · 바꾸기 — 같은 고르개를 두 벌 만든다(카드·플리 아래에 놓는 것, 설정 창 안에 놓는 여백 없는 것)
+  const pick = {
+    common, musicOn, volNo, bgmNo,
+    onToggle: () => { writePref({ on: !musicOn }); setMusicOn(!musicOn); },
+    onVol: (i) => { writePref({ vol: i }); setVolNo(i); },
+    onSong: (n) => {
+      writePref({ no: n }); setPicked(n);
+      // 처음부터 다시 — 같은 곡을 다시 골라도 도입부부터 흐르게 모두 되감는다
+      [introRef, loopARef, loopBRef, outroRef].forEach((r) => { stop(r.current); rewind(r.current); });
+      setPart('intro'); outroFrom.current = 0; backFrom.current = 0; loopNo.current = 0;
+    },
+  };
+  const panel = hasMusic ? <BgmPanel pad={pad} {...pick} /> : null;
+  const barePanel = hasMusic ? <BgmPanel pad={0} {...pick} /> : null;
 
-  return { hasMusic, audios, panel, toOutro };
+  return { hasMusic, audios, panel, barePanel, toOutro };
 }

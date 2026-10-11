@@ -260,18 +260,19 @@ const HomeView = ({ setView, quizCompleted, isLoggedIn, onRequireLogin, bmtiCode
           검사 전 이용자에게 보이는 'BMTI 테스트 하기!' 자리를 그대로 잇는다. */}
       {bmtiCode && (
         <div className="px-6 flex justify-center mb-8 fade-in">
-          <div className="flex flex-col items-center w-full max-w-sm">
+          {/* 나의유형 확인하기 옆에 '다시 검사하기'를 나란히 — 다시 검사하기가 선 만큼 확인하기 버튼이 좁아진다 */}
+          <div className="flex items-stretch gap-2 w-full max-w-sm">
             <button
               onClick={() => setView('result')}
-              className="w-full bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
+              className="flex-1 min-w-0 bg-black text-white text-[min(3.5vw,16px)] md:text-lg whitespace-nowrap font-medium px-4 md:px-6 py-4 rounded-full shadow-2xl hover:scale-[1.03] hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
               나의유형 확인하기
             </button>
             {isLoggedIn && (
               <button
                 onClick={handleRetakeQuiz}
-                className="mt-3.5 text-gray-400 hover:text-gray-600 text-xs md:text-sm font-medium underline underline-offset-4 transition-colors"
+                className="shrink-0 px-4 rounded-full bg-transparent border border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 text-xs md:text-sm font-semibold whitespace-nowrap transition-colors"
               >
                 다시 검사하기
               </button>

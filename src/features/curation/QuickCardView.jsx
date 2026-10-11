@@ -22,6 +22,8 @@ import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY, introImgs } from './format';
 import IntroStills from './IntroStills';
 import CardBgm from './CardBgm';
+import { setVoiceLevel, volumeWorks } from './bgmMixer';
+import { VOICE_VOL, readVoicePref, writeVoicePref, savedVoiceVol } from './voicePref';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
@@ -75,7 +77,12 @@ const readSpeed = () => { try { const v = Number(localStorage.getItem(SPEED_KEY)
 export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch, pliId = null,
   // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 카드를 뒤집어 뒷면에 알아 두기를 보여 주고,
   // '바로 따라하기'를 누르면 곧장 전체 화면으로 간다(바디플리처럼).
-  flippable = false, fullOnStart = false }) {
+  flippable = false, fullOnStart = false,
+  // 바디플리 안에서만 —
+  //   onExit    전체 화면의 왼쪽 위 화살표(플리를 닫고 시작하기 전 화면으로)
+  //   bgmPanel  플리가 쥐고 있는 배경음악 고르개(설정 창 안에 놓는다)
+  //   onNext·nextLabel·onPrev  설정 창의 '다음 동작으로'·'이전 동작'
+  onExit = null, bgmPanel = null, onNext = null, nextLabel = '', onPrev = null }) {
   const { title } = pickCardTone(card, tone);
   // 표지 → 누끼 캐릭터의 오프닝 설명 → 동작. 셋 다 같은 4:5다.
   const [stage, setStage] = useState('cover');
@@ -138,8 +145,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   const restTotal = twoPhase ? restSec * (sets - 1) * 2 + sideRest : restSec * Math.max(0, sets - 1);
   const totalSec = perSet > 0 ? perSet * rounds + restTotal + Math.round(mentSec) * rounds : 0;
 
+  // 전체 화면에서 여는 창 — '' · 'set'(설정 바꾸기) · 'info'(설명 보기)
+  const [sheet, setSheet] = useState('');
+  const [held, setHeld] = useState(false);        // 창을 열면서 내가 멈춰 세웠는가(닫을 때 이어 줄지)
+  const [bgmHost, setBgmHost] = useState(null);   // 설정 창 안의 배경음악 자리(카드 혼자 할 때)
   const [runNo, setRunNo] = useState(0);   // 몇 번째 판인가 — 다시 시작하면 배경음악도 도입부부터 다시 흐른다
-  const restart = () => { setRunNo((n) => n + 1); pendingRef.current = null; clearTimeout(pendingTimer.current); setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); };
+  const restart = () => { setRunNo((n) => n + 1); pendingRef.current = null; clearTimeout(pendingTimer.current); setDone(0); setRep(0); setRest(0); setRestLen(restSec); setSwitching(false); setSecondSide(false); setAltFlip(false); setMentDone(''); setIntroDone(false); setCueDone(false); setPaused(false); setSheet(''); setHeld(false); };
 
   // 잠깐 멈추기 / 다시 하기 — 영상과 소리를 함께 세운다.
   const togglePause = () => {
@@ -150,10 +161,32 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (next) return;
     // 이어서 — 멈췄던 설명·멘트를 그 자리부터 다시 튼다. 이걸 빼먹으면 설명이 끝나지 않아
     // 영상도 영영 '설명을 기다리는' 채로 멈춰 있다.
-    if (a && voiceOn && a.src && !a.ended && a.currentTime > 0) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
+    // 음성을 꺼 두었어도 소리 없이 끝까지 흘러야 한다 — 그래야 '설명이 끝났다'는 소식이 와서 다음으로 넘어간다.
+    if (a && a.src && !a.ended) { try { a.play().catch(() => {}); } catch { /* 무시 */ } }
     // 영상은 설명을 듣는 중이 아니고, 멘트가 끝나기를 기다리는 중도 아닐 때만
     const waiting = introOn || cueOn || !!pendingRef.current;
     if (v && rest === 0 && !allDone && !waiting) { try { v.play().catch(() => {}); } catch { /* 무시 */ } }
+  };
+
+  // 전체 화면에서 여는 창 — 'set' 설정 바꾸기 · 'info' 설명 보기.
+  // 여는 동안은 멈춰 세우고, 닫으면 하던 자리에서 바로 잇는다. 이미 멈춰 둔 채로 열었으면 닫아도 멈춘 그대로 둔다.
+  const openSheet = (which) => {
+    setHeld(!paused);
+    if (!paused) togglePause();
+    setSpeedOpen(false);
+    setSheet(which);
+    track('card_sheet', { which, card: card.id });
+  };
+  const closeSheet = () => {
+    setSheet('');
+    if (held && paused) togglePause();
+    setHeld(false);
+  };
+  // 왼쪽 위 화살표 — 하던 것을 그만두고 시작하기 전 화면으로. 먼저 물어본다.
+  const exit = () => {
+    if (!window.confirm(`${pliId != null ? '하던 플리를' : '하던 동작을'} 그만하고 나갈까요?\n절반 넘게 했다면 한 것으로 남아요.`)) return;
+    if (onExit) { onExit(); return; }
+    restart(); setStage('cover'); setFull(false);
   };
 
   // 따라하는 중에 설정을 바꾸면 처음부터 다시 시작한다 — 먼저 물어본다.
@@ -202,8 +235,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
   // 음성과 자막을 같은 자리끼리 짝지어 읽는다. 중간이 비어도 어긋나지 않는다.
   const setClips = (tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || [];
-  const [voiceOn, setVoiceOn] = useState(true);
-  const [vol, setVol] = useState(0.85);
+  // 켬·끔과 크기는 이 기기에 적어 둔다 — 플리에서 동작이 바뀌어도 그대로 간다.
+  const [voiceOn, setVoiceOnState] = useState(() => readVoicePref().on !== false);
+  const [vol, setVolState] = useState(() => savedVoiceVol() ?? VOICE_VOL);
+  // 아이폰은 audio.volume이 듣지 않는다. 손님이 크기를 직접 바꾼 적이 있을 때만 음성을 믹서로 흘려 크기를 맞춘다.
+  const [voiceMix, setVoiceMix] = useState(() => !volumeWorks() && savedVoiceVol() !== null);
+  const setVoiceOn = (v) => { const n = typeof v === 'function' ? v(voiceOn) : v; setVoiceOnState(n); writeVoicePref({ on: n }); };
+  const setVol = (v) => { setVolState(v); writeVoicePref({ vol: v }); if (!volumeWorks()) setVoiceMix(true); };
   const audioRef = useRef(null);
   // 설명을 들으며 할지, 숫자만 들을지 — 손님이 고른다.
   const keep = useKeep('card', card.id);   // 자기점검에서 열었으면 보관함과 이어진다
@@ -234,7 +272,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 오프닝에서 내 파트너가 먼저 자기를 소개한다.
   const helloUrl = hello[String(bmtiCode || '').split('-')[0].toUpperCase()] || '';
   // 자막 — 소리를 못 켜는 자리에서도 따라 할 수 있게 한다.
-  const [subOn, setSubOn] = useState(true);
+  const [subOn, setSubOnState] = useState(() => readVoicePref().sub !== false);
+  const setSubOn = (v) => { const n = typeof v === 'function' ? v(subOn) : v; setSubOnState(n); writeVoicePref({ sub: n }); };
   // 지금 흐르는 멘트가 얼마나 지났는지 — 오프닝 화면의 남은 시간 막대에 쓴다.
   const [said, setSaid] = useState({ at: 0, len: 0 });
   const myCode = axisOf(bmtiCode);
@@ -360,17 +399,6 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 전체 화면일 땐 뒤쪽이 움직이지 않고, ESC로 빠져나온다.
-  useEffect(() => {
-    if (!full) return undefined;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const esc = (e) => { if (e.key === 'Escape') setFull(false); };
-    window.addEventListener('keydown', esc);
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', esc); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [full]);
-
   // 음성 없이 자막만 올린 세트 멘트 — 읽을 참을 주고 스스로 끝낸다.
   useEffect(() => {
     if (introOn && !introClip) {
@@ -405,15 +433,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
   // 멘트가 바뀌면 처음부터 다시 틀어 준다.
   // 틀 것이 없어졌을 때 세워 두지 않으면, 앞 멘트가 남아서 계속 흐른다.
+  // 음성을 꺼 두었어도 소리 없이 끝까지 흘린다 — 끝나야 다음으로 넘어가기 때문이다.
+  // 멈춰 둔 동안(설정 창 등)에는 틀지 않는다. 이어서 할 때 togglePause가 튼다.
+  const pausedRef = useRef(false);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     if (!nowVoice) { try { a.pause(); } catch { /* 무시 */ } return; }
-    a.volume = vol;
-    a.muted = !voiceOn;
-    if (!voiceOn) return;
+    if (pausedRef.current) return;
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
-  }, [nowVoice, voiceOn, vol]);
+  }, [nowVoice]);
 
   // 숫자 세기 — 한 바퀴마다 하나씩. 멘트가 흐르는 동안은 쉰다.
   useEffect(() => {
@@ -426,7 +456,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     const url = commonAt('count', rep + 1);
     const a = countRef.current;
     if (!a || !url) return;
-    a.volume = vol;
+    setVoiceLevel(a, vol, voiceMix);
     try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rep, done, secondSide, stage, rest, introOn, mentOn, cueOn, voiceOn]);
@@ -457,7 +487,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         if (next === COUNTDOWN_AT && voiceOn) {
           const a = countRef.current;
           if (a && commonAt('countdown', 0)) {
-            a.volume = vol;
+            setVoiceLevel(a, vol, voiceMix);
             const m = audioRef.current;
             a.muted = !!(m && !m.paused && !m.ended);   // 쉬는 멘트와 겹치면 겹치는 동안은 소리 없이
             try { a.currentTime = 0; a.play().catch(() => {}); } catch { /* 무시 */ }
@@ -475,6 +505,24 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rest, paused, voiceOn, vol]);
+
+  // 크기 — 흐르던 멘트를 처음으로 되돌리지 않고 값만 바꾼다(설정 창에서 막대를 움직일 때). 켬·끔은 소리 태그의 muted가 맡는다.
+  useEffect(() => {
+    const a = audioRef.current, c = countRef.current;
+    if (a) setVoiceLevel(a, vol, voiceMix);
+    if (c) setVoiceLevel(c, vol, voiceMix);
+  }, [vol, voiceMix, nowVoice, countUrl]);
+
+  // 전체 화면일 땐 뒤쪽이 움직이지 않고, ESC로 빠져나온다.
+  useEffect(() => {
+    if (!full) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const esc = (e) => { if (e.key !== 'Escape') return; if (sheet) closeSheet(); else setFull(false); };
+    window.addEventListener('keydown', esc);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', esc); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [full, sheet, paused, held]);
 
   // 소리가 막혀 오프닝이 끝나지 않는 경우를 대비해, 스무 해 세고는 동작으로 넘어간다.
   useEffect(() => {
@@ -525,6 +573,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       : voiceRole === 'intro' ? introSub
         : voiceRole === 'ment' ? mentSub : '');
   const sideOpts = SIDES.filter(([k]) => k !== 'alt' || card.can_alternate);
+  const hasKnow = LINES(card.good_when).length + LINES(card.avoid_when).length + LINES(card.focus_body).length > 0;
 
   // 고르는 칸 — 표지에서도, 따라하는 중에도 같은 모양으로 쓴다.
   const pillBtn = (on) => ({
@@ -536,6 +585,44 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 접혀 있을 때는 꼭 알아야 할 것만.
   const optSummary = `기본 설정: ${reps}회 · ${sets}세트`
     + (totalSec > 0 ? ` ㅣ 모두 ${mmss(totalSec)}` : '');
+  // 횟수·세트·쉬는 시간·안내·좌우 — 표지의 접는 상자와 전체 화면의 설정 창이 같은 줄을 쓴다
+  const optRows = (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {label('횟수')}
+        <select value={reps} onChange={(e) => change(setReps)(Number(e.target.value))} style={dropdown}>
+          {setup.repList.map((n) => <option key={n} value={n}>{n}회</option>)}
+        </select>
+        {label('세트')}
+        <select value={sets} onChange={(e) => change(setSets)(Number(e.target.value))} style={dropdown}>
+          {setup.setList.map((n) => <option key={n} value={n}>{n}세트</option>)}
+        </select>
+        {label('쉬는 시간')}
+        <select value={restSec} onChange={(e) => change(setRestSec)(Number(e.target.value))} style={dropdown}>
+          {RESTS.map((n) => <option key={n} value={n}>{n}초</option>)}
+        </select>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {label('안내')}
+        {[[true, '설명 들으며'], [false, '숫자만']].map(([g, lb]) => (
+          <button key={lb} type="button" onClick={() => { change(setGuide)(g); track('guide_set', { v: g ? 'talk' : 'count', card: card.id }); }} style={pillBtn(g === guide)}>{lb}</button>
+        ))}
+        {totalSec > 0 && (
+          <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            모두 {mmss(totalSec)}
+          </span>
+        )}
+      </div>
+      {card.has_side && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {label('좌우')}
+          {sideOpts.map(([k, lb]) => (
+            <button key={k} type="button" onClick={() => change(setSide)(k)} style={pillBtn(k === side)}>{lb}</button>
+          ))}
+        </div>
+      )}
+    </>
+  );
   const optBox = (
     <div style={{ marginBottom: 10 }}>
       <button type="button" onClick={() => setOptOpen((o) => !o)}
@@ -551,39 +638,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       </button>
       {optOpen && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '9px 2px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {label('횟수')}
-            <select value={reps} onChange={(e) => change(setReps)(Number(e.target.value))} style={dropdown}>
-              {setup.repList.map((n) => <option key={n} value={n}>{n}회</option>)}
-            </select>
-            {label('세트')}
-            <select value={sets} onChange={(e) => change(setSets)(Number(e.target.value))} style={dropdown}>
-              {setup.setList.map((n) => <option key={n} value={n}>{n}세트</option>)}
-            </select>
-            {label('쉬는 시간')}
-            <select value={restSec} onChange={(e) => change(setRestSec)(Number(e.target.value))} style={dropdown}>
-              {RESTS.map((n) => <option key={n} value={n}>{n}초</option>)}
-            </select>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {label('안내')}
-            {[[true, '설명 들으며'], [false, '숫자만']].map(([g, lb]) => (
-              <button key={lb} type="button" onClick={() => { change(setGuide)(g); track('guide_set', { v: g ? 'talk' : 'count', card: card.id }); }} style={pillBtn(g === guide)}>{lb}</button>
-            ))}
-            {totalSec > 0 && (
-              <span style={{ marginLeft: 'auto', fontSize: 11.5, color: SUB, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                모두 {mmss(totalSec)}
-              </span>
-            )}
-          </div>
-          {card.has_side && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {label('좌우')}
-              {sideOpts.map(([k, lb]) => (
-                <button key={k} type="button" onClick={() => change(setSide)(k)} style={pillBtn(k === side)}>{lb}</button>
-              ))}
-            </div>
-          )}
+          {optRows}
         </div>
       )}
     </div>
@@ -651,15 +706,17 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
 
       {stage === 'open' ? (
         // 오프닝 — 내 파트너가 말을 건네는 자리. 이 몇 초가 자세를 잡는 시간이기도 하다.
-        <FullWrap on={full}>
+        <FullWrap on={full} onBack={exit}>
           <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''}
-            at={said.at} len={said.len} clip={card.video_url || ''}>
+            at={said.at} len={said.len} clip={card.video_url || ''}
+            // 뒤에는 본 영상이 아니라 시작 전 그림의 첫 장을 흐리게 깐다(그림이 없으면 예전처럼 영상)
+            still={stills[0] ? { url: stills[0].url, y: clipY(card) } : null}>
             <button type="button" onClick={() => setStage('move')} style={partnerBtn}>바로 동작 보기 →</button>
           </PartnerStage>
         </FullWrap>
       ) : started && allDone && !hideFinish ? (
         // 마무리 — 오프닝과 같은 자리에서 파트너가 끝인사를 한다.
-        <FullWrap on={full}>
+        <FullWrap on={full} onBack={exit}>
           <PartnerStage code={myCode} img={partnerImg} name={partnerName} say={subOn ? sayNow : ''}
             at={said.at} len={said.len} clip={card.video_url || ''}>
             <button type="button" onClick={() => { restart(); setStage('move'); }} style={partnerBtn}>한 번 더 하기 ↻</button>
@@ -668,7 +725,15 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       ) : started && hasPlay ? (
         // 실제 동작 — 표지와 같은 4:5. 전체 화면에서도 이 비율 그대로 키우기만 한다.
         // 그래야 위에 얹은 글씨가 화면 꼭대기가 아니라 영상 안에 앉는다.
-        <FullWrap on={full}>
+        <FullWrap on={full} onBack={exit}
+          corner={hasKnow ? (
+            <button type="button" onClick={() => openSheet('info')}
+              style={{ border: 'none', background: 'rgba(255,255,255,0.94)', color: INK, borderRadius: 999, height: 38, padding: '0 14px',
+                fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.14)' }}>
+              설명 보기
+            </button>
+          ) : null}>
         <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', background: '#F3F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video ref={clipRef} className="bmti-clip" src={card.video_url} autoPlay muted playsInline
             onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (d > 0 && Number.isFinite(d)) setClipSec(d); }}
@@ -721,7 +786,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           {/* 전체 화면에서는 위 버튼 줄이 보이지 않으니, 건너뛰기를 오른쪽 위에 둔다 */}
           {full && introOn && (
             <button type="button" onClick={() => setIntroDone(true)}
-              style={{ position: 'absolute', top: 26, right: 12, zIndex: 7, border: 'none',
+              style={{ position: 'absolute', top: 70, right: 12, zIndex: 7, border: 'none',
                 background: NAME_BG, color: NAME_INK, borderRadius: 999, padding: '7px 14px',
                 fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
                 whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(23,21,15,0.12)' }}>
@@ -761,17 +826,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
                   {speed}×
                 </button>
               </div>
-              {/* 설정 바꾸기 — 밑에 아주 작게 '(이전으로)'. 글씨는 버튼 줄의 높이를 흔들지 않게 띄워 둔다 */}
-              <div style={{ position: 'relative' }}>
-                <button type="button" onClick={() => setFull(false)}
-                  style={{ border: 'none', background: '#fff',
-                    color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
-                    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
-                  설정 바꾸기
-                </button>
-                <span style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, textAlign: 'center',
-                  fontSize: 9, fontWeight: 700, color: SUB, pointerEvents: 'none', whiteSpace: 'nowrap' }}>(이전으로)</span>
-              </div>
+              {/* 설정 바꾸기 — 전체 화면 그대로, 멈춰 세우고 아래에서 설정 창을 올린다. 닫으면 바로 잇는다 */}
+              <button type="button" onClick={() => openSheet('set')}
+                style={{ border: 'none', background: '#fff',
+                  color: INK, borderRadius: 999, padding: '11px 22px', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
+                  cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(217,185,106,0.45)' }}>
+                설정 바꾸기
+              </button>
               {/* 일시정지 — 영상과 소리를 함께 세운다 */}
               <button type="button" onClick={togglePause} aria-label={paused ? '이어서 하기' : '일시정지'}
                 style={{ border: 'none', background: paused ? SET_BG : '#fff', color: paused ? SET_INK : INK, borderRadius: 999,
@@ -856,7 +917,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       {/* AI 음성 — 화면에는 조절 막대만 두고, 소리는 이 태그가 낸다 */}
       {started && hasVoice && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 15px 0' }}>
-          <audio ref={audioRef} key={nowVoice || 'none'} src={nowVoice || undefined} preload="auto"
+          <audio ref={audioRef} key={nowVoice || 'none'} src={nowVoice || undefined} preload="auto" muted={!voiceOn}
+            crossOrigin={voiceMix ? 'anonymous' : undefined}
             onLoadedMetadata={(e) => {
               const len = Number(e.currentTarget.duration) || 0;
               setSaid({ at: 0, len });
@@ -887,6 +949,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
           {/* 숫자 세기 · 카운트다운 — 여기도 주소를 key로 둔다.
               주소만 갈아 끼우면 브라우저가 앞 숫자를 마저 세어 버린다. */}
           <audio ref={countRef} key={countUrl || 'none'} src={countUrl || undefined}
+            crossOrigin={voiceMix ? 'anonymous' : undefined}
             preload="auto" style={{ display: 'none' }}
             // 새로 붙을 때도 — 큰 음성이 흐르는 중이면 꺼 둔 채로 시작한다
             onPlay={() => muteCount(talkingNow())} />
@@ -913,7 +976,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
       {/* 배경음악 — 바디플리 안에서는 플리가 음악을 쥐고 있으니, 카드 혼자 따라 할 때만 튼다.
           파트너가 말하는 동안(오프닝·마무리)과 멈춰 둔 동안에는 쉰다. */}
       {started && !onQuiet && (
-        <CardBgm key={runNo} common={common} bmtiCode={bmtiCode} quiet={quiet || paused}
+        <CardBgm key={runNo} common={common} bmtiCode={bmtiCode} quiet={quiet || (paused && sheet !== 'set')}
+          host={sheet === 'set' ? bgmHost : null}
           // 마무리 도막은 마지막 세트에 들어설 때. 한 세트짜리면 시작하자마자 마무리가 나오니, 절반쯤 했을 때로 미룬다.
           last={finalStretch && (sets > 1 || rep + 1 >= midRep)} />
       )}
@@ -942,6 +1006,97 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             (전체 화면에선 영상만) */}
         {flippable ? (started && !full && <KnowAll card={card} />) : <KnowBox card={card} />}
       </div>
+
+      {/* 전체 화면 위로 올라오는 창 — 설정 바꾸기 · 설명 보기. 떠 있는 동안은 멈춰 있고, 닫으면 하던 자리에서 잇는다 */}
+      {sheet && (
+        <div onClick={closeSheet} style={{ position: 'fixed', inset: 0, zIndex: 96, background: 'rgba(28,26,23,0.45)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
+          <style>{'@keyframes bmtiSheetUp{from{transform:translateY(28px);opacity:.5}to{transform:none;opacity:1}}'
+            + '.bmti-set-bgm:has(> .bmti-set-host:empty){display:none}'}</style>
+          <div role="dialog" aria-modal="true" aria-label={sheet === 'set' ? '설정 바꾸기' : '설명 보기'} onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 480, maxHeight: '84vh', overflowY: 'auto', background: '#fff', borderRadius: '22px 22px 0 0',
+              padding: '16px 18px calc(18px + env(safe-area-inset-bottom))', boxSizing: 'border-box', color: INK,
+              animation: 'bmtiSheetUp .22s ease-out' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 900 }}>{sheet === 'set' ? '설정 바꾸기' : '이 동작 알아 두기'}</span>
+              <button type="button" onClick={closeSheet}
+                style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999, padding: '8px 14px',
+                  fontSize: 12.5, fontWeight: 800, background: SET_BG, color: SET_INK, whiteSpace: 'nowrap' }}>
+                {held ? '이어서 하기 ▶' : '닫기'}
+              </button>
+            </div>
+
+            {sheet === 'info' && <KnowAll card={card} avoidFirst />}
+
+            {sheet === 'set' && (
+              <>
+                {/* 배경음악 — 켬·끔, 크기, 곡. 플리에서는 플리의 음악을, 카드 혼자 할 땐 카드의 음악을 여기서 고른다 */}
+                {(bgmPanel || !onQuiet) && (
+                  <div className="bmti-set-bgm">
+                    <div style={{ fontSize: 12, fontWeight: 800, color: SUB, margin: '14px 0 8px' }}>배경음악</div>
+                    {bgmPanel || <div ref={setBgmHost} className="bmti-set-host" />}
+                  </div>
+                )}
+
+                {/* 안내 음성 — 켬·끔, 크기, 자막 */}
+                {hasVoice && (
+                  <>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: SUB, margin: '16px 0 8px' }}>안내 음성</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <button type="button" onClick={() => setVoiceOn((v) => !v)} aria-label={voiceOn ? '음성 끄기' : '음성 켜기'}
+                        style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 15,
+                          background: voiceOn ? SET_BG : '#fff', boxShadow: voiceOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+                        {voiceOn ? '🔊' : '🔇'}
+                      </button>
+                      <input type="range" min={0} max={100} step={5} value={Math.round(vol * 100)} aria-label="안내 음성 크기"
+                        onChange={(e) => { setVol(Number(e.target.value) / 100); setVoiceOn(true); }}
+                        style={{ flex: 1, minWidth: 0, accentColor: '#C9A227' }} />
+                      <button type="button" onClick={() => setSubOn((v) => !v)} aria-label={subOn ? '자막 끄기' : '자막 켜기'}
+                        style={{ flexShrink: 0, height: 34, padding: '0 11px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                          fontFamily: 'inherit', fontSize: 12, fontWeight: 800, color: subOn ? SET_INK : SUB,
+                          background: subOn ? SET_BG : '#fff', boxShadow: subOn ? 'none' : `inset 0 0 0 1px ${LINE}` }}>
+                        자막
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 이 동작 — 횟수·세트·쉬는 시간·안내·좌우. 바꾸면 처음부터 다시 한다(바꿀 때 묻는다) */}
+                <div style={{ fontSize: 12, fontWeight: 800, color: SUB, margin: '16px 0 8px' }}>
+                  이 동작 <span style={{ fontWeight: 700 }}>· 바꾸면 처음부터 다시 해요</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#FAF7F0', borderRadius: 13, padding: '11px 12px' }}>
+                  {optRows}
+                </div>
+
+                {/* 넘기기 — 처음부터 다시, 플리에서는 이전·다음 동작 */}
+                <div style={{ display: 'flex', gap: 7, marginTop: 14, flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => { restart(); setStage('move'); }}
+                    style={{ flex: '0 0 auto', padding: '12px 14px', borderRadius: 13, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      fontSize: 13, fontWeight: 800, background: '#fff', color: SUB, boxShadow: `inset 0 0 0 1px ${LINE}`, whiteSpace: 'nowrap' }}>
+                    처음부터 다시
+                  </button>
+                  {onPrev && (
+                    <button type="button" onClick={onPrev}
+                      style={{ flex: '0 0 auto', padding: '12px 14px', borderRadius: 13, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 13, fontWeight: 800, background: '#fff', color: SUB, boxShadow: `inset 0 0 0 1px ${LINE}`, whiteSpace: 'nowrap' }}>
+                      ‹ 이전 동작
+                    </button>
+                  )}
+                  {onNext && (
+                    <button type="button" onClick={onNext}
+                      style={{ flex: '1 1 140px', minWidth: 0, padding: '12px 14px', borderRadius: 13, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 13, fontWeight: 800, background: '#fff', color: INK, boxShadow: KEEP_SHADOW,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {nextLabel || '다음 동작으로 →'}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </article>
   );
 
@@ -996,7 +1151,8 @@ function Rows({ items, color }) {
 
 // 알아 두기를 모두 펼쳐 보인다 — 카드 뒷면, 그리고 따라하는 동안 영상 아래.
 // 차례: ① 이럴 때 좋습니다 ② 이럴 땐 하지 마세요 ③ 쓰는 곳
-function KnowAll({ card }) {
+// avoidFirst: '이럴 땐 하지 마세요'를 맨 위에 — 전체 화면의 '설명 보기' 창에서 쓴다
+function KnowAll({ card, avoidFirst = false }) {
   const good = LINES(card?.good_when);
   const avoid = LINES(card?.avoid_when);
   const focus = LINES(card?.focus_body);
@@ -1004,10 +1160,11 @@ function KnowAll({ card }) {
     <div style={{ fontSize: 12.5, fontWeight: 900, color, letterSpacing: '-0.01em' }}>{txt}</div>
   );
   const box = { padding: '11px 13px', borderRadius: 13, background: '#FAF7F0' };
+  const goodBox = good.length > 0 && <div key="good" style={box}>{head('👍 이럴 때 좋습니다', '#3F7F5B')}<Rows items={good} color="#3F7F5B" /></div>;
+  const avoidBox = avoid.length > 0 && <div key="avoid" style={box}>{head('⛔ 이럴 땐 하지 마세요', '#B23B36')}<Rows items={avoid} color="#B23B36" /></div>;
   return (
     <div style={{ display: 'grid', gap: 9, marginTop: 10 }}>
-      {good.length > 0 && <div style={box}>{head('👍 이럴 때 좋습니다', '#3F7F5B')}<Rows items={good} color="#3F7F5B" /></div>}
-      {avoid.length > 0 && <div style={box}>{head('⛔ 이럴 땐 하지 마세요', '#B23B36')}<Rows items={avoid} color="#B23B36" /></div>}
+      {avoidFirst ? [avoidBox, goodBox] : [goodBox, avoidBox]}
       {focus.length > 0 && <div style={box}>{head('🎯 쓰는 곳', '#8A6A3A')}<Rows items={focus} color="#8A6A3A" /></div>}
     </div>
   );
