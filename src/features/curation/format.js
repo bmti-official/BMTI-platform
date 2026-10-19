@@ -5,6 +5,17 @@ export const KIND_LABEL = { massage: '마사지', stretch: '스트레칭', exerc
 // Z 유형은 담백한 글, M 유형은 다정한 글을 본다.
 export const toneOf = (bmtiCode) => (String(bmtiCode || '').toUpperCase().endsWith('M') ? 'm' : 'z');
 
+// 한 벌(Z 칸)로만 쓴 글도 M 유형에게 그대로 보이게 — 내 유형 칸이 비어 있으면 다른 칸을 쓴다.
+// 측만 카드·읽을거리부터는 Z·M을 나누지 않고 한 벌만 쓴다.
+const hasText = (v) => (Array.isArray(v)
+  ? v.some((x) => (x && typeof x === 'object' ? (x.texts || []).some((t) => String(t || '').trim()) : String(x || '').trim()))
+  : !!String(v || '').trim());
+export const toneField = (obj, key, tone) => {
+  const mine = obj?.[`${key}_${tone === 'm' ? 'm' : 'z'}`];
+  const other = obj?.[`${key}_${tone === 'm' ? 'z' : 'm'}`];
+  return hasText(mine) ? mine : (hasText(other) ? other : mine);
+};
+
 export const pickCurationTone = (item, tone) => ({
   title: (tone === 'm' ? item.title_m : item.title_z) || item.title_z || item.title_m || '',
   body: (tone === 'm' ? item.body_m : item.body_z) || '',

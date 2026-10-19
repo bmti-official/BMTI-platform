@@ -10,7 +10,7 @@
 import { KEY_TO_PART_LABEL, PART_KEY } from '../../lib/diaryEntryLabels';
 import { BODY_GROUPS, GROUP_LABEL } from '../../lib/bodyGroups';
 import { SEARCH_WORDS } from '../../lib/searchWords';
-import { KIND_LABEL } from './format';
+import { KIND_LABEL, toneField } from './format';
 import { TOOL_LIST } from './tools';
 
 // 어디에서 걸렸는지에 따른 점수 — 제목·썸네일이 가장 무겁고, 설명 글이 가장 가볍다
@@ -113,7 +113,7 @@ function indexOf(item, tone) {
     tone,
     head: squash([item.thumb_text, item.title_z, item.title_m, ...(item.keywords || [])].filter(Boolean).join(' ')),
     desc: squash([item.good_when, item.focus_body, t === 'm' ? item.body_m : item.body_z, ...sections,
-      ...textsIn(t === 'm' ? item.slides_m : item.slides_z)].filter(Boolean).join(' ')),
+      ...textsIn(toneField(item, 'slides', t))].filter(Boolean).join(' ')),
     core: item.core_parts || [],
     related: item.related_parts || [],
     groups: item.body_groups || [],

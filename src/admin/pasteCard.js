@@ -130,10 +130,16 @@ export function parseCard(text) {
     if (t.name === '쓰는곳') { put('focus_body', bullets(t.value)); continue; }
   }
 
+  // 한 벌로만 쓴 원고([제목] · [시작 전]처럼 Z·M 표시가 없다) — M 칸을 비워 M 유형에게도 이 글이 가게 한다.
+  // 예전 원고를 고쳐 붙여넣을 때 남아 있던 M 글이 대신 보이지 않도록 비운다.
+  const single = (out.title_z || out.sub_sets_z) && !filled.some((k) => k.endsWith('_m'));
+  if (single) { out.title_m = ''; out.sub_sets_m = []; }
+
   const has = (re) => filled.filter((k) => re.test(k)).length;
   // 자막은 덩어리 수로 센다(시작 전·1세트… × Z·M)
   const subs = [...(out.sub_sets_z || []), ...(out.sub_sets_m || [])].filter((x) => String(x).trim()).length;
   const report = [
+    single ? '한 벌' : null,
     has(/^title_/) ? `제목 ${has(/^title_/)}` : null,
     has(/^(good_when|avoid_when|focus_body)$/) ? `알아 두기 ${has(/^(good_when|avoid_when|focus_body)$/)}` : null,
     filled.includes('thumb_text') ? '동작 이름' : null,

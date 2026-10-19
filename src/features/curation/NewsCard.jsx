@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flatten } from './newsSlides';
 import { useKeep, useViewMark } from './keep';
+import { toneField } from './format';
 
 const INK = '#1C1A17', SUB = '#8A8378';
 
@@ -66,7 +67,7 @@ export default function NewsCard({ item, slides = [], tone = 'z', onClose, tail 
             fontSize: 17, fontWeight: 800, color: INK, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>‹</button>
         <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 800,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {(tone === 'm' ? item?.title_m : item?.title_z) || item?.thumb_text || '읽을거리'}
+          {toneField(item, 'title', tone) || item?.thumb_text || '읽을거리'}
         </span>
         <span style={{ fontSize: 12, fontWeight: 800, color: SUB, fontVariantNumeric: 'tabular-nums' }}>
           {at + 1} / {cards.length}

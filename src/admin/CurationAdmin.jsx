@@ -144,7 +144,8 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
 
 
   const save = async () => {
-    if (!f.title_z.trim() || !f.title_m.trim()) { setErr('Z·M 제목을 모두 입력해 주세요.'); return; }
+    // 측만 카드·읽을거리부터는 한 벌(Z 칸)만 쓴다. M 칸을 비우면 M 유형에게도 Z 글이 보인다.
+    if (!f.title_z.trim()) { setErr('제목을 입력해 주세요.'); return; }
     // AI가 '내가 준 정보에 없는 내용'이라고 표시해 둔 곳은 공개 전에 반드시 확인한다.
     // 공개로 돌릴 땐 손님 화면에 빈칸이 보이지 않게 알맹이를 확인한다.
     const missing = f.published ? missingForPublish('curation', f) : [];
@@ -256,7 +257,7 @@ function Editor({ row, allPlis, onSaved, onCancel, onPreview, onDelete }) {
             placeholder="목이 굳었을 때 3분 이완법" />
         </div>
         <div>
-          <span style={label}>제목 · M 유형 <span style={{ color: '#B23B36' }}>다정하게</span></span>
+          <span style={label}>제목 · M 유형 <span style={{ color: '#B23B36' }}>다정하게</span> <span style={{ color: '#9A9488', fontWeight: 600 }}>(한 벌만 쓸 땐 비워 두세요)</span></span>
           <input style={input} value={f.title_m} onChange={(e) => set('title_m')(e.target.value)}
             placeholder="목이 뻐근한 날, 3분만 같이 풀어봐요" />
         </div>

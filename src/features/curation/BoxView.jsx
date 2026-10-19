@@ -8,7 +8,7 @@ import CardFeed from './CardFeed';
 import PliFeed from './PliFeed';
 import PickRow from './PickRow';
 import PliGrid from './PliGrid';
-import { mmss } from './format';
+import { mmss, toneField } from './format';
 import { cardTotalSec } from './cardDefaults';
 import { cardCount } from './newsSlides';
 import { readMin } from './browseOrder';
@@ -119,7 +119,7 @@ export default function BoxView({ nickname = '회원', bmtiCode, tone = 'z',
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
           {grid.map((item) => {
             const read = tab === 'read';
-            const slides = cardCount((tone === 'm' ? item.slides_m : item.slides_z) || []);
+            const slides = cardCount(toneField(item, 'slides', tone) || []);
             const mark = read ? (slides > 0 ? `${slides}장` : `${readMin(item, tone)}분`)
               : (cardTotalSec(item) > 0 ? mmss(cardTotalSec(item)) : '');
             return (

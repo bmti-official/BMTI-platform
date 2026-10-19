@@ -11,7 +11,7 @@ import CardFeed from './CardFeed';
 import NewsCard from './NewsCard';
 import PliGrid from './PliGrid';
 import PliFeed from './PliFeed';
-import { mmss, routineSummary } from './format';
+import { mmss, routineSummary, toneField } from './format';
 import PickRow from './PickRow';
 import { cardTotalSec } from './cardDefaults';
 import { cardCount } from './newsSlides';
@@ -115,7 +115,7 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
       )}
       {openRead && (
         <NewsCard item={openRead} tone={tone} onClose={() => setOpenRead(null)}
-          slides={(tone === 'm' ? openRead.slides_m : openRead.slides_z) || []} />
+          slides={toneField(openRead, 'slides', tone) || []} />
       )}
       {openPli && (
         <PliFeed plis={shownPlis.length ? shownPlis : routines} startId={openPli.id} tone={tone} bmtiCode={bmtiCode}
@@ -128,7 +128,7 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
     if (kind === 'card') { setOpenId(item.id); return; }
     if (kind === 'pli') { setOpenPli(item); return; }
     // 카드뉴스로 만든 글이면 옆으로 넘겨 보고, 아직 긴 글이면 바깥에 넘긴다
-    const g = (tone === 'm' ? item.slides_m : item.slides_z) || [];
+    const g = toneField(item, 'slides', tone) || [];
     if (g.length) setOpenRead(item); else if (onOpenRead) onOpenRead(item);
   };
 
@@ -173,7 +173,7 @@ export default function BrowseView({ cards = [], reads = [], routines = [], tone
           {grid.map(({ kind, item }) => {
             const cover = { item, clip: kind === 'read' ? '' : (item.video_url || ''), still: kind === 'read' ? '' : (item.poster_url || '') };
             // 카드뉴스로 만든 글이면 장수를, 아직 긴 글이면 읽는 시간을 적는다
-            const slides = cardCount((tone === 'm' ? item.slides_m : item.slides_z) || []);
+            const slides = cardCount(toneField(item, 'slides', tone) || []);
             const mark = kind === 'read' ? (slides > 0 ? `${slides}장` : `${readMin(item, tone)}분`)
               : kind === 'pli' ? pliMark(item)
                 : (cardTotalSec(item) > 0 ? mmss(cardTotalSec(item)) : '');

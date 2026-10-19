@@ -7,12 +7,13 @@
 //   사진 설명: …
 //   글 1 · Z: …             글 1 · M: …
 //   글 2 · Z: …             글 2 · M: …
+//   한 벌만 쓰는 글(측만 읽을거리부터)은 '· Z'·'· M' 없이 '글 1: …'로 온다 → Z 칸에 담는다.
 //
 // 사진은 따로 올린다. 여기서는 글과 자리만 잡아 두고 image는 빈 칸으로 남긴다.
 const NOISE = /^(MD|\+\s*\d+|\d+\s*\/\s*\d+|-{3,}|={3,})$/;
 const PHOTO = /^=*\s*사진\s*(\d+)\s*=*$/;
 const SHOT = /^사진\s*설명\s*[:：]\s*(.*)$/;
-const TEXT = /^글\s*(\d+)?\s*[·・.]?\s*([ZMzm])\s*[:：]\s*(.*)$/;
+const TEXT = /^글\s*(?:(\d+)\s*[·・.]?\s*([ZMzm])?|[·・.]?\s*([ZMzm]))\s*[:：]\s*(.*)$/;
 const HEAD = /^\[\s*([^\]]+?)\s*\]\s*(.*)$/;
 const KEY = /^(제목|썸네일\s*문구|썸네일|읽는\s*시간)\s*([ZMzm])?\s*[:：]\s*(.*)$/;
 
@@ -25,10 +26,11 @@ const toHilite = (s) => String(s)
 // 채팅에서 복사하면 줄바꿈이 사라져 표지가 앞 문장에 붙는 일이 잦다.
 // 읽기 전에 표지 앞에서 줄을 끊어 준다.
 const unglue = (t) => String(t || '')
-  .replace(/(?<=\S)[ \t]*(?==+\s*사진\s*\d+)/g, '\n')
+  // '=== 사진 2 ===' 안의 등호 사이에서는 끊지 않는다(끊으면 '= ='가 앞 글에 붙는다)
+  .replace(/(?<=[^\s=])[ \t]*(?==+\s*사진\s*\d+)/g, '\n')
   .replace(/(?<=\S)[ \t]*(?=\[[^\]\n]{1,40}\])/g, '\n')
   .replace(/(?<=\S)[ \t]*(?=사진\s*설명\s*[:：])/g, '\n')
-  .replace(/(?<=\S)[ \t]*(?=글\s*\d*\s*[·・.]?\s*[ZMzm]\s*[:：])/g, '\n');
+  .replace(/(?<=\S)[ \t]*(?=글\s*(?:\d+\s*[·・.]?\s*[ZMzm]?|[·・.]?\s*[ZMzm])\s*[:：])/g, '\n');
 
 /** 붙여넣은 글에 카드뉴스 표지가 들어 있는지. 어느 해석기를 쓸지 여기서 가른다. */
 export const looksLikeSlides = (text) => PHOTO.test(String(text || '').split('\n').map((l) => l.trim()).find((l) => PHOTO.test(l)) || '');
@@ -73,7 +75,7 @@ export function parseSlides(text) {
     if (shot && at >= 0) { need(at); out.slides_z[at].note = shot[1].trim(); out.slides_m[at].note = shot[1].trim(); last = null; continue; }
 
     const txt = t.match(TEXT);
-    if (txt && at >= 0) { add(txt[2].toLowerCase(), txt[1], txt[3]); continue; }
+    if (txt && at >= 0) { add((txt[2] || txt[3] || 'z').toLowerCase(), txt[1], txt[4]); continue; }
 
     const head = t.match(HEAD);
     if (head) {
@@ -122,12 +124,17 @@ export function parseSlides(text) {
   filled.forEach((k) => { fields[k] = out[k]; });
   if (out.slides_z.length) fields.slides_z = out.slides_z;
   if (out.slides_m.length) fields.slides_m = out.slides_m;
+  // 한 벌로만 쓴 원고 — M 칸을 비워 M 유형에게도 이 글이 가게 한다(남아 있던 예전 M 글이 대신 보이지 않게).
+  if (out.slides_z.length && !nm) {
+    fields.slides_m = [];
+    if (!filled.includes('title_m')) fields.title_m = '';
+  }
 
   const report = [
     filled.filter((k) => k.startsWith('title_')).length ? `제목 ${filled.filter((k) => k.startsWith('title_')).length}` : null,
     filled.includes('thumb_text') ? '썸네일 문구' : null,
     filled.includes('read_min') ? '읽는 시간' : null,
-    out.slides_z.length ? `사진 ${out.slides_z.length}개 · Z ${nz}장 / M ${nm}장` : null,
+    out.slides_z.length ? (nm ? `사진 ${out.slides_z.length}개 · Z ${nz}장 / M ${nm}장` : `사진 ${out.slides_z.length}개 · 글 ${nz}장(한 벌)`) : null,
   ].filter(Boolean);
 
   return { fields, report, notes, count: report.length };

@@ -19,7 +19,7 @@ import { finishLine } from './finishLine';
 import { cardSetup, REST_LIST } from './cardDefaults';
 import AiNote from './AiNote';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
-import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY, introImgs } from './format';
+import { KIND_LABEL, pickCardTone, fmtCount as fmt, mmss, clipY, subLines, subY, introImgs, toneField } from './format';
 import IntroStills from './IntroStills';
 import CardBgm from './CardBgm';
 import { setVoiceLevel, volumeWorks } from './bgmMixer';
@@ -234,7 +234,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   };
   // AI 음성 — 오프닝이 먼저 흐르고, 끝나면 세트 멘트로 넘어간다.
   // 음성과 자막을 같은 자리끼리 짝지어 읽는다. 중간이 비어도 어긋나지 않는다.
-  const setClips = (tone === 'm' ? card.voice_sets_m : card.voice_sets_z) || [];
+  const setClips = toneField(card, 'voice_sets', tone) || [];
   // 켬·끔과 크기는 이 기기에 적어 둔다 — 플리에서 동작이 바뀌어도 그대로 간다.
   const [voiceOn, setVoiceOnState] = useState(() => readVoicePref().on !== false);
   const [vol, setVolState] = useState(() => savedVoiceVol() ?? VOICE_VOL);
@@ -277,7 +277,7 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 지금 흐르는 멘트가 얼마나 지났는지 — 오프닝 화면의 남은 시간 막대에 쓴다.
   const [said, setSaid] = useState({ at: 0, len: 0 });
   const myCode = axisOf(bmtiCode);
-  const subSets = (tone === 'm' ? card.sub_sets_m : card.sub_sets_z) || [];
+  const subSets = toneField(card, 'sub_sets', tone) || [];
   // 첫 자리는 '시작 전 설명', 그 뒤가 1세트·2세트… 한마디다.
   const introClip = setClips[0] || '';
   const introSub = subSets[0] || '';
