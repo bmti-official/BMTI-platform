@@ -24,6 +24,7 @@ import IntroStills from './IntroStills';
 import CardBgm from './CardBgm';
 import { setVoiceLevel, volumeWorks } from './bgmMixer';
 import { VOICE_VOL, readVoicePref, writeVoicePref, savedVoiceVol } from './voicePref';
+import CardInfoSheet, { CardInfoEntry } from './CardInfoSheet';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
 const GOLD = '#B08635';                   // 타겟 부위 · 도구를 짚어 주는 골드
@@ -75,7 +76,7 @@ const SPEED_KEY = 'bmti_card_speed';
 const readSpeed = () => { try { const v = Number(localStorage.getItem(SPEED_KEY)); return SPEEDS.includes(v) ? v : 1; } catch { return 1; } };
 
 export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onSave, onMakeRoutine, charImages, charCodes, skipOpening = true, autoStart = false, full: fullProp, onFull, onAllDone, hideFinish = true, onQuiet, onFinalStretch, pliId = null,
-  // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 카드를 뒤집어 뒷면에 알아 두기를 보여 주고,
+  // 하나씩 넘겨 보는 화면(CardFeed)에서만 — 표지에는 알아 두기 상자를 두지 않고('설명 보기' 창으로 본다),
   // '바로 따라하기'를 누르면 곧장 전체 화면으로 간다(바디플리처럼).
   flippable = false, fullOnStart = false,
   // 바디플리 안에서만 —
@@ -182,6 +183,13 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     if (held && paused) togglePause();
     setHeld(false);
   };
+  // '설명 보기' — 어디서 누르든 같은 창(CardInfoSheet). 하는 중이면 멈춰 세우고, 표지면 그냥 띄운다.
+  const openInfo = () => {
+    if (stage !== 'cover') { openSheet('info'); return; }
+    setSheet('info');
+    track('card_sheet', { which: 'info', card: card.id });
+  };
+  const closeInfo = () => { if (stage !== 'cover') closeSheet(); else setSheet(''); };
   // 왼쪽 위 화살표 — 하던 것을 그만두고 시작하기 전 화면으로. 먼저 물어본다.
   const exit = () => {
     if (!window.confirm(`${pliId != null ? '하던 플리를' : '하던 동작을'} 그만하고 나갈까요?\n절반 넘게 했다면 한 것으로 남아요.`)) return;
@@ -332,10 +340,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
   // 소리가 없으면 읽을 만큼만 세워 두었다가 저절로 동작으로 넘어간다.
   const openText = subLines(HELLO_LINE[myCode] || '');
   const beginOpening = !skipOpening && !heardOpening && !!(helloUrl || openText);
-  const [flipped, setFlipped] = useState(false);
   const start = () => {
     restart();
-    setFlipped(false);
     if (fullOnStart) setFull(true);
     if (beginOpening) { setHeardOpening(true); setStage('open'); } else setStage('move');
     if (onStart) onStart();
@@ -658,12 +664,12 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
             {KIND_LABEL[card.kind] || card.kind}
           </span>
           <h3 style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, margin: 0, wordBreak: 'keep-all' }}>{title}</h3>
-          {flippable && !started && (
-            <button type="button" onClick={() => setFlipped(true)} aria-label="설명 보기"
+          {hasKnow && !started && (
+            <button type="button" onClick={openInfo} aria-label="설명 보기"
               style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
                 borderRadius: 10, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, color: SUB, whiteSpace: 'nowrap',
                 boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-              설명 보기 ↻
+              설명 보기
             </button>
           )}
         </div>
@@ -1002,31 +1008,36 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
         </div>
         {stage === 'move' && <div style={{ marginTop: 10 }}>{optBox}</div>}
         <AiNote top={10} />
-        {/* 하나씩 보는 화면 — 표지일 땐 뒷면에, 따라하다 '설정 바꾸기'로 나오면 아래에 펼쳐 둔다
-            (전체 화면에선 영상만) */}
-        {flippable ? (started && !full && <KnowAll card={card} />) : <KnowBox card={card} />}
+        {/* 알아 두기 입구 — ⛔ 첫 줄을 늘 보여 주고 누르면 '설명 보기' 창이 뜬다.
+            넘겨 보는 화면의 표지에선 제목 옆 버튼만 둔다(카드가 길어지지 않게). 전체 화면에선 오른쪽 위 버튼. */}
+        {hasKnow && !full && (started || !flippable) && <CardInfoEntry card={card} onOpen={openInfo} />}
       </div>
 
-      {/* 전체 화면 위로 올라오는 창 — 설정 바꾸기 · 설명 보기. 떠 있는 동안은 멈춰 있고, 닫으면 하던 자리에서 잇는다 */}
-      {sheet && (
+      {/* 설명 보기 — 표지·하는 중·전체 화면 어디서나 같은 창 */}
+      {sheet === 'info' && (
+        <CardInfoSheet card={card} tone={tone} totalSec={totalSec} onClose={closeInfo}
+          action={stage === 'cover' ? '바로 따라하기 →' : (held ? '이어서 하기 ▶' : '닫기')}
+          onAction={stage === 'cover' ? () => { setSheet(''); start(); } : closeInfo} />
+      )}
+
+      {/* 전체 화면 위로 올라오는 창 — 설정 바꾸기. 떠 있는 동안은 멈춰 있고, 닫으면 하던 자리에서 잇는다 */}
+      {sheet === 'set' && (
         <div onClick={closeSheet} style={{ position: 'fixed', inset: 0, zIndex: 96, background: 'rgba(28,26,23,0.45)',
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontFamily: "'Pretendard',-apple-system,sans-serif" }}>
           <style>{'@keyframes bmtiSheetUp{from{transform:translateY(28px);opacity:.5}to{transform:none;opacity:1}}'
             + '.bmti-set-bgm:has(> .bmti-set-host:empty){display:none}'}</style>
-          <div role="dialog" aria-modal="true" aria-label={sheet === 'set' ? '설정 바꾸기' : '설명 보기'} onClick={(e) => e.stopPropagation()}
+          <div role="dialog" aria-modal="true" aria-label="설정 바꾸기" onClick={(e) => e.stopPropagation()}
             style={{ width: '100%', maxWidth: 480, maxHeight: '84vh', overflowY: 'auto', background: '#fff', borderRadius: '22px 22px 0 0',
               padding: '16px 18px calc(18px + env(safe-area-inset-bottom))', boxSizing: 'border-box', color: INK,
               animation: 'bmtiSheetUp .22s ease-out' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 900 }}>{sheet === 'set' ? '설정 바꾸기' : '이 동작 알아 두기'}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 900 }}>설정 바꾸기</span>
               <button type="button" onClick={closeSheet}
                 style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 999, padding: '8px 14px',
                   fontSize: 12.5, fontWeight: 800, background: SET_BG, color: SET_INK, whiteSpace: 'nowrap' }}>
                 {held ? '이어서 하기 ▶' : '닫기'}
               </button>
             </div>
-
-            {sheet === 'info' && <KnowAll card={card} avoidFirst />}
 
             {sheet === 'set' && (
               <>
@@ -1100,119 +1111,8 @@ export default function QuickCardView({ card, tone = 'z', bmtiCode, onStart, onS
     </article>
   );
 
-  // 뒤집기 — 표지일 때만. 따라하는 동안엔 3D 틀을 걷는다(틀이 있으면 전체 화면이 그 안에 갇힌다).
-  if (!flippable || started) return front;
-  return (
-    <div style={{ perspective: 1400 }}>
-      <div style={{ position: 'relative', transformStyle: 'preserve-3d', transition: 'transform .6s cubic-bezier(.3,.7,.2,1)',
-        transform: flipped ? 'rotateY(180deg)' : 'none' }}>
-        {/* 표지 위에 얹은 글씨(부위·도구·조회·저장)와 영상은 브라우저가 따로 그리는 층이라
-            '뒷면 감추기'를 따르지 않고 뒤집힌 채 비친다. 그래서 반쯤 돌았을 때(0.3초) 면을 통째로 감춘다. */}
-        <div aria-hidden={flipped} style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
-          visibility: flipped ? 'hidden' : 'visible', transition: 'visibility 0s linear .3s' }}>{front}</div>
-        <div aria-hidden={!flipped} style={{ position: 'absolute', inset: 0, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
-          visibility: flipped ? 'visible' : 'hidden', transition: 'visibility 0s linear .3s',
-          WebkitBackfaceVisibility: 'hidden', background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16,
-          overflowY: 'auto', padding: '16px 16px 20px', fontFamily: "'Pretendard',-apple-system,sans-serif", color: INK }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ flex: 1, fontSize: 15, fontWeight: 900 }}>이 동작 알아 두기</span>
-            <button type="button" onClick={() => setFlipped(false)} aria-label="앞면으로"
-              style={{ flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: '#fff',
-                borderRadius: 10, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, color: SUB, whiteSpace: 'nowrap',
-                boxShadow: `inset 0 0 0 1px ${LINE}` }}>
-              앞면으로 ↺
-            </button>
-          </div>
-          <KnowAll card={card} />
-        </div>
-      </div>
-    </div>
-  );
+  return front;
 }
 
-// 알아 두기 — 대본이 있던 자리를 대신한다.
-//
-// 대본은 어차피 귀로 듣는다. 눈으로 볼 자리에는 손이 먼저 가는 정보를 둔다.
-// '피하세요'는 다치지 않게 하는 칸이라 늘 펼쳐 둔다. 나머지 둘은 접어 둔다.
+// 알아 두기(좋은 상황·피할 상황·쓰는 곳)가 하나라도 있는지 셀 때 쓴다. 보여 주는 일은 CardInfoSheet가 한다.
 const LINES = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
-
-function Rows({ items, color }) {
-  return (
-    <ul style={{ margin: '6px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 4 }}>
-      {items.map((x) => (
-        <li key={x} style={{ display: 'flex', gap: 6, fontSize: 12.5, lineHeight: 1.5, color: INK, wordBreak: 'keep-all' }}>
-          <span style={{ flexShrink: 0, color, fontWeight: 900 }}>·</span>
-          <span>{x}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// 알아 두기를 모두 펼쳐 보인다 — 카드 뒷면, 그리고 따라하는 동안 영상 아래.
-// 차례: ① 이럴 때 좋습니다 ② 이럴 땐 하지 마세요 ③ 쓰는 곳
-// avoidFirst: '이럴 땐 하지 마세요'를 맨 위에 — 전체 화면의 '설명 보기' 창에서 쓴다
-function KnowAll({ card, avoidFirst = false }) {
-  const good = LINES(card?.good_when);
-  const avoid = LINES(card?.avoid_when);
-  const focus = LINES(card?.focus_body);
-  const head = (txt, color) => (
-    <div style={{ fontSize: 12.5, fontWeight: 900, color, letterSpacing: '-0.01em' }}>{txt}</div>
-  );
-  const box = { padding: '11px 13px', borderRadius: 13, background: '#FAF7F0' };
-  const goodBox = good.length > 0 && <div key="good" style={box}>{head('👍 이럴 때 좋습니다', '#3F7F5B')}<Rows items={good} color="#3F7F5B" /></div>;
-  const avoidBox = avoid.length > 0 && <div key="avoid" style={box}>{head('⛔ 이럴 땐 하지 마세요', '#B23B36')}<Rows items={avoid} color="#B23B36" /></div>;
-  return (
-    <div style={{ display: 'grid', gap: 9, marginTop: 10 }}>
-      {avoidFirst ? [avoidBox, goodBox] : [goodBox, avoidBox]}
-      {focus.length > 0 && <div style={box}>{head('🎯 쓰는 곳', '#8A6A3A')}<Rows items={focus} color="#8A6A3A" /></div>}
-    </div>
-  );
-}
-
-function KnowBox({ card }) {
-  const good = LINES(card?.good_when);
-  const avoid = LINES(card?.avoid_when);
-  const focus = LINES(card?.focus_body);
-  const [open, setOpen] = useState(false);
-  if (!good.length && !avoid.length && !focus.length) return null;
-
-  const head = (txt, color) => (
-    <span style={{ fontSize: 11.5, fontWeight: 900, color, letterSpacing: '-0.01em' }}>{txt}</span>
-  );
-  return (
-    <div style={{ marginTop: 10, padding: '11px 13px', borderRadius: 13, background: '#FAF7F0' }}>
-      {avoid.length > 0 && (
-        <div>
-          {head('⛔ 이럴 땐 하지 마세요', '#B23B36')}
-          <Rows items={avoid} color="#B23B36" />
-        </div>
-      )}
-      {(good.length > 0 || focus.length > 0) && (
-        <>
-          {open && (
-            <div style={{ display: 'grid', gap: 10, marginTop: avoid.length ? 10 : 0 }}>
-              {good.length > 0 && (
-                <div>
-                  {head('👍 이럴 때 좋습니다', '#3F7F5B')}
-                  <Rows items={good} color="#3F7F5B" />
-                </div>
-              )}
-              {focus.length > 0 && (
-                <div>
-                  {head('🎯 쓰는 곳', '#8A6A3A')}
-                  <Rows items={focus} color="#8A6A3A" />
-                </div>
-              )}
-            </div>
-          )}
-          <button type="button" onClick={() => setOpen((v) => !v)}
-            style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', cursor: 'pointer',
-              fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: SUB }}>
-            {open ? '접기 ▲' : '이 동작 알아 두기 ▼'}
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
