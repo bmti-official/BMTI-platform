@@ -5,14 +5,14 @@
 //   머리   종류 이름표 · 동작 이름, 그 아래 한 줄 요약(걸리는 시간 · 도구 · 타겟 부위)
 //   ⛔     연한 붉은 바탕, 굵은 글씨, 늘 다 펼친다
 //   👍 🎯  세 줄까지 보이고 넘치면 '더 보기'
-//   🎯     몸 그림 위에 부위를 종류 색으로 번지게 칠한다(핵심은 진하고 크게, 연관은 연하고 작게)
-//   이렇게 해요  시작 전 그림을 작게 나란히
+//   🎯     몸 그림 위에 부위마다 동그란 점을 찍는다(핵심은 진한 보라·크게, 연관은 연한 보라·작게)
+//   이렇게 해요  시작 전 그림을 원본 그대로 나란히, 그 아래 시작 전 설명(멘트 자막)
 //   아래   고정 버튼 하나(표지에선 바로 따라하기, 하는 중엔 이어서 하기)
 //
 // 창은 body에 붙인다 — 카드가 들어 있는 틀(넘겨 보기·전체 화면)의 높이나 겹침 순서에 갇히지 않게.
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { KIND_LABEL, cardShortName, clipY, introImgs } from './format';
+import { KIND_LABEL, cardShortName, introImgs, toneField } from './format';
 import { KEY_TO_PART_LABEL } from '../../lib/diaryEntryLabels';
 import { HOTSPOTS } from '../../lib/mallangProfile';
 import femaleFront from '../../assets/3d_body/female_front.png';
@@ -21,18 +21,15 @@ import maleFront from '../../assets/3d_body/male_front.png';
 import maleBack from '../../assets/3d_body/male_back.png';
 
 const INK = '#1C1A17', SUB = '#8A8378', LINE = '#EDE9E2';
-// 종류마다 고유 색 — 카드의 종류 이름표와 같은 색이다.
+// 머리의 종류 이름표 색 — 카드 표지의 이름표와 같다.
 const KIND_INK = { exercise: '#8B7BD8', massage: '#E08B57', stretch: '#6FAE6A' };
 const AVOID_INK = '#B23B36', AVOID_BG = '#FDEEEC';
 const GOOD_INK = '#3F7F5B';
+// 🎯 몸 그림의 점 — 종류와 상관없이 보라. 핵심은 진하게, 연관은 연하게.
+const CORE_DOT = '#6E5BD0', RELATED_DOT = '#C7BDF3';
 const FOLD = 3;   // 세 줄까지 보이고 넘치면 '더 보기'
 
 const LINES = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
-
-const rgba = (hex, a) => {
-  const n = parseInt(String(hex).replace('#', ''), 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
-};
 
 // 몸 그림은 내 성별로(모르면 여성 그림). 로그인할 때 적어 둔 내 정보에서 읽는다.
 const isMale = () => {
@@ -55,7 +52,6 @@ function spotsOf(keys) {
 }
 
 function BodyFocus({ card }) {
-  const color = KIND_INK[card.kind] || '#8B7BD8';
   const core = spotsOf(card.core_parts);
   // 핵심 부위와 겹치는 연관 부위는 그리지 않는다(핵심이 이미 칠해져 있다)
   const related = spotsOf((card.related_parts || []).filter((k) => !(card.core_parts || []).includes(k)));
@@ -63,16 +59,12 @@ function BodyFocus({ card }) {
   const imgs = { front: male ? maleFront : femaleFront, back: male ? maleBack : femaleBack };
   if (!core.front.length && !core.back.length && !related.front.length && !related.back.length) return null;
 
-  const glow = (s, strong, i) => (
-    <span key={`${s.key}-${i}-${strong ? 'c' : 'r'}`} className={strong ? 'bmti-focus-core' : undefined}
-      // 종류 색이 가운데서 번진다. 밑에 옅은 흰빛을 깔아 어두운 옷 위에서도 보이게 한다.
-      style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, width: strong ? '50%' : '34%', aspectRatio: '1 / 1',
-        transform: 'translate(-50%,-50%)', borderRadius: '50%', pointerEvents: 'none',
-        background: strong
-          ? `radial-gradient(circle, ${rgba(color, 0.95)} 0%, ${rgba(color, 0.7)} 28%, ${rgba(color, 0)} 64%),`
-            + ' radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 58%)'
-          : `radial-gradient(circle, ${rgba(color, 0.55)} 0%, ${rgba(color, 0.3)} 30%, ${rgba(color, 0)} 64%),`
-            + ' radial-gradient(circle, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 56%)' }} />
+  // 동그란 점 — 흰 테두리를 둘러 어두운 옷 위에서도 또렷하게
+  const dot = (s, strong, i) => (
+    <span key={`${s.key}-${i}-${strong ? 'c' : 'r'}`}
+      style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, width: strong ? '17%' : '12%', aspectRatio: '1 / 1',
+        transform: 'translate(-50%,-50%)', borderRadius: '50%', pointerEvents: 'none', boxSizing: 'border-box',
+        background: strong ? CORE_DOT : RELATED_DOT, border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,0.22)' }} />
   );
   const figure = (view, label) => (
     <div style={{ flex: '0 1 112px', minWidth: 0 }}>
@@ -80,24 +72,21 @@ function BodyFocus({ card }) {
         background: 'linear-gradient(180deg,#FAF8F3,#F3F1EC)' }}>
         <img src={imgs[view]} alt="" draggable={false}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
-        {related[view].map((s, i) => glow(s, false, i))}
-        {core[view].map((s, i) => glow(s, true, i))}
+        {related[view].map((s, i) => dot(s, false, i))}
+        {core[view].map((s, i) => dot(s, true, i))}
       </div>
       <div style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 700, color: SUB, marginTop: 4 }}>{label}</div>
     </div>
   );
   return (
     <div style={{ marginTop: 8 }}>
-      <style>{'@keyframes bmtiFocusPulse{0%,100%{opacity:1}50%{opacity:.62}}'
-        + '.bmti-focus-core{animation:bmtiFocusPulse 2.4s ease-in-out infinite}'
-        + '@media (prefers-reduced-motion: reduce){.bmti-focus-core{animation:none}}'}</style>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
         {figure('front', '앞모습')}
         {figure('back', '뒷모습')}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 6, fontSize: 11, fontWeight: 700, color: SUB }}>
-        <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: rgba(color, 0.85), marginRight: 4 }} />핵심 부위</span>
-        <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: rgba(color, 0.32), marginRight: 4 }} />연관 부위</span>
+        <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: CORE_DOT, marginRight: 4, verticalAlign: '-1px' }} />핵심 부위</span>
+        <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: RELATED_DOT, marginRight: 4, verticalAlign: '-1px' }} />연관 부위</span>
       </div>
     </div>
   );
@@ -160,6 +149,8 @@ export default function CardInfoSheet({ card, tone = 'z', totalSec = 0, action =
   const mm = totalSec > 0 ? `${Math.floor(totalSec / 60)}분${totalSec % 60 ? ` ${totalSec % 60}초` : ''}` : '';
   const summary = [mm, tools.length ? tools.join(', ') : '도구 없음', parts.join(', ')].filter(Boolean).join(' · ');
   const stills = introImgs(card || {}).slice(0, 3);
+  // 시작 전 설명 — 멘트 자막의 첫 자리. 한 벌로 쓴 카드는 Z 칸에만 있다.
+  const introText = String((toneField(card || {}, 'sub_sets', tone) || [])[0] || '').trim();
   const head = (txt, color) => <div style={{ fontSize: 13, fontWeight: 900, color, letterSpacing: '-0.01em' }}>{txt}</div>;
 
   return createPortal(
@@ -209,22 +200,26 @@ export default function CardInfoSheet({ card, tone = 'z', totalSec = 0, action =
               {focus.length > 0 && <Folded items={focus} color="#8A6A3A" />}
             </section>
           )}
-          {stills.length > 0 && (
+          {(stills.length > 0 || introText) && (
             <section style={{ padding: '12px 14px', borderRadius: 14, background: '#FAF7F0' }}>
               {head('이렇게 해요', INK)}
-              <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
-                {stills.map((m, i) => (
-                  <div key={m.url} style={{ flex: '1 1 0', minWidth: 0, position: 'relative', aspectRatio: '4 / 5', borderRadius: 11,
-                    overflow: 'hidden', background: '#fff' }}>
-                    {/* 카드에서 맞춰 둔 자리(좌우·높이·크기)를 그대로 따른다 — IntroStills와 같다 */}
-                    <img src={m.url} alt={`시작 전 그림 ${i + 1}`} draggable={false}
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-                        objectPosition: `50% ${clipY(card)}%`, transform: `translate(${m.x}%, ${m.y}%) scale(${m.s / 100})` }} />
-                    <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 10.5, fontWeight: 900, color: INK,
-                      background: 'rgba(255,255,255,0.9)', borderRadius: 7, padding: '1px 6px' }}>{i + 1}</span>
-                  </div>
-                ))}
-              </div>
+              {stills.length > 0 && (
+                // 그림은 원본 그대로 — 동작 화면에서 자막 자리를 비우려고 줄이거나 내려 둔 값은 여기서 따르지 않는다
+                <div style={{ display: 'flex', gap: 7, marginTop: 8, alignItems: 'flex-start' }}>
+                  {stills.map((m, i) => (
+                    <div key={m.url} style={{ flex: '1 1 0', minWidth: 0, position: 'relative', borderRadius: 11, overflow: 'hidden', background: '#fff' }}>
+                      <img src={m.url} alt={`시작 전 그림 ${i + 1}`} draggable={false}
+                        style={{ width: '100%', height: 'auto', display: 'block' }} />
+                      <span style={{ position: 'absolute', left: 6, top: 6, fontSize: 10.5, fontWeight: 900, color: INK,
+                        background: 'rgba(255,255,255,0.9)', borderRadius: 7, padding: '1px 6px' }}>{i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {introText && (
+                <p style={{ margin: stills.length ? '10px 0 0' : '8px 0 0', fontSize: 13, lineHeight: 1.6, color: INK,
+                  wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{introText}</p>
+              )}
             </section>
           )}
         </div>
